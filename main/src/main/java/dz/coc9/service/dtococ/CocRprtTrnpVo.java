@@ -22,31 +22,41 @@ public class CocRprtTrnpVo extends ComDefaultVo {
     @Serial
     private static final long serialVersionUID = 1L;
     private boolean chkSel;
+    /** Identifiant du transport */
+    private Long transportId;
 
-    /** ID du transport */
-    private Long rprtTrnpId;
-    /** Code du modèle du transport */
-    private String rprtTrnpMdlCd;
-    /** Code de la marque du transport */
-    private String rprtTrnpBrndCd;
-    /** Numéro d'immatriculation du transport */
-    private String rprtTrnpRgsrNo;
-    /** Numéro de châssis du transport */
-    private String rprtTrnpChssNo;
+    /** Code du modèle du véhicule */
+    private String modelCode;
+
+    /** Code de la marque du véhicule */
+    private String brandCode;
+
+    /** Numéro d'immatriculation */
+    private String registrationNumber;
+
+    /** Numéro de châssis */
+    private String chassisNumber;
+
     /** Propriétaire du véhicule */
-    private String rprtTrnpOwvh;
-    /** Valeur unitaire du transport */
-    private BigDecimal rprtTrnpUnitVal;
-    /** Code de la devise */
-    private String currCd;
+    private String owner;
+
+    /** Valeur unitaire du véhicule */
+    private BigDecimal unitValue;
+
+    /** Devise */
+    private String currency;
+
     /** Numéro de référence du rapport */
-    private String rprtRefNo;
-    /** nom modele de  véhicule  */
-    private String  vhclMdlNm;
-    /** nom marque de  véhicule  */
-    private String  vhclBrndNm;
-    /** type de  véhicule  */
-    private String  rprtTrnpTpCd;
+    private String reportReference;
+
+    /** Nom du modèle du véhicule */
+    private String modelName;
+
+    /** Nom de la marque du véhicule */
+    private String brandName;
+
+    /** Type de véhicule */
+    private String vehicleType;
 
 }
 

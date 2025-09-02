@@ -22,71 +22,70 @@ import java.util.List;
 public class CocRprtIncVo extends ComDefaultVo {
     private static final long serialVersionUID = 1L;
     private boolean chkSel;
+    /** Numéro de référence de l’incident */
+    private String incidentReference;
 
+    /** Numéro de référence de l’incident (recherche) */
+    private String searchIncidentReference;
 
-    /** innccedent refrence number  */
-    private String rprtIncRefNo;
-    /** innccedent refrence number  */
-    private String srchRprtIncRefNo;
-    /** */
-    private String srchOrgnCd;
-    /** organ code  */
-    private String orgnCd;
+    /** Code d’organisation (recherche) */
+    private String searchOrganizationCode;
 
-    /** report inncedent type    */
-    private String rprtIncTpCd;
+    /** Code d’organisation */
+    private String organizationCode;
 
-    /** report inncedent type    */
-    private String srchRprtIncTpCd;
+    /** Type d’incident */
+    private String incidentType;
 
-    /** search report inncedent date  */
-    private String srchrprtIncDttm;
+    /** Type d’incident (recherche) */
+    private String searchIncidentType;
 
-    /** report inncedent date    */
-    private String  rprtIncDttm;
+    /** Date et heure de l’incident (recherche) */
+    private String searchIncidentDateTime;
 
-    /** title of inccedent    */
-    private String  rprtIncTtl;
+    /** Date et heure de l’incident */
+    private String incidentDateTime;
 
-    /** Description of inccedent    */
-    private String rprtIncDesc;
+    /** Titre de l’incident */
+    private String incidentTitle;
 
-    /** atch file   */
-    private String atchFileId;
+    /** Description de l’incident */
+    private String incidentDescription;
 
-    /** operation Reference number   */
-    private String oprnRefNo;
+    /** Identifiant du fichier joint */
+    private String attachmentFileId;
 
-    /** Supprimé O/N  */
-    private String delYn;
+    /** Numéro de référence d’opération */
+    private String operationReference;
 
-    /** Supprimé O/N  */
-    private String useYn;
+    /** Supprimé (O/N) */
+    private String deleted;
 
-    /** ID de la première personne enregistrante  */
-    private String frstRegstId;
+    /** Utilisé (O/N) */
+    private String active;
 
-    /** Date et heure du premier enregistrement  */
-    private String frstRgsrDttm;
+    /** ID du premier enregistrement */
+    private String createdBy;
 
-    /** ID du modificateur final  */
-    private String lastChprId;
+    /** Date et heure du premier enregistrement */
+    private String createdDateTime;
 
-    /** Date et heure de la modification finale  */
-    private String lastChgDttm;
+    /** ID du dernier modificateur */
+    private String lastModifiedBy;
 
-    /** Liste des pièces jointes  */
-//    private List<ComAtchFileUploadVo> fileList = new ArrayList<>();
+    /** Date et heure de la dernière modification */
+    private String lastModifiedDateTime;
 
-    /** résultat */
-    private String resultNm;
+    /** Résultat */
+    private String resultName;
 
-    /** Liste des organisation parent  */
-    private List<ComCstmOrgnVo> orgnList = new ArrayList<>();
+    /** Liste des organisations parentes */
+    private List<ComCstmOrgnVo> parentOrganizations = new ArrayList<>();
 
-    /** Date de l'infraction(Début) */
-    private String rprtRqstDtFrom;
-    /** Date de l'infraction(Fin) */
-    private String rprtRqstDtTo;
+    /** Date de l’infraction (Début) */
+    private String offenseDateFrom;
+
+    /** Date de l’infraction (Fin) */
+    private String offenseDateTo;
 
 }

@@ -23,23 +23,32 @@ public class CocRprtCagVo  extends ComDefaultVo {
     private static final long serialVersionUID = 1L;
     private boolean chkSel;
 
-    /** Numéro de réference de cargaison */
-    private String rprtCagId;
-    /** Nom de la catégorie des marchandises */
-    private String rprtCagCtgCd;
-    /** Nom exacte de la marchandise */
-    private String rprtCagNm;
+    /** Numéro de référence de cargaison */
+    private String cargoReference;
+
+    /** Catégorie des marchandises */
+    private String cargoCategory;
+
+    /** Nom exact de la marchandise */
+    private String cargoName;
+
     /** Quantité */
-    private BigDecimal rprtCagQty;
+    private BigDecimal quantity;
+
     /** Unité de mesure */
-    private String unitCd;
+    private String unit;
+
     /** Prix unitaire */
-    private BigDecimal rprtCagUnitVal;
-    /** Valeur des marchandises frauduleuses */
-    private BigDecimal rprtCagTtlVal;
-    /** Unité monétaire */
-    private String currCd ;
-    /** Numéro de réference d'opération */
-    private String rprtRefNo;
+    private BigDecimal unitPrice;
+
+    /** Valeur totale des marchandises frauduleuses */
+    private BigDecimal totalValue;
+
+    /** Devise monétaire */
+    private String currency;
+
+    /** Numéro de référence d'opération */
+    private String operationReference;
+
 
 }

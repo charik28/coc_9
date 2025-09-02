@@ -17,28 +17,28 @@ import lombok.Setter;
 public class CocRprtCmpnyVo extends ComDefaultVo {
 
     private boolean chkSel;
+    /** Identifiant de l'entreprise */
+    private String companyId;
 
-    /** Id d'entreprise */
-    private String rprtCmpnyId;
-
-    /** Type d’entreprise	*/
-    private String rprtCmpnyTpCd;
+    /** Type d’entreprise */
+    private String companyType;
 
     /** Nom de l'entreprise */
-    private String rprtCmpnyNm;
+    private String companyName;
 
     /** Adresse de l'établissement */
-    private String rprtCmpnyAddr;
+    private String companyAddress;
 
     /** Numéro de registre du commerce */
-    private String rprtCmpnyCmrcRegsNo;
+    private String tradeRegisterNumber;
 
-    /** NIF	*/
-    private String rprtCmpnyNifNo;
+    /** Numéro d'identification fiscale (NIF) */
+    private String nif;
 
-    /** Date de délivrance du registre du commerce	*/
-    private String rprtCmpnyDlvDt;
+    /** Date de délivrance du registre du commerce */
+    private String tradeRegisterIssueDate;
+
     /** Numéro de référence du rapport */
-    private String rprtRefNo;
+    private String reportReference;
 
 }

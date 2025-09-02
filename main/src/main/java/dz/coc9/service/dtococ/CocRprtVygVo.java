@@ -1,6 +1,5 @@
 package dz.coc9.service.dtococ;
 
-import dz.coc9.service.dtococ.ComDefaultVo;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,28 +16,26 @@ import lombok.Setter;
 @NoArgsConstructor
 public class CocRprtVygVo extends ComDefaultVo {
     private boolean chkSel;
-
-    /** Id de le voyage */
-    private String rprtVygId;
+    /** Identifiant du voyage */
+    private String voyageId;
 
     /** Lieu de départ */
-    private String rprtVygDptr;
+    private String departureLocation;
 
     /** Lieu d'arrivée */
-    private String rprtVygDstn;
+    private String arrivalLocation;
 
     /** Moyen de transport utilisé */
-    private String rprtVygTrnpNm;
+    private String transportName;
 
-    /** date du voyage */
-    private String rprtVygDt;
+    /** Date du voyage */
+    private String voyageDate;
 
-    /** refference number of repport */
-    private String rprtRefNo;
+    /** Numéro de référence du rapport */
+    private String reportReference;
 
-    /** type du voyage */
-    private String rprtVygTp;
-
+    /** Type du voyage */
+    private String voyageType;
 
 
 }

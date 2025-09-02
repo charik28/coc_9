@@ -20,41 +20,55 @@ public class CocRprtPrsnVo extends ComDefaultVo {
     @Serial
     private static final long serialVersionUID = 1L;
     private boolean chkSel;
+    /** Identifiant de la personne liée au rapport */
+    private Long personId;
 
-    /** ID de la personne liée au rapport */
-    private Long rprtPrsnId;
-    /** Code du type de personne liée au rapport */
-    private String rprtPrsnTpCd;
-    /** Nom de la personne liée au rapport */
-    private String rprtPrsnNm;
-    /** Nom de famille de la personne liée au rapport */
-    private String rprtPrsnFmnm;
+    /** Type de la personne liée au rapport */
+    private String personType;
 
-    /** Nom de la personne liée au rapport */
-    private String rprtPrsnNmFr;
-    /** Nom de famille de la personne liée au rapport */
-    private String rprtPrsnFmnmFr;
-    /** Type de document d'identification de la personne */
-    private String rprtPrsnTypDoc;
-    /** Numéro d'enregistrement de la personne */
-    private String rprtPrsnRgsrNo;
-    /** Date de délivrance du document d'identification */
-    private String rprtPrsnDlvDt;
+    /** Prénom de la personne */
+    private String firstName;
+
+    /** Nom de famille de la personne */
+    private String lastName;
+
+    /** Prénom de la personne (en français) */
+    private String firstNameFr;
+
+    /** Nom de famille de la personne (en français) */
+    private String lastNameFr;
+
+    /** Type de document d'identification */
+    private String documentType;
+
+    /** Numéro du document d'identification */
+    private String documentNumber;
+
+    /** Date de délivrance du document */
+    private String documentIssueDate;
+
     /** Agence de délivrance du document */
-    private String rprtPrsnDlvAgncy;
-    /** Code de nationalité de la personne */
-    private String rprtPrsnNatCd;
+    private String issuingAgency;
+
+    /** Nationalité de la personne */
+    private String nationalityCode;
+
     /** Adresse de la personne */
-    private String rprtPrsnAddr;
-    /** Date de naissance de la personne */
-    private String rprtPrsnBrdy;
-    /** Date de naissance  présumée */
-    private String rprtPrsntempBrdy;
-    /** Genre de la personne (M/F) */
-    private String prsnGndr;
+    private String address;
+
+    /** Date de naissance */
+    private String birthDate;
+
+    /** Date de naissance présumée */
+    private String estimatedBirthDate;
+
+    /** Genre (M/F) */
+    private String gender;
+
     /** Numéro de référence du rapport */
-    private String rprtRefNo;
-    /** NIN */
-    private String rprtPrsnNin;
+    private String reportReference;
+
+    /** Numéro d'identification nationale (NIN) */
+    private String nationalIdNumber;
 
 }

@@ -25,108 +25,149 @@ public class CocRprtVo extends ComDefaultVo {
     private static final long serialVersionUID = 1L;
 
     private boolean chkSel;
-
     /** Numéro de référence du rapport */
-    private String rprtRefNo;
-    /** Code du type de rapport */
-    private String rprtTpCd;
+    private String reportReference;
+
+    /** Type de rapport */
+    private String reportType;
+
     /** Code de l'organisation */
-    private String orgnCd;
-    /** Information du rapport */
-    private String rprtInfNtr;
+    private String organizationCode;
+
+    /** Nature de l'information du rapport */
+    private String reportNature;
+
     /** Date et heure de l'information du rapport */
-    private String rprtInfDttm;
+    private String reportDateTime;
+
     /** Lieu de l'information du rapport */
-    private String rprtInfPlc;
-    /** Latitude d'infraction */
-    private BigDecimal rprtLat;
-    /** Longitude d'infraction */
-    private BigDecimal rprtLong;
+    private String reportLocation;
+
+    /** Latitude de l'infraction */
+    private BigDecimal latitude;
+
+    /** Longitude de l'infraction */
+    private BigDecimal longitude;
+
     /** Technique de l'information du rapport */
-    private String rprtInfTch;
+    private String reportTechnique;
+
     /** Numéro de déclaration */
-    private String dclrNo;
+    private String declarationNumber;
+
     /** Procédure de l'information du rapport */
-    private String rprtInfPrcd;
-    /** Amendement de l'information du rapport */
-    private BigDecimal rprtInfAmd;
-    /** Code de la devise */
-    private String currCd;
-    /** Texte juridique de l'information du rapport */
-    private String rprtInfJrdqTxt;
+    private String reportProcedure;
+
+    /** Amendement lié au rapport */
+    private BigDecimal reportAmendment;
+
+    /** Devise */
+    private String currency;
+
+    /** Texte juridique du rapport */
+    private String legalText;
+
     /** Identifiant du fichier joint */
-    private String atchFileId;
+    private String attachmentFileId;
+
     /** Valeur totale de la cargaison */
-    private BigDecimal cagValTtl;
+    private BigDecimal cargoTotalValue;
+
     /** Numéro de référence de l'opération */
-    private String oprnRefNo;
+    private String operationReference;
 
+/* ================================
+   Relations
+   ================================ */
 
-    /** Additional Lists and Objects */
+    /** Informations liées à la cargaison */
+    private List<CocRprtCagVo> cargos = new ArrayList<>();
 
-    /** List of cargo-related information */
-    private List<CocRprtCagVo> rprtCagList = new ArrayList<>();
-    /** List of persons related to the report */
-    private List<CocRprtPrsnVo> rprtPrsnList = new ArrayList<>();
-    /** List of transport-related details */
-    private List<CocRprtTrnpVo> rprtTrnpList = new ArrayList<>();
-    /** List of companies involved */
-    private List<CocRprtCmpnyVo> rprtCmpnyList = new ArrayList<>();
-    /** Voyage-related details */
-    private CocRprtVygVo rprtVygVo;
+    /** Personnes liées au rapport */
+    private List<CocRprtPrsnVo> persons = new ArrayList<>();
 
-    /** List of employees linked to the report */
-    private List<CocMgmtEmpVo> rprtEmpList = new ArrayList<>();
+    /** Détails liés au transport */
+    private List<CocRprtTrnpVo> transports = new ArrayList<>();
+
+    /** Entreprises impliquées */
+    private List<CocRprtCmpnyVo> companies = new ArrayList<>();
+
+    /** Détails liés au voyage */
+    private CocRprtVygVo voyage;
+
+    /** Employés liés au rapport */
+    private List<CocMgmtEmpVo> employees = new ArrayList<>();
+
+    /** Pièces jointes */
+    private List<ComAtchFileUploadVo> attachments = new ArrayList<>();
+
+    /** Organisations parentes */
+    private List<ComCstmOrgnVo> parentOrganizations = new ArrayList<>();
+
+/* ================================
+   Validation & Audit
+   ================================ */
 
     /** Etat de validation */
-    private String vldtStts;
-    /** Date de l'infraction(Début) */
-    private String rprtRqstDtFrom;
-    /** Date de l'infraction(Fin) */
-    private String rprtRqstDtTo;
-    /** unknown persons Yes / No */
-    private String unknownYn;
-    /** Utilisé O/N */
-    private String useYn;
-    /** Supprimé O/N */
-    private String delYn;
-    /** ID du premier enregistrant */
-    private String frstRegstId;
-    /** Date et heure du premier enregistrement */
-    private String frstRgsrDttm;
-    /** ID du modificateur final */
-    private String lastChprId;
-    /** Date et heure de la modification finale */
-    private String lastChgDttm;
+    private String validationStatus;
 
-    /** search Code d'origine */
-    private String srchRprtRefNo;
+    /** Modification (Oui/Non) */
+    private String modified;
 
-    /** search Etat de validation  */
-    private String srchVldtStts;
+    /** Motif de modification */
+    private String modificationReason;
 
-    /** search Noture d'information du rapport */
-    private String srchRprtInfNtr;
+    /** Inconnus (Oui/Non) */
+    private String unknown;
 
-    /** search Code d'origine */
-    private String srchOrgnCd;
+    /** Actif (Oui/Non) */
+    private String active;
 
-    /** Code du type de rapport */
-    private String srchRprtTpCd;
+    /** Supprimé (Oui/Non) */
+    private String deleted;
 
-    /** Liste des pièces jointes  */
-    private List<ComAtchFileUploadVo> fileList = new ArrayList<>();
+    /** ID du créateur */
+    private String createdBy;
 
-    /** résultat !== 라벨구분코드 ==! */
-    private String resultNm;
+    /** Date et heure de création */
+    private String createdDateTime;
 
-    /** Liste des organisation parent  */
-    private List<ComCstmOrgnVo> orgnList = new ArrayList<>();
+    /** ID du dernier modificateur */
+    private String lastModifiedBy;
 
+    /** Date et heure de dernière modification */
+    private String lastModifiedDateTime;
 
-    /** modification Yes / No */
-    private String chngYn;
+/* ================================
+   Search Filters
+   ================================ */
 
-    /** motif de  modification */
-    private String chngRsn;
+    /** Numéro de référence du rapport (recherche) */
+    private String searchReportReference;
+
+    /** Etat de validation (recherche) */
+    private String searchValidationStatus;
+
+    /** Nature de l'information (recherche) */
+    private String searchReportNature;
+
+    /** Code de l'organisation (recherche) */
+    private String searchOrganizationCode;
+
+    /** Type de rapport (recherche) */
+    private String searchReportType;
+
+    /** Date de l'infraction (Début) */
+    private String offenseDateFrom;
+
+    /** Date de l'infraction (Fin) */
+    private String offenseDateTo;
+
+/* ================================
+   Miscellaneous
+   ================================ */
+
+    /** Résultat */
+    private String resultName;
+
 }
