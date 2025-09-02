@@ -1,7 +1,7 @@
 package dz.coc9.service.db;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
+import dz.coc9.mappers.GenericBatchMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,24 +9,19 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class CsvBatchLoaderService {
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private final GenericBatchMapper mapper;
 
-    /**
-     * Batch load all CSV files from a folder into corresponding DB tables.
-     * The filename must start with the target table name.
-     *
-     * @param folderPath the path to the CSV folder
-     */
+    public CsvBatchLoaderService(GenericBatchMapper mapper) {
+        this.mapper = mapper;
+    }
+
     @Transactional
     public void loadCsvFolder(String folderPath) throws Exception {
         File folder = new File(folderPath);
@@ -43,17 +38,14 @@ public class CsvBatchLoaderService {
     }
 
     private String extractTableName(String fileName) {
-        // Remove extension
-        String baseName = fileName.replaceFirst("\\.csv$", "");
-
-        // Regex: capture everything before the last _digits
-        return baseName.replaceFirst("_[0-9]{12}$", "");
+        return fileName.replaceFirst("\\.csv$", "")
+                .replaceFirst("_[0-9]{12}$", "");
     }
 
-
     private void loadCsvFileToTable(Path filePath, String tableName) throws Exception {
+
+       log.info("loadCsvFileToTable : {} into: {}", filePath,tableName);
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath.toFile()))) {
-            // First line: column headers
             String headerLine = reader.readLine();
             if (headerLine == null) {
                 throw new IllegalArgumentException("Empty CSV file: " + filePath);
@@ -63,30 +55,22 @@ public class CsvBatchLoaderService {
                     .map(String::trim)
                     .collect(Collectors.toList());
 
-            String sql = buildInsertSql(tableName, columns);
-
-            List<Object[]> batchArgs = new ArrayList<>();
+            List<Map<String, Object>> rows = new ArrayList<>();
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] values = line.split(",");
-                Object[] row = Arrays.stream(values)
-                        .map(String::trim)
-                        .map(v -> v.isEmpty() ? null : v)
-                        .toArray();
-                batchArgs.add(row);
+                Map<String, Object> row = new LinkedHashMap<>();
+                for (int i = 0; i < columns.size(); i++) {
+                    row.put(columns.get(i), i < values.length ? values[i].trim() : null);
+                }
+                rows.add(row);
             }
 
-            if (!batchArgs.isEmpty()) {
-                jdbcTemplate.batchUpdate(sql, batchArgs);
+            if (!rows.isEmpty()) {
+                mapper.batchInsert(tableName, columns, rows);
                 System.out.printf("Loaded %d rows into table %s from %s%n",
-                        batchArgs.size(), tableName, filePath.getFileName());
+                        rows.size(), tableName, filePath.getFileName());
             }
         }
-    }
-
-    private String buildInsertSql(String tableName, List<String> columns) {
-        String colPart = String.join(",", columns);
-        String valPart = columns.stream().map(c -> "?").collect(Collectors.joining(","));
-        return "INSERT INTO " + tableName + " (" + colPart + ") VALUES (" + valPart + ")";
     }
 }
