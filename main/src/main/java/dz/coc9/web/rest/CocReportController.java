@@ -10,14 +10,14 @@ import java.util.List;
 @RestController
 public class CocReportController {
 
-    private final CocReportService service;
+    private final CocReportService cocReportService;
 
-    public CocReportController(CocReportService service) {
-        this.service = service;
+    public CocReportController(CocReportService cocReportService) {
+        this.cocReportService = cocReportService;
     }
 
     @GetMapping("/api/coc/reports")
     public List<CocReportDto> getAllReports() {
-        return service.getReports();
+        return cocReportService.getReports();
     }
 }
