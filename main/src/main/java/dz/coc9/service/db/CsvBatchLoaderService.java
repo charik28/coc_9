@@ -29,9 +29,11 @@ public class CsvBatchLoaderService {
         this.sqlSessionFactory = sqlSessionFactory;
         this.genericBatchMapper = genericBatchMapper;
     }
+    int tbCount;
 
     @Transactional
-    public void loadCsvFolder(String folderPath) throws Exception {
+    public String loadCsvFolder(String folderPath) throws Exception {
+        tbCount = 0;
         File folder = new File(folderPath);
         if (!folder.exists() || !folder.isDirectory()) {
             throw new IllegalArgumentException("Invalid folder path: " + folderPath);
@@ -43,6 +45,7 @@ public class CsvBatchLoaderService {
                 loadCsvFileToTable(file.toPath(), tableName);
             }
         }
+        return "loaded " + tbCount +" of "+ Objects.requireNonNull(folder.listFiles()).length +" file";
     }
 
     private String extractTableName(String fileName) {
@@ -67,13 +70,14 @@ public class CsvBatchLoaderService {
 
             try {
                 if (!"tb_coc_arm".equals(tableName) && !tableName.contains("_rel")) {
-                    long count = genericBatchMapper.countByTableName(tableName);
-                    if (count < 1) {
+
+                    if (countByTableName(tableName) < 1) {
                         genericBatchMapper.copyCsvFile("alpassint", tableName, filePath.toString(), fields);
                         log.warn("loaded {} from {}", tableName, filePath);
 
+                        tbCount++;
                     } else {
-                        log.warn("skipping {} count(*) lenght: {} ", tableName, count);
+                        log.warn("skipping {}  ", tableName);
                     }
                 }
             }catch (Exception e) {
@@ -85,6 +89,22 @@ public class CsvBatchLoaderService {
         }
     }
 
+    long countByTableName(String tableName) {
+        long count =-2L;
+
+        try{
+
+             if(genericBatchMapper.checkTableExists("alpassint" ,tableName))
+             {
+                 count = genericBatchMapper.countByTableName("alpassint" ,tableName);
+             }                ;
+
+        }catch (Exception e) {
+            log.error(e.getMessage());
+        }
+        return count;
+
+    }
 
 
 }

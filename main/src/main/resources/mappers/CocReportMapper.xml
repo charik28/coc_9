@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dz.coc9.mappers.CocReportMapper">
+
+    <resultMap id="CocReportResultMap" type="dz.coc9.service.dtococ.CocReportDto">
+        <result property="reportRefNo" column="brq_ref_no"/>
+        <result property="reportTypeCode" column="brq_tp"/>
+        <result property="organizationCode" column="orgn_cd"/>
+        <result property="reportInfoNature" column="inf_type"/>
+        <result property="reportInfoDateTime" column="brq_dt_tm"/>
+        <result property="reportInfoPlace" column="brq_post_nm"/>
+        <result property="reportInfoTechnique" column="brq_tch_inf"/>
+        <result property="reportInfoProcedure" column="brq_prcd"/>
+        <result property="reportInfoAmendment" column="amnd_val"/>
+        <result property="reportInfoLegalText" column="amnd_jrdq_txt"/>
+        <result property="reportLatitude" column="brq_lat"/>
+        <result property="reportLongitude" column="brq_long"/>
+        <result property="currencyCode" column="curr_cd"/>
+        <result property="totalCargoValue" column="amnd_val"/> <!-- أو cag_val لو موجود -->
+        <result property="declarationNo" column="brq_dclr_no"/>
+        <result property="validationStatus" column="vldt_stts"/>
+        <result property="firstRegistrarId" column="frst_regst_id"/>
+        <result property="firstRegisterDateTime" column="frst_rgsr_dttm"/>
+        <result property="lastChangerId" column="last_chpr_id"/>
+        <result property="lastChangeDateTime" column="last_chg_dttm"/>
+        <result property="deleteFlag" column="del_yn"/>
+    </resultMap>
+
+    <select id="selectReports" resultMap="CocReportResultMap">
+        SELECT
+            brq_ref_no, sctr_cd, orgn_cd, brq_dt, dptm_cd, dptm_nm, inf_type,
+            brq_dt_tm, brq_post_cd, brq_post_nm, brq_post_nm_sup, brq_tch_inf,
+            brq_dclr_no, brq_prcd, inry_dptr_port, inry_arv_port, inry_ship_nm,
+            inry_vyg_dt, amnd_val, amnd_jrdq_txt, cmrc_regs_no, nif_no, del_yn,
+            frst_regst_id, frst_rgsr_dttm, last_chpr_id, last_chg_dttm, brq_tp,
+            brq_long, brq_lat, vldt_stts, atch_file_id, typ_vyg, dlvr_regs_no,
+            cmpny_nm, cmpny_typ, cmpny_addr, curr_cd
+        FROM alpassint.tb_coc_brq
+    </select>
+</mapper>

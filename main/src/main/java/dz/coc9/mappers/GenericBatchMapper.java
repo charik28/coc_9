@@ -23,6 +23,11 @@ public interface GenericBatchMapper {
     );
 
     long countByTableName(
+            @Param("schemasName") String schemasName,
+            @Param("tableName") String tableName
+    );
+    boolean checkTableExists(
+            @Param("schemasName") String schemasName,
             @Param("tableName") String tableName
     );
 

@@ -17,9 +17,10 @@ public class DbResource {
     }
 
     @GetMapping("/load")
-    void load() {
+    String load() {
         try {
-            csvBatchLoaderService.loadCsvFolder("C:\\wrk\\dzGeo\\cocDb\\csv");
+           return
+                   csvBatchLoaderService.loadCsvFolder("C:\\wrk\\dzGeo\\cocDb\\csv");
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);

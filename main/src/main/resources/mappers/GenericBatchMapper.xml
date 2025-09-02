@@ -20,9 +20,17 @@
         </trim>
     </insert>
 
+    <select id="checkTableExists" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_schema = '${schemaName}'
+              AND table_name = '${tableName}'
+        );
+    </select>
     <!-- countTableName -->
-    <select id="countByTableName" parameterType="string" resultType="long">
-        SELECT count(*) FROM ${tableName}
+    <select id="countByTableName" resultType="long">
+        SELECT count(*) FROM ${schemasName}.${tableName}
     </select>
 
     <insert id="copyCsvFile">
