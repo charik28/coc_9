@@ -1,0 +1,59 @@
+@startuml
+' Home page wireframe (no macros — safe)
+
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam rectangle {
+  BorderColor #444
+  BackgroundColor #EEE
+  RoundCorner 8
+}
+skinparam frame {
+  BorderColor #666
+  BackgroundColor #F8F8F8
+}
+
+rectangle "🏠 Home Page" {
+  frame "📂 Sidebar (Entities)" as Sidebar {
+    rectangle "📂 Assurance" as Entity_Assurance
+    rectangle "📂 Adherent" as Entity_Adherent
+    rectangle "📂 Contrat" as Entity_Contrat
+  }
+
+  frame "📑 Main Content" as Main {
+    frame "Tabs (Submenus)" as Tabs {
+      rectangle "📑 Overview" as Tab_Overview
+      rectangle "📑 Details" as Tab_Details
+      rectangle "📑 Relations" as Tab_Relations
+    }
+
+    frame "Nested Tabs (for Details)" as NestedTabs {
+      rectangle "📄 General Info" as SubTab_GeneralInfo
+      rectangle "📄 Attributes" as SubTab_Attributes
+      rectangle "📄 History" as SubTab_History
+    }
+
+    frame "Tab Content" as Components {
+      rectangle "📊 ListComponent (jsGrid)" as Comp_List
+      rectangle "📝 UpdateComponent (Form)" as Comp_Form
+      rectangle "📄 PdfComponent (Print)" as Comp_Pdf
+      rectangle "📥 ExcelComponent (Bulk Upload)" as Comp_Excel
+    }
+  }
+}
+
+' Relationships
+Entity_Assurance -right-> Tab_Overview
+Entity_Assurance -right-> Tab_Details
+Entity_Adherent  -right-> Tab_Overview
+Entity_Contrat   -right-> Tab_Relations
+
+Tab_Details -down-> SubTab_GeneralInfo
+Tab_Details -down-> SubTab_Attributes
+Tab_Details -down-> SubTab_History
+
+SubTab_GeneralInfo -down-> Comp_List
+SubTab_Attributes  -down-> Comp_Form
+SubTab_History     -down-> Comp_Pdf
+SubTab_History     -down-> Comp_Excel
+@enduml

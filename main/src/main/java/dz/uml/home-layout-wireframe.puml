@@ -1,0 +1,40 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+rectangle "Home Page" {
+
+  frame "Sidebar (Entities)" as Sidebar {
+    rectangle "Entity A" as EA
+    rectangle "Entity B" as EB
+    rectangle "Entity C" as EC
+  }
+
+  frame "Main Content" {
+
+    frame "Tabs" {
+      rectangle "Tab: Overview" as T1
+      rectangle "Tab: Details" as T2
+      rectangle "Tab: Relations" as T3
+    }
+
+    frame "Tab Content" {
+      frame "ListComponent (jsGrid)" as ListC
+      frame "UpdateComponent (Form)" as UpdateC
+      frame "PdfComponent (Print)" as PdfC
+      frame "ExcelComponent (Bulk Upload)" as ExcelC
+    }
+  }
+}
+
+' Layout arrows
+EA -right-> T1
+EB -right-> T2
+EC -right-> T3
+
+T1 -down-> ListC
+T1 -down-> UpdateC
+T1 -down-> PdfC
+T1 -down-> ExcelC
+
+@enduml

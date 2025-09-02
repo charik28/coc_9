@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dz.generator.mappers.FieldMetaMapper">
+
+    <resultMap id="FieldMetaResultMap" type="dz.generator.service.dto.FieldMetaDTO">
+        <id column="id" property="id"/>
+        <result column="entity_name" property="entityName"/>
+        <result column="field_name" property="fieldName"/>
+        <result column="field_type" property="fieldType"/>
+        <result column="i18n_key" property="i18nKey"/>
+        <result column="required" property="required"/>
+        <result column="is_array" property="isArray"/>
+    </resultMap>
+
+    <insert id="insertField" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO field_meta (entity_name, field_name, field_type, i18n_key, required, is_array)
+        VALUES (#{entityName}, #{fieldName}, #{fieldType}, #{i18nKey}, #{required}, #{isArray})
+    </insert>
+
+    <insert id="insertField2" parameterType="dz.generator.service.dto.FieldMetaDTO">
+        INSERT INTO field_meta (entity_name, field_name, field_type, i18n_key)
+        VALUES (#{entityName}, #{fieldName}, #{fieldType}, #{i18nKey})
+    </insert>
+    <insert id="insertFields">
+        INSERT INTO field_meta (entity_name, field_name)
+        VALUES
+        <foreach collection="fields" item="f" separator=",">
+            (#{entityName}, #{f.fieldName}, #{fieldType}, #{f.i18nKey})
+        </foreach>
+    </insert>
+
+    <select id="findFieldsByEntityId" resultMap="FieldMetaResultMap">
+        SELECT * FROM field_meta WHERE entity_name = #{entityName}
+    </select>
+
+    <delete id="deleteFieldsByEntityId">
+        DELETE FROM field_meta WHERE entity_name = #{entityName}
+    </delete>
+
+    <insert id="insertOrUpdateField" parameterType="dz.generator.service.dto.FieldMetaDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO field_meta (entity_name, field_name, field_type, i18n_key)
+        VALUES (#{entityName}, #{fieldName}, #{fieldType}, #{i18nKey})
+        ON CONFLICT (entity_name, field_name) DO UPDATE
+            SET field_type = EXCLUDED.field_type,
+                i18n_key   = EXCLUDED.i18n_key
+    </insert>
+</mapper>

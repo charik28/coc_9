@@ -1,0 +1,9 @@
+
+
+GET http://localhost:3000/api/v3/sys-menus/sidebar
+Content-Type: application/json
+accept: */*
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc1NjUyMzc4MCwiYXV0aCI6IlJPTEVfQURNSU4gUk9MRV9VU0VSIiwiaWF0IjoxNzU2NDM3MzgwLCJ1c2VySWQiOjF9.kvUrAkNhFrAJEezjA0ybRf3xWw3UqD1gTodfSt9CR2OOytznwG3sFTcRG6n3o0-rdYiazRQCD7SoBLYnRh-pRA
+
+
+> 2025-08-30T014627.200.json

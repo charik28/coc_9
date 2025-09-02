@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dz.afaris.mappers.SysMenuMapper">
+
+    <!-- Base result mapping -->
+    <resultMap id="SysMenuResultMap" type="dz.generator.service.dto.SysMenuDto">
+        <id property="id" column="id"/>
+        <result property="mgmtNo" column="mgmt_no"/>
+        <result property="url" column="url"/>
+        <result property="title" column="title"/>
+<!--        <result property="classificationCode" column="classification_code"/>-->
+        <result property="iconName" column="icon_name"/>
+        <result property="description" column="description"/>
+        <result property="ordre" column="ordre"/>
+        <result property="useYn" column="use_yn"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createdDate" column="created_date"/>
+        <result property="lastModifiedBy" column="last_modified_by"/>
+        <result property="lastModifiedDate" column="last_modified_date"/>
+        <result property="parentMenuId" column="parent_menu_id"/>
+
+        <!-- Nested mapping for submenus -->
+        <collection property="subMenus" ofType="dz.generator.service.dto.SysMenuDto"
+                    select="findSubMenus" column="id"/>
+    </resultMap>
+
+    <!-- Base result mapping -->
+    <resultMap id="SidebarResultMap" type="dz.generator.service.dto.SidebarDto">
+        <id property="id" column="id"/>
+        <result property="url" column="url"/>
+        <result property="title" column="title"/>
+        <result property="iconName" column="icon_name"/>
+        <result property="parentMenuId" column="parent_menu_id"/>
+
+        <!-- Nested mapping for submenus -->
+        <collection property="subMenus" ofType="dz.generator.service.dto.SidebarDto"
+                    select="findSubMenusSidebar" column="id"/>
+    </resultMap>
+
+    <!-- Result mapping to SysMenuDto -->
+    <resultMap id="SysMenuDtoMap" type="dz.generator.service.dto.SysMenuDto">
+        <id property="id" column="id"/>
+        <result property="mgmtNo" column="mgmt_no"/>
+        <result property="url" column="url"/>
+        <result property="title" column="title"/>
+<!--        <result property="classificationCode" column="classification_code"/>-->
+        <result property="code" column="code"/>
+        <result property="iconName" column="icon_name"/>
+        <result property="description" column="description"/>
+        <result property="ordre" column="ordre"/>
+        <result property="parentMenuId" column="parent_menu_id"/>
+    </resultMap>
+
+
+    <!-- Result mapping to SidebarDto -->
+    <resultMap id="SysMenuSidebareDto" type="dz.generator.service.dto.SidebarDto">
+        <result property="id" column="id"/>
+        <result property="url" column="url"/>
+        <result property="title" column="title"/>
+        <result property="iconName" column="icon_name"/>
+        <result property="ordre" column="ordre"/>
+        <result property="parentMenuId" column="parent_menu_id"/>
+    </resultMap>
+    <!-- Root menus (no parent) -->
+    <select id="findAllRootMenus" resultMap="SysMenuResultMap">
+        SELECT
+            id,
+            mgmt_no,
+            url,
+            title,
+            classification_code,
+            icon_name,
+            description,
+            ordre,
+            use_yn,
+            parent_menu_id
+        FROM sys_menu
+        WHERE parent_menu_id IS NULL
+          AND use_yn = TRUE
+        ORDER BY ordre ASC
+    </select>
+
+    <!-- Submenus (recursive) -->
+   <select id="findSubMenus" resultMap="SysMenuResultMap" parameterType="long">
+        SELECT *
+        FROM sys_menu
+        WHERE parent_menu_id = #{parentId}
+        ORDER BY ordre
+    </select>
+
+    <!-- Submenus (recursive) -->
+   <select id="findSubMenusSidebar" resultMap="SidebarResultMap" parameterType="long">
+        SELECT id, url, title, icon_name
+        FROM sys_menu
+        WHERE parent_menu_id = #{parentId}
+        ORDER BY ordre
+    </select>
+
+
+    <!-- Sub Menus by Parent -->
+    <select id="findSubMenusByParentId" parameterType="long" resultMap="SysMenuResultMap">
+        SELECT
+            id,
+            mgmt_no,
+            url,
+            title,
+            classification_code,
+            icon_name,
+            description,
+            ordre,
+            use_yn,
+            parent_menu_id
+        FROM sys_menu
+        WHERE parent_menu_id = #{parentMenuId}
+          AND use_yn = TRUE
+        ORDER BY ordre ASC
+    </select>
+<select id="findRootMenus" resultMap="SysMenuSidebareDto">
+    SELECT
+        id,
+        mgmt_no,
+        url,
+        title,
+        code,
+        icon_name,
+        description,
+        ordre,
+        use_yn
+    FROM sys_menu
+    WHERE parent_menu_id IS NULL
+      AND use_yn = TRUE
+
+</select>
+    <select id="findFullMenuTree" resultMap="SysMenuResultMap">
+        <!--findFullMenuTree -->
+
+WITH RECURSIVE menu_hierarchy AS (
+            SELECT
+                id,
+                mgmt_no,
+                url,
+                title,
+                classification_code,
+                icon_name,
+                description,
+                ordre,
+                use_yn,
+                parent_menu_id,
+                1 AS depth
+            FROM sys_menu
+            WHERE parent_menu_id IS NULL
+              AND use_yn = TRUE
+
+            UNION ALL
+
+            SELECT
+                sm.id,
+                sm.mgmt_no,
+                sm.url,
+                sm.title,
+                sm.classification_code,
+                sm.icon_name,
+                sm.description,
+                sm.ordre,
+                sm.use_yn,
+                sm.parent_menu_id,
+                mh.depth + 1
+            FROM sys_menu sm
+                     INNER JOIN menu_hierarchy mh ON sm.parent_menu_id = mh.id
+            WHERE sm.use_yn = TRUE
+        )
+        SELECT *
+        FROM menu_hierarchy
+        ORDER BY depth, ordre
+    </select>
+    <select id="findSidebarTree"  resultMap="SidebarResultMap">
+        <!--findFullMenuTree -->
+
+WITH RECURSIVE menu_hierarchy AS (
+            SELECT
+                id,
+                url,
+                title,
+                icon_name,
+                ordre,
+                parent_menu_id,
+                1 AS depth
+            FROM sys_menu
+            WHERE parent_menu_id IS NULL
+              AND use_yn = TRUE
+
+            UNION ALL
+
+            SELECT
+                sm.id,
+                sm.url,
+                sm.title,
+                sm.icon_name,
+                sm.ordre,
+                sm.parent_menu_id,
+                mh.depth + 1
+            FROM sys_menu sm
+                     INNER JOIN menu_hierarchy mh ON sm.parent_menu_id = mh.id
+            WHERE sm.use_yn = TRUE
+        )
+        SELECT *
+        FROM menu_hierarchy
+        ORDER BY depth, ordre
+    </select>
+    <select id="findFullMenuTreeByRoles" resultMap="SysMenuResultMap">
+        <!--   findFullMenuTreeByRoles -->
+
+        WITH RECURSIVE menu_hierarchy AS (
+        SELECT
+        m.id,
+        m.mgmt_no AS mgmtNo,
+        m.url,
+        m.title,
+        m.classification_code AS classificationCode,
+        m.icon_name AS iconName,
+        m.description,
+        m.ordre,
+        m.use_yn AS useYn,
+        m.parent_menu_id AS parentMenuId,
+        0 AS depth
+        FROM sys_menu m
+        JOIN sys_role_menu rm ON m.id = rm.menu_id
+        JOIN sys_role r ON r.id = rm.role_id
+        WHERE m.parent_menu_id IS NULL
+        AND r.code IN
+        <foreach collection="roles" item="role" open="(" separator="," close=")">
+            #{role}
+        </foreach>
+
+        UNION ALL
+
+        SELECT
+        sm.id,
+        sm.mgmt_no AS mgmtNo,
+        sm.url,
+        sm.title,
+        sm.classification_code AS classificationCode,
+        sm.icon_name AS iconName,
+        sm.description,
+        sm.ordre,
+        sm.use_yn AS useYn,
+        sm.parent_menu_id AS parentMenuId,
+        mh.depth + 1
+        FROM rel_sys_menu__can_view sm
+        INNER JOIN menu_hierarchy mh ON sm.parent_menu_id = mh.id
+        )
+        SELECT DISTINCT * FROM menu_hierarchy ORDER BY depth, ordre;
+    </select>
+
+    <select id="findMenuTreeByLogin" parameterType="string" resultType="dz.generator.service.dto.SysMenuDto">
+        <!--findMenuTreeByUserLogin-->
+
+        WITH RECURSIVE menu_hierarchy AS (
+            SELECT
+                sm.id,
+                sm.code,
+                sm.mgmt_no,
+                sm.url,
+                sm.title,
+                sm.classification_code,
+                sm.icon_name,
+                sm.description,
+                sm.ordre,
+                sm.use_yn,
+                sm.parent_menu_id,
+                0 AS depth
+            FROM sys_menu sm
+                     JOIN jhi_user u ON u.login = #{login}
+            WHERE sm.code LIKE u.code || '%'
+              AND sm.parent_menu_id IS NULL
+
+            UNION ALL
+
+            SELECT
+                sm.id,
+                sm.code,
+                sm.mgmt_no,
+                sm.url,
+                sm.title,
+                sm.classification_code,
+                sm.icon_name,
+                sm.description,
+                sm.ordre,
+                sm.use_yn,
+                sm.parent_menu_id,
+                mh.depth + 1
+            FROM sys_menu sm
+                     INNER JOIN menu_hierarchy mh ON sm.parent_menu_id = mh.id
+        )
+        SELECT DISTINCT *
+        FROM menu_hierarchy
+        ORDER BY depth, ordre
+    </select>
+    <select id="findSidebarTreeByLogin" parameterType="string" resultMap="SidebarResultMap">
+        <!--findMenuTreeByUserLogin-->
+
+        WITH RECURSIVE menu_hierarchy AS (
+            SELECT
+                sm.id,
+                sm.url,
+                sm.title,
+                sm.icon_name,
+                sm.ordre,
+                sm.parent_menu_id,
+                0 AS depth
+            FROM sys_menu sm
+                     JOIN jhi_user u ON u.login = #{login}
+            WHERE sm.code LIKE u.code || '%'
+              AND sm.parent_menu_id IS NULL
+
+            UNION ALL
+
+            SELECT
+                sm.id,
+                sm.url,
+                sm.title,
+                sm.icon_name,
+                sm.ordre,
+                sm.parent_menu_id,
+                mh.depth + 1
+            FROM sys_menu sm
+                     INNER JOIN menu_hierarchy mh ON sm.parent_menu_id = mh.id
+        )
+        SELECT DISTINCT *
+        FROM menu_hierarchy
+        ORDER BY depth, ordre
+    </select>
+    <!-- Select all menus accessible by user -->
+    <select id="findMenusByUserCode" resultMap="SysMenuDtoMap">
+        SELECT
+            id,
+            mgmt_no,
+            url,
+            title,
+            classification_code,
+            icon_name,
+            description,
+            ordre,
+            parent_menu_id
+        FROM sys_menu
+        WHERE use_yn and code LIKE CONCAT(#{userCode}, '%')
+        ORDER BY ordre
+    </select>
+
+    <select id="getUserSideBareMenus" resultMap="SysMenuSidebareDto">
+        <!-- Select all getUserSideBareMenus accessible by user -->
+
+        SELECT
+            id,
+            url,
+            title,
+            icon_name,
+            ordre,
+            parent_menu_id
+        FROM sys_menu
+        WHERE use_yn and code LIKE CONCAT(#{userCode}, '%')
+        ORDER BY ordre
+    </select>
+
+    <select id="getModuleTabs" resultType="dz.generator.service.dto.SideBarTabDto" >
+        select distinct sm.url, parent.url as parentUrl FROM sys_menu sm
+        right JOIN sys_menu parent ON sm.parent_menu_id = parent.id
+        WHERE sm.use_yn;
+    </select>
+</mapper>

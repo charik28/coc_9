@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dz.generator.mappers.EntityMetaMapper">
+
+    <!-- Result Mappings -->
+
+    <resultMap id="EntityMetaResult" type="dz.generator.service.dto.EntityMetaDTO">
+        <id property="id" column="id"/>
+        <result property="entityName" column="entity_name"/>
+        <result property="tableName" column="table_name"/>
+        <result property="i18nKey" column="i18n_key"/>
+        <collection property="fields" ofType="dz.generator.service.dto.FieldMetaDTO">
+            <result property="id" column="field_id"/>
+            <result property="fieldName" column="field_name"/>
+            <result property="fieldType" column="field_type"/>
+            <result property="i18nKey" column="field_i18n_key"/>
+        </collection>
+    </resultMap>
+    <resultMap id="FieldMetaResult" type="dz.generator.service.dto.FieldMetaDTO">
+        <id property="id" column="id"/>
+        <result property="entityId" column="entity_id"/>
+        <result property="fieldName" column="entity_name"/>
+        <result property="fieldType" column="entity_type"/>
+        <result property="i18nKey" column="i18n_key"/>
+        <result property="fieldsJson" column="fields_json"/>
+    </resultMap>
+
+    <resultMap id="RelationMetaResult" type="dz.generator.service.dto.RelationMetaDTO">
+        <id property="id" column="id"/>
+        <result property="entityId" column="entity_id"/>
+        <result property="targetEntity" column="target_entity"/>
+        <result property="relationType" column="relation_type"/>
+        <result property="i18nKey" column="i18n_key"/>
+    </resultMap>
+
+
+    <!-- ========== INSERTS ========== -->
+
+
+    <insert id="insertJson" parameterType="dz.generator.service.dto.EntityMetaDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO entity_meta (entity_name, table_name, fields_json)
+        VALUES (#{entityName}, #{tableName}, #{fieldsJson}::jsonb)
+    </insert>
+
+    <update id="updateJson" parameterType="dz.generator.service.dto.EntityMetaDTO">
+        UPDATE entity_meta
+        SET entity_name = #{entityName},
+            table_name = #{tableName},
+            fields_json = #{fieldsJson}::jsonb
+        WHERE id = #{id}
+    </update>
+    <update id="linkEntitisWidtFields">
+        update field_meta f
+        set entity_id = (
+            select id from entity_meta e where f.entity_name=e.entity_name
+                                           and f.app_name = e.app_name
+            limit 1
+            )
+        where f.entity_id is null;
+    </update>
+
+    <insert id="insertEntity" parameterType="dz.generator.service.dto.EntityMetaDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO entity_meta (entity_name, table_name, i18n_key,project_root,app_name)
+        VALUES (#{entityName}, #{tableName}, #{i18nKey},#{projectRoot} , #{appName})
+    </insert>
+
+    <insert id="insertRelations">
+        INSERT INTO relation_meta (entity_id, target_entity, relation_type, i18n_key)
+        VALUES
+        <foreach collection="relations" item="r" separator=",">
+            (#{entityId}, #{r.targetEntity}, #{r.relationType}, #{r.i18nKey})
+        </foreach>
+    </insert>
+
+
+    <!-- ========== SELECTS ========== -->
+
+    <select id="findAll" resultMap="EntityMetaResult">
+            SELECT id, entity_name,table_name, i18n_key, description
+            FROM entity_meta
+            ORDER BY entity_name
+    </select>
+
+    <select id="findAllJson" resultMap="EntityMetaResult">
+        SELECT id, entity_name, table_name, fields_json::text AS fields_json
+        FROM entity_meta
+        ORDER BY entity_name
+    </select>
+    <select id="findAllEntitiesWithFields" resultMap="EntityMetaResult">
+        SELECT e.id, e.entity_name, e.table_name, e.i18n_key,
+               f.id as field_id, f.field_name, f.field_type, f.i18n_key as field_i18n_key
+        FROM entity_meta e
+                 LEFT JOIN field_meta f ON e.entity_name = f.entity_name
+    </select>
+    <select id="findById" parameterType="long" resultMap="EntityMetaResult">
+        SELECT id, entity_name, table_name, fields_json::text AS fields_json
+        FROM entity_meta
+        WHERE id = #{id}
+    </select>
+
+    <select id="findOne" parameterType="long" resultMap="EntityMetaResult">
+        SELECT id, entity_name, i18n_key, description
+        FROM entity_meta
+        WHERE id = #{id}
+    </select>
+    <!-- Find by EntityName -->
+    <select id="findByEntityName" parameterType="string" resultMap="EntityMetaResult">
+        SELECT * FROM entity_meta
+        WHERE entity_name = #{entityName}
+    </select>
+
+    <!-- ========== DELETES ========== -->
+
+    <delete id="delete" parameterType="long">
+        DELETE FROM entity_meta WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteFields" parameterType="long">
+        DELETE FROM field_meta WHERE entity_id = #{entityId}
+    </delete>
+
+    <delete id="deleteRelations" parameterType="long">
+        DELETE FROM relation_meta WHERE entity_id = #{entityId}
+    </delete>
+    <delete id="deleteEntitiesByAppName" parameterType="string">
+        delete from entity_meta
+        where app_name = #{appName}
+
+    </delete>
+
+    <insert id="insertOrUpdateEntity" parameterType="dz.generator.service.dto.EntityMetaDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO entity_meta (entity_name, table_name)
+        VALUES (#{entityName}, #{tableName})
+        ON CONFLICT (entity_name) DO UPDATE SET table_name = EXCLUDED.table_name
+    </insert>
+
+    <select id="findIdByName" resultType="long">
+        SELECT id FROM entity_meta WHERE entity_name = #{entityName}
+    </select>
+
+</mapper>

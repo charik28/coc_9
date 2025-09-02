@@ -1,0 +1,32 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam componentStyle rectangle
+
+package "HomePage" {
+
+    package "Sidebar" {
+        [EntityMenu]
+        [EntityMenu] -down-> [SubMenuTab]
+    }
+
+    package "Tab Navigation" {
+        [SubMenuTab] -down-> [NestedTab]
+        [NestedTab] -down-> [TabContent]
+    }
+
+    package "TabContent" {
+        [ListComponent] as ListC
+        [UpdateComponent] as UpdateC
+        [PdfComponent] as PdfC
+        [ExcelComponent] as ExcelC
+    }
+
+    ' Relations
+    [TabContent] -down-> ListC
+    [TabContent] -down-> UpdateC
+    [TabContent] -down-> PdfC
+    [TabContent] -down-> ExcelC
+}
+
+@enduml

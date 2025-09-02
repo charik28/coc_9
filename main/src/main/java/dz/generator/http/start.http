@@ -1,0 +1,22 @@
+###
+GET http://localhost:3000/api/meta/entities
+
+<> 2025-08-30T092048.404.json
+
+
+# 1. Scan JHipster models & save metadata
+###
+GET http://localhost:3000/api/gen/scan?
+    projectRoot=C:\wrk\assu\wrkspc\afaris-devv&
+    appName=afarisApp
+
+###
+POST http://localhost:3000/api/gen/scan?
+    projectRoot={{$random.alphanumeric(8)}}&
+    appName={{$random.alphanumeric(8)}}
+    Content-Type: application/x-www-form-urlencoded
+
+
+
+// 2. Generate UI fragments
+POST http://localhost:3000/api/gen/generate

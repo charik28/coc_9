@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Metadata Generator UI</title>
+  <style>
+    body{font-family: Inter, Roboto, Arial; margin:18px; color:#222}
+    h1{font-size:20px}
+    .grid{display:grid;grid-template-columns:380px 1fr;gap:18px}
+    .card{border:1px solid #e6e6e6;border-radius:8px;padding:12px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.03)}
+    label{display:block;font-size:12px;color:#555;margin-top:8px}
+    input[type=text], select{width:100%;padding:8px;border:1px solid #ddd;border-radius:6px}
+    button{margin-top:10px;padding:8px 12px;border-radius:6px;border:0;background:#2563eb;color:#fff;cursor:pointer}
+    button.ghost{background:#f3f4f6;color:#111}
+    pre{background:#0f172a;color:#e6eef8;padding:10px;border-radius:6px;max-height:300px;overflow:auto}
+    .row{display:flex;gap:8px}
+    .small{font-size:12px;color:#666}
+    ul{padding-left:18px}
+    .meta-list{max-height:420px;overflow:auto}
+    .entity-item{padding:6px;border-bottom:1px solid #f1f1f1;cursor:pointer}
+    .entity-item:hover{background:#fbfbff}
+    .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef2ff;color:#1e40af;font-size:12px}
+  </style>
+</head>
+<body>
+<h1>Metadata Generator — UI Controller</h1>
+<p class="small">Use this page to interact with the backend generator services: scan models, persist metadata, generate UI fragments and inspect saved metadata.</p>
+
+<div class="grid">
+  <div>
+    <div class="card">
+      <h3>Scan Project (.jhipster)</h3>
+      <label>Project root path (server filesystem)</label>
+      <input id="projectRoot" type="text" placeholder="e.g. C:\\wrk\\assu\\wrkspc\\afaris-devv" />
+      <label>Application name (for i18n base)</label>
+      <input id="appName" type="text" placeholder="afarisApp" value="afarisApp" />
+      <div class="row">
+        <button id="btnScan">Scan & Save Metadata</button>
+        <button id="btnGenerate" class="ghost">Generate UI Files</button>
+      </div>
+      <label>Quick actions</label>
+      <div class="row">
+        <button id="btnListEntities" class="ghost">Refresh Entities</button>
+        <button id="btnOpenGenerated" class="ghost">Open generated-home.html</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <h3>API / Service</h3>
+      <p class="small">Assumed endpoints used by this UI:</p>
+      <ul class="small">
+        <li><code>POST /api/gen/scan?projectRoot=...&appName=...</code></li>
+        <li><code>POST /api/gen/generate</code></li>
+        <li><code>GET  /api/meta/entities</code></li>
+        <li><code>GET  /api/meta/entities/{id}</code></li>
+        <li><code>GET  /api/meta/entities/{id}/fields</code></li>
+      </ul>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <h3>Logs</h3>
+      <pre id="log">Ready.</pre>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h3>Entities (metadata)</h3>
+      <div class="meta-list" id="entitiesList"></div>
+    </div>
+
+    <div class="card" style="margin-top:12px;" id="entityDetailCard" hidden>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h3 id="entityTitle">Entity</h3>
+        <div><span class="pill" id="entityCount">0 fields</span></div>
+      </div>
+      <div style="margin-top:8px">
+        <strong>Table:</strong> <span id="entityTable" class="small"></span>
+      </div>
+
+      <h4 style="margin-top:12px">Fields</h4>
+      <div id="fieldsRoot"></div>
+
+      <h4 style="margin-top:12px">Relations</h4>
+      <div id="relationsRoot"></div>
+
+      <div style="margin-top:12px">
+        <button id="btnDeleteEntity" class="ghost">Delete Entity (DB)</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <h3>Response Preview</h3>
+      <pre id="responsePreview">--</pre>
+    </div>
+  </div>
+</div>
+
+<script>
+  const logEl = document.getElementById('log');
+  const respEl = document.getElementById('responsePreview');
+  const entitiesListEl = document.getElementById('entitiesList');
+  const detailCard = document.getElementById('entityDetailCard');
+  const entityTitle = document.getElementById('entityTitle');
+  const entityCount = document.getElementById('entityCount');
+  const entityTable = document.getElementById('entityTable');
+  const fieldsRoot = document.getElementById('fieldsRoot');
+  const relationsRoot = document.getElementById('relationsRoot');
+
+  document.getElementById('projectRoot').value = localStorage.getItem("projectRoot");
+  document.getElementById('appName').value = localStorage.getItem("appName");
+  function log(msg){
+    const now = new Date().toLocaleTimeString();
+    logEl.textContent = `[${now}] ${msg}\n` + logEl.textContent;
+  }
+
+  function showResponse(o){
+    try{ respEl.textContent = JSON.stringify(o, null, 2); }catch(e){ respEl.textContent = String(o); }
+  }
+
+  async function scanProject(){
+
+    const root = document.getElementById('projectRoot').value.trim();
+
+    const appName = document.getElementById('appName').value.trim();
+
+    localStorage.setItem("projectRoot" , root);
+    localStorage.setItem("appName" , appName);
+
+    if(!root){ alert('Provide project root path on server'); return; }
+    log('Triggering scan...');
+    try{
+      const res = await fetch(`/api/gen/scan?projectRoot=${encodeURIComponent(root)}&appName=${encodeURIComponent(appName)}`, { method: 'POST' });
+      const body = await res.json().catch(()=> ({ status: res.status }));
+      showResponse(body);
+      log('Scan finished: ' + res.status);
+      await listEntities();
+    }catch(e){ log('Scan failed: '+e.message); }
+  }
+
+  async function generateFiles(){
+    log('Triggering generation...');
+    try{
+      const res = await fetch('/api/gen/generate', { method: 'POST' });
+      const b = await res.json().catch(()=> ({ status: res.status }));
+      showResponse(b);
+      log('Generate finished: ' + res.status);
+    }catch(e){ log('Generate failed: '+e.message); }
+  }
+
+  async function listEntities(){
+    log('Loading entities...');
+    try{
+      const res = await fetch('/api/meta/entities');
+      if(!res.ok) { log('Failed to list entities: '+res.status); respEl.textContent = await res.text(); return; }
+      const list = await res.json();
+      showResponse(list);
+      renderEntities(list);
+      log('Loaded ' + (list.length||0) + ' entities');
+    }catch(e){ log('List failed: '+e.message); }
+  }
+
+  function renderEntities(list){
+    entitiesListEl.innerHTML = '';
+    if(!Array.isArray(list) || !list.length){ entitiesListEl.innerHTML = '<div class="small">No entities</div>'; return; }
+    for(const ent of list){
+      const div = document.createElement('div');
+      div.className = 'entity-item';
+      div.innerHTML = `<strong>${ent.entityName}</strong> <div class="small">${ent.tableName || ''}</div>`;
+      div.onclick = ()=> loadEntityDetail(ent.id);
+      entitiesListEl.appendChild(div);
+    }
+  }
+
+  async function loadEntityDetail(id){
+    detailCard.hidden = true;
+    log('Loading entity ' + id);
+    try{
+      const res = await fetch('/api/meta/entities/' + encodeURIComponent(id));
+      if(!res.ok){ log('Failed to load entity: '+res.status); return; }
+      const data = await res.json();
+      showResponse(data);
+      displayEntity(data);
+      detailCard.hidden = false;
+    }catch(e){ log('Load detail failed: '+e.message); }
+  }
+
+  function displayEntity(data){
+    entityTitle.textContent = data.entityName + ' (id:' + data.id + ')';
+    entityCount.textContent = (data.fields && data.fields.length ? data.fields.length : 0) + ' fields';
+    entityTable.textContent = data.tableName || '(none)';
+    fieldsRoot.innerHTML = '';
+    if(Array.isArray(data.fields)){
+      const ul = document.createElement('ul');
+      for(const f of data.fields){
+        const li = document.createElement('li');
+        li.innerHTML = `<strong>${f.name}</strong> <span class="small">[${f.type}]</span> — <span class="small">${f.i18nKey || ''}</span>`;
+        ul.appendChild(li);
+      }
+      fieldsRoot.appendChild(ul);
+    }
+    relationsRoot.innerHTML = '';
+    if(Array.isArray(data.relations) && data.relations.length){
+      const ul = document.createElement('ul');
+      for(const r of data.relations){
+        const li = document.createElement('li');
+        li.innerHTML = `<strong>${r.name}</strong> <span class="small">→ ${r.target}</span>`;
+        ul.appendChild(li);
+      }
+      relationsRoot.appendChild(ul);
+    }
+  }
+
+  async function deleteEntity(id){
+    if(!confirm('Delete entity metadata id=' + id + '?')) return;
+    log('Deleting entity ' + id);
+    try{
+      const res = await fetch('/api/meta/entities/' + encodeURIComponent(id), { method: 'DELETE' });
+      log('Delete status: ' + res.status);
+      await listEntities();
+    }catch(e){ log('Delete failed: '+e.message); }
+  }
+
+  document.getElementById('btnScan').addEventListener('click', scanProject);
+  document.getElementById('btnGenerate').addEventListener('click', generateFiles);
+  document.getElementById('btnListEntities').addEventListener('click', listEntities);
+  document.getElementById('btnOpenGenerated').addEventListener('click', ()=>{
+    window.open('/generated', '_blank');
+  });
+  document.getElementById('btnDeleteEntity').addEventListener('click', ()=>{
+    const match = entityTitle.textContent.match(/id:(\d+)/);
+    if(!match) return alert('No entity selected');
+    deleteEntity(Number(match[1]));
+  });
+
+  // initial
+  listEntities();
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+rectangle "Home Page" {
+
+  frame "Sidebar (Entities)" as Sidebar {
+    rectangle "Entity A" as EA
+    rectangle "Entity B" as EB
+    rectangle "Entity C" as EC
+  }
+
+  frame "Main Content" {
+
+    frame "Tabs (Submenus)" {
+      rectangle "Tab: Overview" as T1
+      rectangle "Tab: Details" as T2
+      rectangle "Tab: Relations" as T3
+    }
+
+    frame "Nested Tabs (inside 'Details')" {
+      rectangle "General Info" as D1
+      rectangle "Attributes" as D2
+      rectangle "History" as D3
+    }
+
+    frame "Tab Content" {
+      frame "ListComponent (jsGrid)" as ListC
+      frame "UpdateComponent (Form)" as UpdateC
+      frame "PdfComponent (Print)" as PdfC
+      frame "ExcelComponent (Bulk Upload)" as ExcelC
+    }
+  }
+}
+
+' Relationships
+EA -right-> T1
+EB -right-> T2
+EC -right-> T3
+
+T2 -down-> D1
+T2 -down-> D2
+T2 -down-> D3
+
+' Nested tabs link to components
+D1 -down-> ListC
+D2 -down-> UpdateC
+D3 -down-> PdfC
+D3 -down-> ExcelC
+
+@enduml

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dz.generator.mappers.GeneratedEntityMapper">
+
+    <!-- Generic Select -->
+    <select id="findAll" resultType="map">
+        SELECT * FROM ${tableName}
+    </select>
+
+    <!-- Find by ID -->
+    <select id="findById" parameterType="map" resultType="map">
+        SELECT * FROM ${tableName}
+        WHERE id = #{id}
+    </select>
+
+    <!-- Insert (dynamic columns from metadata) -->
+    <insert id="insert" parameterType="map">
+        INSERT INTO ${tableName}
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <foreach collection="fields" item="field" separator=",">
+                ${field}
+            </foreach>
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <foreach collection="fields" item="field" separator=",">
+                #{data[${field}]}
+            </foreach>
+        </trim>
+    </insert>
+
+    <!-- Update (dynamic) -->
+    <update id="update" parameterType="map">
+        UPDATE ${tableName}
+        <set>
+            <foreach collection="fields" item="field" separator=",">
+                ${field} = #{data[${field}]}
+            </foreach>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- Delete -->
+    <delete id="delete" parameterType="map">
+        DELETE FROM ${tableName} WHERE id = #{id}
+    </delete>
+</mapper>

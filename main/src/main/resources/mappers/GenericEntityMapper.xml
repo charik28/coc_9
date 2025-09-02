@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dz.generator.mappers.GenericEntityMapper">
+
+    <!-- Generic Select -->
+    <select id="findAll" resultType="map">
+        SELECT * FROM ${tableName}
+    </select>
+
+    <!-- Find by ID -->
+    <select id="findById" parameterType="map" resultType="map">
+        SELECT * FROM ${tableName}
+        WHERE id = #{id}
+    </select>
+
+
+    <!-- Select all rows from a dynamic table -->
+    <select id="selectAll" parameterType="map" resultType="map">
+        SELECT *
+        FROM ${tableName}
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+        <if test="offset != null">
+            OFFSET #{offset}
+        </if>
+    </select>
+
+    <!-- Select one row by ID -->
+    <select id="selectById" parameterType="map" resultType="map">
+        SELECT *
+        FROM ${tableName}
+        WHERE ${idColumn} = #{id}
+    </select>
+
+
+    <!-- Insert dynamic row -->
+    <insert id="insertEntity" parameterType="map">
+        INSERT INTO ${tableName}
+        (<foreach collection="columns" item="col" separator=",">${col}</foreach>)
+        VALUES
+        (<foreach collection="values" item="val" separator=",">#{val}</foreach>)
+    </insert>
+
+    <!-- Update dynamic row -->
+    <update id="updateEntity" parameterType="map">
+        UPDATE ${tableName}
+        <set>
+            <foreach collection="updates" item="val" index="col" separator=",">
+                ${col} = #{val}
+            </foreach>
+        </set>
+        WHERE ${idColumn} = #{id}
+    </update>
+
+    <!-- Delete dynamic row -->
+    <delete id="deleteEntity" parameterType="map">
+        DELETE FROM ${tableName}
+        WHERE ${idColumn} = #{id}
+    </delete>
+
+</mapper>

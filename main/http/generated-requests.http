@@ -1,0 +1,31 @@
+###
+POST http://localhost:8095/api/lat-langs
+
+###
+GET http://localhost:3000/api/v2/sys-menus/user
+
+
+###
+GET http://localhost:3000/api/v2/common?code=adh_001
+accept: */*
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc1NjUyMzc4MCwiYXV0aCI6IlJPTEVfQURNSU4gUk9MRV9VU0VSIiwiaWF0IjoxNzU2NDM3MzgwLCJ1c2VySWQiOjF9.kvUrAkNhFrAJEezjA0ybRf3xWw3UqD1gTodfSt9CR2OOytznwG3sFTcRG6n3o0-rdYiazRQCD7SoBLYnRh-pRA
+
+<> 2025-08-29T155000.500.html
+<> 2025-08-29T151441.500.html
+<> 2025-08-29T151359.500.html
+<> 2025-08-29T120141.500.html
+
+###
+GET http://localhost:3000/api/v2/common?
+    code={{$random.alphanumeric(8)}}
+
+
+.
+###
+GET http://localhost:3000/api/v3/sys-menus/tabs
+accept: */*
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc1NjUyMzc4MCwiYXV0aCI6IlJPTEVfQURNSU4gUk9MRV9VU0VSIiwiaWF0IjoxNzU2NDM3MzgwLCJ1c2VySWQiOjF9.kvUrAkNhFrAJEezjA0ybRf3xWw3UqD1gTodfSt9CR2OOytznwG3sFTcRG6n3o0-rdYiazRQCD7SoBLYnRh-pRA
+
+<> 2025-08-30T022212.200.json
+<> 2025-08-30T021128.200.json
+<> 2025-08-30T021003.500.html

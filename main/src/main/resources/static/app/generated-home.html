@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Generated Home</title>
+  <link rel="stylesheet" href="/dist/adminlte.min.css"/>
+  <link rel="stylesheet" href="/dist/jsgrid.min.css"/>
+  <script src="/dist/jquery.min.js"></script>
+  <script src="/dist/jsgrid.min.js"></script>
+</head>
+<body class="hold-transition sidebar-mini">
+<div class="wrapper">
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <a href="#" class="brand-link"><span class="brand-text">Generator</span></a>
+    <div class="sidebar">
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview">
+          <li class="nav-item">
+            <a class="nav-link" href="#act-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Act</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#adherent-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Adherent</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#affection-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Affection</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#affiliation-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Affiliation</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#agrement-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Agrement</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#appointment-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Appointment</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#assurancetype-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>AssuranceType</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#assureur-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Assureur</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#atchfile-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>AtchFile</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#baremeremboursement-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>BaremeRemboursement</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#centregestion-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>CentreGestion</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#centresoin-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>CentreSoin</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#claimhistory-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>ClaimHistory</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#classpharmacopee-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>ClassPharmacopee</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#client-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Client</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#codecommon-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>CodeCommon</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#comptebancaire-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>CompteBancaire</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#contrat-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Contrat</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#cotisations-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Cotisations</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#demande-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Demande</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#document-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Document</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#employ-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Employ</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#facture-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Facture</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#feedback-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Feedback</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#formule-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Formule</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#garantiegroupe-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>GarantieGroupe</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#investigation-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Investigation</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#jsgridfieldconfig-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>JsGridFieldConfig</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#medecin-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Medecin</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#medicalproduct-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>MedicalProduct</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#modeplafonnement-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>ModePlafonnement</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#notification-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Notification</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#offre-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Offre</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#ordonance-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Ordonance</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#paiement-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Paiement</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#paymenthistory-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>PaymentHistory</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#policeassurance-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>PoliceAssurance</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#policy-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Policy</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#prestataire-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Prestataire</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#prestatairespecialete-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>PrestataireSpecialete</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#prestation-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Prestation</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#prim-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Prim</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#questionnairemedical-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>QuestionnaireMedical</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#regroupement-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Regroupement</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#remboursement-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Remboursement</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#reseau-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Reseau</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#rubrique-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Rubrique</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#sinistre-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Sinistre</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#socite-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Socite</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#soin-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Soin</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#souscripteur-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Souscripteur</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#sysmenu-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>SysMenu</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#tierspayant-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>TiersPayant</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#traitmentprocess-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>TraitmentProcess</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#translation-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Translation</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#tvaapplicaple-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>TvaApplicaple</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#validation-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Validation</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#ville-tab" data-toggle="tab">
+              <i class="nav-icon fas fa-database"></i>
+              <p>Ville</p>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </aside>
+  <div class="content-wrapper">
+    <div class="tab-content p-3">
+      <div class="tab-pane" id="act-tab">
+        <h2>Act</h2>
+        <!-- load fragments -->
+        <div data-include="act/list.html"></div>
+        <div data-include="act/update.html"></div>
+        <div data-include="act/excel.html"></div>
+        <div data-include="act/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="adherent-tab">
+        <h2>Adherent</h2>
+        <!-- load fragments -->
+        <div data-include="adherent/list.html"></div>
+        <div data-include="adherent/update.html"></div>
+        <div data-include="adherent/excel.html"></div>
+        <div data-include="adherent/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="affection-tab">
+        <h2>Affection</h2>
+        <!-- load fragments -->
+        <div data-include="affection/list.html"></div>
+        <div data-include="affection/update.html"></div>
+        <div data-include="affection/excel.html"></div>
+        <div data-include="affection/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="affiliation-tab">
+        <h2>Affiliation</h2>
+        <!-- load fragments -->
+        <div data-include="affiliation/list.html"></div>
+        <div data-include="affiliation/update.html"></div>
+        <div data-include="affiliation/excel.html"></div>
+        <div data-include="affiliation/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="agrement-tab">
+        <h2>Agrement</h2>
+        <!-- load fragments -->
+        <div data-include="agrement/list.html"></div>
+        <div data-include="agrement/update.html"></div>
+        <div data-include="agrement/excel.html"></div>
+        <div data-include="agrement/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="appointment-tab">
+        <h2>Appointment</h2>
+        <!-- load fragments -->
+        <div data-include="appointment/list.html"></div>
+        <div data-include="appointment/update.html"></div>
+        <div data-include="appointment/excel.html"></div>
+        <div data-include="appointment/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="assurancetype-tab">
+        <h2>AssuranceType</h2>
+        <!-- load fragments -->
+        <div data-include="assurancetype/list.html"></div>
+        <div data-include="assurancetype/update.html"></div>
+        <div data-include="assurancetype/excel.html"></div>
+        <div data-include="assurancetype/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="assureur-tab">
+        <h2>Assureur</h2>
+        <!-- load fragments -->
+        <div data-include="assureur/list.html"></div>
+        <div data-include="assureur/update.html"></div>
+        <div data-include="assureur/excel.html"></div>
+        <div data-include="assureur/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="atchfile-tab">
+        <h2>AtchFile</h2>
+        <!-- load fragments -->
+        <div data-include="atchfile/list.html"></div>
+        <div data-include="atchfile/update.html"></div>
+        <div data-include="atchfile/excel.html"></div>
+        <div data-include="atchfile/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="baremeremboursement-tab">
+        <h2>BaremeRemboursement</h2>
+        <!-- load fragments -->
+        <div data-include="baremeremboursement/list.html"></div>
+        <div data-include="baremeremboursement/update.html"></div>
+        <div data-include="baremeremboursement/excel.html"></div>
+        <div data-include="baremeremboursement/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="centregestion-tab">
+        <h2>CentreGestion</h2>
+        <!-- load fragments -->
+        <div data-include="centregestion/list.html"></div>
+        <div data-include="centregestion/update.html"></div>
+        <div data-include="centregestion/excel.html"></div>
+        <div data-include="centregestion/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="centresoin-tab">
+        <h2>CentreSoin</h2>
+        <!-- load fragments -->
+        <div data-include="centresoin/list.html"></div>
+        <div data-include="centresoin/update.html"></div>
+        <div data-include="centresoin/excel.html"></div>
+        <div data-include="centresoin/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="claimhistory-tab">
+        <h2>ClaimHistory</h2>
+        <!-- load fragments -->
+        <div data-include="claimhistory/list.html"></div>
+        <div data-include="claimhistory/update.html"></div>
+        <div data-include="claimhistory/excel.html"></div>
+        <div data-include="claimhistory/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="classpharmacopee-tab">
+        <h2>ClassPharmacopee</h2>
+        <!-- load fragments -->
+        <div data-include="classpharmacopee/list.html"></div>
+        <div data-include="classpharmacopee/update.html"></div>
+        <div data-include="classpharmacopee/excel.html"></div>
+        <div data-include="classpharmacopee/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="client-tab">
+        <h2>Client</h2>
+        <!-- load fragments -->
+        <div data-include="client/list.html"></div>
+        <div data-include="client/update.html"></div>
+        <div data-include="client/excel.html"></div>
+        <div data-include="client/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="codecommon-tab">
+        <h2>CodeCommon</h2>
+        <!-- load fragments -->
+        <div data-include="codecommon/list.html"></div>
+        <div data-include="codecommon/update.html"></div>
+        <div data-include="codecommon/excel.html"></div>
+        <div data-include="codecommon/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="comptebancaire-tab">
+        <h2>CompteBancaire</h2>
+        <!-- load fragments -->
+        <div data-include="comptebancaire/list.html"></div>
+        <div data-include="comptebancaire/update.html"></div>
+        <div data-include="comptebancaire/excel.html"></div>
+        <div data-include="comptebancaire/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="contrat-tab">
+        <h2>Contrat</h2>
+        <!-- load fragments -->
+        <div data-include="contrat/list.html"></div>
+        <div data-include="contrat/update.html"></div>
+        <div data-include="contrat/excel.html"></div>
+        <div data-include="contrat/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="cotisations-tab">
+        <h2>Cotisations</h2>
+        <!-- load fragments -->
+        <div data-include="cotisations/list.html"></div>
+        <div data-include="cotisations/update.html"></div>
+        <div data-include="cotisations/excel.html"></div>
+        <div data-include="cotisations/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="demande-tab">
+        <h2>Demande</h2>
+        <!-- load fragments -->
+        <div data-include="demande/list.html"></div>
+        <div data-include="demande/update.html"></div>
+        <div data-include="demande/excel.html"></div>
+        <div data-include="demande/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="document-tab">
+        <h2>Document</h2>
+        <!-- load fragments -->
+        <div data-include="document/list.html"></div>
+        <div data-include="document/update.html"></div>
+        <div data-include="document/excel.html"></div>
+        <div data-include="document/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="employ-tab">
+        <h2>Employ</h2>
+        <!-- load fragments -->
+        <div data-include="employ/list.html"></div>
+        <div data-include="employ/update.html"></div>
+        <div data-include="employ/excel.html"></div>
+        <div data-include="employ/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="facture-tab">
+        <h2>Facture</h2>
+        <!-- load fragments -->
+        <div data-include="facture/list.html"></div>
+        <div data-include="facture/update.html"></div>
+        <div data-include="facture/excel.html"></div>
+        <div data-include="facture/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="feedback-tab">
+        <h2>Feedback</h2>
+        <!-- load fragments -->
+        <div data-include="feedback/list.html"></div>
+        <div data-include="feedback/update.html"></div>
+        <div data-include="feedback/excel.html"></div>
+        <div data-include="feedback/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="formule-tab">
+        <h2>Formule</h2>
+        <!-- load fragments -->
+        <div data-include="formule/list.html"></div>
+        <div data-include="formule/update.html"></div>
+        <div data-include="formule/excel.html"></div>
+        <div data-include="formule/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="garantiegroupe-tab">
+        <h2>GarantieGroupe</h2>
+        <!-- load fragments -->
+        <div data-include="garantiegroupe/list.html"></div>
+        <div data-include="garantiegroupe/update.html"></div>
+        <div data-include="garantiegroupe/excel.html"></div>
+        <div data-include="garantiegroupe/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="investigation-tab">
+        <h2>Investigation</h2>
+        <!-- load fragments -->
+        <div data-include="investigation/list.html"></div>
+        <div data-include="investigation/update.html"></div>
+        <div data-include="investigation/excel.html"></div>
+        <div data-include="investigation/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="jsgridfieldconfig-tab">
+        <h2>JsGridFieldConfig</h2>
+        <!-- load fragments -->
+        <div data-include="jsgridfieldconfig/list.html"></div>
+        <div data-include="jsgridfieldconfig/update.html"></div>
+        <div data-include="jsgridfieldconfig/excel.html"></div>
+        <div data-include="jsgridfieldconfig/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="medecin-tab">
+        <h2>Medecin</h2>
+        <!-- load fragments -->
+        <div data-include="medecin/list.html"></div>
+        <div data-include="medecin/update.html"></div>
+        <div data-include="medecin/excel.html"></div>
+        <div data-include="medecin/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="medicalproduct-tab">
+        <h2>MedicalProduct</h2>
+        <!-- load fragments -->
+        <div data-include="medicalproduct/list.html"></div>
+        <div data-include="medicalproduct/update.html"></div>
+        <div data-include="medicalproduct/excel.html"></div>
+        <div data-include="medicalproduct/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="modeplafonnement-tab">
+        <h2>ModePlafonnement</h2>
+        <!-- load fragments -->
+        <div data-include="modeplafonnement/list.html"></div>
+        <div data-include="modeplafonnement/update.html"></div>
+        <div data-include="modeplafonnement/excel.html"></div>
+        <div data-include="modeplafonnement/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="notification-tab">
+        <h2>Notification</h2>
+        <!-- load fragments -->
+        <div data-include="notification/list.html"></div>
+        <div data-include="notification/update.html"></div>
+        <div data-include="notification/excel.html"></div>
+        <div data-include="notification/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="offre-tab">
+        <h2>Offre</h2>
+        <!-- load fragments -->
+        <div data-include="offre/list.html"></div>
+        <div data-include="offre/update.html"></div>
+        <div data-include="offre/excel.html"></div>
+        <div data-include="offre/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="ordonance-tab">
+        <h2>Ordonance</h2>
+        <!-- load fragments -->
+        <div data-include="ordonance/list.html"></div>
+        <div data-include="ordonance/update.html"></div>
+        <div data-include="ordonance/excel.html"></div>
+        <div data-include="ordonance/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="paiement-tab">
+        <h2>Paiement</h2>
+        <!-- load fragments -->
+        <div data-include="paiement/list.html"></div>
+        <div data-include="paiement/update.html"></div>
+        <div data-include="paiement/excel.html"></div>
+        <div data-include="paiement/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="paymenthistory-tab">
+        <h2>PaymentHistory</h2>
+        <!-- load fragments -->
+        <div data-include="paymenthistory/list.html"></div>
+        <div data-include="paymenthistory/update.html"></div>
+        <div data-include="paymenthistory/excel.html"></div>
+        <div data-include="paymenthistory/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="policeassurance-tab">
+        <h2>PoliceAssurance</h2>
+        <!-- load fragments -->
+        <div data-include="policeassurance/list.html"></div>
+        <div data-include="policeassurance/update.html"></div>
+        <div data-include="policeassurance/excel.html"></div>
+        <div data-include="policeassurance/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="policy-tab">
+        <h2>Policy</h2>
+        <!-- load fragments -->
+        <div data-include="policy/list.html"></div>
+        <div data-include="policy/update.html"></div>
+        <div data-include="policy/excel.html"></div>
+        <div data-include="policy/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="prestataire-tab">
+        <h2>Prestataire</h2>
+        <!-- load fragments -->
+        <div data-include="prestataire/list.html"></div>
+        <div data-include="prestataire/update.html"></div>
+        <div data-include="prestataire/excel.html"></div>
+        <div data-include="prestataire/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="prestatairespecialete-tab">
+        <h2>PrestataireSpecialete</h2>
+        <!-- load fragments -->
+        <div data-include="prestatairespecialete/list.html"></div>
+        <div data-include="prestatairespecialete/update.html"></div>
+        <div data-include="prestatairespecialete/excel.html"></div>
+        <div data-include="prestatairespecialete/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="prestation-tab">
+        <h2>Prestation</h2>
+        <!-- load fragments -->
+        <div data-include="prestation/list.html"></div>
+        <div data-include="prestation/update.html"></div>
+        <div data-include="prestation/excel.html"></div>
+        <div data-include="prestation/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="prim-tab">
+        <h2>Prim</h2>
+        <!-- load fragments -->
+        <div data-include="prim/list.html"></div>
+        <div data-include="prim/update.html"></div>
+        <div data-include="prim/excel.html"></div>
+        <div data-include="prim/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="questionnairemedical-tab">
+        <h2>QuestionnaireMedical</h2>
+        <!-- load fragments -->
+        <div data-include="questionnairemedical/list.html"></div>
+        <div data-include="questionnairemedical/update.html"></div>
+        <div data-include="questionnairemedical/excel.html"></div>
+        <div data-include="questionnairemedical/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="regroupement-tab">
+        <h2>Regroupement</h2>
+        <!-- load fragments -->
+        <div data-include="regroupement/list.html"></div>
+        <div data-include="regroupement/update.html"></div>
+        <div data-include="regroupement/excel.html"></div>
+        <div data-include="regroupement/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="remboursement-tab">
+        <h2>Remboursement</h2>
+        <!-- load fragments -->
+        <div data-include="remboursement/list.html"></div>
+        <div data-include="remboursement/update.html"></div>
+        <div data-include="remboursement/excel.html"></div>
+        <div data-include="remboursement/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="reseau-tab">
+        <h2>Reseau</h2>
+        <!-- load fragments -->
+        <div data-include="reseau/list.html"></div>
+        <div data-include="reseau/update.html"></div>
+        <div data-include="reseau/excel.html"></div>
+        <div data-include="reseau/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="rubrique-tab">
+        <h2>Rubrique</h2>
+        <!-- load fragments -->
+        <div data-include="rubrique/list.html"></div>
+        <div data-include="rubrique/update.html"></div>
+        <div data-include="rubrique/excel.html"></div>
+        <div data-include="rubrique/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="sinistre-tab">
+        <h2>Sinistre</h2>
+        <!-- load fragments -->
+        <div data-include="sinistre/list.html"></div>
+        <div data-include="sinistre/update.html"></div>
+        <div data-include="sinistre/excel.html"></div>
+        <div data-include="sinistre/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="socite-tab">
+        <h2>Socite</h2>
+        <!-- load fragments -->
+        <div data-include="socite/list.html"></div>
+        <div data-include="socite/update.html"></div>
+        <div data-include="socite/excel.html"></div>
+        <div data-include="socite/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="soin-tab">
+        <h2>Soin</h2>
+        <!-- load fragments -->
+        <div data-include="soin/list.html"></div>
+        <div data-include="soin/update.html"></div>
+        <div data-include="soin/excel.html"></div>
+        <div data-include="soin/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="souscripteur-tab">
+        <h2>Souscripteur</h2>
+        <!-- load fragments -->
+        <div data-include="souscripteur/list.html"></div>
+        <div data-include="souscripteur/update.html"></div>
+        <div data-include="souscripteur/excel.html"></div>
+        <div data-include="souscripteur/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="sysmenu-tab">
+        <h2>SysMenu</h2>
+        <!-- load fragments -->
+        <div data-include="sysmenu/list.html"></div>
+        <div data-include="sysmenu/update.html"></div>
+        <div data-include="sysmenu/excel.html"></div>
+        <div data-include="sysmenu/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="tierspayant-tab">
+        <h2>TiersPayant</h2>
+        <!-- load fragments -->
+        <div data-include="tierspayant/list.html"></div>
+        <div data-include="tierspayant/update.html"></div>
+        <div data-include="tierspayant/excel.html"></div>
+        <div data-include="tierspayant/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="traitmentprocess-tab">
+        <h2>TraitmentProcess</h2>
+        <!-- load fragments -->
+        <div data-include="traitmentprocess/list.html"></div>
+        <div data-include="traitmentprocess/update.html"></div>
+        <div data-include="traitmentprocess/excel.html"></div>
+        <div data-include="traitmentprocess/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="translation-tab">
+        <h2>Translation</h2>
+        <!-- load fragments -->
+        <div data-include="translation/list.html"></div>
+        <div data-include="translation/update.html"></div>
+        <div data-include="translation/excel.html"></div>
+        <div data-include="translation/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="tvaapplicaple-tab">
+        <h2>TvaApplicaple</h2>
+        <!-- load fragments -->
+        <div data-include="tvaapplicaple/list.html"></div>
+        <div data-include="tvaapplicaple/update.html"></div>
+        <div data-include="tvaapplicaple/excel.html"></div>
+        <div data-include="tvaapplicaple/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="validation-tab">
+        <h2>Validation</h2>
+        <!-- load fragments -->
+        <div data-include="validation/list.html"></div>
+        <div data-include="validation/update.html"></div>
+        <div data-include="validation/excel.html"></div>
+        <div data-include="validation/pdf.html"></div>
+      </div>
+      <div class="tab-pane" id="ville-tab">
+        <h2>Ville</h2>
+        <!-- load fragments -->
+        <div data-include="ville/list.html"></div>
+        <div data-include="ville/update.html"></div>
+        <div data-include="ville/excel.html"></div>
+        <div data-include="ville/pdf.html"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+$(function() {
+  $('[data-include]').each(function(){
+    var file = $(this).attr('data-include');
+    $(this).load(file);
+  });
+});
+</script>
+</body>
+</html>

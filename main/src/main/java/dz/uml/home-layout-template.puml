@@ -1,0 +1,55 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+' ========= Macros =========
+!define Entity(name) rectangle "Entity: " + name as Entity_##name
+!define Tab(name) rectangle "Tab: " + name as Tab_##name
+!define SubTab(name) rectangle "SubTab: " + name as SubTab_##name
+!define Component(name) frame name as Comp_##name
+
+' ========= Layout =========
+rectangle "Home Page" {
+
+  frame "Sidebar (Entities)" as Sidebar
+  frame "Main Content" as Main {
+    frame "Tabs (Submenus)" as Tabs
+    frame "Nested Tabs" as NestedTabs
+    frame "Tab Content" as Components
+  }
+}
+
+' ========= Example Instantiation =========
+' Define Entities
+Entity(A)
+Entity(B)
+
+' Define Tabs for Entity A
+Tab(Overview)
+Tab(Details)
+
+' Define SubTabs inside "Details"
+SubTab(GeneralInfo)
+SubTab(Attributes)
+SubTab(History)
+
+' Define Components
+Component("ListComponent (jsGrid)")
+Component("UpdateComponent (Form)")
+Component("PdfComponent (Print)")
+Component("ExcelComponent (Bulk Upload)")
+
+' ========= Relationships =========
+Entity_A -right-> Tab_Overview
+Entity_A -right-> Tab_Details
+
+Tab_Details -down-> SubTab_GeneralInfo
+Tab_Details -down-> SubTab_Attributes
+Tab_Details -down-> SubTab_History
+
+SubTab_GeneralInfo -down-> Comp_ListComponent
+SubTab_Attributes -down-> Comp_UpdateComponent
+SubTab_History -down-> Comp_PdfComponent
+SubTab_History -down-> Comp_ExcelComponent
+
+@enduml

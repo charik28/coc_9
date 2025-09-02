@@ -1,0 +1,308 @@
+ [
+      {
+        "parentUrl": "divers",
+        "module": "Divers",
+        "tab": "atch file"
+      },
+      {
+        "parentUrl": "divers",
+        "module": "Divers",
+        "tab": "audit log"
+      },
+      {
+        "parentUrl": "divers",
+        "module": "Divers",
+        "tab": "document"
+      },
+      {
+        "parentUrl": "divers",
+        "module": "Divers",
+        "tab": "offre"
+      },
+      {
+        "parentUrl": "divers",
+        "module": "Divers",
+        "tab": "regroupement"
+      },
+      {
+        "parentUrl": "divers",
+        "module": "Divers",
+        "tab": "rubrique"
+      },
+      {
+        "parentUrl": "divers",
+        "module": "Divers",
+        "tab": "sys menu"
+      },
+      {
+        "parentUrl": "assurances",
+        "module": "Gestion des assurances",
+        "tab": "Adhesions"
+      },
+      {
+        "parentUrl": "assurances",
+        "module": "Gestion des assurances",
+        "tab": "affiliation"
+      },
+      {
+        "parentUrl": "assurances",
+        "module": "Gestion des assurances",
+        "tab": "agrement"
+      },
+      {
+        "parentUrl": "assurances",
+        "module": "Gestion des assurances",
+        "tab": "assurance type"
+      },
+      {
+        "parentUrl": "assurances",
+        "module": "Gestion des assurances",
+        "tab": "assureur"
+      },
+      {
+        "parentUrl": "assurances",
+        "module": "Gestion des assurances",
+        "tab": "bareme remboursement"
+      },
+      {
+        "parentUrl": "assurances",
+        "module": "Gestion des assurances",
+        "tab": "contrat"
+      },
+      {
+        "parentUrl": "assurances",
+        "module": "Gestion des assurances",
+        "tab": "cotisations"
+      },
+      {
+        "parentUrl": "assurances",
+        "module": "Gestion des assurances",
+        "tab": "garantie groupe"
+      },
+      {
+        "parentUrl": "assurances",
+        "module": "Gestion des assurances",
+        "tab": "police assurance"
+      },
+      {
+        "parentUrl": "assurances",
+        "module": "Gestion des assurances",
+        "tab": "policy"
+      },
+      {
+        "parentUrl": "assurances",
+        "module": "Gestion des assurances",
+        "tab": "prim"
+      },
+      {
+        "parentUrl": "assurances",
+        "module": "Gestion des assurances",
+        "tab": "souscripteur"
+      },
+      {
+        "parentUrl": "assurances",
+        "module": "Gestion des assurances",
+        "tab": "tiers payant"
+      },
+      {
+        "parentUrl": "clients",
+        "module": "Gestion des clients",
+        "tab": "act"
+      },
+      {
+        "parentUrl": "clients",
+        "module": "Gestion des clients",
+        "tab": "adherent"
+      },
+      {
+        "parentUrl": "clients",
+        "module": "Gestion des clients",
+        "tab": "carte affaris"
+      },
+      {
+        "parentUrl": "clients",
+        "module": "Gestion des clients",
+        "tab": "centre gestion"
+      },
+      {
+        "parentUrl": "clients",
+        "module": "Gestion des clients",
+        "tab": "client"
+      },
+      {
+        "parentUrl": "clients",
+        "module": "Gestion des clients",
+        "tab": "compte bancaire"
+      },
+      {
+        "parentUrl": "clients",
+        "module": "Gestion des clients",
+        "tab": "demande"
+      },
+      {
+        "parentUrl": "clients",
+        "module": "Gestion des clients",
+        "tab": "employ"
+      },
+      {
+        "parentUrl": "clients",
+        "module": "Gestion des clients",
+        "tab": "investigation"
+      },
+      {
+        "parentUrl": "clients",
+        "module": "Gestion des clients",
+        "tab": "socite"
+      },
+      {
+        "parentUrl": "clients",
+        "module": "Gestion des clients",
+        "tab": "ville"
+      },
+      {
+        "parentUrl": "contrats",
+        "module": "Gestion des contrats",
+        "tab": "Contrat"
+      },
+      {
+        "parentUrl": "contrats",
+        "module": "Gestion des contrats",
+        "tab": "formule"
+      },
+      {
+        "parentUrl": "notifications",
+        "module": "Notifications",
+        "tab": "Notification"
+      },
+      {
+        "parentUrl": "paiments",
+        "module": "Réclamations et paiements",
+        "tab": "claim history"
+      },
+      {
+        "parentUrl": "paiments",
+        "module": "Réclamations et paiements",
+        "tab": "facture"
+      },
+      {
+        "parentUrl": "paiments",
+        "module": "Réclamations et paiements",
+        "tab": "feedback"
+      },
+      {
+        "parentUrl": "paiments",
+        "module": "Réclamations et paiements",
+        "tab": "paiement"
+      },
+      {
+        "parentUrl": "paiments",
+        "module": "Réclamations et paiements",
+        "tab": "payment history"
+      },
+      {
+        "parentUrl": "paiments",
+        "module": "Réclamations et paiements",
+        "tab": "remboursement"
+      },
+      {
+        "parentUrl": "paiments",
+        "module": "Réclamations et paiements",
+        "tab": "Sinistre"
+      },
+      {
+        "parentUrl": "services/medical",
+        "module": "Services médicaux",
+        "tab": "affection"
+      },
+      {
+        "parentUrl": "services/medical",
+        "module": "Services médicaux",
+        "tab": "appointment"
+      },
+      {
+        "parentUrl": "services/medical",
+        "module": "Services médicaux",
+        "tab": "centre soin"
+      },
+      {
+        "parentUrl": "services/medical",
+        "module": "Services médicaux",
+        "tab": "class pharmacopee"
+      },
+      {
+        "parentUrl": "services/medical",
+        "module": "Services médicaux",
+        "tab": "medecin"
+      },
+      {
+        "parentUrl": "services/medical",
+        "module": "Services médicaux",
+        "tab": "medical product"
+      },
+      {
+        "parentUrl": "services/medical",
+        "module": "Services médicaux",
+        "tab": "ordonance"
+      },
+      {
+        "parentUrl": "services/medical",
+        "module": "Services médicaux",
+        "tab": "prestataire"
+      },
+      {
+        "parentUrl": "services/medical",
+        "module": "Services médicaux",
+        "tab": "prestataire specialete"
+      },
+      {
+        "parentUrl": "services/medical",
+        "module": "Services médicaux",
+        "tab": "prestation"
+      },
+      {
+        "parentUrl": "services/medical",
+        "module": "Services médicaux",
+        "tab": "questionnare medical"
+      },
+      {
+        "parentUrl": "services/medical",
+        "module": "Services médicaux",
+        "tab": "reseau"
+      },
+      {
+        "parentUrl": "services/medical",
+        "module": "Services médicaux",
+        "tab": "soin"
+      },
+      {
+        "parentUrl": "services/medical",
+        "module": "Services médicaux",
+        "tab": "traitment process"
+      },
+      {
+        "parentUrl": "services/medical",
+        "module": "Services médicaux",
+        "tab": "validation"
+      },
+      {
+        "parentUrl": "paiments/pricing",
+        "module": "Tarifs et Pricing",
+        "tab": "barem cnas"
+      },
+      {
+        "parentUrl": "paiments/pricing",
+        "module": "Tarifs et Pricing",
+        "tab": "base tarifiare"
+      },
+      {
+        "parentUrl": "paiments/pricing",
+        "module": "Tarifs et Pricing",
+        "tab": "mode plafonnement"
+      },
+      {
+        "parentUrl": "paiments/pricing",
+        "module": "Tarifs et Pricing",
+        "tab": "tva applicaple"
+      }
+    ]
+

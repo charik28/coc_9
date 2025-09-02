@@ -1,0 +1,67 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "dz.generator.service.dto" {
+    class EntityMetaDTO {
+        - Long id
+        - String name
+        - String i18nKey
+        - String description
+        - List<FieldMetaDTO> fields
+        - List<RelationMetaDTO> relations
+    }
+
+    class FieldMetaDTO {
+        - Long id
+        - Long entityId
+        - String name
+        - String type
+        - String i18nKey
+    }
+
+    class RelationMetaDTO {
+        - Long id
+        - Long entityId
+        - String targetEntity
+        - String relationType
+        - String i18nKey
+    }
+
+    EntityMetaDTO "1" *-- "many" FieldMetaDTO
+    EntityMetaDTO "1" *-- "many" RelationMetaDTO
+}
+
+package "dz.generator.mapper" {
+    interface EntityMetaMapper {
+        + void insertEntity(EntityMetaDTO entity)
+        + void insertFields(Long entityId, List<FieldMetaDTO> fields)
+        + void insertRelations(Long entityId, List<RelationMetaDTO> relations)
+        + List<EntityMetaDTO> findAll()
+        + EntityMetaDTO findOne(Long id)
+        + void delete(Long id)
+    }
+}
+
+package "dz.generator.service" {
+    class EntityMetaService {
+        + save(EntityMetaDTO dto)
+        + findAll(): List<EntityMetaDTO>
+        + findOne(Long id): EntityMetaDTO
+        + delete(Long id)
+    }
+}
+
+package "dz.generator.web.rest" {
+    class EntityMetaResource {
+        + POST /api/entity-meta
+        + GET /api/entity-meta
+        + GET /api/entity-meta/{id}
+        + DELETE /api/entity-meta/{id}
+    }
+}
+
+EntityMetaMapper --> EntityMetaDTO
+EntityMetaService --> EntityMetaMapper
+EntityMetaResource --> EntityMetaService
+@enduml

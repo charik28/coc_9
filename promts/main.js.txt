@@ -1,0 +1,35 @@
+
+// now in this main =.js script try to do
+// after all loding
+// load current user info and change
+<div className="sidebar">
+  <!-- Sidebar user panel (optional) -->
+  <div className="user-panel mt-3 pb-3 mb-3 d-flex">
+    <div className="image">
+      <img src="../dist/img/user2-160x160.jpg" className="img-circle elevation-2" alt="User Image"/>
+    </div>
+    <div className="info">
+      <a href="#" className="d-block">Admin</a>
+    </div>
+  </div>
+
+
+  http://localhost:82/api/admin/users/{login *} :string
+{
+  "id": 1,
+  "login": "admin",
+  "firstName": "Administrator",
+  "lastName": "Administrator",
+  "email": "admin@localhost",
+  "imageUrl": "admin.png",
+  "activated": true,
+  "langKey": "fr",
+  "createdBy": "system",
+  "createdDate": null,
+  "lastModifiedBy": "admin",
+  "lastModifiedDate": "2025-05-11T08:57:24.236Z",
+  "authorities": [
+    "ROLE_USER",
+    "ROLE_ADMIN"
+  ]
+}

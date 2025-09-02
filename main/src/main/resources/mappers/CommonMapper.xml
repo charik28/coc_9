@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dz.generator.mappers.CommonMapper">
+
+    <!-- Resolve table name from code_common -->
+    <select id="resolveTableName" parameterType="string" resultType="string">
+        SELECT value
+        FROM code_common
+        WHERE code = #{code}
+          AND "key" = 'table_name'
+        LIMIT 1
+    </select>
+
+    <!-- Fetch data from the resolved table -->
+    <select id="selectCommonData__2" parameterType="string" resultType="dz.generator.service.dto.CommonDto">
+        SELECT id, code, label1, label2
+        FROM ${tableName}
+    </select>
+
+    <!-- Resolve columns -->
+    <select id="resolveColumns" parameterType="string" resultType="string">
+        SELECT value
+        FROM code_common
+        WHERE code = #{code}
+          AND "key" = 'columns'
+        LIMIT 1
+    </select>
+
+    <!-- Resolve columns -->
+    <select id="resolveColumnsByTableName" parameterType="string" resultType="string">
+        SELECT value
+        FROM code_common
+        WHERE code = #{tableName}
+          AND "key" = 'columns'
+        LIMIT 1
+    </select>
+
+    <!-- Fetch data dynamically -->
+    <select id="selectCommonData"
+            parameterType="map"
+            resultType="map">
+        SELECT ${columns}
+        FROM ${tableName}
+    </select>
+    <!-- Fetch data directly -->
+    <select id="selectPopupData2"
+            parameterType="map"
+            resultType="map">
+        SELECT ${columns}
+        FROM ${tableName}
+    </select>
+
+
+</mapper>
