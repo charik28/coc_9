@@ -86,22 +86,8 @@ public class CocReportDto  {
     /** List of employees linked to the report */
     private List<CocMgmtEmpVo> rprtEmpList = new ArrayList<>();
 
-/*
-
-    // Related entities
-    private List<CocReportCargoDto> cargoList = new ArrayList<>();
-    private List<CocReportPersonDto> personList = new ArrayList<>();
-    private List<CocReportTransportDto> transportList = new ArrayList<>();
-    private List<CocReportCompanyDto> companyList = new ArrayList<>();
-    private CocReportVoyageDto voyage;
-
-    private List<CocManagementEmployeeDto> employeeList = new ArrayList<>();
-
-    // Attachments
-    private List<ComAttachmentFileUploadDto> attachmentFiles = new ArrayList<>();
-*/
 
     // Additional info
     private String resultName;
-    private List<ComCustomOrganizationDto> organizationList = new ArrayList<>();
+    private List<ComCstmOrgnVo> organizationList = new ArrayList<>();
 }

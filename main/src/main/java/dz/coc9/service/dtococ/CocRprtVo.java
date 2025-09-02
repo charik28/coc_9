@@ -1,10 +1,5 @@
 package dz.coc9.service.dtococ;
 
-import alpass.com.comn.vo.ComDefaultVo;
-import alpass.com.cstm.vo.ComCstmOrgnVo;
-import alpass.com.file.vo.ComAtchFileUploadVo;
-import alpass.ipt.coc.mgmt.emp.vo.CocMgmtEmpVo;
-import alpass.ipt.coc.rprt.vo.CocRprtTrnpVo;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -1,6 +1,5 @@
 package dz.coc9.service.dtococ;
 
-import alpass.com.comn.vo.ComDefaultVo;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

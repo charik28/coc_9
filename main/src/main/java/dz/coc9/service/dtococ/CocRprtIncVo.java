@@ -1,9 +1,6 @@
 package dz.coc9.service.dtococ;
 
 
-import alpass.com.comn.vo.ComDefaultVo;
-import alpass.com.cstm.vo.ComCstmOrgnVo;
-import alpass.com.file.vo.ComAtchFileUploadVo;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -79,7 +76,7 @@ public class CocRprtIncVo extends ComDefaultVo {
     private String lastChgDttm;
 
     /** Liste des pièces jointes  */
-    private List<ComAtchFileUploadVo> fileList = new ArrayList<>();
+//    private List<ComAtchFileUploadVo> fileList = new ArrayList<>();
 
     /** résultat */
     private String resultNm;
