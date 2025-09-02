@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>dz</groupId>
-    <artifactId>lte-generator</artifactId>
+    <artifactId>coc9</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>lte-generator</name>
-    <description>lte-generator</description>
+    <name>coc9</name>
+    <description>coc9</description>
     <url/>
     <licenses>
         <license/>
@@ -42,7 +42,7 @@
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <start-class>dz.generator.FormGenApp</start-class>
+        <start-class>dz.coc9.Coc9App</start-class>
         <argLine>-Djava.security.egd=file:/dev/./urandom -Xmx1G</argLine>
         <m2e.apt.activation>jdt_apt</m2e.apt.activation>
         <run.addResources>false</run.addResources>

@@ -6,7 +6,7 @@ console.log("main.js");
 var token; // keep in global scope
 
 // const server1Url = "http://localhost:3000/api/v2";
-const server2Url = "http://localhost:82/api/";
+const server2Url = "http://localhost:8080/api/";
 function getToken() {
   if (!token) {
     console.log("getting token from localStorage");

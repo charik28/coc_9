@@ -6,7 +6,7 @@
 <mapper namespace="dz.afaris.mappers.UserMapper">
 
     <!-- Reusable result mapping -->
-    <resultMap id="UserDtoMap" type="dz.generator.service.dto.UserDto">
+    <resultMap id="UserDtoMap" type="dz.coc9.service.dto.UserDto">
         <id property="id" column="id" />
         <result property="login" column="login" />
         <result property="email" column="email" />

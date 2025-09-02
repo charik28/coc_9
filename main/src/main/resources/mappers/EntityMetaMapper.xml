@@ -7,19 +7,19 @@
 
     <!-- Result Mappings -->
 
-    <resultMap id="EntityMetaResult" type="dz.generator.service.dto.EntityMetaDTO">
+    <resultMap id="EntityMetaResult" type="dz.coc9.service.dto.EntityMetaDTO">
         <id property="id" column="id"/>
         <result property="entityName" column="entity_name"/>
         <result property="tableName" column="table_name"/>
         <result property="i18nKey" column="i18n_key"/>
-        <collection property="fields" ofType="dz.generator.service.dto.FieldMetaDTO">
+        <collection property="fields" ofType="dz.coc9.service.dto.FieldMetaDTO">
             <result property="id" column="field_id"/>
             <result property="fieldName" column="field_name"/>
             <result property="fieldType" column="field_type"/>
             <result property="i18nKey" column="field_i18n_key"/>
         </collection>
     </resultMap>
-    <resultMap id="FieldMetaResult" type="dz.generator.service.dto.FieldMetaDTO">
+    <resultMap id="FieldMetaResult" type="dz.coc9.service.dto.FieldMetaDTO">
         <id property="id" column="id"/>
         <result property="entityId" column="entity_id"/>
         <result property="fieldName" column="entity_name"/>
@@ -28,7 +28,7 @@
         <result property="fieldsJson" column="fields_json"/>
     </resultMap>
 
-    <resultMap id="RelationMetaResult" type="dz.generator.service.dto.RelationMetaDTO">
+    <resultMap id="RelationMetaResult" type="dz.coc9.service.dto.RelationMetaDTO">
         <id property="id" column="id"/>
         <result property="entityId" column="entity_id"/>
         <result property="targetEntity" column="target_entity"/>
@@ -40,12 +40,12 @@
     <!-- ========== INSERTS ========== -->
 
 
-    <insert id="insertJson" parameterType="dz.generator.service.dto.EntityMetaDTO" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertJson" parameterType="dz.coc9.service.dto.EntityMetaDTO" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO entity_meta (entity_name, table_name, fields_json)
         VALUES (#{entityName}, #{tableName}, #{fieldsJson}::jsonb)
     </insert>
 
-    <update id="updateJson" parameterType="dz.generator.service.dto.EntityMetaDTO">
+    <update id="updateJson" parameterType="dz.coc9.service.dto.EntityMetaDTO">
         UPDATE entity_meta
         SET entity_name = #{entityName},
             table_name = #{tableName},
@@ -62,7 +62,7 @@
         where f.entity_id is null;
     </update>
 
-    <insert id="insertEntity" parameterType="dz.generator.service.dto.EntityMetaDTO" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertEntity" parameterType="dz.coc9.service.dto.EntityMetaDTO" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO entity_meta (entity_name, table_name, i18n_key,project_root,app_name)
         VALUES (#{entityName}, #{tableName}, #{i18nKey},#{projectRoot} , #{appName})
     </insert>
@@ -131,7 +131,7 @@
 
     </delete>
 
-    <insert id="insertOrUpdateEntity" parameterType="dz.generator.service.dto.EntityMetaDTO" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertOrUpdateEntity" parameterType="dz.coc9.service.dto.EntityMetaDTO" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO entity_meta (entity_name, table_name)
         VALUES (#{entityName}, #{tableName})
         ON CONFLICT (entity_name) DO UPDATE SET table_name = EXCLUDED.table_name

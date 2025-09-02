@@ -2,7 +2,7 @@
 skinparam packageStyle rectangle
 skinparam classAttributeIconSize 0
 
-package "dz.generator.service.dto" {
+package "dz.coc9.service.dto" {
     class EntityMetaDTO {
         - Long id
         - String name
@@ -32,7 +32,7 @@ package "dz.generator.service.dto" {
     EntityMetaDTO "1" *-- "many" RelationMetaDTO
 }
 
-package "dz.generator.mapper" {
+package "dz.coc9.mapper" {
     interface EntityMetaMapper {
         + void insertEntity(EntityMetaDTO entity)
         + void insertFields(Long entityId, List<FieldMetaDTO> fields)
@@ -43,7 +43,7 @@ package "dz.generator.mapper" {
     }
 }
 
-package "dz.generator.service" {
+package "dz.coc9.service" {
     class EntityMetaService {
         + save(EntityMetaDTO dto)
         + findAll(): List<EntityMetaDTO>
@@ -52,7 +52,7 @@ package "dz.generator.service" {
     }
 }
 
-package "dz.generator.web.rest" {
+package "dz.coc9.web.rest" {
     class EntityMetaResource {
         + POST /api/entity-meta
         + GET /api/entity-meta

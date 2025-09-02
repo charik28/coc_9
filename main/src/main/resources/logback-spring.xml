@@ -10,7 +10,7 @@
     <property name="LOG_FILE" value="${LOG_PATH}/spring.log"/>
 
     <!-- Patterns based on https://github.com/spring-projects/spring-boot/blob/v3.0.0/spring-boot-project/spring-boot/src/main/resources/org/springframework/boot/logging/logback/defaults.xml -->
-    <conversionRule conversionWord="crlf" converterClass="dz.generator.config.CRLFLogConverter" />
+    <conversionRule conversionWord="crlf" converterClass="dz.coc9.config.CRLFLogConverter" />
     <property name="CONSOLE_LOG_PATTERN" value="${CONSOLE_LOG_PATTERN:-%clr(%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd'T'HH:mm:ss }}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %crlf(%m){red} %n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
     <!-- The FILE and ASYNC appenders are here as examples for a production configuration -->
     <!--
@@ -67,7 +67,7 @@
     <logger name="org.springframework" level="WARN"/>
 
     <!-- Show SQL -->
-    <logger name=" dz.generator.mappers" level="DEBUG"/>  <!-- your mappers -->
+    <logger name=" dz.coc9.mappers" level="DEBUG"/>  <!-- your mappers -->
     <logger name="org.mybatis.spring.SqlSessionUtils" level="INFO"/>
     <logger name="org.mybatis.spring.transaction" level="INFO"/>
     <logger name="org.mybatis.logging" level="DEBUG"/>
@@ -79,7 +79,7 @@
 
 
     <!-- Your app package -->
-    <logger name="dz.generator" level="DEBUG" additivity="false">
+    <logger name="dz.coc9" level="DEBUG" additivity="false">
         <appender-ref ref="ASYNC_CONSOLE"/>
         <appender-ref ref="ASYNC_FILE"/>
     </logger>

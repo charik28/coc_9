@@ -5,7 +5,7 @@
 
 <mapper namespace="dz.generator.mappers.FieldMetaMapper">
 
-    <resultMap id="FieldMetaResultMap" type="dz.generator.service.dto.FieldMetaDTO">
+    <resultMap id="FieldMetaResultMap" type="dz.coc9.service.dto.FieldMetaDTO">
         <id column="id" property="id"/>
         <result column="entity_name" property="entityName"/>
         <result column="field_name" property="fieldName"/>
@@ -20,7 +20,7 @@
         VALUES (#{entityName}, #{fieldName}, #{fieldType}, #{i18nKey}, #{required}, #{isArray})
     </insert>
 
-    <insert id="insertField2" parameterType="dz.generator.service.dto.FieldMetaDTO">
+    <insert id="insertField2" parameterType="dz.coc9.service.dto.FieldMetaDTO">
         INSERT INTO field_meta (entity_name, field_name, field_type, i18n_key)
         VALUES (#{entityName}, #{fieldName}, #{fieldType}, #{i18nKey})
     </insert>
@@ -40,7 +40,7 @@
         DELETE FROM field_meta WHERE entity_name = #{entityName}
     </delete>
 
-    <insert id="insertOrUpdateField" parameterType="dz.generator.service.dto.FieldMetaDTO" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertOrUpdateField" parameterType="dz.coc9.service.dto.FieldMetaDTO" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO field_meta (entity_name, field_name, field_type, i18n_key)
         VALUES (#{entityName}, #{fieldName}, #{fieldType}, #{i18nKey})
         ON CONFLICT (entity_name, field_name) DO UPDATE

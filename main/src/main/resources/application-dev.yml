@@ -18,9 +18,9 @@ spring:
       indent-output: true
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
-    url: jdbc:postgresql://localhost:5444/generator_db
-    username: dev_305
-    password: afaris
+    url: jdbc:postgresql://localhost:5444/cocDb
+    username: coc9
+    password: cocd08
     hikari:
       poolName: Hikari
       auto-commit: false
@@ -38,7 +38,7 @@ spring:
     cache: false
 
 server:
-  port: 3000
+  port: 8080
 #  port: 4200
   # make sure requests the proxy uri instead of the server one
   forward-headers-strategy: native

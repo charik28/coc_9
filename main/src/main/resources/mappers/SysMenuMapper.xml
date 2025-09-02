@@ -6,7 +6,7 @@
 <mapper namespace="dz.afaris.mappers.SysMenuMapper">
 
     <!-- Base result mapping -->
-    <resultMap id="SysMenuResultMap" type="dz.generator.service.dto.SysMenuDto">
+    <resultMap id="SysMenuResultMap" type="dz.coc9.service.dto.SysMenuDto">
         <id property="id" column="id"/>
         <result property="mgmtNo" column="mgmt_no"/>
         <result property="url" column="url"/>
@@ -23,12 +23,12 @@
         <result property="parentMenuId" column="parent_menu_id"/>
 
         <!-- Nested mapping for submenus -->
-        <collection property="subMenus" ofType="dz.generator.service.dto.SysMenuDto"
+        <collection property="subMenus" ofType="dz.coc9.service.dto.SysMenuDto"
                     select="findSubMenus" column="id"/>
     </resultMap>
 
     <!-- Base result mapping -->
-    <resultMap id="SidebarResultMap" type="dz.generator.service.dto.SidebarDto">
+    <resultMap id="SidebarResultMap" type="dz.coc9.service.dto.SidebarDto">
         <id property="id" column="id"/>
         <result property="url" column="url"/>
         <result property="title" column="title"/>
@@ -36,12 +36,12 @@
         <result property="parentMenuId" column="parent_menu_id"/>
 
         <!-- Nested mapping for submenus -->
-        <collection property="subMenus" ofType="dz.generator.service.dto.SidebarDto"
+        <collection property="subMenus" ofType="dz.coc9.service.dto.SidebarDto"
                     select="findSubMenusSidebar" column="id"/>
     </resultMap>
 
     <!-- Result mapping to SysMenuDto -->
-    <resultMap id="SysMenuDtoMap" type="dz.generator.service.dto.SysMenuDto">
+    <resultMap id="SysMenuDtoMap" type="dz.coc9.service.dto.SysMenuDto">
         <id property="id" column="id"/>
         <result property="mgmtNo" column="mgmt_no"/>
         <result property="url" column="url"/>
@@ -56,7 +56,7 @@
 
 
     <!-- Result mapping to SidebarDto -->
-    <resultMap id="SysMenuSidebareDto" type="dz.generator.service.dto.SidebarDto">
+    <resultMap id="SysMenuSidebareDto" type="dz.coc9.service.dto.SidebarDto">
         <result property="id" column="id"/>
         <result property="url" column="url"/>
         <result property="title" column="title"/>
@@ -255,7 +255,7 @@ WITH RECURSIVE menu_hierarchy AS (
         SELECT DISTINCT * FROM menu_hierarchy ORDER BY depth, ordre;
     </select>
 
-    <select id="findMenuTreeByLogin" parameterType="string" resultType="dz.generator.service.dto.SysMenuDto">
+    <select id="findMenuTreeByLogin" parameterType="string" resultType="dz.coc9.service.dto.SysMenuDto">
         <!--findMenuTreeByUserLogin-->
 
         WITH RECURSIVE menu_hierarchy AS (
@@ -365,7 +365,7 @@ WITH RECURSIVE menu_hierarchy AS (
         ORDER BY ordre
     </select>
 
-    <select id="getModuleTabs" resultType="dz.generator.service.dto.SideBarTabDto" >
+    <select id="getModuleTabs" resultType="dz.coc9.service.dto.SideBarTabDto" >
         select distinct sm.url, parent.url as parentUrl FROM sys_menu sm
         right JOIN sys_menu parent ON sm.parent_menu_id = parent.id
         WHERE sm.use_yn;

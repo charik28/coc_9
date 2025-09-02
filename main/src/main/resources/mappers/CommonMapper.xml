@@ -15,7 +15,7 @@
     </select>
 
     <!-- Fetch data from the resolved table -->
-    <select id="selectCommonData__2" parameterType="string" resultType="dz.generator.service.dto.CommonDto">
+    <select id="selectCommonData__2" parameterType="string" resultType="dz.coc9.service.dto.CommonDto">
         SELECT id, code, label1, label2
         FROM ${tableName}
     </select>
