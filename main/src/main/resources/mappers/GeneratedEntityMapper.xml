@@ -16,6 +16,7 @@
         WHERE id = #{id}
     </select>
 
+
     <!-- Insert (dynamic columns from metadata) -->
     <insert id="insert" parameterType="map">
         INSERT INTO ${tableName}

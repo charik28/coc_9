@@ -2,6 +2,9 @@ package dz.coc9.service.db;
 
 import dz.coc9.mappers.GenericBatchMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,9 +20,14 @@ import java.util.stream.Collectors;
 public class CsvBatchLoaderService {
 
     private final GenericBatchMapper mapper;
+    private static final int BATCH_SIZE = 1000;
+    private final SqlSessionFactory sqlSessionFactory;
+    private final GenericBatchMapper genericBatchMapper;
 
-    public CsvBatchLoaderService(GenericBatchMapper mapper) {
+    public CsvBatchLoaderService(GenericBatchMapper mapper, @Qualifier("sqlSessionFactory") SqlSessionFactory sqlSessionFactory, GenericBatchMapper genericBatchMapper) {
         this.mapper = mapper;
+        this.sqlSessionFactory = sqlSessionFactory;
+        this.genericBatchMapper = genericBatchMapper;
     }
 
     @Transactional
@@ -43,34 +51,40 @@ public class CsvBatchLoaderService {
     }
 
     private void loadCsvFileToTable(Path filePath, String tableName) throws Exception {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath.toFile()));
+             SqlSession sqlSession = sqlSessionFactory.openSession(false)) { // disable auto-commit
 
-       log.info("loadCsvFileToTable : {} into: {}", filePath,tableName);
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath.toFile()))) {
+            GenericBatchMapper mapper = sqlSession.getMapper(GenericBatchMapper.class);
+
             String headerLine = reader.readLine();
             if (headerLine == null) {
                 throw new IllegalArgumentException("Empty CSV file: " + filePath);
             }
 
-            List<String> columns = Arrays.stream(headerLine.split(","))
+            List<String> fields = Arrays.stream(headerLine.split(","))
                     .map(String::trim)
                     .collect(Collectors.toList());
 
-            List<Map<String, Object>> rows = new ArrayList<>();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] values = line.split(",");
-                Map<String, Object> row = new LinkedHashMap<>();
-                for (int i = 0; i < columns.size(); i++) {
-                    row.put(columns.get(i), i < values.length ? values[i].trim() : null);
+            try {
+                if (!"tb_coc_arm".equals(tableName) && !tableName.contains("_rel")) {
+                    long count = genericBatchMapper.countByTableName(tableName);
+                    if (count < 1) {
+                        genericBatchMapper.copyCsvFile("alpassint", tableName, filePath.toString(), fields);
+                        log.warn("loaded {} from {}", tableName, filePath);
+
+                    } else {
+                        log.warn("skipping {} count(*) lenght: {} ", tableName, count);
+                    }
                 }
-                rows.add(row);
+            }catch (Exception e) {
+                log.error(e.getMessage());
             }
 
-            if (!rows.isEmpty()) {
-                mapper.batchInsert(tableName, columns, rows);
-                System.out.printf("Loaded %d rows into table %s from %s%n",
-                        rows.size(), tableName, filePath.getFileName());
-            }
+
+
         }
     }
+
+
+
 }

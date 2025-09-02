@@ -5,21 +5,37 @@
 
 <mapper namespace="dz.coc9.mappers.GenericBatchMapper">
 
-    <insert id="batchInsert">
-        INSERT INTO ${tableName}
-        (
-          <foreach collection="columns" item="col" separator=",">
-            ${col}
-          </foreach>
-        )
-        VALUES
-        <foreach collection="rows" item="row" separator=",">
-          (
-            <foreach collection="columns" item="col" separator=",">
-              #{row[${col}]}
+    <!-- Insert one row with dynamic columns -->
+    <insert id="batchInsert" parameterType="map">
+        INSERT INTO ${schemasName}.${tableName}
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <foreach collection="fields" item="field" separator=",">
+                ${field}
             </foreach>
-          )
-        </foreach>
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <foreach collection="fields" item="field" separator=",">
+                #{data[${field}]}
+            </foreach>
+        </trim>
     </insert>
+
+    <!-- countTableName -->
+    <select id="countByTableName" parameterType="string" resultType="long">
+        SELECT count(*) FROM ${tableName}
+    </select>
+
+    <insert id="copyCsvFile">
+        COPY ${schemasName}.${tableName}
+        <trim prefix=" (" suffix=")" suffixOverrides=",">
+            <foreach collection="fields" item="field" separator=",">
+                ${field}
+            </foreach>
+        </trim>
+        FROM '${filePath}'
+        DELIMITER ','
+        CSV HEADER;
+    </insert>
+
 
 </mapper>
