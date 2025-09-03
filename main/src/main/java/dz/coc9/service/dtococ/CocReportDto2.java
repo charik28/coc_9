@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 public class CocReportDto2 {
 
 
+        private String brqType="01"; // special / accidens /
         private String t1ReportNature; // special / accidens /
 
         private String orgnNm;

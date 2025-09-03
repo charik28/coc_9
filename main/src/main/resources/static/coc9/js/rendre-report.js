@@ -160,6 +160,16 @@ function renderSection(container, title, list) {
 
 // todo
 
+/*function jsGridTemplate(value) {
+
+  if (value === "01" || value==="Spc" ) {
+    return '<span class="badge badge-success">' + value + '</span>';
+  } else if (value === "Annulé") {
+    return '<span class="badge badge-danger">' + value + '</span>';
+  } else {
+    return value; // Default rendering for other statuses
+  }
+}*/
 
 async function brq1_bntsearch_click() {
 
@@ -198,6 +208,16 @@ async function brq1_bntsearch_click() {
       data: brqCombinedList,
 
       fields: [
+        {name: "brqType", title: "Type", type: "text", width: 150 ,
+          itemTemplate:function (value) {
+            if (value === "01" || value==="Spc" ) {
+              return '<span class="badge badge-success">' + value + '</span>';
+            } else if (value === "Annulé") {
+              return '<span class="badge badge-danger">' + value + '</span>';
+            } else {
+              return value; // Default rendering for other statuses
+            }
+          } },
         {name: "orgnNm", title: "N° Réf", type: "text", width: 150},
         {name: "t2InfNature", title: "Code org.", type: "text", width: 80},
         {name: "t4Emplacement", title: "Type", type: "text", width: 70},
