@@ -1,5 +1,6 @@
 package dz.coc9.service.dtococ;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -12,8 +13,31 @@ public class CocReportDto2 {
 
         private String orgnNm;
         private String t2InfNature;
-        private String t3Emplacement;
+        private String t4Emplacement;
         private String t4Dttm;
+        private String t5TypeMarchandise;
+        private String t6ValueMarchandise;
+        private String t6TransportMarchandis;
+
+        @JsonIgnore
+        private T6TransportMarchandiseHelper t6TransportMarchandiseHelper;
+
+
+        public void setT6TransportMarchandiseHelper(T6TransportMarchandiseHelper t6TransportMarchandiseHelper) {
+
+                this.t6TransportMarchandiseHelper = t6TransportMarchandiseHelper;
+                this.t6TransportMarchandis = t6TransportMarchandiseHelper.toString();
+
+        }
+
+        private String t6TransportValue = "لم تحدد. ";
+
+        private String t7DetectionTechnology ;
+        private String t8Personne ;
+        private String t9InractionValue ;
+        private String t10Loitxt ;
+        private String t11ActionsTaken =": تحرير محضر الحجز ضد المخالف.";
+
 
 
         private String reportInfoNature; // طبيعة المعلومات

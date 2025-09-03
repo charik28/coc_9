@@ -81,10 +81,27 @@ function render(cocReport2) {
 }
 
 function renderSection(container, title, list, type, viewMode) {
+
   const t1Orgn = 'المصلحة المعاينة للمخالفة:'
    const orgnNm ='الفرقة المتعددة المهام للجمارك بالبويرة بالتنسيق مع مصلحة الوقاية وأمن الجيش بالبويرة.'
 
   const t2Nature='طبيعة المخالفة: ';
+  const t4Emplacment = 'مكان اكتشاف المخالفة: ';
+  const t4Dttm = '02/09/2025 على الساعة 22:20 ليلا.  ';
+  const t5TypeMarchandise = 'تعيين البضاعة محل الغش:';
+
+  const t6TransportMarchandise = 'وسيلة النقل المستعملة:';
+
+  const t6TransportValue = 'قيمة وسيلة النقل المستعملة:';
+  const t7DetectionTechnology ="تقنية الكشف عن المخالفة:";
+
+  const t8Personne = "البيانات المتعلقة بالأشخاص المسؤولين عن المخالفة: ";
+  const t9InractionValue ="قيمة الغرامة المستحقة: "
+  const t10Loitxt = "النصوص القانونية المجرمة والردعية: "
+
+  const t11ActionsTaken = "الإجراءات المتخذة:"
+  // const
+  // const
 
   const section = document.createElement("div");
   section.className = "report-section";
@@ -92,7 +109,17 @@ function renderSection(container, title, list, type, viewMode) {
             <h2> <b>${t1Orgn} </b>
             ${orgnNm}
             </h2>
-            <h2> <b>${t2Nature} </b></h2>
+            <h2> <b>${t2Nature} </b>${list.t3Emplacement}</h2>
+            <h5> <b>${t4Emplacment} </b>${list.t3Emplacement}</h5>
+            <h5> <b>${t4Dttm} </b>${list.t4Dttm}</h5>
+            <h5> <b>${t5TypeMarchandise} </b>${list.t5TypeMarchandise}</h5>
+            <h5> <b>${t6TransportMarchandise} </b>${list.t6TransportMarchandise}</h5>
+            <h5> <b>${t6TransportValue} </b>${list.t6TransportValue}</h5>
+            <h5> <b>${t7DetectionTechnology} </b>${list.t7DetectionTechnology}</h5>
+            <h5> <b>${t8Personne} </b>${list.t8Personne}</h5>
+            <h5> <b>${t9InractionValue} </b>${list.t9InractionValue}</h5>
+            <h5> <b>${t10Loitxt} </b>${list.t10Loitxt}</h5>
+            <h5> <b>${t11ActionsTaken} </b>${list.t11ActionsTaken}</h5>
 `
   ;
 
@@ -157,7 +184,8 @@ render();
 async function brq1_bntsearch_click() {
   try {
     // 1️⃣ Construire la requête (tu peux ajouter params du formulaire ici)
-    const url = "/api/coc/reports";
+    // const url = "/api/coc/reports";
+    const url = "/api/coc/print-test";
 
     // 2️⃣ Fetch API
     const response = await fetch(url, {
