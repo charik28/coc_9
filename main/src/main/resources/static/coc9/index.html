@@ -1,0 +1,580 @@
+<!--
+/**
+*
+*@project DGD-CNTSID_GEO
+*@Author Abdessamie Charik
+*/
+-->
+
+<!DOCTYPE html>
+<html >
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="./coc9/img/drd.png"/>
+
+    <title>DGD Cartographie platforme</title>
+
+    <!-- Google Font: Source Sans Pro -->
+    <link rel="stylesheet"
+          href="./coc9/css/Source+Sans+Pro.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="./coc9/plugins/fontawesome-free/css/all.min.css">
+    <!-- Ionicons -->
+
+    <link rel="stylesheet" href="./coc9/cdn/ionicons.min.css">
+    <!-- Tempusdominus Bootstrap 4 -->
+    <link rel="stylesheet" href="./coc9/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+    <!-- iCheck -->
+    <link rel="stylesheet" href="./coc9/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <!-- JQVMap -->
+    <link rel="stylesheet" href="./coc9/plugins/jqvmap/jqvmap.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="./coc9/dist/css/adminlte.min.css">
+    <!-- overlayScrollbars -->
+    <link rel="stylesheet" href="./coc9/plugins/overlayScrollbars/css/OverlayScrollbars.min.css">
+    <!-- Daterange picker -->
+    <link rel="stylesheet" href="./coc9/plugins/daterangepicker/daterangepicker.css">
+    <!-- summernote -->
+    <link rel="stylesheet" href="./coc9/plugins/summernote/summernote-bs4.min.css">
+    <!--    <link rel="stylesheet" href="./coc9/plugins/pace/pace.min.css">-->
+
+    <link rel="stylesheet" href="./coc9/plugins/pace-progress/themes/blue/pace-theme-minimal.css">
+
+    <link rel="stylesheet" href="./coc9/cdn/leaflet/leaflet.css"/>
+
+
+    <link rel="stylesheet" href="./coc9/cdn/easy-button.css"/>
+    <link rel="stylesheet" href="./coc9/cdn/leaflet.loader.css"/>
+    <!-- <script src="./coc9/./coc9/cdn/jquery-3.6.0.min.js"></script> -->
+
+
+    <style>
+        #map {
+            width: 100%;
+            height: 500px; /* Subtract close button height */
+        }
+
+        .rtl-box {
+          direction: rtl;
+          text-align: right; /* optional, makes text flush right */
+          border: 1px solid #ccc;
+          padding: 8px;
+        }
+    </style>
+    <script >
+        var _user = 'Admin';
+        console.log(_user);
+    </script>
+
+</head>
+
+<body class="hold-transition sidebar-mini layout-fixed">
+
+<div id="body">
+    <div class="wrapper">
+        <!-- Main navbar Container -->
+        <!--    <div id="navbar"></div>-->
+        <!-- Navbar -->
+        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+            <!-- Left navbar links -->
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="/admin-page" class="nav-link">Home</a>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav ml-auto">
+                <a href="@{'/Login'}" class="nav-link logout-button" role="button">
+                    <i class="fas fa-sign-out-alt"></i> Login
+                </a>
+
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="fullscreen" href="#" role="button">
+                        <i class="fas fa-expand-arrows-alt"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="control-sidebar" data-controlsidebar-slide="true" href="#"
+                       role="button">
+                        <i class="fas fa-th-large"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <!-- Main Sidebar Container -->
+        <!--    <div id="sidebar" ></div>-->
+        <style>
+
+            /* Hide all sidebars by default*/
+            .admin {
+
+                display: none;
+            }
+
+            .userVo {
+                display: none;
+            }
+
+            .manager {
+                display: none;
+            }
+
+            .brigade_user {
+                display: none;
+            }
+
+            .active {
+                display: block;
+
+            }
+
+        </style>
+        <aside class="main-sidebar sidebar-dark-primary elevation-4">
+
+            <a href="/" class="brand-link">
+                <img src="dist/img/dgd.png" alt="Douane Logo" class="brand-image img-circle elevation-3"
+                     style="opacity: .8"/>
+                <span class="brand-text font-weight-light">geo</span>
+            </a>
+
+            <div class="sidebar">
+
+                <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+                    <div class="image">
+                        <img src="dist/img/user.png" class="img-circle elevation-2" alt="User Image" width="64"
+                             height="64">
+                    </div>
+                    <div class="info">
+                        <a id="userName" class="d-block"
+                           onclick="loadComponent('components/dashboards/admin/admindashboard')">
+                            Anonym</a>
+                    </div>
+                </div>
+                <nav class="mt-2">
+
+                    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" data-enable-remember="true"
+                        role="menu" data-accordion="false">
+
+                        <li class="nav-header" >Users management</li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fas fa-users"></i>
+                                <p>
+                                    USERS
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a class="nav-link" onclick="loadComponent(usersList)">
+
+                                        <i class="fa fa-list nav-icon"></i>
+                                        <p>List Users</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item ">
+                                    <a class="nav-link" onclick="loadComponent(registerFragments)">
+                                        <i class="fa fa-plus-circle nav-icon"></i>
+                                        <p>Add User</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-header ">GESTION</li>
+
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fas 	fas fa-car-side"></i>
+                                <p>
+                                    VÉHICULES
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fas fa-bomb"></i>
+                                <p>
+                                    l' ARMEMENTS
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a class="nav-link " onclick="loadComponent(armList)">
+                                        <i class="fa fa-list nav-icon"></i>
+                                        <p>List des armes</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item  ">
+                                    <a class="nav-link" onclick="loadComponent(addArm)">
+                                        <i class="fa fa-plus-circle nav-icon"></i>
+                                        <p>Ajouter une arme</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fas fa-fax"></i>
+                                <p>
+                                    MATÉRIEL TÉLÉCOM
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a class="nav-link" onclick="loadComponent(materielList)">
+                                        <i class="fa fa-list nav-icon"></i>
+                                        <p>List des Matériels</p>
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </li>
+
+
+
+                        <li class="nav-header">Territorial organization</li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fas fa-building"></i>
+                                <p>
+                                    DÉPARTEMENTS
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+
+                        <li class="nav-header">Activités douanier</li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fas fa-map-marked-alt"></i>
+                                <p>
+                                    OPÉRATIONS
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a class="nav-link" onclick="loadComponent(liveOp)">
+                                        <i class="fa fa-globe nav-icon"></i>
+                                        <p>Opérations en direct</p>
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fas fa-map"></i>
+                                <p>
+                                    CARTOGRAPHIE
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a class="nav-link" onclick="loadComponent(findInMap)">
+                                        <i class="fas fa-search-location nav-icon"></i>
+                                        <p>Rechercher sur la carte</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fas fa-chart-area"></i>
+                                <p>
+                                    STATISTIQUE
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <!--<ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a class="nav-link" onclick="loadComponent(stateDouane)">
+                                        <i class="fa fa-list nav-icon"></i>
+                                        <p>Statistiques des graphiques</p>
+                                    </a>
+                                </li>
+                            </ul>-->
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fas fa-balance-scale"></i>
+                                <p>
+                                    Prévention et lutte contre les bandes
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+
+        var _user;
+
+
+    </script>
+
+    <div class="content-wrapper">
+        <section class="content" id="indexContentPlaceholder">
+            <div id="admindashboard"></div>
+
+            <div class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h3 class="m-0">Rechercher sur la carte</h3>
+                        </div><!-- /.col -->
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="#"></a>Rechercher</li>
+                                <li class="breadcrumb-item active">Cartographie</li>
+                            </ol>
+                        </div><!-- /.col -->
+                    </div><!-- /.row -->
+                </div><!-- /.container-fluid -->
+            </div>
+            <!-- /.content-header -->
+
+
+            <section class="content">
+
+                <div class="container-fluid">
+                    <form id="search-userVo">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6>Filtres:</h6>
+                                <div class="row">
+                                    <div class="col-md-4 input-group input-group-sm py-1">
+                                        <select id="regionDropdown" name="regionId" class="form-control"
+                                                onchange="populateDivisions()">
+                                            <option ></option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 input-group input-group-sm py-1">
+                                        <select id="divisionId" name="divisionId" class="form-control"
+                                                onchange="populateBrigades()">
+                                            <option value="" disabled selected>Please select</option>
+                                            <!-- Division options will be populated dynamically using JavaScript -->
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 input-group input-group-sm py-1">
+                                        <select id="brigadeId" name="brigadeId" class="form-control">
+                                            <option value="" disabled selected>Please select</option>
+                                            <!-- BrigadeDto options will be populated dynamically using JavaScript -->
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div
+                                            class="col-md-12 form-group form-group-sm py-1 "
+                                            style="margin-bottom: 0 !important"
+                                    >
+                                        <div class="input-group input-group-sm">
+                                            <input
+                                                    id="keyword"
+                                                    value=""
+                                                    type="search"
+                                                    class="form-control"
+                                                    placeholder="Rechercher par Username"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between mt-1">
+                                    <button type="button" class="btn btn-sm btn-dark">
+                                        <i class="fa fa-sm fa-undo"></i> Réinitialiser
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-dark" onclick="performSearch()">
+                                        <i class="fa fa-sm fa-search"></i> Rechercher
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="map" style="width: 100%;height: 700px;"></div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header" style="border-bottom: none">
+                                    <h3 class="card-title mt-2"></h3>
+                                </div>
+                                <!-- /.card-header -->
+                                <div class="card-body table-responsive">
+                                    <table id="tb_search"
+                                           class="table table-hover"
+                                    >
+                                        <thead>
+                                        <tr>
+                                            <th>OSM ID</th>
+                                            <th>Name</th>
+                                            <th>Admin Level</th>
+                                            <th>Water</th>
+                                            <th>Waterway</th>
+                                            <th>Ref</th>
+                                            <th>Tags</th>
+                                            <th>Way</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="tbody">
+                                        <tr>
+                                            <td>OSM</td>
+                                            <td>Name</td>
+                                            <td>Admin</td>
+                                            <td>Water</td>
+                                            <td>Waterway</td>
+                                            <td>Ref</td>
+                                            <td>Tags</td>
+                                            <td>Way</td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!-- /.card-body -->
+                                <div class="card-footer clearfix d-flex justify-content-center">
+                                    <ul class="pagination pagination-sm m-0">
+                                        <li class="page-item">
+                                            <a class="page-link" href="#">&laquo;</a>
+                                        </li>
+                                        <li class="page-item"><a class="page-link" href="#">1</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="#">&raquo;</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <!-- /.card -->
+
+                            <!-- /.card -->
+                        </div>
+                        <!-- /.col -->
+                    </div>
+                    <!-- /.row -->
+                </div>
+                <!-- /.container-fluid -->
+            </section>
+            <script src=""></script>
+            <script>
+
+                var loadSearch;
+            </script>
+
+            <script src="cdn/leaflet.js"></script>
+
+            <script src="./coc9/cdn/easy-button.js"></script>
+            <script src="./coc9/cdn/leaflet/leaflet.loader.js "></script>
+
+            //
+            <script src="./coc9/js/config.js"></script>
+
+            <script src="./coc9/js/map/ORG.js"></script>
+            <script src="./coc9/js/map/marker.js"></script>
+            <script src="./coc9/js/map/ORGBrahim.js"></script>
+            <script src="./coc9/js/map/initMap.js"></script>
+
+            <script src="./coc9/js/butons.js"></script>
+
+            <script src="js/map/marker.js"></script>
+            <script src="js/map/osmSearch.js"></script>
+
+
+
+        </section>
+    </div>
+
+    <!-- Main Sidebar Container -->
+    <!--    <div id="footer" th:replace="~{components/footer}"></div>-->
+
+    <!-- Control Sidebar -->
+    <aside class="control-sidebar control-sidebar-dark">
+        <!-- Control sidebar content goes here -->
+    </aside>
+    <!-- /.control-sidebar -->
+</div>
+<!-- ./coc9/wrapper -->
+</div>
+</body>
+<!-- jQuery -->
+<script src="./coc9/plugins/jquery/jquery.min.js"></script>
+<!-- jQuery UI 1.11.4 -->
+
+<script src="./coc9/js/map/ORG.js"></script>
+<script src="./coc9/js/map/ORGBrahim.js"></script>
+<script src="./coc9/js/main.js"></script>
+<script src="./coc9/js/util.js"></script>
+<script src="js/ui/toast.js"></script>
+
+<script src="/js/lib.js"></script>
+
+<script src="js/bootsrapmodel.js"></script>
+<script>
+
+    var sidebar
+
+
+    $(document).ready(function () {
+
+        //  initSidebare();
+
+    });
+
+    // loadContent('/map/insertBrigadeLocation')
+
+</script>
+
+
+<script src="./coc9/plugins/jquery-ui/jquery-ui.min.js"></script>
+<!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
+
+<!-- Bootstrap 4 -->
+<script src="./coc9/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- ChartJS -->
+<script src="./coc9/plugins/chart.js/Chart.min.js"></script>
+<!-- Sparkline -->
+<script src="./coc9/plugins/sparklines/sparkline.js"></script>
+<!-- JQVMap -->
+<script src="./coc9/plugins/jqvmap/jquery.vmap.min.js"></script>
+<script src="./coc9/plugins/jqvmap/maps/jquery.vmap.usa.js"></script>
+<!-- jQuery Knob Chart -->
+<script src="./coc9/plugins/jquery-knob/jquery.knob.min.js"></script>
+<!--    To implement the Pace loading-->
+<script src="./coc9/plugins/pace-progress/pace.js"></script>
+
+<!-- daterangepicker -->
+<script src="./coc9/plugins/moment/moment.min.js"></script>
+<script src="./coc9/plugins/daterangepicker/daterangepicker.js"></script>
+<!-- Tempusdominus Bootstrap 4 -->
+<script src="./coc9/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+<!-- Summernote -->
+<script src="./coc9/plugins/summernote/summernote-bs4.min.js"></script>
+<!-- overlayScrollbars -->
+<script src="./coc9/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
+<script src='cdn/leaflet.js'></script>
+<script src="./coc9/cdn/leaflet/leaflet.loader.js "></script>
+<script src='cdn/proj4/2-10/proj4.js'></script>
+<script src='cdn/proj4leaflet/1.0.2/proj4leaflet.min.js'></script>
+<script src="js/map/marker.js"></script>
+<script src="js/operation.js"></script>
+<!-- AdminLTE App &ndash;&gt;-->
+<script src="./coc9/dist/js/adminlte.js"></script>
+<script src="./coc9/cdn/easy-button.js"></script>
+
+
+
+</html>

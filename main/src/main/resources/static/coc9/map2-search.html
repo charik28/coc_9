@@ -1,0 +1,182 @@
+
+<!--
+/**
+*
+*@project DGD_GEO
+*@Author Abdessamie Charik
+*/
+-->
+
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Rechercher sur la carte</h1>
+            </div><!-- /.col -->
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#"></a>Rechercher</li>
+                    <li class="breadcrumb-item active">Cartographie</li>
+                </ol>
+            </div><!-- /.col -->
+        </div><!-- /.row -->
+    </div><!-- /.container-fluid -->
+</div>
+<!-- /.content-header -->
+
+
+<section class="content">
+
+    <div class="container-fluid">
+        <form id="search-userVo">
+            <div class="card">
+                <div class="card-body">
+                    <h6>Filtres:</h6>
+                    <div class="row">
+                        <div class="col-md-4 input-group input-group-sm py-1">
+                            <select id="regionDropdown" name="regionId" class="form-control" onchange="populateDivisions()">
+                                <option th:each="regionVo : ${regionVos}" th:value="${regionVo.id}" th:text="${regionVo.name}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 input-group input-group-sm py-1">
+                            <select id="divisionId" name="divisionId" class="form-control" onchange="populateBrigades()">
+                                <option value="" disabled selected>Please select</option>
+                                <!-- Division options will be populated dynamically using JavaScript -->
+                            </select>
+                        </div>
+                        <div class="col-md-4 input-group input-group-sm py-1">
+                            <select id="brigadeId" name="brigadeId" class="form-control">
+                                <option value="" disabled selected>Please select</option>
+                                <!-- BrigadeDto options will be populated dynamically using JavaScript -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div
+                                class="col-md-12 form-group form-group-sm py-1 "
+                                style="margin-bottom: 0 !important"
+                        >
+                            <div class="input-group input-group-sm">
+                                <input
+                                        id="keyword"
+                                        value="alger%"
+                                        type="search"
+                                        class="form-control"
+                                        placeholder="Rechercher par Username"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-1">
+                        <button type="button" class="btn btn-sm btn-dark">
+                            <i class="fa fa-sm fa-undo"></i> Réinitialiser
+                        </button>
+                        <button type="button" class="btn btn-sm btn-dark" onclick="performSearch()">
+                            <i class="fa fa-sm fa-search"></i> Rechercher
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <div id="map" style="width: 100%;height: 700px;"></div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header" style="border-bottom: none">
+                        <h3 class="card-title mt-2"></h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body table-responsive">
+                        <table id="tb_search"
+                               class="table table-hover"
+                        >
+                            <thead>
+                            <tr>
+                                <th>OSM ID</th>
+                                <th>Name</th>
+                                <th>Admin Level</th>
+                                <th>Water</th>
+                                <th>Waterway</th>
+                                <th>Ref</th>
+                                <th>Tags</th>
+                                <th>Way</th>
+                            </tr>
+                            </thead>
+                            <tbody id="tbody">
+                            <tr>
+                                <td>OSM</td>
+                                <td>Name</td>
+                                <td>Admin</td>
+                                <td>Water</td>
+                                <td>Waterway</td>
+                                <td>Ref</td>
+                                <td>Tags</td>
+                                <td>Way</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- /.card-body -->
+                    <div class="card-footer clearfix d-flex justify-content-center">
+                        <ul class="pagination pagination-sm m-0">
+                            <li class="page-item">
+                                <a class="page-link" href="#">&laquo;</a>
+                            </li>
+                            <li class="page-item"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">&raquo;</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- /.card -->
+
+                <!-- /.card -->
+            </div>
+            <!-- /.col -->
+        </div>
+        <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+</section>
+
+<script>
+
+
+    // Example usage
+    async function loadSearchScripts() {
+        try {
+            //  await importScript('cdn/jquery-3.6.0.min.js');
+            //await importScript('cdn/bootstrap.min.js');
+            await importScript('cdn/leaflet.js');
+
+            await importScript('./cdn/easy-button.js');
+            await importScript('./cdn/leaflet/leaflet.loader.js ');
+
+            // await importScript('js/config.js');
+            await importScript('js/map/initMap.js');
+
+            await importScript('./js/butons.js', true); // Assuming you want this script to be loaded asynchronously
+
+            await importScript('js/map/marker.js');
+            await importScript('js/map/osmSearch.js');
+            loadSearch=true;
+        } catch (error) {
+            console.error('Error loading scripts:', error);
+        }
+    }
+
+    if(!loadSearch)
+        loadSearchScripts();
+    else {
+        initMap();
+    }
+
+
+</script>
+
+
