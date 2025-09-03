@@ -1,7 +1,7 @@
 
 function initjsGridAdherents(){
 
-  console.debug('initing jsGridAdherents::')
+  console.debug('initing jsGrid::')
   $("#jsGridAdherents").jsGrid({
   width: "95%",
   height: "400px",
@@ -52,7 +52,7 @@ function initjsGridAdherents(){
 });
 
 }
-initjsGridAdherents();
+//initjsGridAdherents();
 
 
 

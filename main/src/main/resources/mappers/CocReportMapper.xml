@@ -40,8 +40,7 @@
         FROM alpassint.tb_coc_brq
     </select>
     <select id="findAllReports" resultType="dz.coc9.service.dtococ.CocReportDto">
-
-        /** selectChngList */
+        /** todo selectChngList */
         SELECT
         'false' AS chkSel,
         B.RPRT_REF_NO,
