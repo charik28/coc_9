@@ -1,0 +1,76 @@
+<!--
+/**
+*
+*@project DGD_GEO
+*@Author Abdessamie Charik
+*/
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>View OSM GeoJSON</title>
+
+
+
+    <link rel="stylesheet" href="cdn/leaflet/leaflet.css" />
+    <link rel="stylesheet" href="cdn/bootstrap.min.css">
+
+    <style>
+
+        input {
+
+            background-color: #45b6fe;
+            border: 1px solid #0e2433;
+        }
+
+        #map {
+            width: 80%;
+            height: 500px; /* Subtract close button height */
+        }
+    </style>
+</head>
+<body>
+<div class="form-group">
+    <label for="localisation">Localisation:</label>
+    <input type="text" class="form-control" id="localisation" name="localisation">
+
+    <label for="wilayaSelect"  class="form-control">Select a Wilaya:</label>
+    <select id="wilayaSelect"  class="form-control" onclick="getCommunesByWilaya()">
+        <option value="">-- Select Wilaya --</option>
+    </select>
+
+    <select id="comunsSelect"  class="form-control">
+        <option value="">-- Select Comun --</option>
+    </select>
+    <input type="button" value="ViewOnMap" onclick="viewOnMap()"/>
+    <input type="text" class="form-control" id="latitude" name="latitude">
+    <input type="text" class="form-control" id="longitude" name="longitude">
+</div>
+
+<div class="nav-container">
+    <button type="button" id="btn3" onclick="showHideMap()" >Afficher la cate : </button>
+    <span>
+        <!-- Map container -->
+    <div id="map-container">
+        <div id="map" ></div>
+    </div>
+    </span>
+</div>
+</body>
+
+
+
+<script src="cdn/jquery-3.6.0.min.js"></script>
+<script src="cdn/bootstrap.min.js"></script>
+<script src="cdn/leaflet.js"></script>
+<script src="js/bootsrapmodel.js" ></script>
+<!--<script src="js/config.js"></script>-->
+<script src="js/map/marker.js"></script>
+<script src="js/map/initMap.js"></script>
+
+<script src="js/map/osmSearch.js" ></script>
+
+
+</html>
