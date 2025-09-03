@@ -1,11 +1,9 @@
 package dz.coc9.web.rest;
 
 import dz.coc9.service.CocReportService;
-import dz.coc9.service.dtococ.CocReportDto;
+import dz.coc9.service.dtococ.PrintVo;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 public class CocReportController {
@@ -17,7 +15,12 @@ public class CocReportController {
     }
 
     @GetMapping("/api/coc/reports")
-    public List<CocReportDto> getAllReports() {
+    public PrintVo getAllReports() {
+        return cocReportService.getReports();
+    }
+    @GetMapping("/api/coc/print-test")
+    public PrintVo getAllReportsTest() {
+
         return cocReportService.getReports();
     }
 }

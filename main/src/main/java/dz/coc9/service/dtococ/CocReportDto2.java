@@ -1,13 +1,21 @@
 package dz.coc9.service.dtococ;
 
+import lombok.Data;
+
 import java.time.LocalDateTime;
 
+@Data
 public class CocReportDto2 {
 
 
-        private String reportRefNo; // رقم المرجع
-        private String reportTypeCode; // رمز نوع التقرير
-        private String originCode; // رمز الأصل
+        private String t1ReportNature; // special / accidens /
+
+        private String orgnNm;
+        private String t2InfNature;
+        private String t3Emplacement;
+        private String t4Dttm;
+
+
         private String reportInfoNature; // طبيعة المعلومات
         private LocalDateTime reportInfoDateTime; // تاريخ ووقت المعلومات
         private String reportInfoPlace; // مكان المعلومات

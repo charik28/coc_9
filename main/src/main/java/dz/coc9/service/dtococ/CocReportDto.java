@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.io.Serial;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,15 +14,18 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CocReportDto  {
-    @Serial
-    private static final long serialVersionUID = 1L;
+//    @Serial
+//    private static final long serialVersionUID = 1L;
+
+
+
 
     private boolean selected;
 
     // Report identification
-    private String reportRefNo;
+//    private String reportRefNo;
     private String reportTypeCode;
-    private String organizationCode;
+    private String orgnCode;
     private String operationRefNo;
 
     // Report information
@@ -36,15 +38,15 @@ public class CocReportDto  {
     private String reportInfoLegalText;
 
     // Location
-    private BigDecimal reportLatitude;
-    private BigDecimal reportLongitude;
+//    private BigDecimal reportLatitude;
+//    private BigDecimal reportLongitude;
 
     // Financials
     private String currencyCode;
     private BigDecimal totalCargoValue;
 
     // Declaration
-    private String declarationNo;
+    /*private String declarationNo;
 
     // Validation & status
     private String validationStatus;
@@ -56,20 +58,15 @@ public class CocReportDto  {
     private String useFlag;
     private String deleteFlag;
     private String changeFlag;
-
+*/
     // Audit info
-    private String firstRegistrarId;
+    /*private String firstRegistrarId;
     private String firstRegisterDateTime;
     private String lastChangerId;
     private String lastChangeDateTime;
-    private String changeReason;
+    private String changeReason;*/
 
-    // Search filters
-    private String searchReportRefNo;
-    private String searchValidationStatus;
-    private String searchReportInfoNature;
-    private String searchOrganizationCode;
-    private String searchReportTypeCode;
+
     /** Additional Lists and Objects */
 
     /** List of cargo-related information */
@@ -88,6 +85,6 @@ public class CocReportDto  {
 
 
     // Additional info
-    private String resultName;
-    private List<ComCstmOrgnVo> organizationList = new ArrayList<>();
+//    private String resultName;
+//    private List<ComCstmOrgnVo> orgnList = new ArrayList<>();
 }

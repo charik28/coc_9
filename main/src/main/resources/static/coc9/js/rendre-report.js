@@ -38,36 +38,63 @@ const printVo = {
   ]
 };
 
-function render(printVoPram) {
-  if(!printVoPram)
-    printVoPram = printVo;
+function render(cocReport2) {
+  if(!cocReport2)
+    cocReport2 = printVo;
 
   const container = document.getElementById("report-container");
   const viewMode = document.getElementById("viewMode").value;
   container.innerHTML = ""; // reset
 
-  document.getElementById("report-date").textContent = `التاريخ: ${printVoPram.dt || "-"}`;
+  container.innerHTML +=
+    "<div class='container'>\n" +
+    "        <h1>الجمهورية الجزائرية الديمقراطية الشعبية</h1>\n" +
+    "        <h2>وزارة المالية</h2>\n" +
+    "        <h2>المديرية العامة للجمارك</h2>\n" +
+    "        <h2>مديرية الأمن والنشاط العملياتي للفرق</h2>\n" +
+    "        <h2>كشف الاستعلامات اليومي</h2>\n" +
+    "        <h2>الجزائر، في: 04 سبتمبر 2025</h2>\n" +
+    "        \n" +
+    "        <div class='section'>\n" +
+    "            <div class='section-title'>السيد اللواء، المدير العام للجمارك</div>\n" +
+    "            <div>كشف الاستعلامات اليومي</div>\n" +
+    "            <div>يومي 03 و04 سبتمبر 2025</div>\n" +
+    "        </div>\n" +
+    "    </div>" +
+    ""
+  document.getElementById("report-date").textContent = `التاريخ: ${cocReport2.dt || "-"}`;
 
   // SPS
-  if (printVoPram.brqSpsList?.length) {
-    renderSection(container, "I – الحجوزات النوعية", printVoPram.brqSpsList, "rprt", viewMode);
+  if (cocReport2.brqSpsList?.length) {
+    renderSection(container, "I – الحجوزات النوعية", cocReport2.brqSpsList, "rprt", viewMode);
   }
 
   // OTS
-  if (printVoPram.brqOtsList?.length) {
-    renderSection(container, "II – الحجوزات الأخرى", printVoPram.brqOtsList, "rprt", viewMode);
+  if (cocReport2.brqOtsList?.length) {
+    renderSection(container, "II – الحجوزات الأخرى", cocReport2.brqOtsList, "rprt", viewMode);
   }
 
   // INC
-  if (printVoPram.brqIncList?.length) {
-    renderSection(container, "III – الأحداث", printVoPram.brqIncList, "inc", viewMode);
+  if (cocReport2.brqIncList?.length) {
+    renderSection(container, "III – الأحداث", cocReport2.brqIncList, "inc", viewMode);
   }
 }
 
 function renderSection(container, title, list, type, viewMode) {
+  const t1Orgn = 'المصلحة المعاينة للمخالفة:'
+   const orgnNm ='الفرقة المتعددة المهام للجمارك بالبويرة بالتنسيق مع مصلحة الوقاية وأمن الجيش بالبويرة.'
+
+  const t2Nature='طبيعة المخالفة: ';
+
   const section = document.createElement("div");
   section.className = "report-section";
-  section.innerHTML = `<h2>${title}</h2>`;
+  section.innerHTML = ` <h2>${title}</h2>
+            <h2> <b>${t1Orgn} </b>
+            ${orgnNm}
+            </h2>
+            <h2> <b>${t2Nature} </b></h2>
+`
+  ;
 
   if (viewMode === "table") {
     const table = document.createElement("table");
@@ -81,7 +108,7 @@ function renderSection(container, title, list, type, viewMode) {
             <tr>
               <td>${item.rprtRefNo}</td>
               <td>${item.rprtTpCd}</td>
-              <td>${item.orgnCd}</td>
+              <td>${item.orgnNm}</td>
               <td>${item.rprtInfNtr}</td>
               <td>${item.rprtInfDttm}</td>
               <td>${item.rprtInfPlc}</td>

@@ -6,16 +6,13 @@
   }
 
   #report-parent-container {
-    /* rtl ::*/
-    direction: rtl;
-    text-align: right;
-
-
     width: 210mm; /* A4 width */
     height: 297mm; /* A4 height */
     border: 1px solid #000; /* Outer border */
     padding: 10mm; /* Padding inside the container */
     box-sizing: border-box; /* Include padding in width/height */
+    direction: rtl !important; /* Force RTL direction */
+    text-align: right !important; /* Force text alignment */
   }
 
   #report-container {
@@ -24,6 +21,8 @@
     box-sizing: border-box; /* Include padding in width/height */
     height: calc(100% - 20mm); /* Adjust height to fit within parent */
     overflow: auto; /* Allow scrolling if content overflows */
+    direction: rtl !important; /* Force RTL direction */
+    text-align: right !important; /* Force text alignment */
   }
 }
 
@@ -33,6 +32,8 @@
   max-width: 210mm;
   margin: 0 auto; /* Center the container */
   border: 1px solid #000; /* Outer border */
+  direction: rtl; /* Ensure RTL direction */
+  text-align: right; /* Ensure text alignment */
 }
 
 #report-container {
@@ -40,4 +41,28 @@
   padding: 20px; /* Padding inside the report */
   box-sizing: border-box; /* Include padding in width/height */
   height: auto; /* Allow height to expand */
+  direction: rtl; /* Ensure RTL direction */
+  text-align: right; /* Ensure text alignment */
 }
+#report-parent-container h1 {
+  text-align: center;
+  margin: 0;
+}
+
+#report-parent-container h2 {
+  text-align: right;
+  margin: 10px 0;
+}
+
+#report-parent-container .section {
+  margin-top: 20px;
+}
+
+#report-parent-container .section-title {
+  font-weight: bold;
+  border-bottom: 2px solid #fff;
+  padding-bottom: 5px;
+  margin-bottom: 10px;
+}
+
+
