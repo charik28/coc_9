@@ -21,6 +21,6 @@ public class CocReportController {
     @GetMapping("/api/coc/print-test")
     public PrintVo getAllReportsTest() {
 
-        return cocReportService.getReports();
+        return cocReportService.getReportsTest();
     }
 }

@@ -38,9 +38,9 @@ public class PageController {
     public ModelAndView loadCocHome() {
         return new ModelAndView("forward:/coc9/index.html");
     }
-    @GetMapping("/reports")
+    @GetMapping("/coc")
     public ModelAndView loadCocReport() {
-        return new ModelAndView("forward:/coc9/reports/index.html");
+        return new ModelAndView("forward:/coc9/reports/coc-main.html");
     }
 
     @GetMapping({"/generated-home.html","/generated"})

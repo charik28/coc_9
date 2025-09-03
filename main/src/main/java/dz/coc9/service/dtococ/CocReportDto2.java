@@ -16,7 +16,7 @@ public class CocReportDto2 {
         private String t4Emplacement;
         private String t4Dttm;
         private String t5TypeMarchandise;
-        private String t6ValueMarchandise;
+        private String t6ValueMarchandise="لم تحدد. ";
         private String t6TransportMarchandis;
 
         @JsonIgnore
