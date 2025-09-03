@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  Mapper : demande d'informations sur les opérateurs à risque (Traitement des approval) !== 위험업체 자료요청관리 결재처리  Mapper ==!
+-->
+<mapper namespace="alpass.ipt.rsm.basc.mapper.RsmRskCoAprvPrcsMapper">
+
+    <!--
+      Traitement après l'approbation !== 결재 후처리 (위험업체데이터신청 처리상태 코드 변경) ==!
+    -->
+    <update id="processAprvAfJob" parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoAprvPrcsVo">
+        /* processAprvAfJob */
+        UPDATE TB_RSMI_RSK_CO_DTA_RQST
+        SET
+              PRCS_STTS_CD = #{prcsSttsCd}            /* Code De Statut De Traitement !== 처리상태코드 ==! */
+            , APRV_ID = #{aprvId}                     /* ID d'approbation  !== 결재ID ==! */
+            , LAST_CHPR_ID = #{lastChprId}            /* ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP            /* Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE RQST_NO = #{rqstNo}                     /* N° De Demande !== 신청번호 ==! */
+
+    </update>
+
+    <!--
+      Modifier le Motif de rejet !== 반려사유 수정 ==!
+    -->
+    <update id="updateRsckCoDtaRqstRtrnRsnCn" parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstRgsrVo">
+        /* updateRsckCoDtaRqstRtrnRsnCn */
+        UPDATE TB_RSMI_RSK_CO_DTA_RQST
+        SET
+            RTRN_RSN_CN = #{rtrnRsnCn}              /* Motif De Rejet !== 반려사유내용 ==! */
+          , LAST_CHPR_ID = #{lastChprId}            /* ID du modificateur final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM = SYSTIMESTAMP            /* Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE RQST_NO = #{rqstNo}                   /* N° De Demande !== 신청번호 ==! */
+    </update>
+
+</mapper>

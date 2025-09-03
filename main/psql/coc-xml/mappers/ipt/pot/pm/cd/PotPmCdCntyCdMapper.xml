@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.cd.mapper.PotPmCdCntyCdMapper">
+
+  <!--
+    Consulter la liste des codes pays !==국가코드 목록를 조회한다==!
+  -->
+  <select id="selectCntyCdList" resultType="alpass.ipt.pot.pm.cd.vo.PotPmCdCntyCdVo">
+    /** selectCntyCdList */
+    <include refid="pagination.header" />
+    SELECT A.CNTY_CD,
+           (SELECT B.CNTY_NM FROM TB_COM_CNTY_CD_LANG B WHERE B.CNTY_CD = A.CNTY_CD AND B.LANG_CD = #{langCd}) AS CNTY_NM,
+           A.DGT3_CNTY_CD,
+           A.DGT3_NUM_CNTY_CD,
+           A.CNTY_ENG_ABRT_NM,
+           A.PHTO_IMGE_CN,
+           A.FRST_REGST_ID,
+           TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM,
+           A.LAST_CHPR_ID,
+           TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY') AS LAST_CHG_DTTM
+    FROM TB_COM_CNTY_CD A
+    WHERE A.DEL_YN = 'N'
+    <if test="searCntyCd != null and searCntyCd != ''">
+      AND A.CNTY_CD LIKE '%' || #{searCntyCd} || '%'
+    </if>
+    <if test="searDgt3CntyCd != null and searDgt3CntyCd != ''">
+      AND A.DGT3_CNTY_CD LIKE '%' || #{searDgt3CntyCd} || '%'
+    </if>
+    <if test="searCntyNm != null and searCntyNm != ''">
+     AND A.CNTY_CD IN (SELECT B.CNTY_CD
+                       FROM TB_COM_CNTY_CD_LANG B
+                       WHERE UPPER(B.CNTY_NM) LIKE '%' || UPPER(#{searCntyNm}) || '%'
+                       AND B.DEL_YN = 'N')
+    </if>
+    ORDER BY A.CNTY_CD
+    <include refid="pagination.footer" />
+  </select>
+
+  <!--
+    Consulter des noms de codes pays par langue !==언어별 국가코드명 조회한다==!
+  -->
+  <select id="selectCntyCdLangList" resultType="alpass.ipt.pot.pm.cd.vo.PotPmCdCntyCdLangVo">
+    /** selectCntyCdLangList */
+    SELECT B.CNTY_CD,
+           A.CD_VDVAL AS LANG_CD,
+           B.CNTY_NM AS LANG_CN
+    FROM TB_COM_COMN_CD_D A,
+         TB_COM_CNTY_CD_LANG B
+    WHERE A.COMN_CD = 'COM_0057'
+      AND B.DEL_YN(+) = 'N'
+      AND B.CNTY_CD(+) = #{cntyCd}
+      AND A.CD_VDVAL = B.LANG_CD(+)
+    ORDER BY TO_NUMBER(A.SORT_ORDR) ASC
+  </select>
+
+  <!--
+    Consulter des codes pays !==국가코드를 조회한다==!
+  -->
+  <select id="selectCntyCd" resultType="alpass.ipt.pot.pm.cd.vo.PotPmCdCntyCdVo">
+    /** selectCntyCd */
+    SELECT A.CNTY_CD,
+           (SELECT B.CNTY_NM FROM TB_COM_CNTY_CD_LANG B WHERE B.CNTY_CD = A.CNTY_CD AND B.LANG_CD = #{langCd}) AS CNTY_NM,
+           A.DGT3_CNTY_CD,
+           A.DGT3_NUM_CNTY_CD,
+           A.CNTY_ENG_ABRT_NM,
+           A.FRST_REGST_ID,
+           TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM,
+           A.LAST_CHPR_ID,
+           TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY') AS LAST_CHG_DTTM
+    FROM TB_COM_CNTY_CD A
+    WHERE A.DEL_YN = 'N'
+    AND A.CNTY_CD = #{cntyCd}
+  </select>
+
+  <!--
+     Consulter l'enregistrement de codes pays O/N !==국가코드 등록 여부를 조회한다==!
+  -->
+  <select id="selectCntyCdRgstYn" resultType="string">
+    /** selectCntyCdRgstYn */
+    SELECT 1
+    FROM TB_COM_CNTY_CD
+    WHERE CNTY_CD = #{cntyCd}
+    AND DEL_YN = 'N'
+  </select>
+
+  <!--
+    Enregistrer un code pays !==국가코드를 등록한다==!
+  -->
+  <insert id="upsertCntyCd">
+    /** upsertCntyCd */
+      with upsert as
+      (
+          UPDATE	TB_COM_CNTY_CD SET
+                  LAST_CHPR_ID = #{lastChprId},
+                  LAST_CHG_DTTM = SYSTIMESTAMP,
+                  DEL_YN = 'N',
+                  DGT3_CNTY_CD = #{dgt3CntyCd},
+                  DGT3_NUM_CNTY_CD = #{dgt3NumCntyCd},
+                  CNTY_ENG_ABRT_NM = #{cntyEngAbrtNm},
+                  PHTO_IMGE_CN = #{phtoImgeCn:BLOB}
+          WHERE DEL_YN = 'Y' AND CNTY_CD = #{cntyCd}
+          RETURNING *
+      )
+      INSERT INTO TB_COM_CNTY_CD
+      (
+                CNTY_CD,
+                DGT3_CNTY_CD,
+                DGT3_NUM_CNTY_CD,
+                CNTY_ENG_ABRT_NM,
+                PHTO_IMGE_CN,
+                DEL_YN,
+                FRST_REGST_ID,
+                FRST_RGSR_DTTM,
+                LAST_CHPR_ID,
+                LAST_CHG_DTTM
+      )
+      select
+              #{cntyCd},
+              #{dgt3CntyCd},
+              #{dgt3NumCntyCd},
+              #{cntyEngAbrtNm},
+              #{phtoImgeCn:BLOB},
+              #{delYn},
+              #{frstRegstId},
+              SYSTIMESTAMP,
+              #{lastChprId},
+              SYSTIMESTAMP
+      WHERE NOT exists(select * from upsert)
+  </insert>
+
+  <!--
+    Modifier un code pays !==국가코드를 수정한다==!
+  -->
+  <update id="updateCntyCd">
+    /** updateCntyCd */
+    UPDATE TB_COM_CNTY_CD
+    SET LAST_CHPR_ID = #{lastChprId},
+        LAST_CHG_DTTM = SYSTIMESTAMP,
+        DGT3_CNTY_CD = #{dgt3CntyCd},
+        DGT3_NUM_CNTY_CD = #{dgt3NumCntyCd},
+        CNTY_ENG_ABRT_NM = #{cntyEngAbrtNm},
+        PHTO_IMGE_CN = #{phtoImgeCn:BLOB}
+    WHERE CNTY_CD = #{cntyCd}
+  </update>
+
+  <!--
+    Enregistrer un nom de code pays !==국가코드명을 등록한다==!
+  -->
+  <insert id="upsertCntyCdLang">
+    /** upsertCntyCdLang */
+      with upsert as
+      (
+          UPDATE	TB_COM_CNTY_CD_LANG SET
+                  CNTY_NM = #{langCn},
+                  DEL_YN = 'N',
+                  LAST_CHPR_ID = #{lastChprId},
+                  LAST_CHG_DTTM = SYSTIMESTAMP
+          WHERE DEL_YN = 'Y'
+                  AND CNTY_CD = #{cntyCd}
+                  AND LANG_CD = #{langCd}
+          RETURNING *
+      )
+      INSERT INTO TB_COM_CNTY_CD_LANG
+      (
+              CNTY_CD,
+              LANG_CD,
+              CNTY_NM,
+              DEL_YN,
+              FRST_REGST_ID,
+              FRST_RGSR_DTTM,
+              LAST_CHPR_ID,
+              LAST_CHG_DTTM
+      )
+      SELECT
+              #{cntyCd},
+              #{langCd},
+              #{langCn},
+              #{delYn},
+              #{frstRegstId},
+              SYSTIMESTAMP,
+              #{lastChprId},
+              SYSTIMESTAMP
+      WHERE NOT exists(select * from upsert)
+  </insert>
+
+  <!--
+    Modifier un nom de code pays !==국가코드명을 수정한다==!
+  -->
+  <update id="updateCntyCdLang">
+    /** updateCntyCdLang */
+    UPDATE TB_COM_CNTY_CD_LANG
+    SET DEL_YN = #{delYn},
+        LAST_CHPR_ID = #{lastChprId},
+        LAST_CHG_DTTM = SYSTIMESTAMP,
+        CNTY_NM = #{langCn}
+    WHERE CNTY_CD = #{cntyCd}
+      AND LANG_CD = #{langCd}
+  </update>
+
+  <!--
+    Supprimer un code pays !==국가코드를 삭제한다==!
+  -->
+  <update id="deleteCntyCd">
+    /** deleteCntyCd */
+    UPDATE TB_COM_CNTY_CD
+    SET DEL_YN = 'Y',
+        LAST_CHPR_ID = #{lastChprId},
+        LAST_CHG_DTTM = SYSTIMESTAMP
+    WHERE CNTY_CD = #{cntyCd}
+  </update>
+
+  <!--
+    Supprimer un nom de code pays !==국가코드명을 삭제한다==!
+  -->
+  <update id="deleteCntyCdLang">
+    /** deleteCntyCdLang */
+    UPDATE TB_COM_CNTY_CD_LANG
+    SET DEL_YN = 'Y',
+        LAST_CHPR_ID = #{lastChprId},
+        LAST_CHG_DTTM = SYSTIMESTAMP
+    WHERE CNTY_CD = #{cntyCd}
+  </update>
+
+</mapper>

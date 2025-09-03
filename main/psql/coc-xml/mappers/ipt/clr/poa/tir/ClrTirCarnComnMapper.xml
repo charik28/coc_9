@@ -1,0 +1,838 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.clr.poa.tir.mapper.ClrTirCarnComnMapper">
+    <select id="selectClrTirCarnComnList"  parameterType ="alpass.ipt.clr.poa.tir.vo.ClrTirCarnComnVo" resultType="alpass.ipt.clr.poa.tir.vo.ClrTirCarnComnVo">
+        /* selectClrTirCarnComnList : Consulter la liste des Carnet TIR !== TIR 목록조회==! */
+        <include refid="pagination.header" />
+        SELECT
+            A.TIR_MGMT_NO,
+            A.TIR_NO,
+            A.CARN_VALD_PRID,
+            A.CARN_PBLS_ITT_NM,
+            A.PBLS_DT,
+            A.PSSR_IDFY_NO,
+            A.PSSR_NM,
+            A.PSSR_POST_NO,
+            A.PSSR_ADDR,
+            A.INTN_ITT_NM,
+            A.DPTR_CNTY_CD,
+            A.DSTN_CNTY_CD,
+            A.CAR_RGSR_NO,
+            A.VHCL_APRE_EVDC_CN,
+            A.RELA_CNTR_NO,
+            A.RELA_CN,
+            A.DPRP_1_CSTM_CD,
+            A.DPRP_2_CSTM_CD,
+            A.DPRP_3_CSTM_CD,
+            A.DPRP_1_CSTM_NM,
+            A.DPRP_2_CSTM_NM,
+            A.DPRP_3_CSTM_NM,
+            A.DPRP_1_CNTY_CD,
+            A.DPRP_2_CNTY_CD,
+            A.DPRP_3_CNTY_CD,
+            A.ARLC_1_CSTM_CD,
+            A.ARLC_1_TRNP_QTY,
+            A.ARLC_2_CSTM_CD,
+            A.ARLC_2_TRNP_QTY,
+            A.ARLC_3_CSTM_CD,
+            A.ARLC_3_TRNP_QTY,
+            A.ARLC_1_CSTM_NM,
+            A.ARLC_2_CSTM_NM,
+            A.ARLC_3_CSTM_NM,
+            A.ARLC_1_CNTY_CD,
+            A.ARLC_2_CNTY_CD,
+            A.ARLC_3_CNTY_CD,
+            A.RQST_CSTM_CD,
+            A.CRTF_ITT_NM,
+            A.SEAL_NO,
+            A.CMDT_TQTY,
+            A.OFUS_CN,
+            A.RGSR_DT,
+            A.PRCS_STTS_CD,
+            A.ATCH_FILE_ID,
+            A.DEL_YN
+        FROM  ALPASSINT.TB_CLRI_TIR_CARN_COMN A,TB_CLRI_TIR_CARN_APRE B
+        WHERE A.DEL_YN ='N'
+        AND A.TIR_MGMT_NO = B.TIR_MGMT_NO(+)
+        AND A.PRCS_STTS_CD != 'K01'
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(rgsrDtFrom)">
+            <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(rgsrDtTo)">
+                AND A.RGSR_DT BETWEEN TO_CHAR(TO_DATE(#{rgsrDtFrom}, 'DD/MM/YYYY'), 'YYYYMMDD')  AND TO_CHAR(TO_DATE(#{rgsrDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            </if>
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(dprp1CstmCd)">
+            AND A.DPRP_1_CSTM_CD = #{dprp1CstmCd}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(arlc1CstmCd)">
+            AND A.ARLC_1_CSTM_CD = #{arlc1CstmCd}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(tirMgmtNo)">
+            AND UPPER(A.TIR_MGMT_NO) LIKE '%' || UPPER(REPLACE(#{tirMgmtNo},'-','')) ||  '%'
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(pssrNm)">
+            AND A.PSSR_NM LIKE '%' || #{pssrNm} ||  '%'
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(tirNo)">
+            AND UPPER(A.TIR_NO) LIKE '%' || UPPER(#{tirNo}) ||  '%'
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(encyCstmCd)">
+            AND B.ENCY_CSTM_CD = #{encyCstmCd}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(deprCstmCd)">
+            AND B.DEPR_CSTM_CD = #{deprCstmCd}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(prcsSttsCd)">
+            <choose>
+                <when test ='prcsSttsCd.equals("P05")'>
+                    AND EXISTS (
+                        SELECT 1 FROM ALPASSINT.TB_CLRI_TIR_CARN_COMN D WHERE A.TIR_MGMT_NO = D.TIR_MGMT_NO AND D.PRCS_STTS_CD = 'P02'
+                        UNION ALL
+                        SELECT 1 FROM ALPASSINT.TB_CLRI_TIR_CARN_COMN D WHERE A.TIR_MGMT_NO = D.TIR_MGMT_NO AND D.PRCS_STTS_CD != 'P02' AND NOT EXISTS (
+                            SELECT 1 FROM  ALPASSINT.TB_CLRI_TIR_CARN_COMN F
+                            WHERE D.TIR_MGMT_NO = F.TIR_MGMT_NO
+                            AND ((NVL(F.ARLC_1_CSTM_CD,'') = '' AND NVL(F.ARLC_2_CSTM_CD,'') = '' AND NVL(F.ARLC_3_CSTM_CD,'') = '')
+                                 OR ( NVL(F.ARLC_2_CSTM_NM,'') != '' AND NVL(F.ARLC_3_CNTY_CD,'') = ''  )
+                                 OR ( NVL(F.ARLC_2_CSTM_NM,'') != '' AND NVL(F.ARLC_3_CSTM_NM,'') != '' )
+                                 OR NVL(F.ARLC_3_CSTM_NM,'') != '')
+                        )
+                    )
+                </when>
+                <otherwise>
+                   AND A.PRCS_STTS_CD = #{prcsSttsCd}
+                </otherwise>
+            </choose>
+        </if>
+        AND CASE WHEN A.PRCS_STTS_CD = 'D01' AND A.RQST_CSTM_CD = #{blngCstmCd} THEN  #{blngCstmCd}
+                 WHEN #{blngCstmCd} IN (A.DPRP_1_CSTM_CD,A.DPRP_2_CSTM_CD,A.DPRP_3_CSTM_CD,A.ARLC_1_CSTM_CD,A.ARLC_2_CSTM_CD,A.ARLC_3_CSTM_CD,B.ENCY_CSTM_CD,B.DEPR_CSTM_CD,A.RQST_CSTM_CD ) THEN #{blngCstmCd}
+                 WHEN A.PRCS_STTS_CD != 'P02' AND ((NVL(A.ARLC_1_CSTM_CD,'') = '' AND NVL(A.ARLC_2_CSTM_CD,'') = '' AND NVL(A.ARLC_3_CSTM_CD,'') = '')
+                    OR ( NVL(A.ARLC_2_CSTM_NM,'') != '' AND NVL(A.ARLC_3_CNTY_CD,'') = ''  )
+                    OR ( NVL(A.ARLC_2_CSTM_NM,'') != '' AND NVL(A.ARLC_3_CSTM_NM,'') != '' )
+                    OR NVL(A.ARLC_3_CSTM_NM,'') != '') THEN  #{blngCstmCd}
+                 ELSE '' END  = #{blngCstmCd}
+        ORDER BY A.RGSR_DT DESC, A.TIR_MGMT_NO DESC
+        <include refid="pagination.footer" />
+    </select>
+
+    <select id="selectClrTirCarnComnDtl" parameterType ="alpass.ipt.clr.poa.tir.vo.ClrTirCarnComnVo" resultType="alpass.ipt.clr.poa.tir.vo.ClrTirCarnComnVo">
+        /* selectClrTirCarnComnDtl : Consulter la détails de Carnet TIR !== TIR 상세조회==! */
+        SELECT
+            A.TIR_MGMT_NO,
+            A.TIR_NO,
+            TO_CHAR(TO_DATE(A.CARN_VALD_PRID, 'YYYYMMDD'), 'DD/MM/YYYY') CARN_VALD_PRID,
+            A.CARN_PBLS_ITT_NM,
+            TO_CHAR(TO_DATE(A.PBLS_DT, 'YYYYMMDD'), 'DD/MM/YYYY') PBLS_DT,
+            A.PSSR_IDFY_NO,
+            A.PSSR_NM,
+            A.PSSR_POST_NO,
+            A.PSSR_ADDR,
+            A.INTN_ITT_NM,
+            A.DPTR_CNTY_CD,
+            A.DSTN_CNTY_CD,
+            A.CAR_RGSR_NO,
+            A.VHCL_APRE_EVDC_CN,
+            A.RELA_CNTR_NO,
+            A.RELA_CN,
+            A.DPRP_1_CSTM_CD,
+            A.DPRP_2_CSTM_CD,
+            A.DPRP_3_CSTM_CD,
+            A.DPRP_1_CSTM_NM,
+            A.DPRP_2_CSTM_NM,
+            A.DPRP_3_CSTM_NM,
+            A.DPRP_1_CNTY_CD,
+            A.DPRP_2_CNTY_CD,
+            A.DPRP_3_CNTY_CD,
+            A.ARLC_1_CSTM_CD,
+            A.ARLC_1_TRNP_QTY,
+            A.ARLC_2_CSTM_CD,
+            A.ARLC_2_TRNP_QTY,
+            A.ARLC_3_CSTM_CD,
+            A.ARLC_3_TRNP_QTY,
+            A.ARLC_1_CSTM_NM,
+            A.ARLC_2_CSTM_NM,
+            A.ARLC_3_CSTM_NM,
+            A.ARLC_1_CNTY_CD,
+            A.ARLC_2_CNTY_CD,
+            A.ARLC_3_CNTY_CD,
+            A.CRTF_ITT_NM,
+            A.SEAL_NO,
+            A.CMDT_TQTY,
+            A.OFUS_CN,
+            TO_CHAR(TO_DATE(A.RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') RGSR_DT,
+            A.PRCS_STTS_CD,
+            A.ATCH_FILE_ID,
+            A.RQST_CSTM_CD,
+            B.DPRP_1_DMGE_CFRM_YN,
+            B.DPRP_1_CSTM_APVR_ID,
+            TO_CHAR(TO_DATE(B.DPRP_1_CSTM_APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') DPRP_1_CSTM_APRE_DT,
+            B.DPRP_1_CSTM_OTHS_DESC,
+            B.DPRP_1_RTRN_RSN_CN,
+            TO_CHAR(TO_DATE(B.DPRP_1_TRNP_TMLM_DT, 'YYYYMMDD'), 'DD/MM/YYYY') DPRP_1_TRNP_TMLM_DT,
+            B.DPRP_1_CSTM_RELA_NO,
+            B.DPRP_1_SEAL_NO,
+            B.DPRP_2_DMGE_CFRM_YN,
+            B.DPRP_2_CSTM_APVR_ID,
+            TO_CHAR(TO_DATE(B.DPRP_2_CSTM_APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') DPRP_2_CSTM_APRE_DT,
+            B.DPRP_2_CSTM_OTHS_DESC,
+            B.DPRP_2_RTRN_RSN_CN,
+            TO_CHAR(TO_DATE(B.DPRP_2_TRNP_TMLM_DT, 'YYYYMMDD'), 'DD/MM/YYYY') DPRP_2_TRNP_TMLM_DT,
+            B.DPRP_2_CSTM_RELA_NO,
+            B.DPRP_2_SEAL_NO,
+            B.DPRP_3_DMGE_CFRM_YN,
+            B.DPRP_3_CSTM_APVR_ID,
+            TO_CHAR(TO_DATE(B.DPRP_3_CSTM_APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') DPRP_3_CSTM_APRE_DT,
+            B.DPRP_3_CSTM_OTHS_DESC,
+            B.DPRP_3_RTRN_RSN_CN,
+            TO_CHAR(TO_DATE(B.DPRP_3_TRNP_TMLM_DT, 'YYYYMMDD'), 'DD/MM/YYYY') DPRP_3_TRNP_TMLM_DT,
+            B.DPRP_3_CSTM_RELA_NO,
+            B.DPRP_3_SEAL_NO,
+            B.ENCY_CSTM_CD,
+            CASE WHEN B.ENCY_CSTM_APVR_ID IS NULL THEN 'Y' ELSE B.ENCY_DMGE_CFRM_YN END ENCY_DMGE_CFRM_YN,
+            B.ENCY_CSTM_APVR_ID,
+            TO_CHAR(TO_DATE(B.ENCY_CSTM_APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') ENCY_CSTM_APRE_DT,
+            B.ENCY_CSTM_OTHS_DESC,
+            B.ENCY_RTRN_RSN_CN,
+            TO_CHAR(TO_DATE(B.ENCY_TRNP_TMLM_DT, 'YYYYMMDD'), 'DD/MM/YYYY') ENCY_TRNP_TMLM_DT,
+            B.ENCY_CSTM_RELA_NO,
+            B.ENCY_CSTM_SEAL_NO,
+            B.DEPR_CSTM_CD,
+            CASE WHEN B.DEPR_CSTM_APVR_ID IS NULL THEN 'Y' ELSE B.DEPR_DMGE_CFRM_YN END DEPR_DMGE_CFRM_YN,
+            B.DEPR_CSTM_APVR_ID,
+            TO_CHAR(TO_DATE(B.DEPR_CSTM_APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY')  DEPR_CSTM_APRE_DT,
+            B.DEPR_CSTM_AFCH_QTY,
+            B.DEPR_CSTM_OTHS_DESC,
+            B.DEPR_TKAC_OPIN_CN,
+            B.DEPR_CSTM_RSEAL_NO,
+            B.ARLC_1_CSTM_CD,
+            CASE WHEN B.ARLC_1_CSTM_APVR_ID IS NULL AND A.ARLC_1_CSTM_CD IS NOT NULL THEN 'Y' ELSE B.ARLC_1_DMGE_CFRM_YN END ARLC_1_DMGE_CFRM_YN,
+            B.ARLC_1_CSTM_APVR_ID,
+            TO_CHAR(TO_DATE(B.ARLC_1_CSTM_APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') ARLC_1_CSTM_APRE_DT,
+            B.ARLC_1_CSTM_AFCH_QTY,
+            B.ARLC_1_CSTM_OTHS_DESC,
+            B.ARLC_1_TKAC_OPIN_CN,
+            B.ARLC_1_CSTM_RSEAL_NO,
+            B.ARLC_2_CSTM_CD,
+            CASE WHEN B.ARLC_2_CSTM_APVR_ID IS NULL AND A.ARLC_2_CSTM_CD IS NOT NULL THEN 'Y' ELSE B.ARLC_2_DMGE_CFRM_YN END ARLC_2_DMGE_CFRM_YN,
+            B.ARLC_2_CSTM_APVR_ID,
+            TO_CHAR(TO_DATE(B.ARLC_2_CSTM_APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') ARLC_2_CSTM_APRE_DT,
+            B.ARLC_2_CSTM_AFCH_QTY,
+            B.ARLC_2_CSTM_OTHS_DESC,
+            B.ARLC_2_TKAC_OPIN_CN,
+            B.ARLC_2_CSTM_RSEAL_NO,
+            B.ARLC_3_CSTM_CD,
+            CASE WHEN B.ARLC_3_CSTM_APVR_ID IS NULL AND A.ARLC_3_CSTM_CD IS NOT NULL THEN 'Y' ELSE B.ARLC_3_DMGE_CFRM_YN END ARLC_3_DMGE_CFRM_YN,
+            B.ARLC_3_CSTM_APVR_ID,
+            TO_CHAR(TO_DATE(B.ARLC_3_CSTM_APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') ARLC_3_CSTM_APRE_DT,
+            B.ARLC_3_CSTM_AFCH_QTY,
+            B.ARLC_3_CSTM_OTHS_DESC,
+            B.ARLC_3_TKAC_OPIN_CN,
+            B.ARLC_3_CSTM_RSEAL_NO,
+            B.WDRL_RSN_CN,
+            B.DPUT_RSN_CN,
+            B.DPUT_RELE_CN,
+            (SELECT PRCS_STTS_CD FROM ALPASSINT.TB_CLRI_TIR_CARN_PRCS_BRKD C WHERE A.TIR_MGMT_NO = C.TIR_MGMT_NO AND PRCS_STTS_CD NOT IN ('G01','H01','H02') ORDER BY PRCS_SRNO DESC LIMIT 1) BEF_STTS_CD
+        FROM ALPASSINT.TB_CLRI_TIR_CARN_COMN A, ALPASSINT.TB_CLRI_TIR_CARN_APRE B
+        WHERE A.TIR_MGMT_NO = B.TIR_MGMT_NO(+)
+        AND A.DEL_YN ='N'
+        AND A.TIR_MGMT_NO = #{tirMgmtNo}
+    </select>
+
+    <select id="selectExistsClreTirCarnComn" parameterType ="alpass.ipt.clr.poa.tir.vo.ClrTirCarnComnVo" resultType="alpass.ipt.clr.poa.tir.vo.ClrTirCarnComnVo">
+        /* selectExistsClreTirCarnComn :  */
+        SELECT
+            A.TIR_MGMT_NO
+        FROM ALPASSEXT.TB_CLRE_TIR_CARN_COMN A
+        WHERE A.DEL_YN ='N'
+          AND A.TIR_MGMT_NO = #{tirMgmtNo}
+    </select>
+
+    <select id="selectClrTirCarnPdlsList" parameterType ="alpass.ipt.clr.poa.tir.vo.ClrTirCarnComnVo" resultType="alpass.ipt.clr.poa.tir.vo.ClrTirCarnPdlsVo">
+        /* selectClrTirCarnPdlsList : Consulter la  liste de Carnet CPD Article !== 품목정보 리스트조회*/
+        SELECT
+            TIR_MGMT_NO,
+            PDLS_SRNO,
+            CNTR_CN,
+            PCKG_CN,
+            PCKG_DESC,
+            WGHT
+        FROM
+            ALPASSINT.TB_CLRI_TIR_CARN_PDLS
+        WHERE DEL_YN ='N'
+        AND TIR_MGMT_NO = #{tirMgmtNo}
+    </select>
+
+    <update id="updateClreTirCarnComn" parameterType ="alpass.ipt.clr.poa.tir.vo.ClrTirCarnComnVo">
+        /*updateClrTirCarnComn : Modifier la détails de Carnet TIR */
+        UPDATE ALPASSEXT.TB_CLRE_TIR_CARN_COMN
+        SET
+            <if test='prcsSttsCd.equals("D18")'>
+                SEAL_NO = #{sealNo},
+            </if>
+            PRCS_STTS_CD = #{prcsSttsCd},
+            LAST_CHPR_ID = #{lastChprId},                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            LAST_CHG_DTTM = SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE TIR_MGMT_NO = #{tirMgmtNo}
+    </update>
+
+    <update id="updateClriTirCarnComn" parameterType ="alpass.ipt.clr.poa.tir.vo.ClrTirCarnComnVo">
+        /*updateClrTirCarnComn : Modifier la détails de Carnet TIR */
+        UPDATE ALPASSINT.TB_CLRI_TIR_CARN_COMN
+        SET
+            <if test='prcsSttsCd.equals("D18")'>
+                SEAL_NO = #{sealNo},
+            </if>
+            PRCS_STTS_CD = #{prcsSttsCd},
+            LAST_CHPR_ID = #{lastChprId},                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            LAST_CHG_DTTM = SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE TIR_MGMT_NO = #{tirMgmtNo}
+    </update>
+
+
+    <insert id="insertClrTirCarnComn" parameterType ="alpass.ipt.clr.poa.tir.vo.ClrTirCarnComnVo">
+        /* insertClrTirCarnComn : Enregistrer la détails de Carnet TIR */
+        INSERT INTO ALPASSINT.TB_CLRI_TIR_CARN_COMN
+        (
+            TIR_MGMT_NO,
+            TIR_NO,
+            CARN_VALD_PRID,
+            CARN_PBLS_ITT_NM,
+            PBLS_DT,
+            PSSR_IDFY_NO,
+            PSSR_NM,
+            PSSR_POST_NO,
+            PSSR_ADDR,
+            INTN_ITT_NM,
+            DPTR_CNTY_CD,
+            DSTN_CNTY_CD,
+            CAR_RGSR_NO,
+            VHCL_APRE_EVDC_CN,
+            RELA_CNTR_NO,
+            RELA_CN,
+            DPRP_1_CSTM_CD,
+            DPRP_2_CSTM_CD,
+            DPRP_3_CSTM_CD,
+            ARLC_1_CSTM_CD,
+            ARLC_1_TRNP_QTY,
+            ARLC_2_CSTM_CD,
+            ARLC_2_TRNP_QTY,
+            ARLC_3_CSTM_CD,
+            ARLC_3_TRNP_QTY,
+            DPRP_1_CSTM_NM,
+            DPRP_2_CSTM_NM,
+            DPRP_3_CSTM_NM,
+            DPRP_1_CNTY_CD,
+            DPRP_2_CNTY_CD,
+            DPRP_3_CNTY_CD,
+            ARLC_1_CSTM_NM,
+            ARLC_2_CSTM_NM,
+            ARLC_3_CSTM_NM,
+            ARLC_1_CNTY_CD,
+            ARLC_2_CNTY_CD,
+            ARLC_3_CNTY_CD,
+            RQST_CSTM_CD,
+            CRTF_ITT_NM,
+            SEAL_NO,
+            CMDT_TQTY,
+            OFUS_CN,
+            RGSR_DT,
+            PRCS_STTS_CD,
+            ATCH_FILE_ID,
+            DEL_YN,
+            FRST_REGST_ID,
+            FRST_RGSR_DTTM,
+            LAST_CHPR_ID,
+            LAST_CHG_DTTM
+        )
+        VALUES
+            (
+                #{tirMgmtNo},
+                #{tirNo},
+                TO_CHAR(TO_DATE(#{carnValdPrid}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                #{carnPblsIttNm},
+                TO_CHAR(TO_DATE(#{pblsDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                #{pssrIdfyNo},
+                #{pssrNm},
+                #{pssrPostNo},
+                #{pssrAddr},
+                #{intnIttNm},
+                #{dptrCntyCd},
+                #{dstnCntyCd},
+                #{carRgsrNo},
+                #{vhclApreEvdcCn},
+                #{relaCntrNo},
+                #{relaCn},
+                #{dprp1CstmCd},
+                #{dprp2CstmCd},
+                #{dprp3CstmCd},
+                #{arlc1CstmCd},
+                #{arlc1TrnpQty},
+                #{arlc2CstmCd},
+                #{arlc2TrnpQty},
+                #{arlc3CstmCd},
+                #{arlc3TrnpQty},
+                #{dprp1CstmNm},
+                #{dprp2CstmNm},
+                #{dprp3CstmNm},
+                #{dprp1CntyCd},
+                #{dprp2CntyCd},
+                #{dprp3CntyCd},
+                #{arlc1CstmNm},
+                #{arlc2CstmNm},
+                #{arlc3CstmNm},
+                #{arlc1CntyCd},
+                #{arlc2CntyCd},
+                #{arlc3CntyCd},
+                #{rqstCstmCd},
+                #{crtfIttNm},
+                #{sealNo},
+                #{cmdtTqty},
+                #{ofusCn},
+                TO_CHAR(TO_DATE(#{rgsrDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                #{prcsSttsCd},
+                #{atchFileId},
+                'N',
+                #{frstRegstId},               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                SYSTIMESTAMP,                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                #{lastChprId},                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+            )
+    </insert>
+
+    <insert id="insertClrTirCarnPdls" parameterType ="alpass.ipt.clr.poa.tir.vo.ClrTirCarnPdlsVo">
+        /* insertClriTirCarnPdls : Enregistrer la détails de Carnet TIR Article(내부)  */
+        INSERT INTO ALPASSINT.TB_CLRI_TIR_CARN_PDLS
+        (
+            TIR_MGMT_NO,
+            PDLS_SRNO,
+            CNTR_CN,
+            PCKG_CN,
+            PCKG_DESC,
+            WGHT,
+            DEL_YN,
+            FRST_REGST_ID,
+            FRST_RGSR_DTTM,
+            LAST_CHPR_ID,
+            LAST_CHG_DTTM
+        )
+        VALUES
+            (
+                #{tirMgmtNo},
+                #{pdlsSrno},
+                #{cntrCn},
+                #{pckgCn},
+                #{pckgDesc},
+                #{wght},
+                'N',
+                #{frstRegstId},               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                SYSTIMESTAMP,                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                #{lastChprId},                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+            )
+    </insert>
+
+    <insert id="insertClrTirCarnPathcn" parameterType="alpass.ipt.clr.poa.tir.vo.ClrTirCarnPathcnVo">
+        /** insertClrTirCarnPathcn*/
+        INSERT INTO ALPASSINT.TB_CLRI_TIR_CARN_MVMN_CNTY
+        (
+            TIR_MGMT_NO,
+            SRNO,
+            DPTR_ARLC_TP_CD,
+            CNTY_CD,
+            CITY_NM,
+            DEL_YN,
+            FRST_REGST_ID,
+            FRST_RGSR_DTTM,
+            LAST_CHPR_ID,
+            LAST_CHG_DTTM
+        )
+        VALUES
+            (
+                #{tirMgmtNo},
+                #{srno},
+                #{dptrArlcTpCd},
+                #{cntyCd},
+                #{cityNm},
+                'N',
+                #{frstRegstId},
+                SYSTIMESTAMP,
+                #{lastChprId},
+                SYSTIMESTAMP
+            )
+    </insert>
+
+    <insert id="insertClrTirCarnPrcsBkrd" parameterType ="alpass.ipt.clr.poa.tir.vo.ClrTirCarnComnVo">
+        /*insertClriTirCarnPrcsBkrd : */
+        <selectKey keyProperty="prcsSrno" order="BEFORE" resultType="java.math.BigDecimal">
+            SELECT NVL(MAX(PRCS_SRNO),0)+1 FROM ALPASSINT.TB_CLRI_TIR_CARN_PRCS_BRKD WHERE TIR_MGMT_NO = #{tirMgmtNo}
+        </selectKey>
+        INSERT INTO ALPASSINT.TB_CLRI_TIR_CARN_PRCS_BRKD
+        (
+        PRCS_SRNO,
+        TIR_MGMT_NO,
+        PRCS_STTS_CD,
+        PRCS_DTRM_DTTM,
+        DEL_YN,
+        FRST_REGST_ID,
+        FRST_RGSR_DTTM,
+        LAST_CHPR_ID,
+        LAST_CHG_DTTM
+        )
+        VALUES
+        (
+        #{prcsSrno},
+        #{tirMgmtNo},
+        #{prcsSttsCd},
+        SYSTIMESTAMP,
+        'N',
+        #{frstRegstId},
+        SYSTIMESTAMP,
+        #{lastChprId},
+        SYSTIMESTAMP
+        )
+    </insert>
+
+    <insert id="insertClrTirCarnApre" parameterType ="alpass.ipt.clr.poa.tir.vo.ClrTirCarnComnVo">
+        /** insertClrTirCarnApre*/
+        WITH UPSERT AS (
+            UPDATE ALPASSINT.TB_CLRI_TIR_CARN_APRE
+            SET  <if test ='prcsSttsCd.equals("P01")'>
+                    ENCY_CSTM_CD = #{encyCstmCd},
+                    ENCY_DMGE_CFRM_YN = #{encyDmgeCfrmYn},
+                    ENCY_CSTM_APVR_ID = #{encyCstmApvrId},
+                    ENCY_CSTM_APRE_DT = TO_CHAR(TO_DATE(#{encyCstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                    ENCY_CSTM_OTHS_DESC = #{encyCstmOthsDesc},
+                    ENCY_TRNP_TMLM_DT = TO_CHAR(TO_DATE(#{encyTrnpTmlmDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                    ENCY_CSTM_RELA_NO = #{encyCstmRelaNo},
+                    ENCY_CSTM_SEAL_NO = #{encyCstmSealNo},
+                 </if>
+                 <if test ='prcsSttsCd.equals("P03")'>
+                    ENCY_CSTM_CD = #{encyCstmCd},
+                    ENCY_RTRN_RSN_CN = #{encyRtrnRsnCn},
+                    ENCY_CSTM_APVR_ID = #{encyCstmApvrId},
+                    ENCY_CSTM_APRE_DT = TO_CHAR(TO_DATE(#{encyCstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                 </if>
+                 <if test ='prcsSttsCd.equals("P02")'>
+                     DEPR_CSTM_CD = #{deprCstmCd},
+                     DEPR_DMGE_CFRM_YN = #{deprDmgeCfrmYn},
+                     DEPR_CSTM_APVR_ID = #{deprCstmApvrId},
+                     DEPR_CSTM_AFCH_QTY = #{deprCstmAfchQty},
+                     DEPR_CSTM_APRE_DT = TO_CHAR(TO_DATE(#{deprCstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                     DEPR_CSTM_OTHS_DESC = #{deprCstmOthsDesc},
+                     DEPR_TKAC_OPIN_CN = #{deprTkacOpinCn},
+                     DEPR_CSTM_RSEAL_NO = #{deprCstmRsealNo},
+                 </if>
+                 <if test ='prcsSttsCd.equals("D18")'>
+                     DPRP_1_CSTM_CD = #{dprp1CstmCd},
+                     DPRP_1_DMGE_CFRM_YN = #{dprp1DmgeCfrmYn},
+                     DPRP_1_CSTM_APVR_ID = #{dprp1CstmApvrId},
+                     DPRP_1_CSTM_APRE_DT = TO_CHAR(TO_DATE(#{dprp1CstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                     DPRP_1_CSTM_OTHS_DESC = #{dprp1CstmOthsDesc},
+                     DPRP_1_TRNP_TMLM_DT = TO_CHAR(TO_DATE(#{dprp1TrnpTmlmDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                     DPRP_1_CSTM_RELA_NO = #{dprp1CstmRelaNo},
+                     DPRP_1_SEAL_NO = #{dprp1SealNo},
+                 </if>
+                 <if test ='prcsSttsCd.equals("D24")'>
+                    DPRP_1_CSTM_CD = #{dprp1CstmCd},
+                    DPRP_1_CSTM_APVR_ID = #{dprp1CstmApvrId},
+                    DPRP_1_CSTM_APRE_DT = TO_CHAR(TO_DATE(#{dprp1CstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                    DPRP_1_RTRN_RSN_CN = #{dprp1RtrnRsnCn},
+                 </if>
+                 <if test ='prcsSttsCd.equals("D19")'>
+                    DPRP_2_CSTM_CD = #{dprp2CstmCd},
+                    DPRP_2_DMGE_CFRM_YN = #{dprp2DmgeCfrmYn},
+                    DPRP_2_CSTM_APVR_ID = #{dprp2CstmApvrId},
+                    DPRP_2_CSTM_APRE_DT = TO_CHAR(TO_DATE(#{dprp2CstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                    DPRP_2_CSTM_OTHS_DESC = #{dprp2CstmOthsDesc},
+                    DPRP_2_TRNP_TMLM_DT = TO_CHAR(TO_DATE(#{dprp2TrnpTmlmDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                    DPRP_2_CSTM_RELA_NO = #{dprp2CstmRelaNo},
+                    DPRP_2_SEAL_NO = #{dprp2SealNo},
+                 </if>
+                 <if test ='prcsSttsCd.equals("D25")'>
+                    DPRP_2_CSTM_CD = #{dprp2CstmCd},
+                    DPRP_2_CSTM_APVR_ID = #{dprp2CstmApvrId},
+                    DPRP_2_CSTM_APRE_DT = TO_CHAR(TO_DATE(#{dprp2CstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                    DPRP_2_RTRN_RSN_CN = #{dprp2RtrnRsnCn},
+                 </if>
+                 <if test ='prcsSttsCd.equals("D20")'>
+                     DPRP_3_CSTM_CD = #{dprp3CstmCd},
+                     DPRP_3_DMGE_CFRM_YN = #{dprp3DmgeCfrmYn},
+                     DPRP_3_CSTM_APVR_ID = #{dprp3CstmApvrId},
+                     DPRP_3_CSTM_APRE_DT = TO_CHAR(TO_DATE(#{dprp3CstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                     DPRP_3_CSTM_OTHS_DESC = #{dprp3CstmOthsDesc},
+                     DPRP_3_TRNP_TMLM_DT = TO_CHAR(TO_DATE(#{dprp3TrnpTmlmDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                     DPRP_3_CSTM_RELA_NO = #{dprp3CstmRelaNo},
+                     DPRP_3_SEAL_NO = #{dprp3SealNo},
+                 </if>
+                 <if test ='prcsSttsCd.equals("D26")'>
+                    DPRP_3_CSTM_CD = #{dprp3CstmCd},
+                    DPRP_3_CSTM_APVR_ID = #{dprp3CstmApvrId},
+                    DPRP_3_CSTM_APRE_DT = TO_CHAR(TO_DATE(#{dprp3CstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                    DPRP_3_RTRN_RSN_CN = #{dprp3RtrnRsnCn},
+                </if>
+                <if test ='prcsSttsCd.equals("D21")'>
+                    ARLC_1_CSTM_CD = #{arlc1CstmCd},
+                    ARLC_1_DMGE_CFRM_YN = #{arlc1DmgeCfrmYn},
+                    ARLC_1_CSTM_APVR_ID = #{arlc1CstmApvrId},
+                    ARLC_1_CSTM_APRE_DT = TO_CHAR(TO_DATE(#{arlc1CstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                    ARLC_1_CSTM_AFCH_QTY = #{arlc1CstmAfchQty},
+                    ARLC_1_CSTM_OTHS_DESC = #{arlc1CstmOthsDesc},
+                    ARLC_1_TKAC_OPIN_CN = #{arlc1TkacOpinCn},
+                    ARLC_1_CSTM_RSEAL_NO = #{arlc1CstmRsealNo},
+                </if>
+                <if test ='prcsSttsCd.equals("D22")'>
+                    ARLC_2_CSTM_CD = #{arlc2CstmCd},
+                    ARLC_2_DMGE_CFRM_YN = #{arlc2DmgeCfrmYn},
+                    ARLC_2_CSTM_APVR_ID = #{arlc2CstmApvrId},
+                    ARLC_2_CSTM_APRE_DT = TO_CHAR(TO_DATE(#{arlc2CstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                    ARLC_2_CSTM_AFCH_QTY = #{arlc2CstmAfchQty},
+                    ARLC_2_CSTM_OTHS_DESC = #{arlc2CstmOthsDesc},
+                    ARLC_2_TKAC_OPIN_CN = #{arlc2TkacOpinCn},
+                    ARLC_2_CSTM_RSEAL_NO = #{arlc2CstmRsealNo},
+                </if>
+                <if test ='prcsSttsCd.equals("D23")'>
+                    ARLC_3_CSTM_CD = #{arlc3CstmCd},
+                    ARLC_3_DMGE_CFRM_YN = #{arlc3DmgeCfrmYn},
+                    ARLC_3_CSTM_APVR_ID = #{arlc3CstmApvrId},
+                    ARLC_3_CSTM_APRE_DT = TO_CHAR(TO_DATE(#{arlc3CstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                    ARLC_3_CSTM_AFCH_QTY = #{arlc3CstmAfchQty},
+                    ARLC_3_CSTM_OTHS_DESC = #{arlc3CstmOthsDesc},
+                    ARLC_3_TKAC_OPIN_CN = #{arlc3TkacOpinCn},
+                    ARLC_3_CSTM_RSEAL_NO = #{arlc3CstmRsealNo},
+                </if>
+                <if test ='prcsSttsCd.equals("G01")'>
+                    WDRL_RSN_CN = #{wdrlRsnCn},
+                </if>
+                <if test ="prcsSttsCd == 'H01'">
+                    DPUT_RSN_CN = #{dputRsnCn},
+                </if>
+                <if test ="prcsSttsCd == 'H02'">
+                    DPUT_RELE_CN = #{dputReleCn},
+                </if>
+                DEL_YN = 'N',
+                LAST_CHPR_ID = #{lastChprId},
+                LAST_CHG_DTTM = SYSTIMESTAMP
+            WHERE TIR_MGMT_NO = #{tirMgmtNo}
+            RETURNING *
+        )
+        INSERT INTO ALPASSINT.TB_CLRI_TIR_CARN_APRE
+        (
+            TIR_MGMT_NO,
+            DPRP_1_CSTM_CD,
+            DPRP_1_DMGE_CFRM_YN,
+            DPRP_1_CSTM_APVR_ID,
+            DPRP_1_CSTM_APRE_DT,
+            DPRP_1_CSTM_OTHS_DESC,
+            DPRP_1_RTRN_RSN_CN,
+            DPRP_1_TRNP_TMLM_DT,
+            DPRP_1_CSTM_RELA_NO,
+            DPRP_1_SEAL_NO,
+            DPRP_2_CSTM_CD,
+            DPRP_2_DMGE_CFRM_YN,
+            DPRP_2_CSTM_APVR_ID,
+            DPRP_2_CSTM_APRE_DT,
+            DPRP_2_CSTM_OTHS_DESC,
+            DPRP_2_RTRN_RSN_CN,
+            DPRP_2_TRNP_TMLM_DT,
+            DPRP_2_CSTM_RELA_NO,
+            DPRP_2_SEAL_NO,
+            DPRP_3_CSTM_CD,
+            DPRP_3_DMGE_CFRM_YN,
+            DPRP_3_CSTM_APVR_ID,
+            DPRP_3_CSTM_APRE_DT,
+            DPRP_3_CSTM_OTHS_DESC,
+            DPRP_3_RTRN_RSN_CN,
+            DPRP_3_TRNP_TMLM_DT,
+            DPRP_3_CSTM_RELA_NO,
+            DPRP_3_SEAL_NO,
+            ARLC_1_CSTM_CD,
+            ARLC_1_DMGE_CFRM_YN,
+            ARLC_1_CSTM_APVR_ID,
+            ARLC_1_CSTM_APRE_DT,
+            ARLC_1_CSTM_AFCH_QTY,
+            ARLC_1_CSTM_OTHS_DESC,
+            ARLC_1_TKAC_OPIN_CN,
+            ARLC_1_CSTM_RSEAL_NO,
+            ARLC_2_CSTM_CD,
+            ARLC_2_DMGE_CFRM_YN,
+            ARLC_2_CSTM_APVR_ID,
+            ARLC_2_CSTM_APRE_DT,
+            ARLC_2_CSTM_AFCH_QTY,
+            ARLC_2_CSTM_OTHS_DESC,
+            ARLC_2_TKAC_OPIN_CN,
+            ARLC_2_CSTM_RSEAL_NO,
+            ARLC_3_CSTM_CD,
+            ARLC_3_DMGE_CFRM_YN,
+            ARLC_3_CSTM_APVR_ID,
+            ARLC_3_CSTM_APRE_DT,
+            ARLC_3_CSTM_AFCH_QTY,
+            ARLC_3_CSTM_OTHS_DESC,
+            ARLC_3_TKAC_OPIN_CN,
+            ARLC_3_CSTM_RSEAL_NO,
+            WDRL_RSN_CN,
+            DPUT_RSN_CN,
+            DPUT_RELE_CN,
+            ENCY_CSTM_CD,
+            ENCY_DMGE_CFRM_YN,
+            ENCY_CSTM_APVR_ID,
+            ENCY_CSTM_APRE_DT,
+            ENCY_CSTM_OTHS_DESC,
+            ENCY_RTRN_RSN_CN,
+            ENCY_TRNP_TMLM_DT,
+            ENCY_CSTM_RELA_NO,
+            ENCY_CSTM_SEAL_NO,
+            DEPR_CSTM_CD,
+            DEPR_DMGE_CFRM_YN,
+            DEPR_CSTM_APVR_ID,
+            DEPR_CSTM_AFCH_QTY,
+            DEPR_CSTM_APRE_DT,
+            DEPR_CSTM_OTHS_DESC,
+            DEPR_TKAC_OPIN_CN,
+            DEPR_CSTM_RSEAL_NO,
+            DEL_YN,
+            FRST_REGST_ID,
+            FRST_RGSR_DTTM,
+            LAST_CHPR_ID,
+            LAST_CHG_DTTM
+        )
+        SELECT
+            #{tirMgmtNo},
+            #{dprp1CstmCd},
+            #{dprp1DmgeCfrmYn},
+            #{dprp1CstmApvrId},
+            TO_CHAR(TO_DATE(#{dprp1CstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            #{dprp1CstmOthsDesc},
+            #{dprp1RtrnRsnCn},
+            TO_CHAR(TO_DATE(#{dprp1TrnpTmlmDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            #{dprp1CstmRelaNo},
+            #{dprp1SealNo},
+            #{dprp2CstmCd},
+            #{dprp2DmgeCfrmYn},
+            #{dprp2CstmApvrId},
+            TO_CHAR(TO_DATE(#{dprp2CstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            #{dprp2CstmOthsDesc},
+            #{dprp2RtrnRsnCn},
+            TO_CHAR(TO_DATE(#{dprp2TrnpTmlmDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            #{dprp2CstmRelaNo},
+            #{dprp2SealNo},
+            #{dprp3CstmCd},
+            #{dprp3DmgeCfrmYn},
+            #{dprp3CstmApvrId},
+            TO_CHAR(TO_DATE(#{dprp3CstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            #{dprp3CstmOthsDesc},
+            #{dprp3RtrnRsnCn},
+            TO_CHAR(TO_DATE(#{dprp3TrnpTmlmDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            #{dprp3CstmRelaNo},
+            #{dprp3SealNo},
+            #{arlc1CstmCd},
+            #{arlc1DmgeCfrmYn},
+            #{arlc1CstmApvrId},
+            TO_CHAR(TO_DATE(#{arlc1CstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            #{arlc1CstmAfchQty},
+            #{arlc1CstmOthsDesc},
+            #{arlc1TkacOpinCn},
+            #{arlc1CstmRsealNo},
+            #{arlc2CstmCd},
+            #{arlc2DmgeCfrmYn},
+            #{arlc2CstmApvrId},
+            TO_CHAR(TO_DATE(#{arlc2CstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            #{arlc2CstmAfchQty},
+            #{arlc2CstmOthsDesc},
+            #{arlc2TkacOpinCn},
+            #{arlc2CstmRsealNo},
+            #{arlc3CstmCd},
+            #{arlc3DmgeCfrmYn},
+            #{arlc3CstmApvrId},
+            TO_CHAR(TO_DATE(#{arlc3CstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            #{arlc3CstmAfchQty},
+            #{arlc3CstmOthsDesc},
+            #{arlc3TkacOpinCn},
+            #{arlc3CstmRsealNo},
+            #{wdrlRsnCn},
+            #{dputRsnCn},
+            #{dputReleCn},
+            #{encyCstmCd},
+            #{encyDmgeCfrmYn},
+            #{encyCstmApvrId},
+            TO_CHAR(TO_DATE(#{encyCstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            #{encyCstmOthsDesc},
+            #{encyRtrnRsnCn},
+            TO_CHAR(TO_DATE(#{encyTrnpTmlmDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            #{encyCstmRelaNo},
+            #{encyCstmSealNo},
+            #{deprCstmCd},
+            #{deprDmgeCfrmYn},
+            #{deprCstmApvrId},
+            #{deprCstmAfchQty},
+            TO_CHAR(TO_DATE(#{deprCstmApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            #{deprCstmOthsDesc},
+            #{deprTkacOpinCn},
+            #{deprCstmRsealNo},
+            'N',
+            #{frstRegstId},
+            SYSTIMESTAMP,
+            #{lastChprId},
+            SYSTIMESTAMP
+        WHERE NOT EXISTS(SELECT * FROM UPSERT)
+    </insert>
+
+    <select id="selectClrTirCarnPrcsBrkdList" parameterType ="alpass.ipt.clr.poa.tir.vo.ClrTirCarnComnVo" resultType ="alpass.ipt.clr.poa.tir.vo.ClrTirCarnComnVo">
+        SELECT
+            PRCS_SRNO,
+            TIR_MGMT_NO,
+            PRCS_STTS_CD,
+            TO_CHAR(PRCS_DTRM_DTTM,'DD/MM/YYYY hh24:mi:ss') PRCS_DTRM_DTTM,
+            PRCS_STTS_CN
+        FROM ALPASSINT.TB_CLRI_TIR_CARN_PRCS_BRKD
+        WHERE TIR_MGMT_NO = #{tirMgmtNo}
+    </select>
+
+    <select id="selectClrTirCarnpathcnList" parameterType="alpass.ipt.clr.poa.tir.vo.ClrTirCarnComnVo" resultType="alpass.ipt.clr.poa.tir.vo.ClrTirCarnPathcnVo">
+        /** selectClrTirCarnpathcnList */
+        SELECT
+            TIR_MGMT_NO,
+            SRNO,
+            DPTR_ARLC_TP_CD,
+            CNTY_CD,
+            CITY_NM,
+            DEL_YN
+        FROM ALPASSINT.TB_CLRI_TIR_CARN_MVMN_CNTY
+        WHERE TIR_MGMT_NO = #{tirMgmtNo}
+          AND DEL_YN ='N'
+    </select>
+
+    <select id="selectLastClrTirCarnYn" parameterType="alpass.ipt.clr.poa.tir.vo.ClrTirCarnComnVo" resultType="String">
+        /** selectLastClrTirCarnYn*/
+         <![CDATA[
+        SELECT
+            CASE WHEN COUNT(TIR_MGMT_NO) > 0 THEN 'Y' ELSE 'N' END LAST_YN
+        FROM  ALPASSINT.TB_CLRI_TIR_CARN_COMN A
+        WHERE A.DEL_YN ='N'
+        AND  A.TIR_MGMT_NO = #{tirMgmtNo}
+        AND EXISTS(
+                SELECT
+                1
+                FROM
+                (
+                    SELECT
+                    TIR_MGMT_NO,
+                    SUM(CSTM_COUNT) CSTM_COUNT,
+                    SUM(AUDT_COUNT) AUDT_COUNT
+                    FROM
+                    (
+                        SELECT A.TIR_MGMT_NO, SUM(CASE WHEN NVL(A.ARLC_1_CNTY_CD,'') <> '' THEN 1 ELSE 0 END) CSTM_COUNT,SUM(CASE WHEN NVL(B.ARLC_1_CSTM_APVR_ID,'') <> '' OR NVL(A.ARLC_1_CSTM_NM,'') <> '' THEN 1 ELSE 0 END) AUDT_COUNT  FROM ALPASSINT.TB_CLRI_TIR_CARN_COMN A,ALPASSINT.TB_CLRI_TIR_CARN_APRE B WHERE A.TIR_MGMT_NO = B.TIR_MGMT_NO(+) GROUP BY A.TIR_MGMT_NO
+                        UNION ALL
+                        SELECT A.TIR_MGMT_NO, SUM(CASE WHEN NVL(A.ARLC_2_CNTY_CD,'') <> '' THEN 1 ELSE 0 END) CSTM_COUNT,SUM(CASE WHEN NVL(B.ARLC_2_CSTM_APVR_ID,'') <> '' OR NVL(A.ARLC_2_CSTM_NM,'') <> '' THEN 1 ELSE 0 END) AUDT_COUNT  FROM ALPASSINT.TB_CLRI_TIR_CARN_COMN A,ALPASSINT.TB_CLRI_TIR_CARN_APRE B WHERE A.TIR_MGMT_NO = B.TIR_MGMT_NO(+) GROUP BY A.TIR_MGMT_NO
+                        UNION ALL
+                        SELECT A.TIR_MGMT_NO, SUM(CASE WHEN NVL(A.ARLC_3_CNTY_CD,'') <> '' THEN 1 ELSE 0 END) CSTM_COUNT,SUM(CASE WHEN NVL(B.ARLC_3_CSTM_APVR_ID,'') <> '' OR NVL(A.ARLC_3_CSTM_NM,'') <> '' THEN 1 ELSE 0 END) AUDT_COUNT  FROM ALPASSINT.TB_CLRI_TIR_CARN_COMN A,ALPASSINT.TB_CLRI_TIR_CARN_APRE B WHERE A.TIR_MGMT_NO = B.TIR_MGMT_NO(+) GROUP BY A.TIR_MGMT_NO
+                        UNION ALL
+                        SELECT A.TIR_MGMT_NO, SUM(CASE WHEN NVL(A.DPRP_1_CNTY_CD,'') <> '' THEN 1 ELSE 0 END) CSTM_COUNT,SUM(CASE WHEN NVL(B.DPRP_1_CSTM_APVR_ID,'') <> '' OR NVL(A.DPRP_1_CSTM_NM,'') <> '' THEN 1 ELSE 0 END) AUDT_COUNT  FROM ALPASSINT.TB_CLRI_TIR_CARN_COMN A,ALPASSINT.TB_CLRI_TIR_CARN_APRE B WHERE A.TIR_MGMT_NO = B.TIR_MGMT_NO(+) GROUP BY A.TIR_MGMT_NO
+                        UNION ALL
+                        SELECT A.TIR_MGMT_NO, SUM(CASE WHEN NVL(A.DPRP_2_CNTY_CD,'') <> '' THEN 1 ELSE 0 END) CSTM_COUNT,SUM(CASE WHEN NVL(B.DPRP_2_CSTM_APVR_ID,'') <> '' OR NVL(A.DPRP_2_CSTM_NM,'') <> '' THEN 1 ELSE 0 END) AUDT_COUNT  FROM ALPASSINT.TB_CLRI_TIR_CARN_COMN A,ALPASSINT.TB_CLRI_TIR_CARN_APRE B WHERE A.TIR_MGMT_NO = B.TIR_MGMT_NO(+) GROUP BY A.TIR_MGMT_NO
+                        UNION ALL
+                        SELECT A.TIR_MGMT_NO, SUM(CASE WHEN NVL(A.DPRP_3_CNTY_CD,'') <> '' THEN 1 ELSE 0 END) CSTM_COUNT,SUM(CASE WHEN NVL(B.DPRP_3_CSTM_APVR_ID,'') <> '' OR NVL(A.DPRP_3_CSTM_NM,'') <> '' THEN 1 ELSE 0 END) AUDT_COUNT  FROM ALPASSINT.TB_CLRI_TIR_CARN_COMN A,ALPASSINT.TB_CLRI_TIR_CARN_APRE B WHERE A.TIR_MGMT_NO = B.TIR_MGMT_NO(+) GROUP BY A.TIR_MGMT_NO
+                    ) GROUP BY TIR_MGMT_NO
+                )C WHERE A.TIR_MGMT_NO = C.TIR_MGMT_NO AND CSTM_COUNT = AUDT_COUNT
+            )
+        ]]>
+    </select>
+
+</mapper>

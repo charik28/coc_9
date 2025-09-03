@@ -1,0 +1,532 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.psc.tpd.end.mapper.PscTpdEndMapper">
+
+  <!--
+  @TODO:번역필요 !== TPD종료 목록 조회 ==!
+  -->
+  <select id="selectPscTpdEndList"  parameterType="alpass.ipt.psc.tpd.end.vo.PscTpdEndVo" 
+    resultType="alpass.ipt.psc.tpd.end.vo.PscTpdEndVo"> 
+      /* selectPscTpdEndList */
+      <include refid="pagination.header" ></include>
+          SELECT
+                A.TPD_END_TEMP_NO            /** Numéro temporaire d'apurement de TPD !== TPD종료임시번호 ==! */
+              , A.RQST_DGCNT                 /** N° ordre de la demande !== 신청차수 ==! */
+              , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+              , A.TPD_END_TP_CD              /** Code de type d'apurement de TPD !== TPD종료구분코드 ==! */
+              , A.TPD_END_EXCP_TP_CD         /** Code de type d'apurement exceptionnel de TPD !== TPD종료예외구분코드 ==! */
+              , A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+              , A.TPD_MGMT_NO                /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              , A.TPD_RQST_STTS_CD           /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              , A.RIMEX_TRVL_DIRT_CD         /** Code de sens de voyage de réexportation/réimportation !== 재수입재수출여행방향코드 ==! */
+              , A.RIMEX_REFF_NO              /** N° de référence de réexportation/réimportation !== 재수입재수출참조번호 ==! */
+              , A.RIMEX_CSTM_CD              /** Code de bureau de réexportation/réimportation !== 재수입재수출세관코드 ==! */
+              , A.RIMEX_DT                   /** Date de réexportation/réimportation !== 재수입재수출일자 ==! */
+              , A.RIMEX_FFMN_ITT_NM          /** Autorité d'apurement de réexportation/réimportation !== 재수입재수출이행기관명 ==! */
+              , A.VLNT_ABND_APRS_DOC_NO       /** N° de pv d'expertise de l'abandon au profit du Trésor public !== 자진포기감정문서번호 ==! */
+              , A.VLNT_ABND_APRS_DOC_DT       /** Date de pv d'expertise de l'abandon au profit du Trésor public !== 자진포기감정문서일자 ==! */
+              , A.VLNT_ABND_MAKE_PLC_NM       /** Lieu de l’établissement de pv de l'abandon au profit du Trésor public !== 자진포기작성장소명 ==! */
+              , A.VLNT_ABND_RSN_CN           /** Motif de l'abandon !== 자진포기사유내용 ==! */
+              , A.VHCL_RBR_ISS_ITT_NM        /** Autorité de délivrance du PV en cas de vol !== 차량도난발급기관명 ==! */
+              , A.VHCL_RBR_WTNNC_NO          /** N° de pv en cas de vol !== 차량도난조서번호 ==! */
+              , A.VHCL_RBR_WTNNC_DT          /** Date de pv en cas de vol !== 차량도난조서일자 ==! */
+              , A.VHCL_RBR_MAKE_PLC_NM       /** Lieu de l’établissement de pv en cas de vol !== 차량도난작성장소명 ==! */
+              , A.CONM_NM                    /** Raison sociale   !== 상호명 ==!   */
+              , A.CO_ADDR                    /**  Adresse De L'Entreprise  !== 업체주소 ==!   */
+              , A.SPAR_XPRT_ISS_ITT_NM       /** L’autorité de délivrance du pv expert en cas de dédouanement en état d'épave !== 폐차전문가발급기관명 ==! */
+              , A.SPAR_ASSU_WTNNC_NO         /** N° de pv expert assurance en cas de dédouanement en état d'épave !== 폐차보험업자조서번호 ==! */
+              , A.SPAR_ASSU_WTNNC_DT         /** Date de pv expert assurance en cas de dédouanement en état d'épave !== 폐차보험업자조서일자 ==! */
+              , A.SPAR_ASSU_MAKE_PLC_NM       /** Lieu de l’établissement de PV d’expert d’assurance en cas de dédouanement en état d'épave !== 폐차보험업자작성장소명 ==! */
+              , A.SPAR_WTNNC_ISS_ITT_NM       /** Autorité de délivrance du pv en cas de dédouanement en état d'épave !== 폐차조서발급기관명 ==! */
+              , A.SPAR_WTNNC_NO              /** N° de pv de l'autorité en cas de dédouanement en état d'épave !== 폐차조서번호 ==! */
+              , A.SPAR_WTNNC_DT              /** Date de pv de l'autorité en cas de dédouanement en état d'épave !== 폐차조서일자 ==! */
+              , A.SPAR_WTNNC_MAKE_PLC_NM       /** Lieu de l’établissement du PV de l’autorité en cas de dédouanement en état d'épave !== 폐차조서작성장소명 ==! */
+              , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+              , A.OBJT_LDGG_CN               /** Contenu De La Contestation !== 이의제기내용 ==! */
+              , A.DTL_DCSH_NO                /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+              , A.TXS_AMT                    /** Droits Taxes !== 제세금액 ==! */
+              , A.CRPP_NO                    /** Numéro de certificat !== 증명서번호 ==! */
+              , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              , A.ATCH_ISTM_TP_CD
+              , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+              , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+          FROM   TB_PSCI_TPD_END A
+         WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+           AND  A.TPD_END_TEMP_NO = #{tpdEndTempNo}         /** Numéro temporaire d'apurement de TPD !== TPD종료임시번호 ==! */
+           AND  A.RQST_DGCNT = #{rqstDgcnt}                 /** N° ordre de la demande !== 신청차수 ==! */
+      <include refid="pagination.footer" ></include>
+  </select>
+
+  <select id="selectPscTpdEnd"  parameterType="alpass.ipt.psc.tpd.end.vo.PscTpdEndVo" 
+    resultType="alpass.ipt.psc.tpd.end.vo.PscTpdEndVo"> 
+      /* selectPscTpdEnd */
+          SELECT
+                A.TPD_END_TEMP_NO            /** Numéro temporaire d'apurement de TPD !== TPD종료임시번호 ==! */
+              , A.RQST_DGCNT                 /** N° ordre de la demande !== 신청차수 ==! */
+              , ( SELECT ORG.ORGN_NM  FROM ALPASSINT.TB_POTI_ORGN ORG WHERE ORG.ORGN_MGMT_CD = 
+                (SELECT FN_GET_UPR_ORGN_CD(ORGN_MGMT_CD,'DIR') FROM ALPASSINT.TB_POTI_ORGN WHERE ORGN_CD = A.CSTM_CD ) 
+               ) AS DRD_CD                    /** Code de direction régionale des douanes !== 지역본부세관코드 ==! */
+              , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+              , FN_GET_ORGN_NM(A.CSTM_CD) AS CSTM_CD_NM               /**  !== 세관명 ==! */
+              , ( SELECT ORG.ORGN_NM  FROM ALPASSINT.TB_POTI_ORGN ORG WHERE ORG.ORGN_MGMT_CD =
+                (SELECT EMP.ORGN_MGMT_CD  FROM ALPASSINT.TB_POTI_EMP EMP WHERE EMP.PBSR_NO = 
+                (SELECT B.ADOR_ID FROM TB_PSCI_TPD_AUDT B where B.AUDT_RSLT_CD = '02' AND B.TPD_TEMP_NO = A.TPD_END_TEMP_NO LIMIT 1 ))
+                ) AS DEPT_NM
+              , A.TPD_END_TP_CD              /** Code de type d'apurement de TPD !== TPD종료구분코드 ==! */
+              , A.TPD_END_EXCP_TP_CD         /** Code de type d'apurement exceptionnel de TPD !== TPD종료예외구분코드 ==! */
+              , A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+              , A.TPD_MGMT_NO                /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              , A.TPD_RQST_STTS_CD           /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              , A.RIMEX_TRVL_DIRT_CD         /** Code de sens de voyage de réexportation/réimportation !== 재수입재수출여행방향코드 ==! */
+              , A.RIMEX_REFF_NO              /** N° de référence de réexportation/réimportation !== 재수입재수출참조번호 ==! */
+              , A.RIMEX_CSTM_CD              /** Code de bureau de réexportation/réimportation !== 재수입재수출세관코드 ==! */
+              , A.RIMEX_DT                   /** Date de réexportation/réimportation !== 재수입재수출일자 ==! */
+              , A.RIMEX_FFMN_ITT_NM          /** Autorité d'apurement de réexportation/réimportation !== 재수입재수출이행기관명 ==! */
+              , A.VLNT_ABND_APRS_DOC_NO       /** N° de pv d'expertise de l'abandon au profit du Trésor public !== 자진포기감정문서번호 ==! */
+              , A.VLNT_ABND_APRS_DOC_DT       /** Date de pv d'expertise de l'abandon au profit du Trésor public !== 자진포기감정문서일자 ==! */
+              , A.VLNT_ABND_MAKE_PLC_NM       /** Lieu de l’établissement de pv de l'abandon au profit du Trésor public !== 자진포기작성장소명 ==! */
+              , A.VLNT_ABND_RSN_CN           /** Motif de l'abandon !== 자진포기사유내용 ==! */
+              , A.VHCL_RBR_ISS_ITT_NM        /** Autorité de délivrance du PV en cas de vol !== 차량도난발급기관명 ==! */
+              , A.VHCL_RBR_WTNNC_NO          /** N° de pv en cas de vol !== 차량도난조서번호 ==! */
+              , A.VHCL_RBR_WTNNC_DT          /** Date de pv en cas de vol !== 차량도난조서일자 ==! */
+              , A.VHCL_RBR_MAKE_PLC_NM       /** Lieu de l’établissement de pv en cas de vol !== 차량도난작성장소명 ==! */
+              , A.CONM_NM                    /** Raison sociale   !== 상호명 ==!   */
+              , A.CO_ADDR                    /**  Adresse De L'Entreprise  !== 업체주소 ==!   */
+              , A.SPAR_XPRT_ISS_ITT_NM       /** L’autorité de délivrance du pv expert en cas de dédouanement en état d'épave !== 폐차전문가발급기관명 ==! */
+              , A.SPAR_ASSU_WTNNC_NO         /** N° de pv expert assurance en cas de dédouanement en état d'épave !== 폐차보험업자조서번호 ==! */
+              , A.SPAR_ASSU_WTNNC_DT         /** Date de pv expert assurance en cas de dédouanement en état d'épave !== 폐차보험업자조서일자 ==! */
+              , A.SPAR_ASSU_MAKE_PLC_NM       /** Lieu de l’établissement de PV d’expert d’assurance en cas de dédouanement en état d'épave !== 폐차보험업자작성장소명 ==! */
+              , A.SPAR_WTNNC_ISS_ITT_NM       /** Autorité de délivrance du pv en cas de dédouanement en état d'épave !== 폐차조서발급기관명 ==! */
+              , A.SPAR_WTNNC_NO              /** N° de pv de l'autorité en cas de dédouanement en état d'épave !== 폐차조서번호 ==! */
+              , A.SPAR_WTNNC_DT              /** Date de pv de l'autorité en cas de dédouanement en état d'épave !== 폐차조서일자 ==! */
+              , A.SPAR_WTNNC_MAKE_PLC_NM       /** Lieu de l’établissement du PV de l’autorité en cas de dédouanement en état d'épave !== 폐차조서작성장소명 ==! */
+              , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+              , A.OBJT_LDGG_CN               /** Contenu De La Contestation !== 이의제기내용 ==! */
+              , A.DTL_DCSH_NO                /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+              , A.TXS_AMT                    /** Droits Taxes !== 제세금액 ==! */
+              , A.WDRW_AMT                   /** Montant de restitution !== 회수금액 ==! */
+              , A.CRPP_NO                    /** Numéro de certificat !== 증명서번호 ==! */
+              , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              , A.ATCH_ISTM_TP_CD
+              , A.END_DRVR_CD                /** Code de conducteur d'apurement !== 종료운전자코드 ==! */
+              , A.DSTN_NM                    /**  Nom de destination !== 목적지 ==! */
+              , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+              , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+          FROM   TB_PSCI_TPD_END A
+         WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+           AND  A.TPD_END_TEMP_NO = #{tpdEndTempNo}         /** Numéro temporaire d'apurement de TPD !== TPD종료임시번호 ==! */
+
+  </select>
+  
+
+  <!--
+  @TODO:번역필요 !== TPD종료 등록 ==!
+  (deKim)
+  -->
+  <insert id="insertPscTpdEnd" parameterType="alpass.ipt.psc.tpd.end.vo.PscTpdEndVo">
+      /* insertPscTpdEnd */
+      
+      <selectKey keyProperty="rqstDgcnt" order="BEFORE" resultType="java.math.BigDecimal">
+        SELECT NVL(MAX(RQST_DGCNT),0)+1 FROM TB_PSCI_TPD_END WHERE TPD_END_TEMP_NO = #{tpdEndTempNo}
+      </selectKey>
+        
+        INSERT INTO TB_PSCI_TPD_END
+              (
+                TPD_END_TEMP_NO              /** Numéro temporaire d'apurement de TPD !== TPD종료임시번호 ==! */
+              , RQST_DGCNT                   /** N° ordre de la demande !== 신청차수 ==! */
+              , CSTM_CD                      /** Code Du Bureau !== 세관코드 ==! */
+              , TPD_END_TP_CD                /** Code de type d'apurement de TPD !== TPD종료구분코드 ==! */
+              , TPD_END_EXCP_TP_CD           /** Code de type d'apurement exceptionnel de TPD !== TPD종료예외구분코드 ==! */
+              , TPD_TEMP_NO                  /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+              , TPD_MGMT_NO                  /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              , TPD_RQST_STTS_CD             /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              , RIMEX_TRVL_DIRT_CD           /** Code de sens de voyage de réexportation/réimportation !== 재수입재수출여행방향코드 ==! */
+              , RIMEX_REFF_NO                /** N° de référence de réexportation/réimportation !== 재수입재수출참조번호 ==! */
+              , RIMEX_CSTM_CD                /** Code de bureau de réexportation/réimportation !== 재수입재수출세관코드 ==! */
+              , RIMEX_DT                     /** Date de réexportation/réimportation !== 재수입재수출일자 ==! */
+              , RIMEX_FFMN_ITT_NM            /** Autorité d'apurement de réexportation/réimportation !== 재수입재수출이행기관명 ==! */
+              , VLNT_ABND_APRS_DOC_NO        /** N° de pv d'expertise de l'abandon au profit du Trésor public !== 자진포기감정문서번호 ==! */
+              , VLNT_ABND_APRS_DOC_DT        /** Date de pv d'expertise de l'abandon au profit du Trésor public !== 자진포기감정문서일자 ==! */
+              , VLNT_ABND_MAKE_PLC_NM        /** Lieu de l’établissement de pv de l'abandon au profit du Trésor public !== 자진포기작성장소명 ==! */
+              , VLNT_ABND_RSN_CN             /** Motif de l'abandon !== 자진포기사유내용 ==! */
+              , VHCL_RBR_ISS_ITT_NM          /** Autorité de délivrance du PV en cas de vol !== 차량도난발급기관명 ==! */
+              , VHCL_RBR_WTNNC_NO            /** N° de pv en cas de vol !== 차량도난조서번호 ==! */
+              , VHCL_RBR_WTNNC_DT            /** Date de pv en cas de vol !== 차량도난조서일자 ==! */
+              , VHCL_RBR_MAKE_PLC_NM         /** Lieu de l’établissement de pv en cas de vol !== 차량도난작성장소명 ==! */
+              , CONM_NM                      /** Raison sociale   !== 상호명 ==!   */
+              , CO_ADDR                      /**  Adresse De L'Entreprise  !== 업체주소 ==!   */
+              , SPAR_XPRT_ISS_ITT_NM         /** L’autorité de délivrance du pv expert en cas de dédouanement en état d'épave !== 폐차전문가발급기관명 ==! */
+              , SPAR_ASSU_WTNNC_NO           /** N° de pv expert assurance en cas de dédouanement en état d'épave !== 폐차보험업자조서번호 ==! */
+              , SPAR_ASSU_WTNNC_DT           /** Date de pv expert assurance en cas de dédouanement en état d'épave !== 폐차보험업자조서일자 ==! */
+              , SPAR_ASSU_MAKE_PLC_NM        /** Lieu de l’établissement de PV d’expert d’assurance en cas de dédouanement en état d'épave !== 폐차보험업자작성장소명 ==! */
+              , SPAR_WTNNC_ISS_ITT_NM        /** Autorité de délivrance du pv en cas de dédouanement en état d'épave !== 폐차조서발급기관명 ==! */
+              , SPAR_WTNNC_NO                /** N° de pv de l'autorité en cas de dédouanement en état d'épave !== 폐차조서번호 ==! */
+              , SPAR_WTNNC_DT                /** Date de pv de l'autorité en cas de dédouanement en état d'épave !== 폐차조서일자 ==! */
+              , SPAR_WTNNC_MAKE_PLC_NM       /** Lieu de l’établissement du PV de l’autorité en cas de dédouanement en état d'épave !== 폐차조서작성장소명 ==! */
+              , REGST_ID                     /** Id De La Personne Enregistrant !== 등록자ID ==! */
+              , OBJT_LDGG_CN                 /** Contenu De La Contestation !== 이의제기내용 ==! */
+              , DTL_DCSH_NO                  /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+              , TXS_AMT                      /** Droits Taxes !== 제세금액 ==! */
+              , CRPP_NO                      /** Numéro de certificat !== 증명서번호 ==! */
+              , ATCH_FILE_ID                 /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              , ATCH_ISTM_TP_CD
+              , END_DRVR_CD                  /** Code de conducteur d'apurement !== 종료운전자코드 ==! */
+              , DSTN_NM                      /**  Nom de destination !== 목적지 ==! */
+              , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+              , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+              )
+              VALUES
+              (
+                #{tpdEndTempNo}              /** Numéro temporaire d'apurement de TPD !== TPD종료임시번호 ==! */
+              , #{rqstDgcnt}                 /** N° ordre de la demande !== 신청차수 ==! */
+              , #{cstmCd}                    /** Code Du Bureau !== 세관코드 ==! */
+              , #{tpdEndTpCd}                /** Code de type d'apurement de TPD !== TPD종료구분코드 ==! */
+              , #{tpdEndExcpTpCd}            /** Code de type d'apurement exceptionnel de TPD !== TPD종료예외구분코드 ==! */
+              , #{tpdTempNo}                 /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+              , #{tpdMgmtNo}                 /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              , #{tpdRqstSttsCd}             /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              , #{rimexTrvlDirtCd}           /** Code de sens de voyage de réexportation/réimportation !== 재수입재수출여행방향코드 ==! */
+              , #{rimexReffNo}               /** N° de référence de réexportation/réimportation !== 재수입재수출참조번호 ==! */
+              , #{rimexCstmCd}               /** Code de bureau de réexportation/réimportation !== 재수입재수출세관코드 ==! */
+              , #{rimexDt}                   /** Date de réexportation/réimportation !== 재수입재수출일자 ==! */
+              , #{rimexFfmnIttNm}            /** Autorité d'apurement de réexportation/réimportation !== 재수입재수출이행기관명 ==! */
+              , #{vlntAbndAprsDocNo}         /** N° de pv d'expertise de l'abandon au profit du Trésor public !== 자진포기감정문서번호 ==! */
+              , #{vlntAbndAprsDocDt}         /** Date de pv d'expertise de l'abandon au profit du Trésor public !== 자진포기감정문서일자 ==! */
+              , #{vlntAbndMakePlcNm}         /** Lieu de l’établissement de pv de l'abandon au profit du Trésor public !== 자진포기작성장소명 ==! */
+              , #{vlntAbndRsnCn}             /** Motif de l'abandon !== 자진포기사유내용 ==! */
+              , #{vhclRbrIssIttNm}           /** Autorité de délivrance du PV en cas de vol !== 차량도난발급기관명 ==! */
+              , #{vhclRbrWtnncNo}            /** N° de pv en cas de vol !== 차량도난조서번호 ==! */
+              , #{vhclRbrWtnncDt}            /** Date de pv en cas de vol !== 차량도난조서일자 ==! */
+              , #{vhclRbrMakePlcNm}          /** Lieu de l’établissement de pv en cas de vol !== 차량도난작성장소명 ==! */
+              , #{conmNm}                    /** Raison sociale   !== 상호명 ==!   */
+              , #{coAddr}                    /**  Adresse De L'Entreprise  !== 업체주소 ==!   */
+              , #{sparXprtIssIttNm}          /** L’autorité de délivrance du pv expert en cas de dédouanement en état d'épave !== 폐차전문가발급기관명 ==! */
+              , #{sparAssuWtnncNo}           /** N° de pv expert assurance en cas de dédouanement en état d'épave !== 폐차보험업자조서번호 ==! */
+              , #{sparAssuWtnncDt}           /** Date de pv expert assurance en cas de dédouanement en état d'épave !== 폐차보험업자조서일자 ==! */
+              , #{sparAssuMakePlcNm}         /** Lieu de l’établissement de PV d’expert d’assurance en cas de dédouanement en état d'épave !== 폐차보험업자작성장소명 ==! */
+              , #{sparWtnncIssIttNm}         /** Autorité de délivrance du pv en cas de dédouanement en état d'épave !== 폐차조서발급기관명 ==! */
+              , #{sparWtnncNo}               /** N° de pv de l'autorité en cas de dédouanement en état d'épave !== 폐차조서번호 ==! */
+              , #{sparWtnncDt}               /** Date de pv de l'autorité en cas de dédouanement en état d'épave !== 폐차조서일자 ==! */
+              , #{sparWtnncMakePlcNm}        /** Lieu de l’établissement du PV de l’autorité en cas de dédouanement en état d'épave !== 폐차조서작성장소명 ==! */
+              , #{regstId}                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+              , #{objtLdggCn}                /** Contenu De La Contestation !== 이의제기내용 ==! */
+              , #{dtlDcshNo}                 /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+              , #{txsAmt}                    /** Droits Taxes !== 제세금액 ==! */
+              , #{crppNo}                    /** Numéro de certificat !== 증명서번호 ==! */   
+              , #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              , #{atchIstmTpCd}
+              , #{endDrvrCd}                  /** Code de conducteur d'apurement !== 종료운전자코드 ==! */
+              , #{dstnNm}                     /**  Nom de destination !== 목적지 ==! */
+              , 'N'                          /** Suppression On !== 삭제여부 ==! */
+              , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , CURRENT_TIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , CURRENT_TIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+              )
+  </insert>
+
+
+  <!--
+  @TODO:번역필요 !== TPD종료 수정 ==!
+  (deKim) 
+  -->
+  <update id="updatePscTpdEnd" parameterType="alpass.ipt.psc.tpd.end.vo.PscTpdEndVo">
+      /* updatePscTpdEnd */
+      UPDATE  TB_PSCI_TPD_END SET 
+                LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , LAST_CHG_DTTM = CURRENT_TIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+              <if test='cstmCd != null and cstmCd != ""'>
+              , CSTM_CD = #{cstmCd}                         /** Code Du Bureau !== 세관코드 ==! */
+              </if>
+              <if test='tpdEndTpCd != null and tpdEndTpCd != ""'>
+              , TPD_END_TP_CD = #{tpdEndTpCd}               /** Code de type d'apurement de TPD !== TPD종료구분코드 ==! */
+              </if>
+              <if test='tpdEndExcpTpCd != null and tpdEndExcpTpCd != ""'>
+              , TPD_END_EXCP_TP_CD = #{tpdEndExcpTpCd}      /** Code de type d'apurement exceptionnel de TPD !== TPD종료예외구분코드 ==! */
+              </if>
+              <if test='tpdMgmtNo != null and tpdMgmtNo != ""'>
+              , TPD_MGMT_NO = #{tpdMgmtNo}                  /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              </if>
+              <if test='tpdRqstSttsCd != null and tpdRqstSttsCd != ""'>
+              , TPD_RQST_STTS_CD = #{tpdRqstSttsCd}         /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              </if>
+              <if test='rimexTrvlDirtCd != null and rimexTrvlDirtCd != ""'>
+              , RIMEX_TRVL_DIRT_CD = #{rimexTrvlDirtCd}     /** Code de sens de voyage de réexportation/réimportation !== 재수입재수출여행방향코드 ==! */
+              </if>
+              <if test='rimexReffNo != null and rimexReffNo != ""'>
+              , RIMEX_REFF_NO = #{rimexReffNo}              /** N° de référence de réexportation/réimportation !== 재수입재수출참조번호 ==! */
+              </if>
+              <if test='rimexCstmCd != null and rimexCstmCd != ""'>
+              , RIMEX_CSTM_CD = #{rimexCstmCd}              /** Code de bureau de réexportation/réimportation !== 재수입재수출세관코드 ==! */
+              </if>
+              <if test='rimexDt != null and rimexDt != ""'>
+              , RIMEX_DT = #{rimexDt}                       /** Date de réexportation/réimportation !== 재수입재수출일자 ==! */
+              </if>
+              <if test='rimexFfmnIttNm != null and rimexFfmnIttNm != ""'>
+              , RIMEX_FFMN_ITT_NM = #{rimexFfmnIttNm}       /** Autorité d'apurement de réexportation/réimportation !== 재수입재수출이행기관명 ==! */
+              </if>
+              <if test='vlntAbndAprsDocNo != null and vlntAbndAprsDocNo != ""'>
+              , VLNT_ABND_APRS_DOC_NO = #{vlntAbndAprsDocNo}  /** N° de pv d'expertise de l'abandon au profit du Trésor public !== 자진포기감정문서번호 ==! */
+              </if>
+              <if test='vlntAbndAprsDocDt != null and vlntAbndAprsDocDt != ""'>
+              , VLNT_ABND_APRS_DOC_DT = #{vlntAbndAprsDocDt}  /** Date de pv d'expertise de l'abandon au profit du Trésor public !== 자진포기감정문서일자 ==! */
+              </if>
+              <if test='vlntAbndMakePlcNm != null and vlntAbndMakePlcNm != ""'>
+              , VLNT_ABND_MAKE_PLC_NM = #{vlntAbndMakePlcNm}  /** Lieu de l’établissement de pv de l'abandon au profit du Trésor public !== 자진포기작성장소명 ==! */
+              </if>
+              <if test='vlntAbndRsnCn != null and vlntAbndRsnCn != ""'>
+              , VLNT_ABND_RSN_CN = #{vlntAbndRsnCn}         /** Motif de l'abandon !== 자진포기사유내용 ==! */
+              </if>
+              <if test='vhclRbrIssIttNm != null and vhclRbrIssIttNm != ""'>
+              , VHCL_RBR_ISS_ITT_NM = #{vhclRbrIssIttNm}    /** Autorité de délivrance du PV en cas de vol !== 차량도난발급기관명 ==! */
+              </if>
+              <if test='vhclRbrWtnncNo != null and vhclRbrWtnncNo != ""'>
+              , VHCL_RBR_WTNNC_NO = #{vhclRbrWtnncNo}       /** N° de pv en cas de vol !== 차량도난조서번호 ==! */
+              </if>
+              <if test='vhclRbrWtnncDt != null and vhclRbrWtnncDt != ""'>
+              , VHCL_RBR_WTNNC_DT = #{vhclRbrWtnncDt}       /** Date de pv en cas de vol !== 차량도난조서일자 ==! */
+              </if>
+              <if test='vhclRbrMakePlcNm != null and vhclRbrMakePlcNm != ""'>
+              , VHCL_RBR_MAKE_PLC_NM = #{vhclRbrMakePlcNm}  /** Lieu de l’établissement de pv en cas de vol !== 차량도난작성장소명 ==! */
+              </if>
+              <if test='conmNm != null and conmNm != ""'>
+              , CONM_NM       = #{conmNm}                   /** Raison sociale   !== 상호명 ==!   */
+              </if>
+              <if test='coAddr != null and coAddr != ""'>
+              , CO_ADDR       = #{coAddr}                   /**  Adresse De L'Entreprise  !== 업체주소 ==!   */
+              </if>
+              <if test='sparXprtIssIttNm != null and sparXprtIssIttNm != ""'>
+              , SPAR_XPRT_ISS_ITT_NM = #{sparXprtIssIttNm}  /** L’autorité de délivrance du pv expert en cas de dédouanement en état d'épave !== 폐차전문가발급기관명 ==! */
+              </if>
+              <if test='sparAssuWtnncNo != null and sparAssuWtnncNo != ""'>
+              , SPAR_ASSU_WTNNC_NO = #{sparAssuWtnncNo}     /** N° de pv expert assurance en cas de dédouanement en état d'épave !== 폐차보험업자조서번호 ==! */
+              </if>
+              <if test='sparAssuWtnncDt != null and sparAssuWtnncDt != ""'>
+              , SPAR_ASSU_WTNNC_DT = #{sparAssuWtnncDt}     /** Date de pv expert assurance en cas de dédouanement en état d'épave !== 폐차보험업자조서일자 ==! */
+              </if>
+              <if test='sparAssuMakePlcNm != null and sparAssuMakePlcNm != ""'>
+              , SPAR_ASSU_MAKE_PLC_NM = #{sparAssuMakePlcNm}  /** Lieu de l’établissement de PV d’expert d’assurance en cas de dédouanement en état d'épave !== 폐차보험업자작성장소명 ==! */
+              </if>
+              <if test='sparWtnncIssIttNm != null and sparWtnncIssIttNm != ""'>
+              , SPAR_WTNNC_ISS_ITT_NM = #{sparWtnncIssIttNm}  /** Autorité de délivrance du pv en cas de dédouanement en état d'épave !== 폐차조서발급기관명 ==! */
+              </if>
+              <if test='sparWtnncNo != null and sparWtnncNo != ""'>
+              , SPAR_WTNNC_NO = #{sparWtnncNo}              /** N° de pv de l'autorité en cas de dédouanement en état d'épave !== 폐차조서번호 ==! */
+              </if>
+              <if test='sparWtnncDt != null and sparWtnncDt != ""'>
+              , SPAR_WTNNC_DT = #{sparWtnncDt}              /** Date de pv de l'autorité en cas de dédouanement en état d'épave !== 폐차조서일자 ==! */
+              </if>
+              <if test='sparWtnncMakePlcNm != null and sparWtnncMakePlcNm != ""'>
+              , SPAR_WTNNC_MAKE_PLC_NM = #{sparWtnncMakePlcNm}  /** Lieu de l’établissement du PV de l’autorité en cas de dédouanement en état d'épave !== 폐차조서작성장소명 ==! */
+              </if>
+              <if test='objtLdggCn != null and objtLdggCn != ""'>
+              , OBJT_LDGG_CN = #{objtLdggCn}                /** Contenu De La Contestation !== 이의제기내용 ==! */
+              </if>
+              <if test='atchFileId != null and atchFileId != ""'>
+              , ATCH_FILE_ID = #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              </if>
+              <if test='dtlDcshNo != null and dtlDcshNo != ""'>
+              , DTL_DCSH_NO = #{dtlDcshNo}                 /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+              </if>
+              <if test='txsAmt != null and txsAmt != ""'>
+              , TXS_AMT = #{txsAmt}                    /** Droits Taxes !== 제세금액 ==! */
+              </if>
+              <if test='wdrwAmt != null and wdrwAmt != ""'>
+              , WDRW_AMT = #{wdrwAmt}                    /** Montant de restitution !== 회수금액 ==! */
+              </if>              
+              <if test='crppNo != null and crppNo != ""'>
+              , CRPP_NO = #{crppNo}                    /** Numéro de certificat !== 증명서번호 ==! */   
+              </if>
+              <if test='atchIstmTpCd != null'> 
+              , ATCH_ISTM_TP_CD       = #{atchIstmTpCd}   
+              </if>
+              <if test='dstnNm != null and dstnNm != ""'> 
+              , DSTN_NM       = #{dstnNm}   
+              </if>
+         WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+           AND  TPD_END_TEMP_NO = #{tpdEndTempNo}           /** Numéro temporaire d'apurement de TPD !== TPD종료임시번호 ==! */
+  </update>
+
+  <!--
+  @TODO:번역필요 !== TPD종료 삭제 ==!
+  (deKim)
+  -->
+  <update id="deletePscTpdEnd" parameterType="alpass.ipt.psc.tpd.end.vo.PscTpdEndVo">
+      /* deletePscTpdEnd */
+      UPDATE  TB_PSCI_TPD_END SET 
+              DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+           ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+           ,  LAST_CHG_DTTM = CURRENT_TIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+       WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+         AND  TPD_END_TEMP_NO = #{tpdEndTempNo}             /** Numéro temporaire d'apurement de TPD !== TPD종료임시번호 ==! */
+         AND  RQST_DGCNT = #{rqstDgcnt}                     /** N° ordre de la demande !== 신청차수 ==! */
+  </update>
+
+  <!--
+  @TODO:번역필요 !== TPD종료 상태조회 ==!
+  -->
+  <select id="selectTpdEndRqstSttsCd"  parameterType="alpass.ipt.psc.tpd.end.vo.PscTpdEndVo" 
+    resultType="alpass.ipt.psc.tpd.end.vo.PscTpdEndVo"> 
+      /* selectTpdEndRqstSttsCd */
+
+          SELECT
+                A.TPD_END_TEMP_NO            /** Numéro temporaire d'apurement de TPD !== TPD종료임시번호 ==! */
+              , A.RQST_DGCNT                 /** N° ordre de la demande !== 신청차수 ==! */
+              , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+              , A.TPD_END_TP_CD              /** Code de type d'apurement de TPD !== TPD종료구분코드 ==! */
+              , A.TPD_END_EXCP_TP_CD         /** Code de type d'apurement exceptionnel de TPD !== TPD종료예외구분코드 ==! */
+              , A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+              , A.TPD_MGMT_NO                /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              , A.TPD_RQST_STTS_CD           /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              , A.RIMEX_TRVL_DIRT_CD         /** Code de sens de voyage de réexportation/réimportation !== 재수입재수출여행방향코드 ==! */
+              , A.RIMEX_REFF_NO              /** N° de référence de réexportation/réimportation !== 재수입재수출참조번호 ==! */
+              , A.RIMEX_CSTM_CD              /** Code de bureau de réexportation/réimportation !== 재수입재수출세관코드 ==! */
+              , A.RIMEX_DT                   /** Date de réexportation/réimportation !== 재수입재수출일자 ==! */
+              , A.RIMEX_FFMN_ITT_NM          /** Autorité d'apurement de réexportation/réimportation !== 재수입재수출이행기관명 ==! */
+              , A.VLNT_ABND_APRS_DOC_NO       /** N° de pv d'expertise de l'abandon au profit du Trésor public !== 자진포기감정문서번호 ==! */
+              , A.VLNT_ABND_APRS_DOC_DT       /** Date de pv d'expertise de l'abandon au profit du Trésor public !== 자진포기감정문서일자 ==! */
+              , A.VLNT_ABND_MAKE_PLC_NM       /** Lieu de l’établissement de pv de l'abandon au profit du Trésor public !== 자진포기작성장소명 ==! */
+              , A.VLNT_ABND_RSN_CN           /** Motif de l'abandon !== 자진포기사유내용 ==! */
+              , A.VHCL_RBR_ISS_ITT_NM        /** Autorité de délivrance du PV en cas de vol !== 차량도난발급기관명 ==! */
+              , A.VHCL_RBR_WTNNC_NO          /** N° de pv en cas de vol !== 차량도난조서번호 ==! */
+              , A.VHCL_RBR_WTNNC_DT          /** Date de pv en cas de vol !== 차량도난조서일자 ==! */
+              , A.VHCL_RBR_MAKE_PLC_NM       /** Lieu de l’établissement de pv en cas de vol !== 차량도난작성장소명 ==! */
+              , A.SPAR_XPRT_ISS_ITT_NM       /** L’autorité de délivrance du pv expert en cas de dédouanement en état d'épave !== 폐차전문가발급기관명 ==! */
+              , A.SPAR_ASSU_WTNNC_NO         /** N° de pv expert assurance en cas de dédouanement en état d'épave !== 폐차보험업자조서번호 ==! */
+              , A.SPAR_ASSU_WTNNC_DT         /** Date de pv expert assurance en cas de dédouanement en état d'épave !== 폐차보험업자조서일자 ==! */
+              , A.SPAR_ASSU_MAKE_PLC_NM       /** Lieu de l’établissement de PV d’expert d’assurance en cas de dédouanement en état d'épave !== 폐차보험업자작성장소명 ==! */
+              , A.SPAR_WTNNC_ISS_ITT_NM       /** Autorité de délivrance du pv en cas de dédouanement en état d'épave !== 폐차조서발급기관명 ==! */
+              , A.SPAR_WTNNC_NO              /** N° de pv de l'autorité en cas de dédouanement en état d'épave !== 폐차조서번호 ==! */
+              , A.SPAR_WTNNC_DT              /** Date de pv de l'autorité en cas de dédouanement en état d'épave !== 폐차조서일자 ==! */
+              , A.SPAR_WTNNC_MAKE_PLC_NM       /** Lieu de l’établissement du PV de l’autorité en cas de dédouanement en état d'épave !== 폐차조서작성장소명 ==! */
+              , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+              , A.OBJT_LDGG_CN               /** Contenu De La Contestation !== 이의제기내용 ==! */
+              , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+              , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+          FROM   TB_PSCI_TPD_END A
+          WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+          AND  A.TPD_TEMP_NO = #{tpdTempNo}                  /** Numéro temporaire de prorogation de TPD !== TPD연장임시번호 ==! */
+          AND  A.TPD_RQST_STTS_CD IN ('A0','A2','A3','A5');
+           
+
+           
+  </select>
+  
+  
+  <select id="selectPscTpdEndDrvr"  parameterType="alpass.ipt.psc.tpd.end.vo.PscTpdEndVo" 
+    resultType="alpass.ipt.psc.tpd.end.vo.PscTpdEndVo"> 
+      /* selectPscTpdEndDrvr */
+          SELECT
+                A.TPD_END_TEMP_NO            /** Numéro temporaire d'apurement de TPD !== TPD종료임시번호 ==! */
+              , A.RQST_DGCNT                 /** N° ordre de la demande !== 신청차수 ==! */
+              , A.DRVR_GVNM_NM               /** Prénom de conducteur !== 운전자이름명 ==! */
+              , A.DRVR_FMNM                  /** @TODO : 번역필요 !== 운전자성 ==! */
+              , A.DRVR_BRDY                  /** Date de naissance de conducteur !== 운전자생년원일 ==! */
+              , A.DRVR_BIRT_REGN_NM          /** Lieu de naissance de conducteur !== 운전자출생지역명 ==! */
+              , A.DRVR_PSPR_NO               /** N° de passeport de conducteur !== 운전자여권번호 ==! */
+              , A.DRVR_PSPR_NO_ISS_DT        /** @TODO : 번역필요 !== 운전자여권번호발급일자 ==! */
+              , A.DRVR_PSPR_NO_ISS_ITT       /** Lieu de délivrance de passeport de conducteur !== 운전자여권번호발급기관 ==! */
+              , A.DRVR_JOB_NM                /** Profession de conducteur !== 운전자직업명 ==! */
+              , A.DRVR_NAT_CD                /** Code De Nationalité Du Commandant !== 운전자국적코드 ==! */
+              , A.DRVR_POST_CD
+              , CASE WHEN A.DRVR_POST_CD = '' OR A.DRVR_POST_CD IS NULL THEN '' ELSE '(' || A.DRVR_POST_CD || ':' || ( SELECT POST_NM FROM ALPASSINT.TB_COM_WLY_POST_CD W where W.POST_CD = A.DRVR_POST_CD ) || ')' END AS  DRVR_POST_NM
+              , A.DRVR_ADDR                  /** Adresse Du Conducteur !== 운전자주소 ==! */
+              , A.DRVR_OVRS_ADDR             /** Adresse à l'étranger de conducteur !== 운전자해외주소 ==! */
+              , A.DRVR_FAR_SNM               /** @TODO : 번역필요 !== 운전자아버지성명 ==! */
+              , A.DRVR_MOR_SNM               /** @TODO : 번역필요 !== 운전자어머니성명 ==! */
+              , A.DRVR_ESTM_YN               /** Conducteur présumé O/N !== 운전자추정여부 ==! */
+              , A.DRVR_PSPR_VALD_DT          /** Validite du passeport !== 여권유효일자 ==! */    
+              , A.END_DRVR_CD                /** Code de conducteur d'apurement !== 종료운전자코드 ==! */
+              , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+              , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+          FROM   TB_PSCI_END_DRVR_BSCS A
+         WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+           AND  A.TPD_END_TEMP_NO = #{tpdEndTempNo}         /** Numéro temporaire d'apurement de TPD !== TPD종료임시번호 ==! */
+           ORDER BY FRST_RGSR_DTTM DESC
+           LIMIT 1 
+  </select>
+  
+
+  <insert id="insertPscTpdEndDrvr" parameterType="alpass.ipt.psc.tpd.end.vo.PscTpdEndVo">
+      /* insertPscTpdEndDrvr */
+      
+      <selectKey keyProperty="prcsSrno" order="BEFORE" resultType="java.math.BigDecimal">
+        SELECT NVL(MAX(PRCS_SRNO),0)+1 FROM TB_PSCI_END_DRVR_BSCS WHERE TPD_END_TEMP_NO = #{tpdEndTempNo}
+      </selectKey>
+        
+        INSERT INTO TB_PSCI_END_DRVR_BSCS
+              (
+                TPD_END_TEMP_NO              /** Numéro temporaire d'apurement de TPD !== TPD종료임시번호 ==! */
+              , RQST_DGCNT                   /** N° ordre de la demande !== 신청차수 ==! */
+              , PRCS_SRNO
+              , END_DRVR_CD                  /** Code de conducteur d'apurement !== 종료운전자코드 ==! */
+              , DRVR_GVNM_NM                 /** Prénom de conducteur !== 운전자이름명 ==! */
+              , DRVR_FMNM                    /** @TODO : 번역필요 !== 운전자성 ==! */
+              , DRVR_BRDY                    /** Date de naissance de conducteur !== 운전자생년원일 ==! */
+              , DRVR_BIRT_REGN_NM            /** Lieu de naissance de conducteur !== 운전자출생지역명 ==! */
+              , DRVR_PSPR_NO                 /** N° de passeport de conducteur !== 운전자여권번호 ==! */
+              , DRVR_PSPR_NO_ISS_DT          /** @TODO : 번역필요 !== 운전자여권번호발급일자 ==! */
+              , DRVR_PSPR_NO_ISS_ITT         /** Lieu de délivrance de passeport de conducteur !== 운전자여권번호발급기관 ==! */
+              , DRVR_JOB_NM                  /** Profession de conducteur !== 운전자직업명 ==! */
+              , DRVR_NAT_CD                  /** Code De Nationalité Du Commandant !== 운전자국적코드 ==! */
+              , DRVR_POST_CD
+              , DRVR_ADDR                    /** Adresse Du Conducteur !== 운전자주소 ==! */
+              , DRVR_OVRS_ADDR               /** Adresse à l'étranger de conducteur !== 운전자해외주소 ==! */
+              , DRVR_FAR_SNM                 /** @TODO : 번역필요 !== 운전자아버지성명 ==! */
+              , DRVR_MOR_SNM                 /** @TODO : 번역필요 !== 운전자어머니성명 ==! */
+              , DRVR_ESTM_YN                 /** Conducteur présumé O/N !== 운전자추정여부 ==! */
+              , DRVR_PSPR_VALD_DT            /** Validite du passeport !== 여권유효일자 ==! */    
+              , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+              , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */              
+              
+              )
+              VALUES
+              (
+                #{tpdEndTempNo}              /** Numéro temporaire d'apurement de TPD !== TPD종료임시번호 ==! */
+              , #{rqstDgcnt}                 /** N° ordre de la demande !== 신청차수 ==! */
+              , #{prcsSrno}
+              , #{endDrvrCd}                  /** Code de conducteur d'apurement !== 종료운전자코드 ==! */
+              , #{drvrGvnmNm}                /** Prénom de conducteur !== 운전자이름명 ==! */
+              , #{drvrFmnm}                  /** @TODO : 번역필요 !== 운전자성 ==! */
+              , #{drvrBrdy}                  /** Date de naissance de conducteur !== 운전자생년원일 ==! */
+              , #{drvrBirtRegnNm}            /** Lieu de naissance de conducteur !== 운전자출생지역명 ==! */
+              , #{drvrPsprNo}                /** N° de passeport de conducteur !== 운전자여권번호 ==! */
+              , #{drvrPsprNoIssDt}           /** @TODO : 번역필요 !== 운전자여권번호발급일자 ==! */
+              , #{drvrPsprNoIssItt}          /** Lieu de délivrance de passeport de conducteur !== 운전자여권번호발급기관 ==! */
+              , #{drvrJobNm}                 /** Profession de conducteur !== 운전자직업명 ==! */
+              , #{drvrNatCd}                 /** Code De Nationalité Du Commandant !== 운전자국적코드 ==! */
+              , #{drvrPostCd}
+              , #{drvrAddr}                  /** Adresse Du Conducteur !== 운전자주소 ==! */
+              , #{drvrOvrsAddr}              /** Adresse à l'étranger de conducteur !== 운전자해외주소 ==! */
+              , #{drvrFarSnm}                /** @TODO : 번역필요 !== 운전자아버지성명 ==! */
+              , #{drvrMorSnm}                /** @TODO : 번역필요 !== 운전자어머니성명 ==! */
+              , #{drvrEstmYn}
+              , #{drvrPsprValdDt}
+              , 'N'                          /** Suppression On !== 삭제여부 ==! */
+              , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , CURRENT_TIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , CURRENT_TIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+              )
+  </insert>    
+  
+</mapper>

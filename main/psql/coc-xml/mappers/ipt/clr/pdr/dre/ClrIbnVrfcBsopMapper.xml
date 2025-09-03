@@ -1,0 +1,1610 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.clr.pdr.dre.mapper.ClrIbnVrfcBsopMapper">
+
+    <!--
+    Vérifier le code de timing de dédouanement selon le code de Type de déclaration de la DED
+    !== DED신고서 신고유형코드에 따른 EPC코드 확인 ==!
+    -->
+    <select id="selectEpcCdByDclrPtCd" resultType="java.lang.String">
+        /* ClriIbnVrfcBsop_selectEpcCdByDclrPtCd */
+        SELECT epc_cd
+        FROM tb_clri_epc_cd
+        WHERE del_yn = 'N'
+          AND dclr_pt_cd = #{dclrPtCd}
+          AND epc_cd = #{epcCd}
+          AND TO_CHAR(CURRENT_DATE,'YYYYMMDD') BETWEEN EPC_APLY_STRT_DT AND EPC_APLY_END_DT
+    </select>
+
+    <!--
+   Vérifier le code de timing de dédouanement selon le code de Type de déclaration de la DED
+   !== DED신고서 신고유형코드에 따른 통관계획코드 확인 ==!
+   -->
+    <select id="selectCsclPlnCdByDclrPtCd" resultType="java.lang.String">
+        /* ClriIbnVrfcBsop_selectCsclPlnCdByDclrPtCd */
+        SELECT t2.cscl_pln_cd
+        FROM tb_clri_epc_cd t1
+           , tb_clri_ded_vrfc t2
+        WHERE t1.del_yn = 'N'
+          AND t1.dclr_pt_cd = #{dclrPtCd}
+          AND t1.epc_cd = #{epcCd}
+          AND t1.epc_cd = t2.epc_cd
+          AND t2.cscl_pln_cd = #{csclPlnCd}
+          AND t2.del_yn = 'N'
+          AND TO_CHAR(CURRENT_DATE,'YYYYMMDD') BETWEEN t1.EPC_APLY_STRT_DT AND t1.EPC_APLY_END_DT
+    </select>
+
+    <!--
+    Vérifier s'il s'agit d'un conteneur déjà utilisé
+    !== 이미 사용된 컨테이너인지 확인 ==!
+    -->
+    <select id="selectDubleCheckCntrNo" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrIbnDedComnVo" resultType="alpass.ipt.clr.pdr.dre.vo.ClrDedCntrVo">
+        /* ClriIbnVrfcBsop_selectDubleCheckCntrNo */
+        SELECT C.CNTR_SRNO,
+        A.DTL_DCSH_NO,
+        B.CNTR_NO
+        FROM TB_CLRI_DED_COMN A,
+        TB_CLRI_DED_CNTR B,
+        TB_CLRI_DED_CNTR C
+        WHERE A.DTL_DCSH_NO      = B.DTL_DCSH_NO
+        AND A.PRCS_STTS_CD NOT IN ('G03', 'G04')         /* 취소건 제외 */
+        AND A.CAG_MGMT_NO = #{cagMgmtNo}
+        <if test="cmdtStgeLoctCd != null and cmdtStgeLoctCd != ''">
+            AND A.CMDT_STGE_LOCT_CD = #{cmdtStgeLoctCd}
+        </if>
+        <if test="cmdtStgeLoctCd == null or cmdtStgeLoctCd == ''">
+            AND A.CMDT_STGE_LOCT_CD IS NULL
+        </if>
+        AND A.DTL_DCSH_NO     <![CDATA[<>]]> #{dtlDcshNo}
+        AND A.DEL_YN      = 'N'
+        AND B.DEL_YN      = 'N'
+        AND B.CNTR_NO     = C.CNTR_NO
+        AND C.DTL_DCSH_NO      = #{dtlDcshNo}
+        AND C.DEL_YN      = 'N'
+        <if test="epcCd != null and epcCd.startsWith('4')">
+            AND CASE WHEN SUBSTR(A.epc_cd, 0, 1) = '7' THEN FALSE ELSE TRUE END
+        </if>
+    </select>
+
+    <!--
+    Comparer le nombre total des colis, le  poids total de la déclaration DED et le nombre total des colis et le poids total à dédouaner
+    !== DAU 신고서 총포장개수, 총중량과 통관하고자하는 총포장개수와 총중량 비교 ==!
+    -->
+    <select id="selectCntrPckgTtwgInfo" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrIbnDedComnVo" resultType="alpass.ipt.car.com.vo.CarCagDcshBlCntrVo">
+        /* ClriIbnVrfcBsop_selectCntrPckgTtwgInfo */
+        SELECT NVL(SUM(A.PCKG_GCNT), 0) AS PCKG_GCNT,   /* BL 컨테이너 합계(총포장수량) */
+               NVL(SUM(A.TTWG), 0) AS TTWG              /* BL 컨테이너 합계(총중량) */
+        FROM tb_cari_cag_dcsh_bl_cntr A,
+             TB_CLRI_DED_CNTR B
+        WHERE A.CAG_MGMT_NO = #{cagMgmtNo}
+          AND A.DEL_YN      = 'N'
+          AND A.CNTR_NO     = B.CNTR_NO
+          AND B.DTL_DCSH_NO      = #{dtlDcshNo}
+          AND B.DEL_YN      = 'N'
+    </select>
+
+    <!--
+    Vérification de l'état de l'opérateur
+    !== 업체 상태 확인 ==!
+    -->
+    <select id="selectCo" resultType="java.lang.String">
+        /* selectCo */
+        SELECT NIF
+        FROM TB_POTE_NIF
+        WHERE DEL_YN = 'N'
+          AND NIF_STTS_CD != '0'
+          AND NIF = #{imExBucnNo}
+    </select>
+
+    <!--
+    Consulter le dépassement de l'apurement de la gestion et suivie (si Y c'est dépassé)
+    !== 사후관리 이행 초과 여부 조회 (Y일 경우 초과) ==!
+    -->
+    <select id="selectPsmgtFfmnXpirPridYn" resultType="string" parameterType="string">
+        /* ClriIbnVrfcBsop_selectPsmgtMaxFfmnXpirPrid */
+        select (CASE WHEN COUNT(*) > 0 THEN 'Y' ELSE 'N' END)
+        FROM tb_clri_ded_comn a
+        where a.dtl_dcsh_no = #{dtlDcshNo} and a.del_yn = 'N'
+        and exists(
+            select 'Y'
+                FROM tb_clri_ded_pdls b
+                where b.dtl_dcsh_no = a.dtl_dcsh_no
+                and b.del_yn = 'N'
+                and (b.apc_cd is not null and b.apc_cd != '')
+                and case when b.regm_pn is not null and b.regm_pn != '' then exists (
+                    select 'Y'
+                    from TB_CLRI_REGM_AUDT_MDL_COMN r
+                    where r.regm_pn = b.regm_pn and to_date(r.perm_tmlm_end_dt, 'YYYYMMDD') <![CDATA[ < ]]> to_date(to_char(systimestamp, 'YYYYMMDD'))
+                    ) ELSE
+                exists (
+                select 'Y'
+                FROM tb_clri_apc_cd c
+                where c.apc_cd = b.apc_cd
+                and c.psmgt_yn = 'Y'
+                and c.psmgt_prid is not null
+                and NVL(to_char(to_date(a.dclr_dt, 'YYYYMMDD') + c.psmgt_prid, 'YYYYMMDD'), to_char(systimestamp, 'YYYYMMDD')) <![CDATA[ < ]]>  systimestamp
+                )
+            END
+        )
+    </select>
+
+    <!--
+    Consulter la caution individuelle déclarée de la déclaration DED
+    !== DED신고서 신고 된 개별담보 조회 ==!
+    -->
+    <select id="selectIndvMgUseCnt" resultType="bigdecimal">
+        /* ClriIbnVrfcBsop_selectIndvMgUseCnt */
+        SELECT COUNT(*)
+        FROM TB_CLRI_DED_COMN A, TB_CLRI_DED_MG B
+        WHERE A.DEL_YN = 'N'
+        AND B.DEL_YN = 'N'
+        AND A.DTL_DCSH_NO = B.DTL_DCSH_NO
+        <if test="dtlDcshNo != null and dtlDcshNo != ''">
+            <![CDATA[
+           AND A.DTL_DCSH_NO <> #{dtlDcshNo}
+        ]]>
+        </if>
+        AND A.PRCS_STTS_CD NOT IN ('G03', 'G04')
+        AND B.MG_AC_NO = #{mgAcNo}
+    </select>
+
+    <!--
+    Consulter l'état de statistique de la déclaration DED par l'emplacement des marchandises
+    !== 화물 물품위치별 DAU 신고 통계현황 조회 ==!
+    -->
+    <select id="selectDedDclrStatsOfLoc" resultType="java.util.Map">
+        SELECT
+        SUM(PRE_DEC_CNT) AS PRE_DEC_CNT
+        , SUM(PRE_DEC_DCRD_Y_CNT) AS  PRE_DEC_DCRD_Y_CNT
+        , SUM(PRE_DEC_DCRD_N_CNT) AS  PRE_DEC_DCRD_N_CNT
+        , SUM(PRE_DEC_A_CNT) AS PRE_DEC_A_CNT /* 분할통관구분 A|전체 신고 건수 */
+        , SUM(PRE_DEC_I_CNT)  AS PRE_DEC_I_CNT  /* 분할통관구분 I|분할(시작) 신고 건수 */
+        , SUM(PRE_DEC_D_CNT) AS PRE_DEC_D_CNT  /* 분할통관구분 D|분할(진행중) 건수 */
+        , SUM(PRE_DEC_L_CNT) AS PRE_DEC_L_CNT  /* 분할통관구분 L|분할(최종) 건수 */
+        , SUM(PRE_ATA_A_CNT) AS PRE_ATA_A_CNT /* ATA 까르네 신고건수 */
+        FROM
+        (
+        SELECT  COUNT(*) AS PRE_DEC_CNT  /* 이전신고 건수 */
+        , NVL(SUM(DECODE(DCRD_YN, 'Y', 1, 0)), 0) AS PRE_DEC_DCRD_Y_CNT /* 차상반출 Y 신고 건수 */
+        , NVL(SUM(DECODE(DCRD_YN, 'N', 1, 0)), 0) AS PRE_DEC_DCRD_N_CNT /* 차상반출 N 신고 건수 */
+        , NVL(SUM(DECODE(DIVD_CSCL_TP_CD, 'A', 1, 0)), 0) AS PRE_DEC_A_CNT  /* 분할통관구분 A|전체 신고 건수 */
+        , NVL(SUM(DECODE(DIVD_CSCL_TP_CD, 'I', 1, 0)), 0) AS PRE_DEC_I_CNT  /* 분할통관구분 I|분할(시작) 신고 건수 */
+        , NVL(SUM(DECODE(DIVD_CSCL_TP_CD, 'D', 1, 0)), 0) AS PRE_DEC_D_CNT  /* 분할통관구분 D|분할(진행중) 건수 */
+        , NVL(SUM(DECODE(DIVD_CSCL_TP_CD, 'L', 1, 0)), 0) AS PRE_DEC_L_CNT  /* 분할통관구분 L|분할(최종) 건수 */
+        , 0 AS PRE_ATA_A_CNT
+        FROM ALPASSINT.TB_CLRI_DED_COMN
+        WHERE DEL_YN = 'N'
+        AND CAG_MGMT_NO       = #{cagMgmtNo}
+        AND CMDT_STGE_LOCT_CD = #{cmdtStgeLoctCd}
+        AND CASE WHEN DCLR_PT_CD = 'IM8' THEN
+        ( /* 물품위치장소랑 보세구역창고랑 같은것  또는 반출한신고서 물품위치장소랑 보세구역창고랑 같은것 - 20190530 추가*/
+        ( NVL(CMDT_STGE_LOCT_CD, ' ') != NVL(BNBN_CMDT_WRHS_CD, ' ') )
+        OR
+        ( NVL(CMDT_STGE_LOCT_CD, ' ') = NVL(BNBN_CMDT_WRHS_CD, ' ') AND PRCS_STTS_CD != 'D07' )
+        )
+        ELSE TRUE END
+        AND PRCS_STTS_CD NOT IN ('G03', 'G04')       /* 취소건 제외 */
+        <choose>
+            <when test="bfDtlDcshNo != null and bfDtlDcshNo != ''">
+                <![CDATA[
+				AND dtl_dcsh_no <> #{bfDtlDcshNo} /* 이전 신고번호가 존재하는 경우는 이전 신고번호 제외하고 판단 해당 조건은 비교하지 않음*/
+				AND SUBSTR(EPC_CD, 3, 2) = (SELECT SUBSTR(X.EPC_CD, 0, 2) FROM TB_CLRI_DED_COMN X WHERE X.DTL_DCSH_NO = #{bfDtlDcshNo} AND X.DEL_YN = 'N')
+             ]]>
+            </when>
+            <otherwise>
+                AND (BF_DTL_DCSH_NO IS NULL OR BF_DTL_DCSH_NO = '')
+            </otherwise>
+        </choose>
+        <if test="dtlDcshNo != null and dtlDcshNo != ''">
+            <![CDATA[
+		  AND dtl_dcsh_no <> #{dtlDcshNo} /* 현재 신고번호가 존재하는 경우는 본인 신고번호 제외하고 판단 (제출전) 이라면 해당 조건은 비교하지 않음*/
+		    ]]>
+        </if>
+        UNION ALL
+        SELECT  COUNT(*) AS PRE_DEC_CNT  /* 이전신고 건수 */
+        , 0 AS PRE_DEC_DCRD_Y_CNT /* 차상반출 Y 신고 건수 */
+        , 0 AS PRE_DEC_DCRD_N_CNT /* 차상반출 N 신고 건수 */
+        , NVL(SUM(DECODE(NVL(DIVD_CSCL_TP_CD, 'A'), 'A', 1, 0)), 0) AS PRE_DEC_A_CNT  /* 분할통관구분 A|전체 신고 건수 */
+        , NVL(SUM(DECODE(DIVD_CSCL_TP_CD, 'I', 1, 0)), 0) AS PRE_DEC_I_CNT  /* 분할통관구분 I|분할(시작) 신고 건수 */
+        , NVL(SUM(DECODE(DIVD_CSCL_TP_CD, 'D', 1, 0)), 0) AS PRE_DEC_D_CNT  /* 분할통관구분 D|분할(진행중) 건수 */
+        , NVL(SUM(DECODE(DIVD_CSCL_TP_CD, 'L', 1, 0)), 0) AS PRE_DEC_L_CNT  /* 분할통관구분 L|분할(최종) 건수 */
+        , COUNT(*) AS PRE_ATA_A_CNT  /* 이전신고 건수 */
+        FROM ( <![CDATA[ SELECT CARN_MGMT_NO,BSOP_REFF_NO ,CMDT_STGE_LOCT_CD,BNBN_CMDT_WRHS_CD,DIVD_CSCL_TP_CD, 'ADT' DIV, PRCS_STTS_CD   FROM TB_CLRE_ATA_CARN_IMEX WHERE CAG_MGMT_NO = #{cagMgmtNo} AND DEL_YN ='N'  UNION ALL
+            SELECT CARN_MGMT_NO,BSOP_REFF_NO,CMDT_STGE_LOCT_CD,BNBN_CMDT_WRHS_CD,DIVD_CSCL_TP_CD, 'RIM' DIV, PRCS_STTS_CD  FROM TB_CLRE_ATA_CARN_RIMEX WHERE CAG_MGMT_NO = #{cagMgmtNo} AND DEL_YN ='N' ]]> ) A
+        WHERE 1=1
+        <if test=' ( dcrdYn != null and dcrdYn.equals("N") ) and cmdtStgeLoctCd != null '>
+            <![CDATA[
+              AND CMDT_STGE_LOCT_CD = #{cmdtStgeLoctCd}    /* 차상반출이 아닌 경우는 무조건 물품장치장소 값을 비교해야 함. 다만 적하목록하역전신고(BMD)인 경우는 물품위치를 체크하지 않음. (2020.01.24) */
+              AND PRCS_STTS_CD NOT IN ('A03','E03')
+            ]]>
+        </if>
+        )
+    </select>
+
+    <select id="selectCarTrnpRgsrAtForDtlDcshNo" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrIbnDedComnVo" resultType="java.lang.String">
+        /** !==DED신고번호를 통하여 운송신청서가 등록되어 있는지 조회처리 한다.==! */
+        SELECT NVL((SELECT 'Y' AS RESULTS
+        FROM alpassint.TB_CARI_TRNP          A,
+        alpassint.TB_CARI_CAG_PRCS_BRKD P
+        WHERE A.RELA_NO        = #{dtlDcshNo}
+        AND A.DEL_YN         = 'N'
+        AND P.CAG_RQST_TP_CD = 'TRN'
+        AND P.cag_rqst_no        = A.TRNP_RQST_NO
+        AND P.RQST_DGCNT     = 0 <!-- 운송신청서의 신청차수는 0 -->
+        AND P.PRCS_STTS_CD NOT IN ('D09', 'G03') <!-- 기각(거절), 취소 제외) -->
+        <!-- AND ROWNUM = 1 -->
+        ),'N') AS EXISTS_RESULT
+        FROM DUAL
+    </select>
+
+
+    <!--
+    Vérifier si le même numéro de la déclaration précédente est saisi à l'onglet Article s'il s'agit d'une admission temporaire spéciale (ATS)
+    !== 특별임시수입(ATS)에 대한 이행신고서일 경우, 폼목사항에 동일한 이전절차DED번호를 입력했는지 검증 ==!
+     -->
+    <select id="selectBfDtlDcshNoNotEqCheck" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrIbnDedComnVo" resultType="string">
+        /* ClriIbnVrfcBsop_selectBfSadNoNotEqCheck */
+        SELECT 'Y' FROM (
+                            SELECT A.DTL_DCSH_NO, A.BF_DTL_DCSH_NO
+                            FROM TB_CLRI_DED_PDLS A
+                            WHERE A.DTL_DCSH_NO     = #{dtlDcshNo}
+                              AND A.DEL_YN     = 'N'
+                            GROUP BY A.DTL_DCSH_NO, A.BF_DTL_DCSH_NO
+                        )
+        GROUP BY DTL_DCSH_NO HAVING COUNT(*) <![CDATA[ > ]]> 1
+    </select>
+
+    <!--
+    Vérifier la totalité en même temps si le choix Véhicule O/N est O mais la SPT véhicule n'est pas enregistrée
+    !== 자동차여부가 Y인데 자동차 HS코드에 등록되지 않은 경우 한번에 일괄로 체크 ==!
+    -->
+    <select id="selectVhclHsYnCheckAll" resultType="alpass.ipt.clr.pdr.dre.vo.ClrDedPdlsVo">
+        /* selectVhclHsYnCheckAll */
+        SELECT *
+        FROM (
+            SELECT A.pdls_no, NVL(B.ased_hs_cd, A.hs_cd) as HS_CD
+                 FROM TB_CLRI_DED_PDLS A
+                     , TB_CLRI_DED_VLUT_AUDT_PDLS B
+
+        WHERE A.DTL_DCSH_NO     = #{dtlDcshNo}
+                     AND A.VHCL_YN = 'Y'
+                     AND A.DEL_YN = 'N'
+                     AND A.DTL_DCSH_NO = B.DTL_DCSH_NO
+                     AND A.PDLS_NO = B.PDLS_NO
+                     AND (B.DTL_DCSH_NO, B.PRC_EV_DGCNT) = (SELECT DTL_DCSH_NO, PRC_EV_DGCNT
+                     FROM TB_CLRI_DED_VLUT_AUDT_COMN
+                     WHERE DEL_YN = 'N'
+                     AND DTL_DCSH_NO = #{dtlDcshNo}
+                     AND LAST_YN = 'Y')
+                     AND B.DEL_YN = 'N'
+                 ) A
+                  WHERE NOT EXISTS (
+                SELECT 'Y'
+                FROM TB_CLRI_HS_PRFL B
+                WHERE B.DEL_YN          = 'N'
+                  AND B.USE_YN          = 'Y'
+                  AND B.HS_UPR_CLSF_CD  = 'V'
+                  AND B.HS_LWPR_CLSF_CD = 'V'
+                  AND B.HS_CD           = SUBSTR(A.HS_CD, 0, LENGTH(B.HS_CD))
+            )
+    </select>
+
+    <!--
+    Vérifier en même temps si des SPT prohibées à l'importation/à l'exportation existent parmi les articles
+    !== 품목에 수출입금지HS가 존재하는지 한번에 체크 ==!
+    -->
+    <select id="selectPrhbCmdtCheckAll" resultType="alpass.ipt.clr.pdr.dre.vo.ClrDedPdlsVo">
+        /* selectPrhbCmdtCheckAll */
+        SELECT *
+        FROM (
+                 SELECT AA.dept_cd,
+                        NVL(alpassint.fn_get_bf_dclr_dt(A.bf_dtl_dcsh_no, A.bf_pdls_no),AA.dclr_dt) AS dclr_dt,
+                        AA.dclr_pt_cd,
+                        (CASE WHEN SUBSTR(AA.dclr_pt_cd, 0, 2) = 'IM' THEN AA.imppn_idfy_no ELSE AA.exppn_idfy_no END) AS NIF,
+                        A.pdls_no,
+                        A.prhb_cmdt_cd,
+                        NVL(B.ased_hs_cd, A.hs_cd) as hs_cd,
+                        NVL(( SELECT HS_DESC FROM   ALPASSINT.TB_CLRI_HS_CD WHERE  HS_CD = NVL(B.ased_hs_cd, A.hs_cd) AND AA.dclr_dt BETWEEN HS_APLY_STRT_DT AND HS_APLY_END_DT AND ROWNUM = 1 ),'') AS PDLS_NM
+                 FROM TB_CLRI_DED_COMN AA, TB_CLRI_DED_PDLS A
+                                               LEFT OUTER JOIN TB_CLRI_DED_VLUT_AUDT_PDLS B ON
+                             A.DTL_DCSH_NO = B.DTL_DCSH_NO
+                         AND A.PDLS_NO = B.PDLS_NO
+                         AND (B.DTL_DCSH_NO, B.PRC_EV_DGCNT) = (SELECT DTL_DCSH_NO, PRC_EV_DGCNT
+                                                                FROM TB_CLRI_DED_VLUT_AUDT_COMN
+                                                                WHERE DEL_YN = 'N'
+                                                                  AND DTL_DCSH_NO = A.dtl_dcsh_no
+                                                                  AND LAST_YN = 'Y')
+                         AND B.DEL_YN = 'N'
+                 WHERE A.DTL_DCSH_NO = #{dtlDcshNo} AND AA.dtl_dcsh_no = A.dtl_dcsh_no
+                   AND A.DEL_YN = 'N' AND AA.del_yn = 'N'
+             ) A
+        WHERE EXISTS (                                                                 /* 수출입금지물품인지 확인 */
+                      SELECT 'Y'
+                      FROM TB_CLRI_HS_PRFL B
+                      WHERE B.DEL_YN          = 'N'
+                        AND B.USE_YN          = 'Y'
+                        AND B.HS_UPR_CLSF_CD  = 'P'                                  /* P: 수출입금지물품 */
+                        AND B.HS_LWPR_CLSF_CD = (CASE WHEN SUBSTR(A.dclr_pt_cd, 0, 2) = 'IM' THEN 'P1' ELSE 'P2' END) /* P1: 수입금지물품코드, P2:수출금지물품 */
+                        AND B.HS_CD = SUBSTR(A.HS_CD, 0, LENGTH (B.HS_CD))
+                        AND A.dclr_dt BETWEEN B.aply_strt_dt AND B.aply_end_dt
+                        AND (EXISTS(
+                                     select 'Y' /* 금지연례일자 확인 */
+                                     from TB_CLRI_HS_PRFL_PRHB_PRID P
+                                     WHERE P.hs_cd = B.hs_cd
+                                       AND P.hs_upr_clsf_cd = B.hs_upr_clsf_cd
+                                       AND P.hs_lwpr_clsf_cd = B.hs_lwpr_clsf_cd
+                                       AND P.aply_strt_dt = B.aply_strt_dt
+                                       AND P.del_yn = 'N'
+                                       and P.use_yn = 'Y'
+                                       AND A.dclr_dt BETWEEN CONCAT(substr(A.dclr_dt, 0, 4), P.prhb_strt_mmdd) AND CONCAT(substr(A.dclr_dt, 0, 4), P.prhb_end_mmdd)
+                                 ) OR 'Y' = (
+                                      select (CASE WHEN COUNT(*) > 0 THEN 'Y' ELSE 'N' END) /* 금지세번상세 확인 */
+                                      from ALPASSINT.TB_CLRI_HS_PRFL_DTL D
+                                      WHERE D.del_yn = 'N'
+                                        AND D.hs_cd = B.hs_cd
+                                        AND D.hs_upr_clsf_cd = B.hs_upr_clsf_cd
+                                        AND D.hs_lwpr_clsf_cd = B.hs_lwpr_clsf_cd
+                                        AND D.aply_strt_dt = B.aply_strt_dt AND (
+                                          (CASE
+                                               WHEN D.NIF IS NOT NULL AND D.NIF <![CDATA[ <> ]]> '' AND D.NIF = A.NIF THEN FALSE
+                                               ELSE (CASE
+                                                         WHEN D.aply_cstm_cd IS NOT NULL AND D.aply_cstm_cd <![CDATA[ <> ]]> '' AND
+                                                              D.aply_cstm_cd = A.DEPT_CD THEN TRUE
+                                                         WHEN D.hs_prfl_tp_cd IS NULL OR D.hs_prfl_tp_cd = '' THEN FALSE
+                                                         WHEN 'Y' = (SELECT CASE WHEN COUNT(*) > 0 THEN 'Y' ELSE 'N' END
+                                                                     FROM ALPASSINT.TB_CLRI_HS_PRFL_DTL C
+                                                                     WHERE C.DEL_YN = 'N'
+                                                                       AND C.hs_upr_clsf_cd = B.hs_upr_clsf_cd
+                                                                       AND C.hs_lwpr_clsf_cd = B.hs_lwpr_clsf_cd
+                                                                       AND C.hs_cd = B.hs_cd
+                                                                       AND C.aply_strt_dt = B.aply_strt_dt
+                                                                       AND C.cscl_yn = 'N'
+                                                                       AND C.hs_prfl_tp_cd = A.prhb_cmdt_cd) THEN FALSE
+                                                         ELSE TRUE END) END)))
+                          )
+                  )
+    </select>
+
+
+
+    <!--
+    Consulter le code spécifique de catégorie de l'article perfectionné
+    !== 가공물품분류특별코드 조회 ==!
+    -->
+    <select id="selectMfcmClsfSpelCd" resultType="string">
+        /* ClriIbnVrfcBsop_selectMfcmClsfSpelCd */
+        SELECT cmdt_clsf_spel_cd
+        FROM tb_clri_mfcm_clsf_spel_cd
+        WHERE del_yn = 'N'
+          AND use_yn = 'Y'
+          AND mafc_co_nif = #{mafcCoNif}
+          AND cmdt_clsf_spel_cd = #{cmdtClsfSpelCd}
+          AND hs_cd = #{hsCd}
+    </select>
+
+    <!--
+    Vérifier si le code spécifique saisi dans l'article existe dans la table de codes spécifiques
+    !== 품목에 기재된 특별코드가 특별코드테이블에 존재하는지 체크함.  ==!
+    -->
+    <select id="selectMfcmClsfSpelCdCheckAll" resultType="alpass.ipt.clr.pdr.dre.vo.ClrDedPdlsVo">
+        /* selectMfcmClsfSpelCdCheckAll */
+        SELECT *
+        FROM (SELECT A.pdls_no, NVL(B.ased_hs_cd, A.hs_cd) as hs_cd, A.CMDT_CLSF_SPEL_CD
+              FROM TB_CLRI_DED_PDLS A
+               LEFT OUTER JOIN TB_CLRI_DED_VLUT_AUDT_PDLS B ON
+                  A.DTL_DCSH_NO = B.DTL_DCSH_NO
+              AND A.PDLS_NO = B.PDLS_NO
+              AND (B.DTL_DCSH_NO, B.PRC_EV_DGCNT) = (SELECT DTL_DCSH_NO, PRC_EV_DGCNT
+                                                     FROM TB_CLRI_DED_VLUT_AUDT_COMN
+                                                     WHERE DEL_YN = 'N'
+                                                       AND DTL_DCSH_NO = #{dtlDcshNo}
+                                                       AND LAST_YN = 'Y')
+              AND B.DEL_YN = 'N'
+              WHERE A.DTL_DCSH_NO = #{dtlDcshNo}
+                AND A.DEL_YN = 'N'
+              ) A
+                 WHERE (A.CMDT_CLSF_SPEL_CD IS NOT NULL AND A.CMDT_CLSF_SPEL_CD <![CDATA[ <> ]]> '')         /* 특별코드를 기재함 */
+          AND NOT EXISTS (
+                SELECT CMDT_CLSF_SPEL_CD
+                FROM TB_CLRI_MFCM_CLSF_SPEL_CD B
+                WHERE B.DEL_YN            = 'N'
+                  AND B.USE_YN            = 'Y'
+                  AND B.MAFC_CO_NIF       = #{mafcCoNif}
+            AND B.CMDT_CLSF_SPEL_CD = A.CMDT_CLSF_SPEL_CD
+            AND B.HS_CD = A.HS_CD
+            )
+    </select>
+
+    <!--
+    Vérifier en même temps si les SPT dans l'article sont valables
+    !== 품목에 HS 유효한지 한번에 체크 ==!
+    -->
+    <select id="selectHsCdCheckAll" resultType="alpass.ipt.clr.pdr.dre.vo.ClrDedPdlsVo">
+        /* selectHsCdCheckAll */
+        SELECT *
+        FROM (SELECT A.pdls_no, NVL(B.ased_hs_cd, A.hs_cd) as hs_cd
+              FROM TB_CLRI_DED_PDLS A
+               LEFT OUTER JOIN TB_CLRI_DED_VLUT_AUDT_PDLS B ON
+                  A.DTL_DCSH_NO = B.DTL_DCSH_NO
+              AND A.PDLS_NO = B.PDLS_NO
+              AND (B.DTL_DCSH_NO, B.PRC_EV_DGCNT) = (SELECT DTL_DCSH_NO, PRC_EV_DGCNT
+                                                     FROM TB_CLRI_DED_VLUT_AUDT_COMN
+                                                     WHERE DEL_YN = 'N'
+                                                       AND DTL_DCSH_NO = #{dtlDcshNo}
+                                                       AND LAST_YN = 'Y')
+              AND B.DEL_YN = 'N'
+              WHERE A.DTL_DCSH_NO = #{dtlDcshNo}
+                AND A.DEL_YN = 'N'
+              ) A
+                 WHERE NOT EXISTS (
+                SELECT 'Y'
+                FROM tb_clri_hs_cd B
+                WHERE DEL_YN = 'N'
+                  AND HS_CD = A.HS_CD
+                  AND TO_CHAR(TO_DATE(#{dclrDt}, 'DD/MM/YYYY'),'YYYYMMDD') BETWEEN HS_APLY_STRT_DT AND HS_APLY_END_DT
+            )
+    </select>
+
+    <!--
+    Vérifier en même temps si les codes accord dans l'article sont valables
+    !== 품목에 협정코드 유효한지 한번에 체크 ==!
+    -->
+    <select id="selectPrvlCdCheckAll" resultType="alpass.com.ded.vo.ComDedPdlsVrfcVo">
+        /* selectPrvlCdCheckAll */
+        select pdls_no,
+               hs_cd,
+               prvl_cd,
+               msg_id,
+               param1,
+               param2
+        from (select p.pdls_no,
+                     p.hs_cd,
+                     p.prvl_cd,
+                     'msg.03985'    as msg_id,
+                     p.orcy_cnty_cd as param1,
+                     p.prvl_cd      as param2
+              from tb_clri_ded_comn c,
+                   tb_clri_ded_pdls p
+              where c.dtl_dcsh_no = #{dtlDcshNo}
+                and c.dtl_dcsh_no = p.dtl_dcsh_no
+                and p.prvl_cd != ''
+                and (NOT EXISTS(
+                      select 'Y'
+                      from tb_clri_prvl_cnty pc
+                      where pc.use_yn = 'Y'
+                        AND c.del_yn = 'N'
+                        AND pc.prvl_cd = p.prvl_cd
+                        and pc.cnty_cd = (CASE WHEN SUBSTR(c.dclr_pt_cd, 0, 2) = 'IM' THEN p.orcy_cnty_cd ELSE 'DZ' END)
+                        and NVL(alpassint.fn_get_bf_dclr_dt(p.bf_dtl_dcsh_no, p.bf_pdls_no), c.dclr_dt) Between pc.aply_strt_dt and pc.aply_end_dt
+                  ))
+              UNION ALL
+              select p.pdls_no,
+                     p.hs_cd,
+                     p.prvl_cd,
+                     'msg.03986' as msg_id,
+                     p.hs_cd     as param1,
+                     ''          as param2
+              from tb_clri_ded_comn c,
+                   tb_clri_ded_pdls p
+              where c.dtl_dcsh_no = #{dtlDcshNo}
+                and c.dtl_dcsh_no = p.dtl_dcsh_no
+                and p.prvl_cd != ''
+                AND (EXISTS(
+                             SELECT  'Y'
+                             FROM  ALPASSINT.tb_clri_prvl_qta AA
+                             WHERE  AA.DEL_YN = 'N'
+                               AND AA.prvl_cd = p.prvl_cd
+                               AND AA.hs_cd = p.hs_cd
+                         ) AND NOT EXISTS(
+                      SELECT 'Y'
+                      FROM ALPASSINT.tb_clri_prvl_qta AA
+                      WHERE AA.DEL_YN = 'N'
+                        AND AA.prvl_cd = p.prvl_cd
+                        AND AA.hs_cd = p.hs_cd
+                        AND NVL(alpassint.fn_get_bf_dclr_dt(p.bf_dtl_dcsh_no, p.bf_pdls_no), c.dclr_dt) BETWEEN AA.aply_strt_dt AND AA.aply_end_dt
+                  )
+                  ))
+    </select>
+
+    <!--
+    Vérifier en même temps s'il exsite des articles dont la marque n'est pas saisie alors qu'elle est obligatoire
+    !== 품목에 브랜드 기재 대상인데 기재하지 않은 품목이 존재하는지 한번에 체크 ==!
+    -->
+    <select id="selectBrndCheckAll" resultType="alpass.ipt.clr.pdr.dre.vo.ClrDedPdlsVo">
+        /* selectBrndCheckAll */
+        SELECT *
+        FROM ( SELECT A.pdls_no, NVL(B.ased_hs_cd, A.hs_cd) as hs_cd
+            FROM TB_CLRI_DED_PDLS A
+             LEFT OUTER JOIN TB_CLRI_DED_VLUT_AUDT_PDLS B ON
+                A.DTL_DCSH_NO = B.DTL_DCSH_NO
+            AND A.PDLS_NO = B.PDLS_NO
+            AND (B.DTL_DCSH_NO, B.PRC_EV_DGCNT) = (SELECT DTL_DCSH_NO, PRC_EV_DGCNT
+                                                   FROM TB_CLRI_DED_VLUT_AUDT_COMN
+                                                   WHERE DEL_YN = 'N'
+                                                     AND DTL_DCSH_NO = #{dtlDcshNo}
+                                                     AND LAST_YN = 'Y')
+            AND B.DEL_YN = 'N'
+        WHERE A.DTL_DCSH_NO     = #{dtlDcshNo}
+                AND A.DEL_YN = 'N'
+                AND (A.BRND_NM IS NULL OR A.BRND_NM = '')
+            ) A
+            WHERE EXISTS (
+                SELECT 'Y'
+                FROM tb_clri_hs_cd B
+                WHERE DEL_YN = 'N'
+                  AND HS_CD = A.HS_CD
+                  AND TO_CHAR(TO_DATE(#{dclrDt}
+           , 'DD/MM/YYYY')
+           , 'YYYYMMDD') BETWEEN HS_APLY_STRT_DT AND HS_APLY_END_DT
+            AND B.BRND_NM_WRTE_YN = 'Y' /* 브랜드 기재 대상 Y */
+            )
+    </select>
+
+    <!--
+    Vérifier en même temps s'il existe des spécifications de modèle dont la liste d'ingrédients n'est pas saisie alors qu'elle est obligatoire
+    !== 성분기재대상인데 성분을 기재하지 않은 모델규격사항이 있는지 한번에 체크 ==!
+    -->
+    <select id="selectIngrNmCheckAll" resultType="alpass.ipt.clr.pdr.dre.vo.ClrDedMdlStszVo">
+        /* selectIngrNmCheckAll */
+        SELECT *
+        FROM (SELECT A.pdls_no, NVL(C.ased_hs_cd, A.hs_cd) as hs_cd, B.mdl_stsz_no
+            FROM TB_CLRI_DED_PDLS A
+                  LEFT OUTER JOIN TB_CLRI_DED_VLUT_AUDT_PDLS C ON
+                  A.DTL_DCSH_NO = C.DTL_DCSH_NO
+                  AND A.PDLS_NO = C.PDLS_NO
+                  AND (C.DTL_DCSH_NO, C.PRC_EV_DGCNT) = (SELECT DTL_DCSH_NO, PRC_EV_DGCNT
+                                                      FROM TB_CLRI_DED_VLUT_AUDT_COMN
+                                                      WHERE DEL_YN = 'N'
+                                                      AND DTL_DCSH_NO = #{dtlDcshNo}
+                                                      AND LAST_YN = 'Y')
+                  AND C.DEL_YN = 'N'
+                , TB_CLRI_DED_MDL_STSZ B
+        WHERE A.DTL_DCSH_NO     = #{dtlDcshNo}
+                AND A.DEL_YN = 'N'
+                AND B.DEL_YN = 'N'
+                AND A.DTL_DCSH_NO = B.DTL_DCSH_NO
+                AND A.PDLS_NO = B.PDLS_NO
+                AND (B.INGR_NM IS NULL OR B.INGR_NM = '') /* 성분 기재되지 않음 */
+            ) A
+            WHERE EXISTS (
+                SELECT 'Y'
+                FROM tb_clri_hs_cd C
+                WHERE C.DEL_YN = 'N'
+                  AND C.HS_CD  = A.HS_CD
+                  AND TO_CHAR(TO_DATE(#{dclrDt}
+           , 'DD/MM/YYYY')
+           , 'YYYYMMDD') BETWEEN C.HS_APLY_STRT_DT AND C.HS_APLY_END_DT
+            AND INGR_WRTE_YN = 'Y'
+            )
+    </select>
+
+    <!--
+    Vérifier s'il existe le taux d'amortissement
+    !== 감가상각률 존재여부 검증 ==!
+    -->
+    <select id="selectDprcRtCheckAll" resultType="alpass.ipt.clr.pdr.dre.vo.ClrDedPdlsVo">
+        /* selectDprcRtCheckAll */
+        SELECT *
+        FROM TB_CLRI_DED_PDLS A
+        WHERE DTL_DCSH_NO     = #{dtlDcshNo}
+          AND DEL_YN     = 'N'
+          AND NOT EXISTS (
+                WITH RECURSIVE a AS (
+                    SELECT hs_cd, hs_aply_strt_dt
+                    FROM tb_clri_hs_cd b
+                    WHERE B.DEL_YN = 'N'
+                      AND TO_CHAR(TO_DATE(#{dclrDt}, 'DD/MM/YYYY'),'YYYYMMDD') BETWEEN B.HS_APLY_STRT_DT AND B.HS_APLY_END_DT
+                      AND B.DPRC_RT IS NOT NULL
+                    UNION ALL
+                    SELECT d.UPR_HS_CD, d.UPR_HS_APLY_STRT_DT
+                    FROM tb_clri_hs_cd d
+                             JOIN a ON a.hs_cd = d.UPR_HS_CD and a.hs_aply_strt_dt = d.UPR_HS_APLY_STRT_DT)
+                SELECT 'Y' FROM a
+            )
+    </select>
+
+    <!--
+    Vérifier si les documents obligatoires sont joints.
+    !== 필수첨부서류 체크 ==!
+    -->
+    <select id="selectAtchDocCdCheckAll" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrIbnDedComnVo" resultType="alpass.ipt.clr.pdr.dre.vo.ClrDedAtdocVo">
+        /* selectAtchDocCdCheckAll */
+        SELECT DTL_DCSH_NO
+             , PDLS_NO
+             , PBLS_ITT_NM
+             , ATCH_DOC_CD AS DOC_KND_CD
+             , FN_GET_DOC_NM(ATCH_DOC_CD, #{langCd}) AS DOC_KND_NM
+             , BFHN_SBMT_YN
+        FROM (
+                 /******************************************************/
+                 /* HS코드별 첨부문서 조회 Consulter les documents joints par SPT  */
+                 /******************************************************/
+                 SELECT B.DTL_DCSH_NO
+                      , B.PDLS_NO
+                      , 'HS_CD' AS PBLS_ITT_NM
+                      , T2.ATCH_DOC_CD
+                      , T3.BFHN_SBMT_YN
+                 FROM TB_CLRI_DED_COMN A
+                    , TB_CLRI_DED_PDLS B
+                          LEFT OUTER JOIN TB_CLRI_DED_VLUT_AUDT_PDLS C ON
+                             B.DTL_DCSH_NO = C.DTL_DCSH_NO
+                         AND B.PDLS_NO = C.PDLS_NO
+                         AND (C.DTL_DCSH_NO, C.PRC_EV_DGCNT) = (SELECT DTL_DCSH_NO, PRC_EV_DGCNT
+                                                                FROM TB_CLRI_DED_VLUT_AUDT_COMN
+                                                                WHERE DEL_YN = 'N'
+                                                                  AND DTL_DCSH_NO = #{dtlDcshNo}
+                                                                  AND LAST_YN = 'Y')
+                         AND C.DEL_YN = 'N'
+                    , TB_CLRI_HS_ATDOC T1
+                    , TB_CLRI_HS_ATDOC_D T2
+                    , TB_CLRI_ATDOC T3
+                 WHERE A.DTL_DCSH_NO     = #{dtlDcshNo}
+                   AND A.DEL_YN     = 'N'
+                   AND A.DTL_DCSH_NO     = B.DTL_DCSH_NO
+                   AND B.DEL_YN     = 'N'
+                   AND T1.hs_cd = NVL(C.ased_hs_cd, B.HS_CD)
+                   AND T1.DEL_YN    = 'N'
+                   AND T1.HS_ATCH_DOC_MGMT_NO = T2.HS_ATCH_DOC_MGMT_NO
+                   AND T2.USE_YN    = 'Y'
+                   AND T2.DEL_YN    = 'N'
+                   AND T3.ATCH_DOC_CD = T2.ATCH_DOC_CD
+                   AND EXISTS (
+                         SELECT 'Y'
+                         FROM TB_CLRI_HS_ATDOC_DCLR_PT T3
+                         WHERE T3.HS_ATCH_DOC_MGMT_NO = T1.HS_ATCH_DOC_MGMT_NO
+                           AND T3.DCLR_PT_CD          = A.DCLR_PT_CD
+                           AND T3.USE_YN              = 'Y'
+                           AND T3.DEL_YN              = 'N'
+                     )
+                   AND (NVL(A.frst_dclr_dt, A.dclr_dt) BETWEEN T2.aply_strt_dt AND T2.aply_end_dt)
+                     /* 작업유형이 신고서의 작업유형과 일치하거나(비어있는 경우 필수),
+                       HS예외코드가 신고서의 품목의 HS예외코드가 일치하는 경우(비어있는 경우 필수) 보완요구 */
+                   AND (
+                         ((T2.wkng_pt_cd IS NULL OR T2.wkng_pt_cd = '') OR
+                          (T2.wkng_pt_cd IS NOT NULL AND T2.wkng_pt_cd != '' AND T2.wkng_pt_cd = A.wkng_pt_cd)) AND
+                         ( (T2.HS_EXCP_MTR_CD IS NULL OR T2.HS_EXCP_MTR_CD = '') OR
+                           (T2.HS_EXCP_MTR_CD IS NOT NULL AND T2.HS_EXCP_MTR_CD != '' AND T2.HS_EXCP_MTR_CD = B.hs_excp_mtr_cd)
+                             )
+                     )
+                 UNION ALL
+                 /*********************************************************/
+                 /* APC 코드별 첨부문서 조회  Consulter les documents joints par code APC */
+                 /*********************************************************/
+                 SELECT A.DTL_DCSH_NO
+                      , A.PDLS_NO
+                      , 'APC_CD' AS PBLS_ITT_NM
+                      , T1.ATCH_DOC_CD
+                      , T2.BFHN_SBMT_YN
+                 FROM TB_CLRI_DED_PDLS A
+                 LEFT OUTER JOIN TB_CLRI_DED_VLUT_AUDT_PDLS B ON A.DTL_DCSH_NO = B.DTL_DCSH_NO
+                    AND A.PDLS_NO = B.PDLS_NO
+                    AND (B.DTL_DCSH_NO, B.PRC_EV_DGCNT) = (SELECT DTL_DCSH_NO, PRC_EV_DGCNT
+                                                            FROM TB_CLRI_DED_VLUT_AUDT_COMN
+                                                            WHERE DEL_YN = 'N'
+                                                              AND DTL_DCSH_NO = #{dtlDcshNo}
+                                                              AND LAST_YN = 'Y')
+                     AND B.DEL_YN = 'N'
+                    , TB_CLRI_APC_ATDOC T1
+                    , TB_CLRI_ATDOC T2
+                 WHERE A.DTL_DCSH_NO     = #{dtlDcshNo}
+                   AND A.DEL_YN     = 'N'
+                   AND T1.APC_CD    = NVL(B.ased_apc_cd, A.apc_cd)
+                   AND T1.USE_YN    = 'Y'
+                   AND T1.DEL_YN    = 'N'
+                   AND T2.ATCH_DOC_CD = T1.ATCH_DOC_CD
+                   AND TO_CHAR(TO_DATE(NVL(#{frstDclrDt}, #{dclrDt}), 'DD/MM/YYYY'),'YYYYMMDD')   BETWEEN T2.APLY_STRT_DT AND T2.APLY_END_DT
+                   AND (CASE WHEN T1.apc_excp_mtr_cd IS NOT NULL AND T1.apc_excp_mtr_cd <![CDATA[ <> ]]> '' THEN T1.apc_excp_mtr_cd = A.apc_dtl_Cd ELSE TRUE END)
+                 UNION ALL
+                 /*********************************************************/
+                 /* 특별코드별 첨부문서 조회  Consulter les documents joints par code spécifique  */
+                 /*********************************************************/
+                 SELECT A.DTL_DCSH_NO
+                      , A.PDLS_NO
+                      , 'PRVL_CD' AS PBLS_ITT_NM
+                      , T1.ATCH_DOC_CD
+                      , T2.BFHN_SBMT_YN
+                 FROM TB_CLRI_DED_PDLS A
+                 LEFT OUTER JOIN TB_CLRI_DED_VLUT_AUDT_PDLS B ON A.DTL_DCSH_NO = B.DTL_DCSH_NO
+                    AND A.PDLS_NO = B.PDLS_NO
+                    AND (B.DTL_DCSH_NO, B.PRC_EV_DGCNT) = (SELECT DTL_DCSH_NO, PRC_EV_DGCNT
+                                                            FROM TB_CLRI_DED_VLUT_AUDT_COMN
+                                                            WHERE DEL_YN = 'N'
+                                                              AND DTL_DCSH_NO = #{dtlDcshNo}
+                                                              AND LAST_YN = 'Y')
+                    AND B.DEL_YN = 'N'
+                    , TB_CLRI_PRVL_CD_ATDOC T1
+                    , TB_CLRI_ATDOC T2
+                 WHERE A.DTL_DCSH_NO     = #{dtlDcshNo}
+                   AND T2.ATCH_DOC_CD = T1.ATCH_DOC_CD
+                   AND A.DEL_YN     = 'N'
+                   AND TO_CHAR(TO_DATE(NVL(#{frstDclrDt}, #{dclrDt}), 'DD/MM/YYYY'),'YYYYMMDD')   BETWEEN T2.APLY_STRT_DT AND T2.APLY_END_DT
+                   AND T1.PRVL_CD   = NVL(B.ased_prvl_cd, A.PRVL_CD)
+                   AND T1.USE_YN    = 'Y'
+                   AND T1.DEL_YN    = 'N'
+             ) A
+        WHERE NOT EXISTS (
+            /***************************************************************/
+            /* A 필수 첨부에 해당된 첨부파일을 실제 신고서에 작성여부 확인 Vérifier si les documents joints obligatoires sont réellement saisis dans la déclaration*/
+            /***************************************************************/
+                SELECT 'EXISTS'
+                FROM TB_CLRI_DED_ATDOC X
+                WHERE (X.pdls_no = A.pdls_no OR X.pdls_no = '999')
+                  AND X.DOC_KND_CD = A.ATCH_DOC_CD
+                  AND X.DEL_YN     = 'N'
+                  AND X.DTL_DCSH_NO     = #{dtlDcshNo}
+            )
+    </select>
+
+    <!--
+    Consulter le numéro de châssis du véhicule de la déclaration précédente
+    !== 이전 신고 차량 차대번호 조회 ==!
+    -->
+    <select id="selectBfDedVhclChssNo" resultType="string">
+        /* selectBfSadVhclChssNo */
+        SELECT CHSS_NO
+        FROM ALPASSINT.TB_CLRI_DED_VHCL A,
+             ALPASSINT.TB_CLRI_DED_COMN B
+        WHERE A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND A.DTL_DCSH_NO = B.DTL_DCSH_NO
+          AND A.dtl_dcsh_no = #{bfDtlDcshNo}
+          AND A.CHSS_NO = #{chssNo}
+    </select>
+
+    <select id="selectOthsDedVhclChssNo" resultType="string">
+        select B.chss_no from tb_clri_ded_comn A,
+                              tb_clri_ded_vhcl B
+        where A.dtl_dcsh_no = B.dtl_dcsh_no AND
+            A.PRCS_STTS_CD NOT IN ('G03','G04') AND /**취소건 제외*/
+            A.DEL_YN = 'N' AND B.del_yn = 'N' AND
+            A.bf_dtl_dcsh_no = #{bfDtlDcshNo} AND
+        <if test='dtlDcshNo != null and !"".equals(dtlDcshNo)'>
+            A.dtl_dcsh_no <![CDATA[ <> ]]> #{dtlDcshNo} AND
+        </if>
+            B.chss_no = #{chssNo} LIMIT 1
+    </select>
+
+    <!--
+    Consulter la quantité de stock de l'article faisant l'objet de la gestion et suivi de la procédure précédente
+    !== 이전절차 사후관리 품목 재고 수량 조회 ==!
+    -->
+    <select id="selectBfPsmgtPdlsQty" resultType="BigDecimal">
+		<![CDATA[
+        /* ClriIbnVrfcBsop_selectBfPsmgtPdlsQty */
+        SELECT t2.rsqty_qty
+                   + (SELECT NVL(SUM(ffmn_qty),0)
+                      FROM tb_clri_psmgt_pdls_invn_h
+                      WHERE del_yn = 'N'
+                        AND dtl_dcsh_no = t2.dtl_dcsh_no
+                        and pdls_no = t2.pdls_no
+                        AND ffmn_dtl_dcsh_no = #{dtlDcshNo}) AS rsqty_qty
+        FROM tb_clri_psmgt_pdls t1
+           , tb_clri_psmgt_pdls_invn_h t2
+        WHERE t1.del_yn = 'N'
+          AND t1.dtl_dcsh_no = #{bfDtlDcshNo}
+          AND t1.pdls_no = #{bfPdlsNo}
+          AND t1.dtl_dcsh_no = t2.dtl_dcsh_no
+          AND t1.pdls_no = t2.pdls_no
+          AND t2.del_yn = 'N'
+          AND t2.last_yn = 'Y'
+        ]]>
+	</select>
+
+    <!--
+    Consulter la quantité en cours de traitement pour compaer la quantité de stock de l'article faisant l'objet de la gestion et suivi de la procédure précédente
+    !== 이전절차 사후관리 품목 재고 수량 비교를 위한 진행 수량 조회 ==!
+    -->
+    <select id="selectBfPsmgtPdlsPrcsQty" resultType="java.math.BigDecimal">
+        <![CDATA[
+		/* ClriIbnVrfcBsop_selectBfPsmgtPdlsPrcsQty */
+        SELECT NVL(SUM(t2.qty),0)
+		  FROM tb_clri_ded_comn t1
+             , tb_clri_ded_pdls t2
+		 WHERE t1.del_yn = 'N'
+		]]>
+        <if test="dtlDcshNo != null and dtlDcshNo != ''">
+            <![CDATA[
+           AND t1.dtl_dcsh_no <> #{dtlDcshNo}
+		]]>
+        </if>
+        <![CDATA[
+           AND t1.dtl_dcsh_no = t2.dtl_dcsh_no
+           AND t2.del_yn = 'N'
+           AND t2.bf_dtl_dcsh_no = #{bfDtlDcshNo}
+           AND t2.bf_pdls_no = #{bfPdlsNo}
+           AND t1.prcs_stts_cd IN ('A04','B01','C02','B04','B02','D01','D02','D03','H04','E02','D04','F01','F02','G01','G02')  /** 반출전 처리상태 */
+		]]>
+        <if test="nif != null and nif != ''">
+            and (   (t1.dclr_pt_cd in ('IM4', 'IM5', 'IM6', 'IM7', 'END', 'TRC', 'LOI', 'ZFI', 'ZFP') and t1.imppn_idfy_no = #{nif})
+            or (t1.dclr_pt_cd in ('EX1', 'EX2', 'EX3', 'LOE', 'ZFE') and t1.exppn_idfy_no = #{nif}))
+        </if>
+    </select>
+
+    <!--
+    Consulter les données de la gestion et suivi de la procédure précédente
+    !== 이전절차 사후관리 데이터 조회 ==!
+    -->
+    <select id="selectBfPsmgtPdls" resultType="alpass.ipt.clr.pdr.dre.vo.ClrIbnBfPsmgtPdlsInfoVo">
+        SELECT
+            G.HS_CD
+             , G.CMDT_CLSF_SPEL_CD
+             , G.BNBN_CMDT_WRHS_CD
+             , (CASE
+                    WHEN A.EPC_CD NOT LIKE '21%' THEN E.ORCY_CNTY_CD
+                    ELSE R.ORCY_CNTY_CD
+            END) AS ORCY_CNTY_CD
+        FROM
+            TB_CLRI_PSMGT_PDLS_INVN_H G
+           , TB_CLRI_DED_COMN A
+           , TB_CLRI_DED_PDLS E
+           , TB_CLRI_DED_RIMEX_PRNG_PDLS R
+        WHERE
+            G.DTL_DCSH_NO = A.DTL_DCSH_NO
+          AND    G.DTL_DCSH_NO = E.DTL_DCSH_NO(+)
+          AND    G.PDLS_NO = E.PDLS_NO(+)
+          AND    G.DTL_DCSH_NO = R.DTL_DCSH_NO(+)
+          AND    G.PDLS_NO = R.PRNG_PDLS_NO(+)
+          AND    G.LAST_YN = 'Y'
+          AND    G.DTL_DCSH_NO = #{bfDtlDcshNo}
+          AND    G.PDLS_NO = #{bfPdlsNo}
+          AND    G.DEL_YN = 'N'
+          AND    A.DEL_YN = 'N'
+          AND    E.DEL_YN(+) = 'N'
+          AND    R.DEL_YN(+) = 'N'
+    </select>
+
+    <!--
+    Consulter la quantité actuellement en cours de traitement de la matière première pour la sortie suite au perfectionnement sous douane
+    !== 보세가공반출 원자재 현재 진행 수량 조회 ==!
+    -->
+    <select id="selectMafcRwmsPrcsQty" resultType="java.math.BigDecimal">
+        <![CDATA[
+		/* ClriIbnVrfcBsop_selectMafcRwmsPrcsQty */
+		SELECT NVL(SUM(t3.qty),0)
+		  FROM tb_clri_ded_comn t1
+		     , tb_clri_ded_pdls t2
+		     , tb_clri_ded_rwms t3
+		 WHERE t1.del_yn = 'N'
+		   AND t1.prcs_stts_cd IN ('A04','B01','C02','B04','B02','D01','D02','D03','H04','E02','D04','F01','F02','G01','G02')  /** 반출전 처리상태 */
+		]]>
+        <if test="dtlDcshNo != null and dtlDcshNo != ''">
+            <![CDATA[
+           AND t1.dtl_dcsh_no <> #{dtlDcshNo}
+		]]>
+        </if>
+        <![CDATA[
+		   AND t1.dtl_dcsh_no = t2.dtl_dcsh_no
+		   AND T2.del_yn = 'N'
+		   AND t2.dtl_dcsh_no = t3.dtl_dcsh_no
+		   AND t2.pdls_no = t3.pdls_no
+		   AND T3.del_yn = 'N'
+           AND t3.bf_dtl_dcsh_no = #{bfDtlDcshNo}
+           AND t3.bf_pdls_no = #{bfPdlsNo}
+		]]>
+    </select>
+
+    <!--
+	Consulter l'ordre séquentielle de l'estimation de la valeur actuelle
+	!== 현재 가격평가 차수 조회 ==!
+	-->
+    <select id="selectCurrPrcAudtDgcnt" resultType="bigdecimal">
+        /* selectCurrPrcAudtDgcnt */
+        SELECT PRC_EV_DGCNT
+        FROM TB_CLRI_DED_VLUT_AUDT_COMN
+        WHERE DEL_YN = 'N'
+          AND dtl_dcsh_no = #{dtlDcshNo}
+          AND LAST_YN = 'Y'
+    </select>
+
+    <!--
+    Consulter les objets de vérification de documents joints par EPC
+    !== EPC코드별 첨부문서 체크대상 조회 ==!
+    -->
+    <select id="selectCheckDedAtdocByEpc" resultType="alpass.ipt.clr.pdr.dre.vo.ClrIbnDedAtdocCheckVo">
+        <![CDATA[
+		/* ClriIbnVrfcBsop_selectCheckSadAtdocByEpc */
+		SELECT T1.ATCH_DOC_CD
+             , (SELECT fn_get_doc_nm(T1.ATCH_DOC_CD ,#{langCd}) FROM DUAL) AS ATCH_DOC_NM
+             , '0' as PDLS_NO
+             , 'Y' as INQT_DOC_YN
+          FROM TB_CLRI_EPC_ATDOC T1
+                ,tb_clri_atdoc T2
+         WHERE T1.DEL_YN = 'N'
+           AND T1.EPC_CD = #{epcCd}
+           AND T1.USE_YN = 'Y'
+           AND T1.atch_doc_cd = T2.atch_doc_cd
+           AND TO_CHAR(TO_DATE(#{dclrDt}, 'DD/MM/YYYY'),'YYYYMMDD')  BETWEEN T2.aply_strt_dt AND NVL(T2.aply_end_dt, '99991231')
+           AND T2.del_yn = 'N'
+           AND EXISTS (
+            SELECT 1 FROM TB_CLRI_EPC_CD T3
+            WHERE T1.epc_cd = T3.epc_cd AND T1.epc_aply_strt_dt = T3.epc_aply_strt_dt
+            AND TO_CHAR(TO_DATE(#{dclrDt}, 'DD/MM/YYYY'),'YYYYMMDD')  BETWEEN T3.epc_aply_strt_dt AND T3.epc_aply_end_dt
+        )
+	]]>
+        <choose>
+            <when test='trnpMethKndCd != null and trnpMethKndCd.equals("1")'>
+                AND T1.SEA_APLY_YN = 'Y'
+            </when>
+            <when test='trnpMethKndCd != null and trnpMethKndCd.equals("2")'>
+                AND T1.RLRD_APLY_YN = 'Y'
+            </when>
+            <when test='trnpMethKndCd != null and trnpMethKndCd.equals("3")'>
+                AND T1.VHCL_APLY_YN = 'Y'
+            </when>
+            <when test='trnpMethKndCd != null and trnpMethKndCd.equals("4")'>
+                AND T1.FLGH_APLY_YN = 'Y'
+            </when>
+            <otherwise>
+                AND T1.OTHS_APLY_YN = 'Y'
+            </otherwise>
+        </choose>
+        <choose>
+            <when test='prmsntSttsCd != null and "01".equals(prmsntSttsCd)'>
+                AND T1.atch_doc_cd != '600'
+            </when>
+            <otherwise>
+                AND T1.atch_doc_cd != '610'
+            </otherwise>
+        </choose>
+    </select>
+
+    <!--
+    Consulter les objets de vérification de documents joints par SPT
+    !== HS코드별 첨부문서 체크대상 조회 ==!
+    -->
+    <select id="selectCheckDedAtdocByHsCd" resultType="alpass.ipt.clr.pdr.dre.vo.ClrIbnDedAtdocCheckVo">
+	<![CDATA[
+        /* ClriIbnVrfcBsop_selectCheckSadAtdocByHsCd */
+        SELECT DISTINCT T2.ATCH_DOC_CD
+                      , (SELECT fn_get_doc_nm(T2.ATCH_DOC_CD ,#{langCd}) FROM DUAL) AS ATCH_DOC_NM
+        FROM TB_CLRI_HS_ATDOC T1
+           , TB_CLRI_HS_ATDOC_D T2
+           , TB_CLRI_HS_ATDOC_DCLR_PT T3
+           , tb_clri_atdoc T4
+        WHERE T1.DEL_YN = 'N'
+          AND #{hsCd} = T1.hs_cd
+          AND T1.HS_ATCH_DOC_MGMT_NO = T2.HS_ATCH_DOC_MGMT_NO
+          AND T2.DEL_YN = 'N'
+          AND T2.USE_YN = 'Y'
+          AND T1.HS_ATCH_DOC_MGMT_NO = T3.HS_ATCH_DOC_MGMT_NO
+          AND T3.DEL_YN = 'N'
+          AND T3.USE_YN = 'Y'
+          AND T3.DCLR_PT_CD = #{dclrPtCd}
+          AND T2.ATCH_DOC_CD = T4.atch_doc_cd
+          AND TO_CHAR(TO_DATE(#{dclrDt}, 'DD/MM/YYYY'),'YYYYMMDD')  BETWEEN T2.APLY_STRT_DT AND T2.APLY_END_DT
+          AND TO_CHAR(TO_DATE(#{dclrDt}, 'DD/MM/YYYY'),'YYYYMMDD')  BETWEEN T4.aply_strt_dt AND NVL(T4.aply_end_dt, '99991231')
+          AND T4.del_yn = 'N'
+        ]]>
+	</select>
+
+    <!--
+   Consulter les objets de vérification de documents joints par APC
+   !== APC코드별 첨부문서 체크대상 조회 ==!
+   -->
+    <select id="selectCheckDedAtdocByApcCd" resultType="alpass.ipt.clr.pdr.dre.vo.ClrIbnDedAtdocCheckVo">
+	<![CDATA[
+        /* ClriIbnVrfcBsop_selectCheckSadAtdocByApcCd */
+        SELECT T1.ATCH_DOC_CD
+             , fn_get_doc_nm(T1.ATCH_DOC_CD,#{langCd}) AS ATCH_DOC_NM
+        FROM TB_CLRI_APC_ATDOC T1
+        WHERE T1.DEL_YN = 'N'
+          AND T1.APC_CD = #{apcCd}
+          AND T1.USE_YN = 'Y'
+        ]]>
+	</select>
+
+    <!--
+    Consulter les numéros de châssis faisant l'objet de déclaration
+    !== 신고 가능 대상 샤시번호 조회 ==!
+    -->
+    <select id="selectVhclChssNoList" resultType="alpass.ipt.clr.pdr.dre.vo.ClrDedVhclVo">
+        SELECT
+            CHSS_NO
+        FROM
+            alpassint.tb_cari_cag_dcsh_bl_vhcl A,
+            ALPASSINT.tb_cari_cag_dcsh_bl b
+        WHERE
+            A.CAG_MGMT_NO = #{cagMgmtNo}
+          AND A.cag_mgmt_no = B.cag_mgmt_no
+          AND A.DEL_YN = 'N' AND B.del_yn = 'N'
+          AND B.bl_no = #{blNo}                           /** N° De Bl!==BL번호==! */
+            MINUS
+        SELECT
+            B.CHSS_NO
+        FROM
+            alpassint.TB_CLRI_DED_COMN A
+           , alpassint.TB_CLRI_DED_VHCL B
+        WHERE
+            A.CAG_MGMT_NO = #{cagMgmtNo}
+          AND    A.DTL_DCSH_NO      = B.DTL_DCSH_NO
+          AND    A.PRCS_STTS_CD NOT IN ('A01', 'G03', 'G04')
+          AND    A.DEL_YN = 'N'
+          AND    B.DEL_YN = 'N'
+    </select>
+
+    <!--
+    Consulter la redondance des CRN de la déclaration DED
+    !== DED신고서 화물관리번호 중복 조회 ==!
+    -->
+    <select id="selectDedComnDuplCagMgmtNo" resultType="java.math.BigDecimal">
+        /* ClriIbnVrfcBsop_selectDedComnDuplCagMgmtNo */
+        SELECT COUNT(*)
+        FROM tb_clri_ded_comn
+        WHERE del_yn = 'N'
+          AND prcs_stts_cd NOT IN ('G03','G04')  /** 취소 처리상태 */
+          AND cag_mgmt_no = #{cagMgmtNo}
+    </select>
+
+    <!--
+    Consultation des informations sur le total de la déclaration DED pour le même B/L
+    !== 동일 B/L DED신고서 합계 정보 조회 ==!
+    -->
+    <select id="selectEqBlSadSumInfo" resultType="java.util.Map">
+        /* ClriIbnVrfcBsop_selectEqBlSadSumInfo */
+        SELECT NVL(SUM(pdls_gcnt),0) AS sum_pdls_gcnt
+        , NVL(SUM(pckg_tgcnt),0) AS sum_pckg_tgcnt
+        , NVL(SUM(al_ttwg),0) AS sum_al_ttwg
+        , NVL(SUM(al_ntwg),0) AS sum_al_ntwg
+        FROM tb_clri_ded_comn
+        WHERE prcs_stts_cd IN ('A04','B01','C02','B04','B02','D01','D02','D03','H04','E02','D04','F01','F02','G01','G02')  /** 반출전 처리상태 */
+        <choose>
+            <when test="cagMgmtNo != null and cagMgmtNo != ''">
+                AND cag_mgmt_no = #{cagMgmtNo}
+            </when>
+            <otherwise>
+                AND bl_no = #{blNo}
+                AND arvl_dt = #{arvlDt}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!--
+    Vérifier si l'impotateur est la même personne
+    !== 수입자 동일인 확인 ==!
+    -->
+    <select id="selectImppnIdfyNo" resultType="java.lang.String">
+        /* ClriIbnVrfcBsop_selectImppnIdfyNo */
+        SELECT imppn_idfy_no
+        FROM tb_clri_ded_comn
+        WHERE del_yn = 'N'
+          AND dtl_dcsh_no = #{bfSadNo}
+          AND imppn_idfy_no = #{imExBucnNo}
+    </select>
+
+    <!--
+    Vérifier le NIF pour la zone de libres échanges
+    !== 자유무역지업 사업자등록번호 확인 ==!
+    -->
+    <select id="selectFreeTrdeIdfyNo" resultType="java.lang.String">
+        /* ClriIbnVrfcBsop_selectFreeTrdeIdfyNo */
+        SELECT T2.ILST_VAL_CN
+        FROM TB_CLRI_CSCL_ILST T1
+           , TB_CLRI_CSCL_ILST_VAL T2
+        WHERE T1.DEL_YN = 'N'
+          AND T1.CSCL_ILST_NM = 'LISTE_POINT_FRANC'
+          AND T1.CSCL_ILST_NO = T2.CSCL_ILST_NO
+          AND T2.DEL_YN = 'N'
+          AND TO_CHAR(TO_DATE(#{rqstDt}, 'DD/MM/YYYY'),'YYYYMMDD') BETWEEN T2.APLY_STRT_DT AND T2.APLY_END_DT
+          AND T2.ILST_VAL_CN = #{imExBucnNo}
+    </select>
+
+    <!--
+    Consulter les documents joints à vérifier par code spécifique
+    !== 특별코드별 첨부문서 체크대상 조회 ==!
+    -->
+    <select id="selectCheckDedAtdocByPrvlCd" resultType="alpass.ipt.clr.pdr.dre.vo.ClrIbnDedAtdocCheckVo">
+	<![CDATA[
+        /* ClriIbnVrfcBsop_selectCheckSadAtdocByPrvlCd */
+        SELECT T1.ATCH_DOC_CD
+             , fn_get_doc_nm(T1.ATCH_DOC_CD,#{langCd}) AS ATCH_DOC_NM
+        FROM TB_CLRI_PRVL_CD_ATDOC T1
+        WHERE T1.DEL_YN = 'N'
+          AND T1.PRVL_CD = #{prvlCd}
+          AND T1.USE_YN = 'Y'
+
+        ]]>
+	</select>
+
+    <!--
+    Consulter le taux d'amortissement de la SPT
+    !== HS코드 감가상각율 조회 ==!
+    -->
+    <select id="selectHsDprcRt" resultType="alpass.com.code.vo.ComHsCdVo">
+        select DPRC_RT
+        FROM (
+        WITH RECURSIVE a AS (SELECT DPRC_RT, hs_cd, hs_aply_strt_dt
+
+        FROM tb_clri_hs_cd b
+        WHERE b.HS_CLSF_CD <![CDATA[ <> ]]> '0'
+        AND TO_CHAR(SYSDATE, 'YYYYMMDD') BETWEEN b.HS_APLY_STRT_DT AND b.HS_APLY_END_DT
+        AND b.DPRC_RT IS NOT NULL
+        UNION ALL
+        SELECT d.DPRC_RT, d.UPR_HS_CD, d.UPR_HS_APLY_STRT_DT
+        FROM tb_clri_hs_cd d
+        JOIN a ON a.HS_CD = #{hsCd} and a.hs_cd = d.UPR_HS_CD and a.hs_aply_strt_dt = d.UPR_HS_APLY_STRT_DT)
+        select *, RANK() OVER (ORDER BY DPRC_RT ASC) AS RK
+        from a)
+        WHERE RK = 1;
+    </select>
+
+    <!--
+    Consulter la quantité de l'article de la déclaration précédente
+    !== 이전신고서 품목 수량 조회 ==!
+    -->
+    <select id="selectBfPdls" resultType="alpass.ipt.clr.pdr.dre.vo.ClrDedPdlsVo">
+        /* ClriIbnVrfcBsop_selectBfPdls */
+        SELECT QTY
+        FROM TB_CLRI_DED_PDLS
+        WHERE DEL_YN = 'N'
+          AND DTL_DCSH_NO = #{bfDtlDcshNo}
+          AND PDLS_NO = #{bfPdlsNo}
+    </select>
+
+    <!--
+    Consulter les informations sur les spécifications de modèle de la déclaration précédente
+    !== 이전신고서의 모델규격 정보 조회 ==!
+    -->
+    <select id="selectBfPdlsMdlStsz" resultType="bigDecimal">
+        /* ClriIbnVrfcBsop_selectBfPdlsMdlStsz */
+        SELECT SUM(NVL(INVC_AMT, 0)) AS INVC_AMT
+        FROM TB_CLRI_DED_MDL_STSZ
+        WHERE DEL_YN = 'N'
+          AND DTL_DCSH_NO = #{bfDtlDcshNo}
+          AND PDLS_NO = #{bfPdlsNo}
+    </select>
+
+    <!--
+    Consulter la liste des conteneurs cumulés déclarés DAU avec le CRN
+    !== 해당 화물관리번호로 DAU 신고된 누적 컨테이너 목록 조회 ==!
+    -->
+    <select id="selectScmlCntrbyCRN" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrIbnDedComnVo" resultType="alpass.ipt.clr.pdr.dre.vo.ClrDedCntrVo">
+        /* ClriIbnVrfcBsop_selectScmlCntrbyCRN */
+        SELECT DISTINCT B.CNTR_NO
+        FROM TB_CLRI_DED_COMN A
+           , TB_CLRI_DED_CNTR B
+        WHERE A.DEL_YN      = 'N'
+          AND B.DEL_YN      = 'N'
+          AND A.DTL_DCSH_NO      = B.DTL_DCSH_NO
+          AND A.PRCS_STTS_CD NOT IN ('G03', 'G04')         /* 취소건 제외 */
+          AND A.CAG_MGMT_NO = #{cagMgmtNo}
+    </select>
+
+
+    <!--
+   	   !== 자동차 재고 테이블을 조회한다. ==!
+    -->
+    <select id="selectCagBlVhclInvnInfo" resultType="alpass.ipt.clr.pdr.dre.vo.ClrCagBlInvnVhclVo">
+        /* alpass.ipt.car.bnwrhs.cagbrng.mapper.CarCagBrngMapper.selectTbCariInvnData */
+        SELECT  b.bl_no                                                   AS bl_no               /** N° De Bl !== BL번호 ==! */
+             , b.cag_mgmt_no                                             AS cag_mgmt_no         /** N° Demande De La Création De Crn !== 화물관리번호 ==! */
+             , A.vhcl_srno                                               AS vhcl_srno           /** Numéro De Séquence De Véhicule !== 차량일련번호 ==! */
+             , A.chss_no                                                 AS chss_no             /** N° De Châssis !== 차대번호 ==! */
+             , A.vhcl_rgsr_no                                            AS vhcl_rgsr_no        /** VOYAGE VEHICULES VEHICULE NUMERO_IMMATRICULATION !== 차량등록번호 ==! */
+             , A.vhcl_mnur_cd                                            AS vhcl_mnur_cd        /** Code De Fabricant Du Véhicule !== 차량제조사코드 ==! */
+             , NVL((SELECT vhcl_mnur_nm FROM alpassint.tb_com_vhcl_mnur where del_yn = 'N' AND vhcl_mnur_cd = A.vhcl_mnur_cd), '') AS  vhcl_mnur_nm
+             , A.vhcl_mdl_cd                                             AS vhcl_mdl_cd         /** Code De Modèle Du Véhicule !== 차량모델코드 ==! */
+        , NVL((SELECT vhcl_mdl_nm FROM tb_com_vhcl_mdl
+        where del_yn = 'N'
+        AND vhcl_mnur_cd = A.vhcl_mnur_cd
+        AND vhcl_mdl_cd = A.vhcl_mdl_cd), '') AS vhcl_mdl_nm
+             , A.vhcl_knd_nm                                             AS vhcl_knd_nm         /** Type De Véhicule !== 차량종류명 ==! */
+             , A.vhcl_mnfc_yy                                            AS vhcl_mnfc_yy        /** Année De Fabrication De Véhicule !== 차량제조년도 ==! */
+             , A.engn_clnd_gcnt                                          AS engn_clnd_gcnt      /** Nombre De Cylindres De Moteur !== 엔진기통개수 ==! */
+             , A.vhcl_totl_wght                                          AS vhcl_totl_wght      /** Poids total en charge !== 차량총중량 ==! */
+             , A.del_yn                                                  AS del_yn              /** Suppression On !== 삭제여부 ==! */
+             , A.frst_regst_id                                           AS frst_regst_id       /** Id Du Premier Enregistrant !== 최초등록자ID ==! */
+             , TO_CHAR(A.frst_rgsr_dttm,'DD/MM/YYYY HH24:MI:SS')         AS frst_rgsr_dttm      /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+             , A.last_chpr_id                                            AS last_chpr_id        /** Id Du Modificateur Final !== 최종변경자ID ==! */
+             , TO_CHAR(A.last_chg_dttm,'DD/MM/YYYY HH24:MI:SS')          AS last_chg_dttm       /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        FROM tb_cari_cag_dcsh_bl_vhcl A
+         INNER join tb_cari_cag_dcsh_bl b
+        ON a.cag_mgmt_no = b.cag_mgmt_no
+        WHERE A.del_yn = 'N'
+        AND B.cag_mgmt_no = #{cagMgmtNo}       /** Numéro de gestion de l'enregistrement de la déclaration de fret !== 화물신고서등록관리번호 ==! */
+        <if test="blNo != null and blNo != ''">
+            AND B.bl_no = #{blNo}                           /** N° De Bl!==BL번호==! */
+        </if>
+    </select>
+
+    <!--
+	Consulter le nombre d'utilisations de caution de la déclaration ayant une caution
+	!== 담보있는 신고서의 담보 사용 건수 조회 ==!
+	-->
+    <select id="selectDedMgUseCnt" resultType="java.math.BigDecimal">
+        /* ClriIbnVrfcBsop_selectDedMgUseCnt */
+        WITH DED_MG_INFO AS (
+            SELECT W1.DTL_DCSH_NO
+                 , W2.MG_TP_CD
+                 , W2.MG_AC_NO
+            FROM TB_CLRI_DED_COMN W1
+               , TB_CLRI_DED_MG W2
+            WHERE W1.DEL_YN = 'N'
+              AND W1.DTL_DCSH_NO = #{dtlDcshNo}
+              AND W1.DTL_DCSH_NO = W2.DTL_DCSH_NO
+              AND W2.DEL_YN = 'N'
+              AND (                        /* 개별이든 포괄이든 하나라도 사용한내역이 있어야 카운트를 확인함. 2019-02-19 */
+                          (SELECT COUNT(*)
+                           FROM tb_coli_mg_use
+                           WHERE DEL_YN = 'N'
+                             AND rqst_no = W2.MG_AC_NO
+                             AND REFF_NO = W1.DTL_DCSH_NO) ) > 0
+        )
+        SELECT (SELECT COUNT(*)
+                FROM tb_coli_mg_use
+                WHERE DEL_YN = 'N'
+                  AND MG_AC_NO = A.MG_AC_NO
+                  AND REFF_NO = A.DTL_DCSH_NO) - (SELECT COUNT(*)
+                                                  FROM tb_coli_mg_rele
+                                                  WHERE DEL_YN = 'N'
+                                                    AND LAST_RELE_YN = 'Y'
+                                                    AND rqst_no = A.MG_AC_NO
+                                                    AND USE_REFF_NO = A.DTL_DCSH_NO) AS USE_MG_CNT
+        FROM DED_MG_INFO A
+    </select>
+
+    <!--
+	Consulter le nombre de déclarations DED d'apurement (Vérifier si l'apurement est effectué)
+	!== 이행 DED신고서 건 수 조회(이행여부 확인) ==!
+	-->
+    <select id="selectFfmnDedDclrCnt" resultType="java.math.BigDecimal">
+        /* ClriIbnVrfcBsop_selectFfmnSadDclrCnt */
+        SELECT SUM(CNT)
+        FROM (
+                 SELECT COUNT(*) AS CNT
+                 FROM TB_CLRI_DED_PDLS A
+                 WHERE DEL_YN = 'N'
+                   AND bf_dtl_dcsh_no = #{dtlDcshNo}
+                   AND NOT EXISTS(
+                         SELECT 1
+                         FROM   TB_CLRI_DED_COMN
+                         WHERE  dtl_dcsh_no = A.dtl_dcsh_no
+                           AND    PRCS_STTS_CD IN ('G03', 'G04')
+                     )
+                 UNION ALL
+                 SELECT COUNT(*)
+                 FROM TB_CLRI_DED_RWMS A
+                 WHERE DEL_YN = 'N'
+                   AND bf_dtl_dcsh_no = #{dtlDcshNo}
+                   AND NOT EXISTS(
+                         SELECT 1
+                         FROM   TB_CLRI_DED_COMN
+                         WHERE  dtl_dcsh_no = A.dtl_dcsh_no
+                           AND  PRCS_STTS_CD IN ('G03', 'G04')
+                     )
+             )
+    </select>
+
+    <!--
+	Consulter le nombre d'utilisations de caution de la déclaration précédente de la déclaration d'apurement
+	!== 이행신고서 이전신고서의 담보 사용 건수 조회 ==!
+	-->
+    <select id="selectFfmnDedMgUseCnt" resultType="bigdecimal">
+        /* ClriIbnVrfcBsop_selectFfmnSadMgUseCnt */
+        WITH DED_MG_INFO AS (
+            SELECT W2.DTL_DCSH_NO
+                 , W3.MG_TP_CD
+                 , W3.MG_AC_NO
+            FROM TB_CLRI_DED_PDLS W1
+               , TB_CLRI_DED_COMN W2
+               , TB_CLRI_DED_MG W3
+            WHERE W1.DEL_YN = 'N'
+              AND W1.DTL_DCSH_NO = #{dtlDcshNo}
+              AND W1.BF_DTL_DCSH_NO = W2.DTL_DCSH_NO
+              AND W2.DEL_YN = 'N'
+              AND W2.DTL_DCSH_NO = W3.DTL_DCSH_NO
+              AND W3.DEL_YN = 'N'
+              AND (                        /* 개별이든 포괄이든 하나라도 사용한내역이 있어야 카운트를 확인함. 2019-02-19 */
+                          (SELECT COUNT(*)
+                           FROM tb_coli_mg_use
+                           WHERE DEL_YN = 'N'
+                             AND rqst_no = W3.MG_AC_NO
+                             AND REFF_NO = W2.DTL_DCSH_NO) ) > 0
+        )
+        SELECT USE_MG_CNT
+        FROM (
+                 SELECT (SELECT COUNT(*)
+                         FROM tb_coli_mg_use
+                         WHERE DEL_YN = 'N'
+                           AND rqst_no = A.MG_AC_NO
+                           AND REFF_NO = A.DTL_DCSH_NO) - (SELECT COUNT(*)
+                                                           FROM tb_coli_mg_rele
+                                                           WHERE DEL_YN = 'N'
+                                                             AND LAST_RELE_YN = 'Y'
+                                                             AND rqst_no = A.MG_AC_NO
+                                                             AND reff_no = A.DTL_DCSH_NO) AS USE_MG_CNT
+                 FROM DED_MG_INFO A
+             )
+        WHERE USE_MG_CNT = 0
+          AND ROWNUM = 1
+    </select>
+
+    <!--
+    Consulter la dernière déclaration sur l'historique de DED
+    !== DED 히스토리 마지막 신고서 조회 ==!
+    -->
+    <select id="selectBfDedComnInfo" resultType="java.util.Map">
+        /* ClriIbnVrfcBsop_selectBfSadComnInfo */
+        SELECT
+            A.dtl_dcsh_no              /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+             , A.hist_srno                  /** N° de sequence de l'historique !== 이력일련번호 ==! */
+             , TO_CHAR(TO_DATE(A.dclr_dt             , 'YYYYMMDD'),'DD/MM/YYYY') AS dclr_dt                    /** Date de déclaration !== 신고일자 ==! */
+             , A.reff_no                    /** N° De Référence !== 참조번호 ==! */
+             , A.mdfy_dgcnt                 /** Fréquence de rectification !== 정정차수 ==! */
+             , TO_CHAR(TO_DATE(A.rqst_dt             , 'YYYYMMDD'),'DD/MM/YYYY') AS rqst_dt                    /** Date De Demande !== 신청일자 ==! */
+             , A.dclr_pt_cd                 /** Code De Type De Déclaration !== 신고유형코드 ==! */
+             , A.epc_cd                     /** Code EPC !== EPC코드 ==! */
+             , A.dclr_cstm_cd               /** Code De Bureau De Déclaration !== 신고세관코드 ==! */
+             , A.cscl_pln_cd                /** Code De Plan De Dédouanement !== 통관계획코드 ==! */
+             , A.dcsh_fm_cd                 /** Code De Formulaire De La Déclaration !== 신고서양식코드 ==! */
+             , A.pdls_gcnt                  /** Nombre D'Articles !== 품목개수 ==! */
+             , A.pckg_tgcnt                 /** Nombre Total De Colis !== 포장총개수 ==! */
+             , A.cntr_cag_yn                /** Cargaison Conteneurisée On !== 컨테이너화물여부 ==! */
+             , A.al_ttwg                    /** Poids Brut Total !== 전체총중량 ==! */
+             , A.al_ntwg                    /** Poids Net Total !== 전체순중량 ==! */
+             , A.exppn_idfy_no_tp_cd        /** Code De Type De N° D'Identification De L'Exportateur !== 수출자식별번호구분코드 ==! */
+             , A.exppn_idfy_no              /** N° D'Identification De L'Exportateur !== 수출자식별번호 ==! */
+             , A.imppn_idfy_no_tp_cd        /** Code De Type Du N° D'Identification De L'Importateur !== 수입자식별번호구분코드 ==! */
+             , A.imppn_idfy_no              /** N° D'Identification De L'Importateur !== 수입자식별번호 ==! */
+             , A.txpr_idfy_no               /** NIF !== 납세자식별번호 ==! */
+             , A.dcer_cd                    /** Code Du Déclarant !== 신고인코드 ==! */
+             , A.csm_cnty_cd                /** Code De Pays D'Expédition !== 탁송국가코드 ==! */
+             , A.trde_dlng_cnty_cd          /** Code De Pays De Transaction !== 무역거래국가코드 ==! */
+             , A.exp_cnty_cd                /** Code De Pays Exportateur !== 수출국가코드 ==! */
+             , A.dstn_cnty_cd               /** Code De Pays Destinataire !== 목적지국가코드 ==! */
+             , A.dstn_regn_cd               /** Code De Région Destinataire !== 목적지지역코드 ==! */
+             , A.trnp_meth_knd_cd           /** Code De Type Du Moyen De Transport !== 운송수단종류코드 ==! */
+             , A.trnp_meth_idfy_no          /** N° D'Identification Du Moyen De Transport !== 운송수단식별번호 ==! */
+             , A.trnp_meth_nat_cd           /** Code de nationalité du moyen de transport !== 운송수단국적코드 ==! */
+             , A.ship_nm                    /** Nom Du Navire !== 선박명 ==! */
+             , A.cag_mgmt_no                /** N° Demande De La Création De Crn !== 화물관리번호 ==! */
+             , A.bl_no                      /** N° De Bl !== BL번호 ==! */
+             , TO_CHAR(TO_DATE(A.arvl_dt             , 'YYYYMMDD'),'DD/MM/YYYY') AS arvl_dt                    /** Date D'Arrivée !== 도착일자 ==! */
+             , A.divd_cscl_tp_cd            /** Code De Type De Dédouanement Partiel !== 분할통관구분코드 ==! */
+             , A.ldnp_cd                    /** Code De Lieu De Chargement !== 선적지코드 ==! */
+             , A.cntr_gcnt                  /** Nombre De Conteneurs !== 컨테이너개수 ==! */
+             , A.dispr_cd                   /** Code De Lieu De Déchargement !== 하역지코드 ==! */
+             , TO_CHAR(TO_DATE(A.ldun_dt             , 'YYYYMMDD'),'DD/MM/YYYY') AS ldun_dt                    /** Date De Déchargement !== 하역일자 ==! */
+             , A.rlbr_cstm_cd               /** Code Du Bureau D'Entrée Et De Sortie !== 반출입세관코드 ==! */
+             , A.cmdt_stge_loct_cd          /** Code De Localisation De Stockage !== 물품장치위치코드 ==! */
+             , A.bnbn_cmdt_wrhs_cd          /** Code D'Entrepôt De La Marchandise Sous Douane !== 보세물품창고코드 ==! */
+             , A.bf_bnbn_cmdt_wrhs_cd       /** Code De L'Entrepôt Précédent De La Marchandise Sous Douane !== 이전보세물품창고코드 ==! */
+             , A.psmgt_ffmn_xpir_prid       /** Période d'échéance de l'apurement de la gestion et suivi !== 사후관리이행만료기간 ==! */
+             , A.dcrd_yn                    /** Enlèvement En Véhicule On !== 차상반출여부 ==! */
+             , A.dlvr_cond_cd               /** Code De La Condition De Livraison !== 인도조건코드 ==! */
+             , A.dlvr_plc_cd                /** Code Du Lieu De Livraison !== 인도장소코드 ==! */
+             , A.invc_no                    /** N° De Facture !== 송장번호 ==! */
+             , TO_CHAR(TO_DATE(A.invc_pbls_dt        , 'YYYYMMDD'),'DD/MM/YYYY') AS invc_pbls_dt               /** Date D'Émission De La Facture !== 송장발행일자 ==! */
+             , A.pymn_mean_cd               /** Code De Mode De Paiement !== 지불방법코드 ==! */
+             , A.pymn_bnk_cd                /** Transaction Banque Domiciliatrice Code Banque !== 지불은행코드 ==! */
+             , A.pymn_bnk_brnh_cd           /** Code D'Agnce De Banque De Paiement !== 지불은행지점코드 ==! */
+             , A.pymn_ac_no                 /** N° De Compte De Paiement !== 지불계좌번호 ==! */
+             , A.dlng_cond1_cd              /** Code De Condition De Transaction 1 !== 거래조건1코드 ==! */
+             , A.dlng_cond2_cd              /** Code De Condition De Transaction 2 !== 거래조건2코드 ==! */
+             , A.prc_dcsh_wrte_yn           /** Déclaration De La Valeur Saisie On !== 가격신고서기재여부 ==! */
+             , A.owhs_prc_ev_yn             /** Auto-Liquidation On !== 자가가격평가여부 ==! */
+             , A.dcer_wrte_cn               /** Texte Libre Réservé Au Déclarant !== 신고인기재내용 ==! */
+             , A.mdfy_rsn_cd                /** Code De Motif De La Modification !== 정정사유코드 ==! */
+             , A.mdfy_rsn_cn                /** Motif de rectification !== 정정사유내용 ==! */
+             , A.prcs_stts_cd               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+             , A.dept_cd                    /** Code de service !== 부서코드 ==! */
+             , A.audt_emp_id                /** ID de l'insepcteur !== 심사직원ID ==! */
+             , A.insc_emp_id                /** ID de l'vérificateur !== 검사직원ID ==! */
+             , A.selc_rslt_cd               /** Code De Résultat De Ciblage !== 선별결과코드 ==! */
+             , A.insc_plc_tp_cd             /** Code De Type De Lieu De Visite !== 검사장소구분코드 ==! */
+             , A.psmgt_trgt_yn              /** Cible de gestion et suivi ON !== 사후관리대상여부 ==! */
+             , A.psmgt_ffmn_cmpl_yn         /** Gestion et suivi apurée ON !== 사후관리이행완료여부 ==! */
+             , TO_CHAR(TO_DATE(A.psmgt_ffmn_cmpl_dt  , 'YYYYMMDD'),'DD/MM/YYYY') AS psmgt_ffmn_cmpl_dt         /** Date d'apurement de gestion et suivi !== 사후관리이행완료일자 ==! */
+             , A.ador_hnot_prcs_yn          /** Traitement de la cotation d'inspecteurs ON !== 심사자배부처리여부 ==! */
+             , A.ador_hnot_opin_cn          /** Contenu de l'opinion pour la cotation d'inspecteurs !== 심사자배부의견내용 ==! */
+             , TO_CHAR(TO_DATE(A.exp_ffmn_cmpl_dt    , 'YYYYMMDD'),'DD/MM/YYYY') AS exp_ffmn_cmpl_dt           /** Date D'Accomplissement De L'Apurement D'Exportation !== 수출이행완료일자 ==! */
+             , TO_CHAR(TO_DATE(A.exp_ffmn_xpir_dt    , 'YYYYMMDD'),'DD/MM/YYYY') AS exp_ffmn_xpir_dt           /** Date D'Échéance De L'Apurement D'Exportation !== 수출이행만료일자 ==! */
+             , TO_CHAR(TO_DATE(A.asmt_dt             , 'YYYYMMDD'),'DD/MM/YYYY') AS asmt_dt                    /** Date De Liquidation !== 가격평가심사일자 ==! */
+             , A.acpt_yn                    /** Validation ON !== 수리여부 ==! */
+             , TO_CHAR(TO_DATE(A.acpt_dt             , 'YYYYMMDD'),'DD/MM/YYYY') AS acpt_dt                    /** Date de la validation !== 수리일자 ==! */
+             , A.rlse_yn                    /** Enlevé On !== 반출여부 ==! */
+             , TO_CHAR(TO_DATE(A.rlse_dt             , 'YYYYMMDD'),'DD/MM/YYYY') AS rlse_dt                    /** Date D'Enlèvement !== 반출일자 ==! */
+             , A.atr_dclr_rcpn_yn           /** Déclaration Modifiée Reçue On !== 수정신고수신여부 ==! */
+             , A.cncl_dclr_rcpn_yn          /** Déclaration De L'Annulation Reçue On !== 취소신고수신여부 ==! */
+             , A.cscl_pstp_yn               /** Dédouanement Suspendu On !== 통관보류여부 ==! */
+             , A.dput_yn                    /** Contentieux On !== 쟁송여부 ==! */
+             , A.prvi_dclr_apre_yn          /** Déclaration Provisoire Autorisée On !== 잠정신고승인여부 ==! */
+             , A.new_sys_yn                 /** Nouveau Système On !== 신규시스템여부 ==! */
+             , A.hist_cret_tp_cd            /** Code De Type De Création D'Historique !== 이력생성구분코드 ==! */
+             , A.del_yn                     /** Suppression On !== 삭제여부 ==! */
+             , A.frst_regst_id              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+             , TO_CHAR(A.frst_rgsr_dttm      , 'DD/MM/YYYY') AS frst_rgsr_dttm             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+             , A.last_chpr_id               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+             , TO_CHAR(A.last_chg_dttm       , 'DD/MM/YYYY') AS last_chg_dttm              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+             , A.wkng_pt_cd                 /** Type D'Opération !==  ==! */
+             , NVL(A.sys_use_ss, 1) as sys_use_ss
+             , A.exp_cmdt_brng_rqno         /** N° demande de l'introduction des marchandises à exporter !== 수출물품반입신청번호 ==! */
+             , A.exp_cmdt_loct_nm           /** Exporter le nom de l'emplacement du produit !== 수출물품위치명 ==! */
+             , A.bf_dtl_dcsh_no             /** N° de la déclaration en détail précédent !== 이전상세신고서번호 ==! */
+             , A.bfhn_no                    /** N° de autorisation pour PAD et provisoire !== 사전허가번호 ==! */
+             , A.pad_bfhn_no
+             , A.prvi_bfhn_no
+             , A.bfcy_idfy_no                /** NIF du bénéficiaire */
+             , A.bfcy_cmrc_regs_no           /** Registre de commerce du bénéficiaire */
+             , A.exppn_cmrc_regs_no         /** Numéro de registre de commerce de l’exportateur !==  ==! */
+             , A.imppn_cmrc_regs_no         /** Numéro de registre de commerce de l’importateur !==  ==! */
+             , A.txpr_cmrc_regs_no          /** Numéro de registre de commerce du redevable !==  ==! */
+             , A.csor_aprv_rsof_yn          /** no name !==  ==! */
+             , A.dphd_aprv_rsof_yn          /** no name !==  ==! */
+             , A.dept_hnot_prcs_yn          /** Cotation Aux Services Traitée O/N !==  ==! */
+             , A.dept_hnot_opin_cn          /** Annotation Sur La Cotation Au Service !==  ==! */
+        FROM   TB_CLRI_DED_COMN_H A
+        WHERE  del_yn = 'N'                /** Suppression ON !== 삭제여부 ==! */
+          AND  A.dtl_dcsh_no = #{dtlDcshNo}                /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+          AND HIST_SRNO = (SELECT MAX(HIST_SRNO) FROM TB_CLRI_DED_COMN_H WHERE dtl_dcsh_no = #{dtlDcshNo} AND PRCS_STTS_CD <![CDATA[ <> ]]> 'A01')
+    </select>
+
+    <!--
+	Consulter les informations supplémentaires pour vérification obligatoire
+	!== 필수 체크를 위한 추가 정보 조회 ==!
+	-->
+    <select id="selectAditDedComnInt" resultType="java.util.Map">
+        /* selectAditSadComnInt */
+        SELECT t1.cntr_cag_yn
+             , t1.pymn_mean_cd
+             , t1.dcrd_yn
+             , t2.invc_ncy_amt
+             , T1.cscl_pln_cd
+             , (select mg_tp_cd from tb_clri_ded_mg where t1.dtl_dcsh_no = t1.dtl_dcsh_no limit 1) as mg_tp_cd
+        FROM tb_clri_ded_comn t1
+           , tb_clri_ded_vlut_comn t2
+        WHERE t1.del_yn = 'N'
+          AND t1.dtl_dcsh_no = #{dtlDcshNo}
+          AND t1.dtl_dcsh_no = t2.dtl_dcsh_no
+          AND t2.del_yn = 'N'
+    </select>
+
+    <!--
+	Informations sur les rubriques faisont l'objet de la vérification préalable de la DED
+	!== DED신고 사전검증 대상 항목 정보 ==!
+	-->
+    <select id="selectDedVrfcClusMeta" resultType="java.util.Map">
+        /* selectDedVrfcClusMeta */
+        SELECT t1.trgt_tbl_nm
+        , t1.trgt_col_nm
+        , t2.lbl_id
+        FROM tb_clri_ded_vrfc_base t1
+        , tb_com_lbl t2
+        , tb_com_lbl_lang t3
+        WHERE t1.del_yn = 'N'
+        AND (t1.esnt_inp_vrfc_yn = 'Y'
+        <foreach collection="inclColList" item="item" open="OR t1.trgt_col_nm IN (" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+        )
+        AND t1.epc_cd = #{epcCd}
+        AND t1.use_yn = 'Y'
+        AND t1.trgt_tbl_nm = #{trgtTblNm}
+        <foreach collection="excpColList" item="item" open="AND t1.trgt_col_nm NOT IN (" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+        AND t1.lbl_id = t2.lbl_id(+)
+        AND t2.del_yn(+) = 'N'
+        AND t2.use_yn(+) = 'Y'
+        AND t2.lbl_id = t3.lbl_id(+)
+        AND t3.lang_cd(+) = #{langCd}
+        AND t3.del_yn(+) = 'N'
+    </select>
+
+    <!--
+	Consulter si les rubriques faisont l'objet de la vérification préalable de la DED sont obligatoires
+	!== DED신고 사전검증 항목 필수 여부 조회 ==!
+	-->
+    <select id="selectDedVrfcClusEsntAt" resultType="java.util.Map">
+        SELECT <choose><when test="errKeyCol1 != null and errKeyCol1 != ''">${errKeyCol1}</when><otherwise>''</otherwise></choose> AS erky1_val
+        , <choose><when test="errKeyCol2 != null and errKeyCol2 != ''">${errKeyCol2}</when><otherwise>''</otherwise></choose> AS erky2_val
+        , <choose><when test="errKeyCol3 != null and errKeyCol3 != ''">${errKeyCol3}</when><otherwise>''</otherwise></choose> AS erky3_val
+        , ${trgtColNm}
+        FROM ${trgtTblNm}
+        WHERE dtl_dcsh_no = #{dtlDcshNo}
+        AND del_yn = 'N'
+    </select>
+
+    <!--
+    Consulter si les rubriques faisont l'objet de la vérification préalable de la DED sont obligatoires (Véhicules)
+    !== DED신고 사전검증 항목 필수 여부 조회(차량) ==!
+    -->
+    <select id="selectDedVrfcClusEsntAtVhcl" resultType="java.util.Map">
+        SELECT <choose><when test="errKeyCol1 != null and errKeyCol1 != ''">t3.${errKeyCol1}</when><otherwise>''</otherwise></choose> AS erky1_val
+        , <choose><when test="errKeyCol2 != null and errKeyCol2 != ''">t3.${errKeyCol2}</when><otherwise>''</otherwise></choose> AS erky2_val
+        , <choose><when test="errKeyCol3 != null and errKeyCol3 != ''">t3.${errKeyCol3}</when><otherwise>''</otherwise></choose> AS erky3_val
+        , t1.vhcl_yn
+        , t3.trsf_nnpr_yn
+        , t3.${trgtColNm}
+        FROM tb_clri_ded_pdls t1
+        , tb_clri_ded_mdl_stsz t2
+        , tb_clri_ded_vhcl t3
+        WHERE t1.del_yn = 'N' AND t2.del_yn = 'N'
+        AND t1.dtl_dcsh_no = #{dtlDcshNo}
+        AND t1.dtl_dcsh_no = t3.dtl_dcsh_no
+        AND t1.pdls_no = t3.pdls_no
+        AND t2.dtl_dcsh_no = t1.dtl_dcsh_no
+        AND t2.pdls_no = t1.pdls_no
+        AND t3.mdl_stsz_no = t2.mdl_stsz_no
+        AND t3.del_yn = 'N'
+    </select>
+
+    <!--
+	Consulter le nombre de déclarations provisoires avant rectification
+	!== 정정 전 잠정신고 신고 건 수 조회 ==!
+	-->
+    <select id="selectBfMdfyDedPrviDcshCnt" resultType="int">
+        /* ClriIbnVrfcBsop_selectBfMdfySadPrviDcshCnt */
+        SELECT SUM(CNT)
+        FROM (
+                 SELECT COUNT(*) AS CNT
+                 FROM TB_CLRI_DED_COMN
+                 WHERE DEL_YN = 'N'
+                   AND dtl_dcsh_no = #{dtlDcshNo}
+                   AND ACPT_YN = 'Y'      /** 수리여부 */
+                   AND PRVI_DCLR_APRE_YN = 'N'  /** 잠정신고승인여부 */
+                 UNION ALL
+                 SELECT COUNT(*) AS CNT
+                 FROM TB_CLRI_DED_COMN_H
+                 WHERE DEL_YN = 'N'
+                   AND dtl_dcsh_no = #{dtlDcshNo}
+                   AND ACPT_YN = 'Y'      /** 수리여부 */
+                   AND PRVI_DCLR_APRE_YN = 'N'  /** 잠정신고승인여부 */
+             )
+    </select>
+
+    <!--
+    Voir les informations sur code de region !==지역코드를 조회한다.==!
+    -->
+    <select id="selectBusiComRegnCd" parameterType="alpass.com.code.vo.ComRegnCdVo" resultType="alpass.com.code.vo.ComRegnCdVo">
+        /** ClriIbnVrfcBsop_selectBusiComRegnCd */
+        SELECT REGN_CD, REGN_TP_CD, CNTY_CD
+        FROM TB_COM_REGN_CD
+        WHERE DEL_YN = 'N'
+        <if test="cntyCd != null and cntyCd != ''">
+            AND CNTY_CD = #{cntyCd}
+        </if>
+        <if test="regnTpCd != null and regnTpCd != ''">
+            AND REGN_TP_CD = #{regnTpCd}
+        </if>
+        <if test="regnCd != null and regnCd != ''">
+            AND REGN_CD = #{regnCd}
+        </if>
+    </select>
+
+    <!--
+    Consulter le code d'entrepôt SCDP O/N
+    !== SCDP 창고코드 여부 조회  ==!
+    -->
+    <select id="selectWhrsSCDP" resultType="string">
+        /* ClriIbnVrfcBsop_selectWhrsSCDP */
+        SELECT PRMT_VAL_CN
+        FROM TB_COM_PRMT
+        WHERE PRMT_ID IN ('CAG_0019', 'CAG_0020')
+          AND NVL(TO_CHAR(TO_DATE(#{dclrDt}, 'DD/MM/YYYY'),'YYYYMMDD'), TO_CHAR(SYSDATE, 'YYYYMMDD')) BETWEEN APLY_STRT_DT AND APLY_END_DT
+          AND DEL_YN = 'N'
+          AND PRMT_VAL_CN = #{bnbnCmdtWrhsCd}
+    </select>
+
+    <!--
+    Consulter le NIF du propriétaire avec le code de l'entrepôt privé
+    !== 사설 보세창고코드로 해당 소유주 NIU 조회  ==!
+    -->
+    <select id="selectWhrsNIU" resultType="string">
+        /* ClriIbnVrfcBsop_selectWhrsNIU */
+        select ibobz_nif
+        from TB_CARI_IBOBZ
+        where ibobz_co_cd = #{bnbnCmdtWrhsCd}
+        and DEL_YN     = 'N'
+        and ibobz_tp_cd <![CDATA[<>]]> '01'; /* 1 : 공공, 2:사설, 3: 특별 */
+    </select>
+
+    <select id="selectIbobzOrgnCdYn" parameterType="alpass.ipt.car.com.vo.CarComVo" resultType="java.lang.String">
+        SELECT 'Y'
+        FROM TB_CARI_IBOBZ K
+        WHERE K.DEL_YN       = 'N'
+          AND K.OPRN_CESE_YN = 'N'
+          AND K.ATPM_WDRL_YN = 'N'
+          AND K.IBOBZ_CD = #{ibobzCd}
+          AND K.JRSD_ORGN_CD = #{jrsdOrgnCd}
+    </select>
+</mapper>

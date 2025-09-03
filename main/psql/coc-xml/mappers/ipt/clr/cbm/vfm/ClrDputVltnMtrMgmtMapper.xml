@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="alpass.ipt.clr.cbm.vfm.mapper.ClrDputVltnMtrMgmtMapper">
+
+    <!--
+     Consulter la liste des codes des infractions du contentieux
+     !== 쟁송위반사항코드관리 목록 조회 ==!
+     (Lee KyeongSeok)
+     -->
+    <select id="selectClrDputVltnMtrMgmtList" parameterType="alpass.ipt.clr.cbm.vfm.vo.ClrDputVltnMtrMgmtVo" resultType="alpass.ipt.clr.cbm.vfm.vo.ClrDputVltnMtrMgmtVo">
+        /** selectClrDputVltnMtrMgmtList */
+        <include refid="pagination.header" />
+        SELECT
+              VLTN_MTR_CD
+            , VLTN_MTR_CLUS_CLSF_CN
+            , VLTN_MTR_PT_CD
+            , APLY_FINE_PRC
+            , APLY_FINE_TXRT
+            , CMDT_TKAC_CD
+            , TRNP_METH_TKAC_CD
+            , VITR_TKAC_YN
+            , PNSH_CLSE_CN
+            , INCD_PT_CD
+            , APLY_FINE_MAX_AMT
+            , CSCL_WRPM_TKAC_YN
+            , FNC_LWRG_CN
+            , TO_CHAR(TO_DATE(APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS APLY_STRT_DT
+            , TO_CHAR(TO_DATE(APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS APLY_END_DT
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+        FROM  TB_CLRI_DPUT_VLTN_MTR_CD
+        WHERE DEL_YN = 'N'
+        <if test="vltnMtrCd != null and vltnMtrCd != ''">
+        AND   VLTN_MTR_CD like '%'||#{vltnMtrCd}||'%'
+        </if>
+        <if test="vltnMtrPtCd != null and vltnMtrPtCd != ''">
+        AND   VLTN_MTR_PT_CD = #{vltnMtrPtCd}
+        </if>
+        ORDER BY VLTN_MTR_CD ASC
+        <include refid="pagination.footer" />
+    </select>
+
+    <!--
+     Gérer les codes des infractions du contentieux Enregistrer de nouvelles informations
+     !== 쟁송위반사항코드관리 등록 ==!
+     (Lee KyeongSeok)
+     -->
+    <insert id="insertClrDputVltnMtrMgmt" parameterType="alpass.ipt.clr.cbm.vfm.vo.ClrDputVltnMtrMgmtVo">
+        /** insertClrDputVltnMtrMgmt */
+        <selectKey keyProperty="vltnMtrCd" resultType="String" order="BEFORE">
+            select LPAD(coalesce(max(TO_NUMBER(VLTN_MTR_CD)),0)+1,3,'000') VLTN_MTR_CD from TB_CLRI_DPUT_VLTN_MTR_CD
+        </selectKey>
+
+        INSERT INTO TB_CLRI_DPUT_VLTN_MTR_CD
+            (
+              VLTN_MTR_CD
+            , VLTN_MTR_CLUS_CLSF_CN
+            , VLTN_MTR_PT_CD
+            , APLY_FINE_PRC
+            , APLY_FINE_TXRT
+            , CMDT_TKAC_CD
+            , TRNP_METH_TKAC_CD
+            , VITR_TKAC_YN
+            , PNSH_CLSE_CN
+            , INCD_PT_CD
+            , APLY_FINE_MAX_AMT
+            , CSCL_WRPM_TKAC_YN
+            , FNC_LWRG_CN
+            , APLY_STRT_DT
+            , APLY_END_DT
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+            )
+        VALUES
+            (
+              #{vltnMtrCd}
+            , #{vltnMtrClusClsfCn}
+            , #{vltnMtrPtCd}
+            , #{aplyFinePrc}
+            , #{aplyFineTxrt}
+            , #{cmdtTkacCd}
+            , #{trnpMethTkacCd}
+            , #{vitrTkacYn}
+            , #{pnshClseCn}
+            , #{incdPtCd}
+            , #{aplyFineMaxAmt}
+            , #{csclWrpmTkacYn}
+            , #{fncLwrgCn}
+            , TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            , TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            , 'N'
+            , #{frstRegstId}
+            , SYSTIMESTAMP
+            , #{lastChprId}
+            , SYSTIMESTAMP
+            )
+    </insert>
+
+    <!--
+     Gérer les codes des infractions du contentieux Modifier de nouvelles informations
+     !== 쟁송위반사항코드관리 수정 ==!
+     (Lee KyeongSeok)
+     -->
+    <update id="updateClrDputVltnMtrMgmt" parameterType="alpass.ipt.clr.cbm.vfm.vo.ClrDputVltnMtrMgmtVo">
+        /** updateClrDputVltnMtrMgmt */
+        UPDATE TB_CLRI_DPUT_VLTN_MTR_CD
+        SET
+            VLTN_MTR_CLUS_CLSF_CN = #{vltnMtrClusClsfCn}
+            , VLTN_MTR_PT_CD = #{vltnMtrPtCd}
+            , APLY_FINE_PRC = #{aplyFinePrc}
+            , APLY_FINE_TXRT = #{aplyFineTxrt}
+            , CMDT_TKAC_CD = #{cmdtTkacCd}
+            , TRNP_METH_TKAC_CD = #{trnpMethTkacCd}
+            , VITR_TKAC_YN = #{vitrTkacYn}
+            , PNSH_CLSE_CN = #{pnshClseCn}
+            , INCD_PT_CD = #{incdPtCd}
+            , APLY_FINE_MAX_AMT = #{aplyFineMaxAmt}
+            , CSCL_WRPM_TKAC_YN = #{csclWrpmTkacYn}
+            , FNC_LWRG_CN = #{fncLwrgCn}
+            , APLY_STRT_DT = TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            , APLY_END_DT = TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            , LAST_CHPR_ID = #{lastChprId}
+            , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE VLTN_MTR_CD = #{vltnMtrCd}
+        AND   DEL_YN = 'N'
+    </update>
+
+    <!--
+     Gérer les codes des infractions du contentieux Supprimer de nouvelles informations
+     !== 쟁송위반사항코드관리 삭제 ==!
+     (Lee KyeongSeok)
+     -->
+    <update id="deleteClrDputVltnMtrMgmt" parameterType="alpass.ipt.clr.cbm.vfm.vo.ClrDputVltnMtrMgmtVo">
+        /** deleteClrDputVltnMtrMgmt */
+        UPDATE TB_CLRI_DPUT_VLTN_MTR_CD
+        SET DEL_YN = 'Y',
+        LAST_CHPR_ID = #{lastChprId},
+        LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE 1=1
+        <if test="vltnMtrCd != null and vltnMtrCd != ''">
+        AND  VLTN_MTR_CD = #{vltnMtrCd}
+        </if>
+    </update>
+
+</mapper>

@@ -1,0 +1,663 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.car.ldun.mapper.CarNuldMapper">
+
+	<!-- Liste des cargaisons non déchargées par voie !== 미양하 목록 ==! -->
+	<select id="selectCarNuldList" parameterType="alpass.ipt.car.ldun.vo.CarNuldVo"
+									  resultType="alpass.ipt.car.ldun.vo.CarNuldVo">
+		/* CarNuldMapper.selectCarNuldList */
+		<if test="pagination != null and  pagination == true ">
+			<include refid="pagination.header" ></include>
+		</if>
+		SELECT a.ldun_rprt_no
+		     , a.ldun_rprt_mgmt_no
+		     , a.mrn
+		     , a.cag_rqst_tp_cd
+		     , a.trsn_co_cd           /** Code d'entreprise transmettrice !== 전송업체코드 ==! */
+		     , FN_CARI_GET_CO_NM(a.trsn_co_cd) AS trsn_co_nm
+		     , TO_CHAR(h.real_arvl_dttm,'DD/MM/YYYY HH24:MI:SS')                   AS real_arvl_dttm      /** Date Et Heure D'Arrivée Effective !== 실제도착일시 ==! */
+		     , TO_CHAR(a.real_ldun_strt_dttm,'DD/MM/YYYY HH24:MI')       AS real_ldun_strt_dttm   /** Date/Heure de début de déchargement effective !== 실제하역시작일시 ==! */
+		     , TO_CHAR(a.real_ldun_end_dttm,'DD/MM/YYYY HH24:MI')        AS real_ldun_end_dttm    /** Date/Heure de fin de déchargement effective !== 실제하역종료일시 ==! */
+		     , TO_CHAR(a.trsn_dttm,'DD/MM/YYYY HH24:MI:SS')             AS trsn_dttm           /** Date et heure de transmission !== 전송일시 ==! */
+		     , A.trsn_dttm                                              AS sort_trsn_dttm      /** Date et heure de transmission !== 전송일시 ==! */
+		     , b.carr_cd /** Code De Société De Transport !== 운송사코드 ==! */
+		     , cc.carr_nm AS carr_nm
+		     , b.trnp_meth_nm          /** Nom De Moyen De Transport !== 운송수단명 ==! */
+		     , b.trnp_meth_idfy_no     /** N° D'Identification Du Moyen De Transport !== 운송수단식별번호 ==! */
+		     , b.trnp_rfer_no          /** N° de référence de transport !== 운송참고번호 ==! */
+		     , TO_CHAR(c.prcs_dttm,'DD/MM/YYYY HH24:MI:SS')             AS prcs_dttm           /** Date Et Heure De Traitement !== 처리일시 ==! */
+		     , c.prcs_stts_cd                                           AS prcs_stts_cd        /** Code De Statut De Traitement !== 처리상태코드 ==! */
+		     , FN_GET_CD_VDVAL_NM('COM_0026', c.prcs_stts_cd, 'FR')     AS prcs_stts_nm        /** Code de statut de traitement !==처리상태코드==! */
+		     , DECODE(f.al_cntr_nload, NULL, 0, f.al_cntr_nload) AS al_cntr_nload
+		     , DECODE(d.rprt_cntr_nload_nuld, NULL, 0, d.rprt_cntr_nload_nuld) AS rprt_cntr_nload_nuld
+		     , DECODE((DECODE(f.al_cntr_nload, NULL, 0, f.al_cntr_nload) - DECODE(d.rprt_cntr_nload_nuld, NULL, 0, d.rprt_cntr_nload_nuld))
+		             , NULL
+		             , 0
+		             , (DECODE(f.al_cntr_nload, NULL, 0, f.al_cntr_nload) - DECODE(d.rprt_cntr_nload_nuld, NULL, 0, d.rprt_cntr_nload_nuld))
+		             ) AS al_cntr_nload_nuld
+		     , DECODE(g.al_cntr_load, NULL, 0, g.al_cntr_load) AS al_cntr_load
+		     , DECODE(e.rprt_cntr_load_nuld, NULL, 0, e.rprt_cntr_load_nuld) AS rprt_cntr_load_nuld
+		     , DECODE((DECODE(g.al_cntr_load, NULL, 0, g.al_cntr_load) - DECODE(e.rprt_cntr_load_nuld, NULL, 0, e.rprt_cntr_load_nuld))
+		             , NULL
+		             , 0
+		             , (DECODE(g.al_cntr_load, NULL, 0, g.al_cntr_load) - DECODE(e.rprt_cntr_load_nuld, NULL, 0, e.rprt_cntr_load_nuld))
+		             ) AS al_cntr_load_nuld
+		  FROM tb_cari_ldun_rprt a
+		 INNER JOIN tb_cari_cag_dcsh b
+		    ON a.mrn = b.mrn
+		 INNER JOIN tb_cari_cag_prcs_brkd c                             /** CARI_화물_처리_내역 */
+		    ON a.cag_rqst_tp_cd = c.cag_rqst_tp_cd
+		   AND a.ldun_rprt_no = c.cag_rqst_no
+		   AND a.rprt_dgcnt = c.rqst_dgcnt
+		  LEFT JOIN ( SELECT j.ldun_rprt_no
+		                   , SUM(CASE WHEN j.ldun_rprt_no IS NOT NULL THEN 1 ELSE 0 END) AS rprt_cntr_nload_nuld
+		                FROM tb_cari_ldun_rprt i
+		                   , tb_cari_ldun_rprt_bl j
+		                   , tb_cari_cag_dcsh k
+		                   , tb_cari_cag_dcsh_bl l
+		               WHERE 1=1
+		                 AND i.del_yn ='N'
+		                 AND j.del_yn ='N'
+		                 AND k.del_yn ='N'
+		                 AND l.del_yn ='N'
+		                 AND i.ldun_rprt_no = j.ldun_rprt_no
+		                 AND i.mrn = k.mrn
+		                 AND k.mrn = l.mrn
+		                 --AND j.bl_no = l.bl_no
+		                 AND j.bl_no = (SELECT (CASE WHEN t.bl_pt_cd = 'M'
+		                                             THEN t.bl_no
+		                                             ELSE t.hbl_no
+		                                         END) AS bl_no
+		                                  FROM tb_cari_cag_dcsh_bl t
+		                                 WHERE 1=1
+		                                   AND t.mrn = l.mrn
+		                                   AND t.cag_mgmt_no = l.cag_mgmt_no)
+		                 --AND l.bl_pt_cd = 'M'
+		                 AND l.cag_mgmt_no IS NOT NULL
+		               GROUP BY j.ldun_rprt_no) d
+		    ON a.ldun_rprt_no   = d.ldun_rprt_no
+		  LEFT JOIN ( SELECT j.ldun_rprt_no
+		                   , SUM(CASE WHEN j.ldun_rprt_no IS NOT NULL THEN 1 ELSE 0 END) AS rprt_cntr_load_nuld
+		                FROM tb_cari_ldun_rprt i
+		                   , tb_cari_ldun_rprt_cntr j
+		                   , tb_cari_cag_dcsh k
+		                   , tb_cari_cag_dcsh_bl l
+		               WHERE 1=1
+		                 AND i.del_yn ='N'
+		                 AND j.del_yn ='N'
+		                 AND k.del_yn ='N'
+		                 AND l.del_yn ='N'
+		                 AND i.ldun_rprt_no = j.ldun_rprt_no
+		                 AND i.mrn = k.mrn
+		                 AND k.mrn = l.mrn
+		                 AND j.bl_no = l.bl_no
+		                 AND l.bl_pt_cd = 'M'
+		               GROUP BY j.ldun_rprt_no) e
+		    ON a.ldun_rprt_no   = e.ldun_rprt_no
+		  LEFT JOIN (SELECT m.mrn
+		                  , SUM(CASE WHEN m.mrn IS NOT NULL THEN 1 ELSE 0 END) AS al_cntr_nload
+		               FROM tb_cari_cag_dcsh m
+		              INNER JOIN tb_cari_cag_dcsh_bl b
+		                 ON m.mrn = b.mrn
+		              WHERE 1=1
+		                AND m.apre_yn_cd = 'O'
+		                AND m.del_yn = 'N'
+		                AND b.del_yn = 'N'
+		                AND NOT EXISTS (SELECT 1
+		                                  FROM tb_cari_cag_dcsh_bl sb
+		                                 WHERE 1=1
+		                                   AND m.mrn = sb.mrn
+		                                   AND sb.bl_pt_cd = 'M'
+		                                   AND sb.del_yn = 'N'
+		                                   AND b.bf_cag_mgmt_no = sb.cag_mgmt_no)
+		                AND b.cntr_gcnt = '0'
+		                AND ((b.bl_pt_cd = 'M' AND b.bl_tp_cd = 'S') OR b.bl_pt_cd = 'H')
+		              GROUP BY m.mrn) f
+		    ON a.mrn = f.mrn
+		  LEFT JOIN (
+		             SELECT m.mrn
+		                  , SUM(CASE WHEN m.mrn IS NOT NULL THEN 1 ELSE 0 END) AS al_cntr_load
+		               FROM tb_cari_cag_dcsh_bl_cntr x
+		              INNER JOIN tb_cari_cag_dcsh_bl y
+		                 ON x.cag_mgmt_no = y.cag_mgmt_no
+		                AND x.mrn = y.mrn
+		              INNER JOIN tb_cari_cag_dcsh m
+		                 ON x.mrn = m.mrn
+		              WHERE 1=1
+		                AND x.del_yn ='N'
+		                AND y.del_yn ='N'
+		                AND m.del_yn ='N'
+		                AND m.apre_yn_cd = 'O'
+		                AND y.bl_pt_cd = 'M'
+		                AND NOT EXISTS(SELECT 1
+		                                 FROM tb_cari_cag_dcsh_bl sb
+		                                WHERE m.mrn = sb.mrn
+		                                  AND sb.bl_pt_cd = 'M'
+		                                  AND sb.del_yn = 'N'
+		                                  AND y.bf_cag_mgmt_no = sb.cag_mgmt_no)
+		                AND y.cntr_gcnt > '0'
+		              GROUP BY m.mrn) g
+		    ON a.mrn = g.mrn
+		  LEFT JOIN tb_cari_ldun h
+		    ON h.mrn = a.mrn
+		   AND h.del_yn = 'N'
+		  LEFT JOIN (SELECT t1.co_nm carr_nm
+		                  , t2.co_dclr_cd
+		               FROM tb_com_co t1
+		                  , tb_com_co_dclr_cd t2
+		              WHERE t1.nif = t2.nif
+		                AND t2.del_yn = 'N') cc
+		    ON a.trsn_co_cd = cc.co_dclr_cd
+		 WHERE 1=1
+		   AND a.del_yn = 'N'
+		   AND b.del_yn = 'N'  /** Suppression ON !== 삭제여부 ==! */
+		   AND c.del_yn = 'N'
+		   AND a.cag_rqst_tp_cd = #{cagRqstTpCd}
+		   AND (
+		        DECODE((DECODE(f.al_cntr_nload, NULL, 0, f.al_cntr_nload) - DECODE(d.rprt_cntr_nload_nuld, NULL, 0, d.rprt_cntr_nload_nuld))
+		             , NULL
+		             , 0
+		             , (DECODE(f.al_cntr_nload, NULL, 0, f.al_cntr_nload) - DECODE(d.rprt_cntr_nload_nuld, NULL, 0, d.rprt_cntr_nload_nuld))
+		             ) != 0
+		        OR
+		        DECODE((DECODE(g.al_cntr_load, NULL, 0, g.al_cntr_load) - DECODE(e.rprt_cntr_load_nuld, NULL, 0, e.rprt_cntr_load_nuld))
+		             , NULL
+		             , 0
+		             , (DECODE(g.al_cntr_load, NULL, 0, g.al_cntr_load) - DECODE(e.rprt_cntr_load_nuld, NULL, 0, e.rprt_cntr_load_nuld))
+		             ) != 0
+		        )
+		<if test="arvlDttmFrom != null and arvlDttmFrom != ''">
+		   AND h.real_arvl_dttm <![CDATA[ >= ]]> TO_DATE(#{arvlDttmFrom},'DD/MM/YYYY')
+		</if>
+		<if test="arvlDttmTo != null and arvlDttmTo != ''">
+		   AND h.real_arvl_dttm <![CDATA[ < ]]> TO_DATE(#{arvlDttmTo},'DD/MM/YYYY')+1
+		</if>
+		<if test="mrn != null and mrn != ''">
+		   AND UPPER(a.mrn) LIKE UPPER(#{mrn})||'%' /** MRN !== MRN ==! */
+		</if>
+		<if test="carrNm != null and carrNm != ''">
+		   AND UPPER(cc.carr_nm) LIKE '%'||UPPER(#{carrNm})||'%' /** Code de société de transport !== 운송사코드 ==! */
+		</if>
+		<if test="trnpMethNm != null and trnpMethNm != ''">
+		   AND UPPER(b.trnp_meth_nm) LIKE '%'||UPPER(#{trnpMethNm})||'%' /** Nom de moyen de transport !== 운송수단명 ==! */
+		</if>
+		<if test="trnpRferNo != null and trnpRferNo != ''">
+		   AND UPPER(b.trnp_rfer_no) LIKE '%'||UPPER(#{trnpRferNo})||'%' /** N° de voyage/N° de vol/N° d'itinéraire !== 운송참고번호 ==! */
+		</if>
+		<if test="trnpMethIdfyNo != null and trnpMethIdfyNo != ''">
+		   AND UPPER(b.trnp_meth_idfy_no) LIKE '%'||UPPER(#{trnpMethIdfyNo})||'%' /** N° D'Identification Du Moyen De Transport !== 운송수단식별번호 ==! */
+		</if>
+		<if test="trnpMeanCd != null and trnpMeanCd != ''">
+		   AND b.trnp_mean_cd = #{trnpMeanCd} /** Code de mode de transport !== 운송방법코드 ==! */
+		</if>
+           AND a.JRSD_ORGN_CD IN (           
+            <choose>
+                  <when test="jrsdOrgnCd != null and jrsdOrgnCd != ''">
+                  SELECT unnest(string_to_array(alpassint.fn_cari_get_orgcd('O', #{jrsdOrgnCd}), ','))
+                  </when>
+                  <otherwise>
+                  SELECT unnest(string_to_array(alpassint.fn_cari_get_orgcd('P', #{frstRegstId}), ','))
+                  </otherwise>
+              </choose>
+            )
+		 ORDER BY sort_trsn_dttm desc
+		<if test="pagination != null and  pagination == true ">
+			<include refid="pagination.footer" ></include>
+		</if>
+	</select>
+	
+	<!-- Détails de non déchargées !== 미양하 상세 ==! -->
+	<select id="selectCarNuldItem" parameterType="alpass.ipt.car.ldun.vo.CarNuldVo"
+									  resultType="alpass.ipt.car.ldun.vo.CarNuldVo">
+		/* CarNuldMapper.selectCarNuldItem */
+		SELECT a.ldun_rprt_no                                           AS ldun_rprt_no
+		     , a.ldun_rprt_mgmt_no                                      AS ldun_rprt_mgmt_no
+		     , b.cag_dcsh_rgsr_mgmt_no                                  AS cag_dcsh_rgsr_mgmt_no/** Numéro de gestion de l'enregistrement de la déclaration de fret !== 화물신고서등록관리번호 ==! */
+		     , b.mrn                                                    AS mrn                 /** Mrn !== MRN ==! */
+		     , TO_CHAR(a.trsn_dttm,'DD/MM/YYYY HH24:MI:SS')             AS trsn_dttm           /** Date et heure de transmission !== 전송일시 ==! */
+		     , a.cag_rqst_tp_cd                                         AS cag_rqst_tp_cd      /** Code de classement du suivi du fret !== 화물신청구분코드 ==! */
+		     , a.jrsd_orgn_cd                                           AS jrsd_orgn_cd        /** Code D'Unité Compétente !== 관할조직코드 ==! */
+		     , FN_GET_ORGN_NM(a.jrsd_orgn_cd)                           AS jrsd_orgn_nm        /** Code D'Unité Compétente !== 관할조직코드 ==! */
+		     , cstm.jrsd_cstm_cd                                        AS jrsd_cstm_cd        /** Code de bureau compétent !== 관할세관코드 ==! */
+		     , cstm.jrsd_cstm_nm                                        AS jrsd_cstm_nm        /** Code de bureau compétent !== 관할세관코드 ==! */
+		     , a.trsn_co_cd                                             AS trsn_co_cd          /** Code d'entreprise transmettrice !== 전송업체코드 ==! */
+		     , FN_CARI_GET_CO_NM(a.trsn_co_cd)                          AS trsn_co_nm
+		     , a.trsn_co_cd || ' | ' || FN_CARI_GET_CO_NM(a.trsn_co_cd) AS trsn_co_cd_nm
+		     , b.imo_no                                                 AS imo_no              /** N° IMO !== IMO번호 ==! */
+		     , b.trnp_meth_nm                                           AS trnp_meth_nm        /** Nom De Moyen De Transport !== 운송수단명 ==! */
+		     , b.trnp_meth_idfy_no                                      AS trnp_meth_idfy_no   /** N° D'Identification Du Moyen De Transport !== 운송수단식별번호 ==! */
+		     , b.trnp_rfer_no                                           AS trnp_rfer_no        /** N° de référence de transport !== 운송참고번호 ==! */
+		     , b.trnp_mean_cd                                           AS trnp_mean_cd        /** Code de type de transport !==운송방법코드==! */
+		     , TO_CHAR(TO_DATE(b.trnp_meth_rgsr_dt),'DD/MM/YYYY')       AS trnp_meth_rgsr_dt   /** Date D'Enregistrement De Moyen De Transport !== 운송수단등록일자 ==! */
+		     , TO_CHAR(b.dptr_dttm,'DD/MM/YYYY HH24:MI:SS')             AS dptr_dttm           /** Date Et Heure De Départ !== 출발일시 ==! */
+		     , TO_CHAR(b.real_arvl_dttm,'DD/MM/YYYY HH24:MI:SS')        AS real_arvl_dttm      /** Date Et Heure D'Arrivée Effective !== 실제도착일시 ==! */
+		     , CASE WHEN b.last_ldun_dt IS NULL OR b.last_ldun_dt = ''
+		            THEN ''
+		            ELSE TO_CHAR(TO_DATE(b.last_ldun_dt),'DD/MM/YYYY')
+		        END                                                     AS last_ldun_dt        /** Date De Déchargement Définitif !== 최종하역일자 ==! */
+		     , b.dptr_port_cd                                           AS dptr_port_cd        /** Code De Port De Départ !== 출발항구코드 ==! */
+		     , FN_CARI_GET_PORT_AIRPT_CITY_CD_NM(b.dptr_port_cd,#{langCd})   AS dptr_port_nm
+		     , b.ldun_port_cd                                           AS ldun_port_cd        /** Code De Port De Déchargement !== 하역항구코드 ==! */
+		     , FN_CARI_GET_PORT_AIRPT_CITY_CD_NM(b.ldun_port_cd,#{langCd})   AS ldun_port_nm
+		     , b.last_thrg_port_cd                                      AS last_thrg_port_cd   /** Code Du Dernier Port D'Escale !== 최종경유항구코드 ==! */
+		     , FN_CARI_GET_PORT_AIRPT_CITY_CD_NM(b.last_thrg_port_cd,#{langCd})   AS last_thrg_port_nm
+		     , b.trnp_meth_loct_nm                                      AS trnp_meth_loct_nm   /** Emplacement De Moyen De Transport !== 운송수단위치명 ==! */
+		     , b.carr_cd                                                AS carr_cd             /** Code De Société De Transport !== 운송사코드 ==! */
+		     , cc.carr_nm                                               AS carr_nm
+		     , b.trnp_meth_nat_cd                                       AS trnp_meth_nat_cd    /** Code de nationalité du moyen de transport !== 운송수단국적코드 ==! */
+		     , FN_GET_CNTY_NM(b.trnp_meth_nat_cd, #{langCd})            AS trnp_meth_nat_nm
+		     , b.carr_addr_nm                                           AS carr_addr_nm        /** Adresse De Société De Transport !== 운송사주소명 ==! */
+		     , b.ship_ttn                                               AS ship_ttn            /** Tonnage Brut Du Navire !== 선박총톤수 ==! */
+		     , b.ship_nttn                                              AS ship_nttn           /** Tonnage Net Du Navire !== 선박순톤수 ==! */
+		     , b.al_cntr_gcnt                                           AS al_cntr_gcnt        /** Nombre Total De Conteneurs !== 전체컨테이너개수 ==! */
+		     , b.al_vhcl_gcnt                                           AS al_vhcl_gcnt        /** Nombre Total De Véhicules !== 전체차량개수 ==! */
+		     --, bc.bl_cnt                                                AS bl_cnt
+		     , b.al_bl_gcnt                                             AS bl_cnt
+		     , NVL(b.ldun_bl_gcnt, 0)                                   AS ldun_bl_gcnt        /** Nombre de BL déchargé !== 양하BL개수 ==! */ 
+		     , c.audt_emp_id                                            AS audt_emp_id         /** ID de l'insepcteur !== 심사직원ID ==! */
+		     , c.cag_rqst_no                                            AS cag_rqst_no         /** N° De Demande De Cargaison !== 화물신청번호 ==! */
+		     , c.prcs_stts_cd                                           AS prcs_stts_cd        /** Code De Statut De Traitement !== 처리상태코드 ==! */
+		     , TO_CHAR(c.prcs_dttm,'DD/MM/YYYY HH24:MI:SS')             AS prcs_dttm           /** Date Et Heure De Traitement !== 처리일시 ==! */
+		     , dd.audt_emp_nm                                           AS audt_emp_nm         /** Nom De L'Employé !== 직원명 ==! */
+		     , dd.orgn_cd                                               AS orgn_cd             /** Code De L'Organisme !== 조직코드 ==! */
+		     , ee.orgn_nm                                               AS jrsd_orgn_nm        /** Nom D'Organisme !== 조직명 ==! */
+		     , hnot.bfch_emp_id                                         AS bfch_emp_id         /** Id De L'Inspecteur Avant La Modification !== 변경전직원ID ==! */
+		     , hnot.bfch_emp_nm                                         AS bfch_emp_nm         /** Id De L'Inspecteur Avant La Modification !== 변경전직원ID ==! */
+		     , hnot.afch_emp_id                                         AS afch_emp_id         /** Id De L'Inspecteur Après La Modification !== 변경후직원ID ==! */
+		     , hnot.afch_emp_nm                                         AS afch_emp_nm         /** Id De L'Inspecteur Après La Modification !== 변경후직원ID ==! */
+		     , hnot.chg_rsn_cn                                          AS chg_rsn_cn          /** Motif De La Modification !== 변경사유내용 ==! */
+		  FROM tb_cari_ldun_rprt a
+		  LEFT JOIN tb_cari_cag_dcsh b                                      /**CARI_적하목록*/
+		    ON a.mrn = b.mrn
+		   AND b.del_yn = 'N'                                         /** Suppression ON !== 삭제여부 ==! */
+		  LEFT JOIN tb_cari_cag_prcs_brkd c                             /** CARI_화물_처리_내역 */
+		    ON a.cag_rqst_tp_cd = c.cag_rqst_tp_cd                        /** Code de type de demande de cargaison !==화물신청구분코드==! */
+		   AND a.ldun_rprt_no = c.cag_rqst_no
+		   AND c.del_yn = 'N'
+		  LEFT JOIN ( SELECT a.cag_rqst_no                                            AS cag_rqst_no         /** N° De Demande De Cargaison !== 화물신청번호 ==! */
+		                   , a.cag_rqst_tp_cd                                         AS cag_rqst_tp_cd      /** Code de classement du suivi du fret !== 화물신청구분코드 ==! */
+		                   , a.bfch_emp_id                                            AS bfch_emp_id         /** Id De L'Inspecteur Avant La Modification !== 변경전직원ID ==! */
+		                   , a.afch_emp_id                                            AS afch_emp_id         /** Id De L'Inspecteur Après La Modification !== 변경후직원ID ==! */
+		                   , a.chg_rsn_cn                                             AS chg_rsn_cn          /** Motif De La Modification !== 변경사유내용 ==! */
+		                   , e1.emp_nm                                                AS bfch_emp_nm              /** Nom De L'Employé !== 직원명 ==! */
+		                   , e2.emp_nm                                                AS afch_emp_nm              /** Nom De L'Employé !== 직원명 ==! */
+		                FROM tb_cari_hnot_chg_h a
+		               INNER JOIN ( SELECT cag_rqst_no
+		                                 , MAX(chg_hist_srno) chg_hist_srno
+		                              FROM tb_cari_hnot_chg_h
+		                             GROUP BY cag_rqst_no
+		                     ) H
+		                  ON a.cag_rqst_no = h.cag_rqst_no
+		                 AND a.chg_hist_srno = h.chg_hist_srno
+		                LEFT JOIN tb_poti_emp e1
+		                  ON e1.pbsr_no = a.bfch_emp_id
+		                LEFT JOIN tb_poti_emp e2
+		                  ON e2.pbsr_no = a.afch_emp_id
+		       ) hnot
+		    ON hnot.cag_rqst_no = c.cag_rqst_no
+		   AND hnot.cag_rqst_tp_cd = c.cag_rqst_tp_cd
+		  /*LEFT JOIN ( SELECT mrn
+		                   , count(*) bl_cnt
+		                FROM tb_cari_cag_dcsh_bl
+		               where del_yn = 'N'
+		               GROUP BY mrn
+		       ) bc
+		    ON a.mrn = bc.mrn*/
+		  LEFT JOIN ( SELECT t1.co_nm carr_nm
+		                   , t2.co_dclr_cd
+		                FROM tb_com_co t1
+		                   , tb_com_co_dclr_cd t2
+		               WHERE t1.nif = t2.nif
+		                 AND t2.del_yn = 'N'
+		       ) cc
+		    ON b.carr_cd = cc.co_dclr_cd
+		  LEFT JOIN ( SELECT d.pbsr_no                                                AS pbsr_no             /** Matricule Solde !== 공무원번호 ==! */
+		                   , d.emp_nm                                                 AS audt_emp_nm         /** Nom De L'Employé !== 직원명 ==! */
+		                   , e.orgn_cd                                                AS orgn_cd             /** Code De L'Organisme !== 조직코드 ==! */
+		                   , e.orgn_nm                                                AS orgn_nm             /** Nom D'Organisme !== 조직명 ==! */
+		                FROM tb_poti_emp d
+		                LEFT JOIN tb_poti_orgn e                                      /** POTI_조직 */
+		                  ON d.orgn_mgmt_cd = e.orgn_mgmt_cd
+		               WHERE d.del_yn = 'N'
+		                 AND e.del_yn = 'N'
+		       ) dd
+		    ON c.audt_emp_id  = dd.pbsr_no
+		  LEFT JOIN tb_poti_orgn ee                                      /** POTI_조직 */
+		    ON a.jrsd_orgn_cd  = ee.orgn_cd
+		   AND ee.del_yn = 'N'                                        /** Suppression ON !== 삭제여부 ==! */
+		  LEFT JOIN ( SELECT c1.orgn_cd
+		                   , c2.orgn_cd AS jrsd_cstm_cd
+		                   , c2.orgn_nm AS jrsd_cstm_nm
+		                FROM tb_poti_orgn c1
+		                LEFT JOIN tb_poti_orgn c2
+		                  ON c1.upr_orgn_mgmt_cd = c2.orgn_mgmt_cd
+		               WHERE c1.del_yn = 'N'
+		       ) cstm
+		    ON a.jrsd_orgn_cd = cstm.orgn_cd
+		 WHERE a.cag_rqst_tp_cd = #{cagRqstTpCd}
+		   AND a.del_yn = 'N'                                         /** Suppression ON !== 삭제여부 ==! */
+		   AND a.ldun_rprt_no = #{ldunRprtNo}
+	</select>
+
+    <!-- Nombre de B/L !== BL 개수 조회 ==! -->
+    <select id="selectCariBlCntrCnt" parameterType="alpass.ipt.car.ldun.vo.CarNuldVo"
+											  resultType="alpass.ipt.car.ldun.vo.CarNuldVo">
+		/* CarNuldMapper.selectCariBlCntrCnt */
+		SELECT a.ldun_rprt_no
+		     , a.ldun_rprt_mgmt_no
+		     , a.mrn
+		     , a.cag_rqst_tp_cd
+		     , DECODE(f.al_cntr_nload, NULL, 0, f.al_cntr_nload) AS al_cntr_nload
+		     , DECODE(d.rprt_cntr_nload_nuld, NULL, 0, d.rprt_cntr_nload_nuld) AS rprt_cntr_nload_nuld
+		     , DECODE((DECODE(f.al_cntr_nload, NULL, 0, f.al_cntr_nload) - DECODE(d.rprt_cntr_nload_nuld, NULL, 0, d.rprt_cntr_nload_nuld))
+		             , NULL
+		             , 0
+		             , (DECODE(f.al_cntr_nload, NULL, 0, f.al_cntr_nload) - DECODE(d.rprt_cntr_nload_nuld, NULL, 0, d.rprt_cntr_nload_nuld))
+		             ) AS al_cntr_nload_nuld
+		     , DECODE(g.al_cntr_load, NULL, 0, g.al_cntr_load) AS al_cntr_load
+		     , DECODE(e.rprt_cntr_load_nuld, NULL, 0, e.rprt_cntr_load_nuld) AS rprt_cntr_load_nuld
+		     , DECODE((DECODE(g.al_cntr_load, NULL, 0, g.al_cntr_load) - DECODE(e.rprt_cntr_load_nuld, NULL, 0, e.rprt_cntr_load_nuld))
+		             , NULL
+		             , 0
+		             , (DECODE(g.al_cntr_load, NULL, 0, g.al_cntr_load) - DECODE(e.rprt_cntr_load_nuld, NULL, 0, e.rprt_cntr_load_nuld))
+		             ) AS al_cntr_load_nuld
+		  FROM tb_cari_ldun_rprt a
+		 INNER JOIN tb_cari_cag_prcs_brkd c                             /** CARI_화물_처리_내역 */
+		    ON a.cag_rqst_tp_cd = c.cag_rqst_tp_cd
+		   AND a.ldun_rprt_no = c.cag_rqst_no
+		   AND a.rprt_dgcnt = c.rqst_dgcnt
+		  LEFT JOIN ( SELECT j.ldun_rprt_no
+		                   , SUM(CASE WHEN j.ldun_rprt_no IS NOT NULL THEN 1 ELSE 0 END) AS rprt_cntr_nload_nuld
+		                FROM tb_cari_ldun_rprt i
+		                   , tb_cari_ldun_rprt_bl j
+		                   , tb_cari_cag_dcsh k
+		                   , tb_cari_cag_dcsh_bl l
+		               WHERE 1=1
+		                 AND i.del_yn ='N'
+		                 AND j.del_yn ='N'
+		                 AND k.del_yn ='N'
+		                 AND l.del_yn ='N'
+		                 AND i.ldun_rprt_no = j.ldun_rprt_no
+		                 AND i.mrn = k.mrn
+		                 AND k.mrn = l.mrn
+		                 --AND j.bl_no = l.bl_no
+		                 AND j.bl_no = (SELECT (CASE WHEN t.bl_pt_cd = 'M'
+		                                             THEN t.bl_no
+		                                             ELSE t.hbl_no
+		                                         END) AS bl_no
+		                                  FROM tb_cari_cag_dcsh_bl t
+		                                 WHERE 1=1
+		                                   AND t.mrn = l.mrn
+		                                   AND t.cag_mgmt_no = l.cag_mgmt_no)
+		                 --AND l.bl_pt_cd = 'M'
+		                 AND l.cag_mgmt_no IS NOT NULL
+		               GROUP BY j.ldun_rprt_no) d
+		    ON a.ldun_rprt_no   = d.ldun_rprt_no
+		  LEFT JOIN ( SELECT j.ldun_rprt_no
+		                   , SUM(CASE WHEN j.ldun_rprt_no IS NOT NULL THEN 1 ELSE 0 END) AS rprt_cntr_load_nuld
+		                FROM tb_cari_ldun_rprt i
+		                   , tb_cari_ldun_rprt_cntr j
+		                   , tb_cari_cag_dcsh k
+		                   , tb_cari_cag_dcsh_bl l
+		               WHERE 1=1
+		                 AND i.del_yn ='N'
+		                 AND j.del_yn ='N'
+		                 AND k.del_yn ='N'
+		                 AND l.del_yn ='N'
+		                 AND i.ldun_rprt_no = j.ldun_rprt_no
+		                 AND i.mrn = k.mrn
+		                 AND k.mrn = l.mrn
+		                 AND j.bl_no = l.bl_no
+		                 AND l.bl_pt_cd = 'M'
+		               GROUP BY j.ldun_rprt_no) e
+		    ON a.ldun_rprt_no   = e.ldun_rprt_no
+		  LEFT JOIN (SELECT m.mrn
+		                  , SUM(CASE WHEN m.mrn IS NOT NULL THEN 1 ELSE 0 END) AS al_cntr_nload
+		               FROM tb_cari_cag_dcsh m
+		              INNER JOIN tb_cari_cag_dcsh_bl b
+		                 ON m.mrn = b.mrn
+		              WHERE 1=1
+		                AND m.apre_yn_cd = 'O'
+		                AND m.del_yn = 'N'
+		                AND b.del_yn = 'N'
+		                AND NOT EXISTS (SELECT 1
+		                                  FROM tb_cari_cag_dcsh_bl sb
+		                                 WHERE 1=1
+		                                   AND m.mrn = sb.mrn
+		                                   AND sb.bl_pt_cd = 'M'
+		                                   AND sb.del_yn = 'N'
+		                                   AND b.bf_cag_mgmt_no = sb.cag_mgmt_no)
+		                AND b.cntr_gcnt = '0'
+		                AND ((b.bl_pt_cd = 'M' AND b.bl_tp_cd = 'S') OR b.bl_pt_cd = 'H')
+		              GROUP BY m.mrn) f
+		    ON a.mrn = f.mrn
+		  LEFT JOIN (
+		             SELECT m.mrn
+		                  , SUM(CASE WHEN m.mrn IS NOT NULL THEN 1 ELSE 0 END) AS al_cntr_load
+		               FROM tb_cari_cag_dcsh_bl_cntr x
+		              INNER JOIN tb_cari_cag_dcsh_bl y
+		                 ON x.cag_mgmt_no = y.cag_mgmt_no
+		                AND x.mrn = y.mrn
+		              INNER JOIN tb_cari_cag_dcsh m
+		                 ON x.mrn = m.mrn
+		              WHERE 1=1
+		                AND x.del_yn ='N'
+		                AND y.del_yn ='N'
+		                AND m.del_yn ='N'
+		                AND m.apre_yn_cd = 'O'
+		                AND y.bl_pt_cd = 'M'
+		                AND NOT EXISTS(SELECT 1
+		                                 FROM tb_cari_cag_dcsh_bl sb
+		                                WHERE m.mrn = sb.mrn
+		                                  AND sb.bl_pt_cd = 'M'
+		                                  AND sb.del_yn = 'N'
+		                                  AND y.bf_cag_mgmt_no = sb.cag_mgmt_no)
+		                AND y.cntr_gcnt > '0'
+		              GROUP BY m.mrn) g
+		    ON a.mrn = g.mrn
+		 WHERE 1=1
+		   AND a.del_yn = 'N'
+		   AND c.del_yn = 'N'
+		   AND a.ldun_rprt_no = #{ldunRprtNo}
+    </select>
+    
+    <!-- Marchandises non TC !== 컨테이너에 안실린 화물 ==! -->
+    <select id="selectCariLdunRprtUnCntr" parameterType="alpass.ipt.car.ldun.vo.CarNuldVo"
+													resultType="alpass.ipt.car.ldun.vo.CarCagLdunRprtBlVo">
+		/* CarNuldMapper.selectCariLdunRprtCagDcshUnCntr */
+		SELECT --a.bl_no                                                  AS bl_no               /** N° De Bl !== BL번호 ==! */
+		       CASE WHEN a.bl_pt_cd = 'M'
+		            THEN a.bl_no
+		            ELSE a.hbl_no
+		        END                                                     AS bl_no               /** N° De Bl !== BL번호 ==! */
+		     , a.cag_chrc_cd                                            AS cag_chrc_cd         /** Nature De Cargaison !== 화물특성코드 ==! */
+		     , a.pckg_gcnt                                              AS pckg_gcnt           /** Nombre De Colis !== 포장개수 ==! */
+		     , a.ibobz_cd                                               AS ibobz_cd            /** Code de zone sous douane !== 보세구역코드 ==! */
+		     , a.cag_mgmt_no                                            AS cag_mgmt_no         /** N° Demande De La Création De Crn !== 화물관리번호 ==! */
+		     , a.bl_tp_cd                                               AS bl_tp_cd            /** Code De Catégorie De B/L !== BL구분코드 ==! */
+		     , CASE WHEN a.cag_chrc_cd != '9'
+		            THEN a.ttwg /** Poids brut !== 총중량 ==! */
+		            ELSE a.lir_vol /** Volume (Litre) !==리터용적==! */
+		       END                                                      AS ttwg                /** Poids Brut !== 총중량 ==! */
+		     , a.vhcl_gcnt                                              AS vhcl_gcnt           /** Nombre De Véhicules !== 차량개수 ==! */
+		     , a.ibobz_cd                                               AS ibobz_cd
+		     , (SELECT dd.ibobz_nm
+		          FROM tb_cari_ibobz dd
+		         WHERE 1=1
+		           AND dd.del_yn = 'N'
+		           AND dd.ibobz_cd = a.ibobz_cd)                        AS ibobz_nm
+		     , a.stvd_cd                                                AS stvd_cd             /** Code De Stevedoremanutentionnaire !== 하역업자코드 ==! */
+		     , (SELECT co.co_nm
+		          FROM tb_com_co co, tb_com_co_dclr_cd cd
+		         WHERE co.nif = cd.nif 
+		           AND cd.co_dclr_cd = a.stvd_cd)                       AS stvd_nm
+		  FROM tb_cari_cag_dcsh_bl a
+		     , (/*화물신고한 컨테이너*/
+		        SELECT (CASE WHEN b.bl_pt_cd = 'M'
+		                     THEN b.bl_no
+		                     ELSE b.hbl_no
+		                 END) AS bl_no  /** N° De Bl !== BL번호 ==! */
+		             , b.cag_mgmt_no
+		             , m.mrn
+		          FROM tb_cari_cag_dcsh m
+		         INNER JOIN tb_cari_cag_dcsh_bl b
+		            ON m.mrn = b.mrn
+		         WHERE 1=1
+		           AND m.apre_yn_cd = 'O'
+		           AND m.del_yn = 'N'
+		           AND b.del_yn = 'N'
+		           AND NOT EXISTS (SELECT 1
+		                             FROM tb_cari_cag_dcsh_bl sb
+		                            WHERE 1=1
+		                              AND m.mrn = sb.mrn
+		                              AND sb.bl_pt_cd = 'M'
+		                              AND sb.del_yn = 'N'
+		                              AND b.bf_cag_mgmt_no = sb.cag_mgmt_no)
+		           AND m.mrn = (SELECT mrn
+		                          FROM tb_cari_ldun_rprt a
+		                         WHERE 1=1
+		                           AND a.ldun_rprt_no = #{ldunRprtNo})
+		           AND b.cntr_gcnt = '0'
+		           AND ((b.bl_pt_cd = 'M' AND b.bl_tp_cd = 'S') OR b.bl_pt_cd = 'H')
+		         MINUS
+		        /*양하보고된 컨테이너*/
+		        SELECT j.bl_no, l.cag_mgmt_no, i.mrn
+		          FROM tb_cari_ldun_rprt i
+		             , tb_cari_ldun_rprt_bl j
+		             , tb_cari_cag_dcsh k
+		             , tb_cari_cag_dcsh_bl l
+		         WHERE 1=1
+		           AND i.del_yn ='N'
+		           AND j.del_yn ='N'
+		           AND k.del_yn ='N'
+		           AND l.del_yn ='N'
+		           AND i.ldun_rprt_no = j.ldun_rprt_no
+		           AND i.mrn = k.mrn
+		           AND k.mrn = l.mrn
+		           --AND j.bl_no = l.bl_no
+		           AND j.bl_no = (SELECT (CASE WHEN t.bl_pt_cd = 'M'
+		                                       THEN t.bl_no
+		                                       ELSE t.hbl_no
+		                                   END) AS bl_no
+		                            FROM tb_cari_cag_dcsh_bl t
+		                           WHERE 1=1
+		                             AND t.mrn = l.mrn
+		                             AND t.cag_mgmt_no = l.cag_mgmt_no)
+		           /*AND l.bl_pt_cd = 'M'*/
+		           AND l.cag_mgmt_no IS NOT NULL
+		           AND i.ldun_rprt_no = #{ldunRprtNo}
+		       ) b
+		 WHERE 1=1
+		   --AND a.bl_no = b.bl_no
+		   AND b.bl_no = (SELECT (CASE WHEN t.bl_pt_cd = 'M'
+		                               THEN t.bl_no
+		                               ELSE t.hbl_no
+		                           END) AS bl_no
+		                    FROM tb_cari_cag_dcsh_bl t
+		                   WHERE 1=1
+		                     AND t.mrn = a.mrn
+		                     AND t.cag_mgmt_no = a.cag_mgmt_no)
+		   AND a.cag_mgmt_no = b.cag_mgmt_no
+		   AND a.mrn = b.mrn
+	</select>
+    
+    <!-- Marchandises TC !== 컨테이너에 실린 화물 ==! -->
+    <select id="selectCariLdunRprtCntr" parameterType="alpass.ipt.car.ldun.vo.CarNuldVo"
+												  resultType="alpass.ipt.car.ldun.vo.CarCagLdunRprtCntrVo">
+		/* CarNuldMapper.selectCariLdunRprtCagDcshCntr */  
+		SELECT (SELECT bl_no
+		          FROM tb_cari_cag_dcsh_bl
+		         WHERE mrn = a.mrn
+		           AND cag_mgmt_no = a.cag_mgmt_no)                     AS bl_no        /** N° De Bl !== BL번호 ==! */
+		     , a.cag_mgmt_no                                            AS cag_mgmt_no  /** N° Demande De La Création De Crn !== 화물관리번호 ==! */
+		     , (SELECT ibobz_cd
+		          FROM tb_cari_cag_dcsh_bl
+		         WHERE mrn = a.mrn
+		           AND cag_mgmt_no = a.cag_mgmt_no)                     AS ibobz_cd     /** Code de zone sous douane !== 보세구역코드 ==! */
+		     , (SELECT ibobz_nm
+		          FROM tb_cari_ibobz
+		         WHERE del_yn = 'N'
+		           AND ibobz_cd = (SELECT ibobz_cd
+		                             FROM tb_cari_cag_dcsh_bl
+		                            WHERE mrn = a.mrn
+		                              AND cag_mgmt_no = a.cag_mgmt_no)) AS ibobz_nm
+		     , (SELECT stvd_cd
+		          FROM tb_cari_cag_dcsh_bl
+		         WHERE mrn = a.mrn
+		           AND cag_mgmt_no = a.cag_mgmt_no)                     AS stvd_cd      /** Code de zone sous douane !== 보세구역코드 ==! */
+		     , (SELECT co.co_nm
+		         FROM tb_com_co co, tb_com_co_dclr_cd cd
+		        WHERE co.nif = cd.nif 
+		          AND cd.co_dclr_cd = (SELECT stvd_cd 
+		                                 FROM tb_cari_cag_dcsh_bl
+		                                WHERE 1=1
+		                                  AND mrn = a.mrn
+		                                  AND cag_mgmt_no = a.cag_mgmt_no)) AS stvd_nm        /** Code de zone sous douane !== 보세구역코드 ==! */
+		     , a.cntr_no                                                AS cntr_no             /** N° De Conteneur !== 컨테이너번호 ==! */
+		     , a.cntr_tp_cd                                             AS cntr_tp_cd          /** Code De Type De Conteneur !== 컨테이너구분코드 ==! */
+		     , a.pckg_gcnt                                              AS pckg_gcnt           /** Nombre De Colis !== 포장개수 ==! */
+		     , a.ttwg                                                   AS ttwg                /** Poids Brut !== 총중량 ==! */
+		     , a.pckg_ut_cd                                             AS pckg_ut_cd          /** Code De L'Unité De Colis !== 포장단위코드 ==! */
+		     , CASE WHEN a.pckg_ut_cd IS NOT NULL
+		            THEN a.pckg_gcnt||'['||a.pckg_ut_cd||']'
+		            ELSE a.pckg_gcnt||''
+		        END                                                     AS pckg_gcnt_ut_cd
+		     , a.seal_no1                                               AS seal_no1            /** N° De Scellé1 !== 봉인번호1 ==! */
+		     , a.seal_no2                                               AS seal_no2            /** N° De Scellé2 !== 봉인번호2 ==! */
+		     , a.seal_no3                                               AS seal_no3            /** N° De Scellé3 !== 봉인번호3 ==! */
+		     , a.seal_chpn1                                             AS seal_chpn1          /** Responsable de scellé 1 !== 봉인담당자1 ==! */
+		     , a.seal_chpn2                                             AS seal_chpn2          /** Responsable de scellé 2 !== 봉인담당자2 ==! */
+		     , a.seal_chpn3                                             AS seal_chpn3          /** Responsable de scellé 3 !== 봉인담당자3 ==! */
+		  FROM tb_cari_cag_dcsh_bl_cntr a
+		     , (/*화물신고한 컨테이너*/
+		        SELECT x.cntr_no, y.cag_mgmt_no, m.mrn
+		          FROM tb_cari_cag_dcsh_bl_cntr x
+		         INNER JOIN tb_cari_cag_dcsh_bl y
+		            ON x.cag_mgmt_no = y.cag_mgmt_no
+		           AND x.mrn = y.mrn
+		         INNER JOIN tb_cari_cag_dcsh m
+		            ON x.mrn = m.mrn
+		         WHERE 1=1
+		           AND x.del_yn ='N'
+		           AND y.del_yn ='N'
+		           AND m.del_yn ='N'
+		           AND m.apre_yn_cd = 'O'
+		           AND y.bl_pt_cd = 'M'
+		           AND NOT EXISTS(SELECT 1
+		                            FROM tb_cari_cag_dcsh_bl sb
+		                           WHERE m.mrn = sb.mrn
+		                             AND sb.bl_pt_cd = 'M'
+		                             AND sb.del_yn = 'N'
+		                             AND y.bf_cag_mgmt_no = sb.cag_mgmt_no)
+		           AND y.cntr_gcnt > '0'
+		           AND y.mrn = (SELECT mrn
+		                          FROM tb_cari_ldun_rprt a
+		                         WHERE 1=1
+		                           AND a.ldun_rprt_no = #{ldunRprtNo})
+		         MINUS
+		        /*양하보고된 컨테이너*/
+		        SELECT j.cntr_no, l.cag_mgmt_no, k.mrn
+		          FROM tb_cari_ldun_rprt i
+		             , tb_cari_ldun_rprt_cntr j
+		             , tb_cari_cag_dcsh k
+		             , tb_cari_cag_dcsh_bl l
+		         WHERE 1=1
+		           AND i.del_yn ='N'
+		           AND j.del_yn ='N'
+		           AND k.del_yn ='N'
+		           AND l.del_yn ='N'
+		           AND i.ldun_rprt_no = j.ldun_rprt_no
+		           AND i.mrn = k.mrn
+		           AND k.mrn = l.mrn
+		           AND j.bl_no = l.bl_no
+		           AND l.bl_pt_cd = 'M'
+		           AND i.ldun_rprt_no = #{ldunRprtNo}
+		       ) b
+		 WHERE 1=1
+		   AND a.cntr_no = b.cntr_no
+		   AND a.cag_mgmt_no = b.cag_mgmt_no
+		   AND a.mrn = b.mrn
+	</select>
+
+</mapper>
+

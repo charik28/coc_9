@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="alpass.ipt.clr.trm.hsm.mapper.ClrHsmMrktPrcMapper">
+    <sql id="sqlSearchQuery">
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hsCd)">
+            AND		MRKT_PRC_CD IN (
+            SELECT
+            MRKT_PRC_CD
+            FROM	TB_CLRI_HS_CD
+            WHERE	HS_CD = #{hsCd}
+            <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(basedDt)">
+                AND		TO_CHAR(TO_DATE(#{basedDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN HS_APLY_STRT_DT AND HS_APLY_END_DT
+            </if>
+            )
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(mrktPrcCd)">
+            AND		MRKT_PRC_CD = #{mrktPrcCd}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(mrktPrcNm)">
+            AND		MRKT_PRC_NM LIKE '%' || #{mrktPrcNm} || '%'
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(basedDt)">
+            AND		TO_CHAR(TO_DATE(#{basedDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN MRKT_PRC_APLY_STRT_DT AND MRKT_PRC_APLY_END_DT
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(mrktPrcAplyStrtDt)">
+            <![CDATA[
+			AND		MRKT_PRC_APLY_STRT_DT >= TO_CHAR(TO_DATE(#{mrktPrcAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		]]>
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(mrktPrcAplyStrtDt)">
+            <![CDATA[
+			AND		MRKT_PRC_APLY_END_DT <= TO_CHAR(TO_DATE(#{mrktPrcAplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		]]>
+        </if>
+    </sql>
+
+    <sql id="sqlSelectQuery">
+        SELECT
+            MRKT_PRC_CD
+             , MRKT_PRC_APLY_STRT_DT
+             , MRKT_PRC_APLY_END_DT
+             , MRKT_PRC_NM
+             , IMP_TTWG_UT_PRC
+             , IMP_TTWG_CURR_CD
+             , IMP_NTWG_UT_PRC
+             , IMP_NTWG_CURR_CD
+             , IMP_QTY_UT1_UT_PRC
+             , IMP_QTY_UT1_CURR_CD
+             , IMP_QTY_UT2_UT_PRC
+             , IMP_QTY_UT2_CURR_CD
+             , IMP_QTY_UT3_UT_PRC
+             , IMP_QTY_UT3_CURR_CD
+             , EXP_TTWG_UT_PRC
+             , EXP_TTWG_CURR_CD
+             , EXP_NTWG_UT_PRC
+             , EXP_NTWG_CURR_CD
+             , EXP_QTY_UT1_UT_PRC
+             , EXP_QTY_UT1_CURR_CD
+             , EXP_QTY_UT2_UT_PRC
+             , EXP_QTY_UT2_CURR_CD
+             , EXP_QTY_UT3_UT_PRC
+             , EXP_QTY_UT3_CURR_CD
+             , TOP_PRC_YN
+             , TX_BASE_PRC_CHG_YN
+             , DEL_YN
+             , FRST_REGST_ID
+             , FRST_RGSR_DTTM
+             , LAST_CHPR_ID
+             , LAST_CHG_DTTM
+        FROM		TB_CLRI_MRKT_PRC
+        WHERE		DEL_YN = 'N'
+    </sql>
+
+    <select id="selectClrMrktPrcList" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmMrktPrcVo" resultType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmMrktPrcVo">
+        /** selectClrMrktPrcList : 시장가격 목록 조회 **/
+        <include refid="pagination.header" />
+        SELECT
+        A.MRKT_PRC_CD                /** Code de valeur boursière !== 시장가격코드 ==! */
+        , TO_CHAR(TO_DATE(A.MRKT_PRC_APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') MRKT_PRC_APLY_STRT_DT      /** Date de début d'application de la valeur boursière !== 시장가격적용시작일자 ==! */
+        , MRKT_PRC_APLY_STRT_DT AS PREV_MRKT_PRC_APLY_STRT_DT
+        , TO_CHAR(TO_DATE(A.MRKT_PRC_APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') MRKT_PRC_APLY_END_DT       /** Date de fin d'application de la valeur boursière !== 시장가격적용종료일자 ==! */
+        , A.MRKT_PRC_NM                /** Nom de la valeur boursière !== 시장가격명 ==! */
+        , A.IMP_TTWG_UT_PRC            /** Prix unitaire du poids brut importe !== 수입총중량단위가격 ==! */
+        , A.IMP_TTWG_CURR_CD           /** Code de devise du poids brut importe !== 수입총중량통화코드 ==! */
+        , A.IMP_NTWG_UT_PRC            /** Prix unitaire du poids net importe !== 수입순중량단위가격 ==! */
+        , A.IMP_NTWG_CURR_CD           /** Code de devise du poids net importe !== 수입순중량통화코드 ==! */
+        , A.IMP_QTY_UT1_UT_PRC         /** Valeur unitaire 1 de l'unité de quanité de l'importation !== 수입수량단위1단위가격 ==! */
+        , A.IMP_QTY_UT1_CURR_CD        /** Code de devise de l'unite1 de la quantite importee !== 수입수량단위1통화코드 ==! */
+        , A.IMP_QTY_UT2_UT_PRC         /** Valeur unitaire 2 de l'unité de quantité de l'importation !== 수입수량단위2단위가격 ==! */
+        , A.IMP_QTY_UT2_CURR_CD        /** Code de devise de l'unite2 de la quantite importee !== 수입수량단위2통화코드 ==! */
+        , A.IMP_QTY_UT3_UT_PRC         /** Valeur unitaire 3 de l'unité de quantité de l'importation !== 수입수량단위3단위가격 ==! */
+        , A.IMP_QTY_UT3_CURR_CD        /** Code de devise de l'unite3 de la quanite importee !== 수입수량단위3통화코드 ==! */
+        , A.EXP_TTWG_UT_PRC            /** Prix unitaire du poids brut exporte !== 수출총중량단위가격 ==! */
+        , A.EXP_TTWG_CURR_CD           /** Code de devise du poids brut exporte !== 수출총중량통화코드 ==! */
+        , A.EXP_NTWG_UT_PRC            /** Prix unitaire du poids net exporte !== 수출순중량단위가격 ==! */
+        , A.EXP_NTWG_CURR_CD           /** Code de devise du poids net exportee !== 수출순중량통화코드 ==! */
+        , A.EXP_QTY_UT1_UT_PRC         /** Prix unitaire de l'unite1 de la quantite exportee !== 수출수량단위1단위가격 ==! */
+        , A.EXP_QTY_UT1_CURR_CD        /** Code de devise de l'unite1 de la quantite exportee !== 수출수량단위1통화코드 ==! */
+        , A.EXP_QTY_UT2_UT_PRC         /** Prix unitaire de l'unite2 de la quantite exportee !== 수출수량단위2단위가격 ==! */
+        , A.EXP_QTY_UT2_CURR_CD        /** Code de devise de l'unite2 de la quantite exportee !== 수출수량단위2통화코드 ==! */
+        , A.EXP_QTY_UT3_UT_PRC         /** Prix unitaire de l'unite3 de la quantite exportee !== 수출수량단위3단위가격 ==! */
+        , A.EXP_QTY_UT3_CURR_CD        /** Code de devise de l'unite3 de la quantite exportee !== 수출수량단위3통화코드 ==! */
+        , A.TOP_PRC_YN                 /** Valeur maximale O/N !== 최고가격여부 ==! */
+        , A.TX_BASE_PRC_CHG_YN         /** Modification de la valeur de l'assiette O/N !== 과세기준가격변경여부 ==! */
+        , A.DEL_YN                     /** Suppression ON !== 삭제여부 ==! */
+        , A.FRST_REGST_ID              /** ID du premier enregistrant  !== 최초등록자ID ==! */
+        , A.FRST_RGSR_DTTM             /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+        , A.LAST_CHPR_ID               /** ID du modificateur final !== 최종변경자ID ==! */
+        , A.LAST_CHG_DTTM              /** Date et heure de modification finale !== 최종변경일시 ==! */
+        FROM (
+        <include refid="sqlSelectQuery" />
+        <include refid="sqlSearchQuery" />
+        ) A
+        ORDER BY	A.MRKT_PRC_APLY_STRT_DT DESC
+        <include refid="pagination.footer" />
+    </select>
+
+    <select id="selectAplyClrMrktPrcCnt" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmMrktPrcVo" resultType="Integer">
+        /** selectAplyClrMrktPrcCnt : 시장가격 중복 데이터 카운트 조회 : 시작일자가 PK이기 때문에 이전 시작일자를 제외한 나머지 데이터와 비교 **/
+        SELECT
+        COUNT(*)
+        FROM 		TB_CLRI_MRKT_PRC
+        <![CDATA[
+		WHERE		DEL_YN = 'N'
+		AND			MRKT_PRC_CD = #{mrktPrcCd}
+		AND			MRKT_PRC_APLY_STRT_DT <= TO_CHAR(TO_DATE(#{mrktPrcAplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		AND			MRKT_PRC_APLY_END_DT >= TO_CHAR(TO_DATE(#{mrktPrcAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		]]>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(prevMrktPrcAplyStrtDt)">
+            <![CDATA[
+		AND			MRKT_PRC_APLY_STRT_DT <> #{prevMrktPrcAplyStrtDt}
+		]]>
+        </if>
+    </select>
+
+    <insert id="insertClrMrktPrc" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmMrktPrcVo">
+        /** insertClrMrktPrc : 시장가격 정보 저장 **/
+        INSERT INTO	TB_CLRI_MRKT_PRC (
+                                          MRKT_PRC_CD                  /** Code de valeur boursière !== 시장가격코드 ==! */
+                                        , MRKT_PRC_APLY_STRT_DT        /** Date de début d'application de la valeur boursière !== 시장가격적용시작일자 ==! */
+                                        , MRKT_PRC_APLY_END_DT         /** Date de fin d'application de la valeur boursière !== 시장가격적용종료일자 ==! */
+                                        , MRKT_PRC_NM                  /** Nom de la valeur boursière !== 시장가격명 ==! */
+                                        , IMP_TTWG_UT_PRC              /** Prix unitaire du poids brut importe !== 수입총중량단위가격 ==! */
+                                        , IMP_TTWG_CURR_CD             /** Code de devise du poids brut importe !== 수입총중량통화코드 ==! */
+                                        , IMP_NTWG_UT_PRC              /** Prix unitaire du poids net importe !== 수입순중량단위가격 ==! */
+                                        , IMP_NTWG_CURR_CD             /** Code de devise du poids net importe !== 수입순중량통화코드 ==! */
+                                        , IMP_QTY_UT1_UT_PRC           /** Valeur unitaire 1 de l'unité de quanité de l'importation !== 수입수량단위1단위가격 ==! */
+                                        , IMP_QTY_UT1_CURR_CD          /** Code de devise de l'unite1 de la quantite importee !== 수입수량단위1통화코드 ==! */
+                                        , IMP_QTY_UT2_UT_PRC           /** Valeur unitaire 2 de l'unité de quantité de l'importation !== 수입수량단위2단위가격 ==! */
+                                        , IMP_QTY_UT2_CURR_CD          /** Code de devise de l'unite2 de la quantite importee !== 수입수량단위2통화코드 ==! */
+                                        , IMP_QTY_UT3_UT_PRC           /** Valeur unitaire 3 de l'unité de quantité de l'importation !== 수입수량단위3단위가격 ==! */
+                                        , IMP_QTY_UT3_CURR_CD          /** Code de devise de l'unite3 de la quanite importee !== 수입수량단위3통화코드 ==! */
+                                        , EXP_TTWG_UT_PRC              /** Prix unitaire du poids brut exporte !== 수출총중량단위가격 ==! */
+                                        , EXP_TTWG_CURR_CD             /** Code de devise du poids brut exporte !== 수출총중량통화코드 ==! */
+                                        , EXP_NTWG_UT_PRC              /** Prix unitaire du poids net exporte !== 수출순중량단위가격 ==! */
+                                        , EXP_NTWG_CURR_CD             /** Code de devise du poids net exportee !== 수출순중량통화코드 ==! */
+                                        , EXP_QTY_UT1_UT_PRC           /** Prix unitaire de l'unite1 de la quantite exportee !== 수출수량단위1단위가격 ==! */
+                                        , EXP_QTY_UT1_CURR_CD          /** Code de devise de l'unite1 de la quantite exportee !== 수출수량단위1통화코드 ==! */
+                                        , EXP_QTY_UT2_UT_PRC           /** Prix unitaire de l'unite2 de la quantite exportee !== 수출수량단위2단위가격 ==! */
+                                        , EXP_QTY_UT2_CURR_CD          /** Code de devise de l'unite2 de la quantite exportee !== 수출수량단위2통화코드 ==! */
+                                        , EXP_QTY_UT3_UT_PRC           /** Prix unitaire de l'unite3 de la quantite exportee !== 수출수량단위3단위가격 ==! */
+                                        , EXP_QTY_UT3_CURR_CD          /** Code de devise de l'unite3 de la quantite exportee !== 수출수량단위3통화코드 ==! */
+                                        , TOP_PRC_YN                   /** Valeur maximale O/N !== 최고가격여부 ==! */
+                                        , TX_BASE_PRC_CHG_YN           /** Modification de la valeur de l'assiette O/N !== 과세기준가격변경여부 ==! */
+                                        , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+                                        , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                                        , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                                        , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+                                        , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        ) VALUES (
+                     #{mrktPrcCd}                 /** Code de valeur boursière !== 시장가격코드 ==! */
+                 , TO_CHAR(TO_DATE(#{mrktPrcAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')         /** Date de début d'application de la valeur boursière !== 시장가격적용시작일자 ==! */
+                 , TO_CHAR(TO_DATE(#{mrktPrcAplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')          /** Date de fin d'application de la valeur boursière !== 시장가격적용종료일자 ==! */
+                 , #{mrktPrcNm}                 /** Nom de la valeur boursière !== 시장가격명 ==! */
+                 , #{impTtwgUtPrc}              /** Prix unitaire du poids brut importe !== 수입총중량단위가격 ==! */
+                 , #{impTtwgCurrCd}             /** Code de devise du poids brut importe !== 수입총중량통화코드 ==! */
+                 , #{impNtwgUtPrc}              /** Prix unitaire du poids net importe !== 수입순중량단위가격 ==! */
+                 , #{impNtwgCurrCd}             /** Code de devise du poids net importe !== 수입순중량통화코드 ==! */
+                 , #{impQtyUt1UtPrc}            /** Valeur unitaire 1 de l'unité de quanité de l'importation !== 수입수량단위1단위가격 ==! */
+                 , #{impQtyUt1CurrCd}           /** Code de devise de l'unite1 de la quantite importee !== 수입수량단위1통화코드 ==! */
+                 , #{impQtyUt2UtPrc}            /** Valeur unitaire 2 de l'unité de quantité de l'importation !== 수입수량단위2단위가격 ==! */
+                 , #{impQtyUt2CurrCd}           /** Code de devise de l'unite2 de la quantite importee !== 수입수량단위2통화코드 ==! */
+                 , #{impQtyUt3UtPrc}            /** Valeur unitaire 3 de l'unité de quantité de l'importation !== 수입수량단위3단위가격 ==! */
+                 , #{impQtyUt3CurrCd}           /** Code de devise de l'unite3 de la quanite importee !== 수입수량단위3통화코드 ==! */
+                 , #{expTtwgUtPrc}              /** Prix unitaire du poids brut exporte !== 수출총중량단위가격 ==! */
+                 , #{expTtwgCurrCd}             /** Code de devise du poids brut exporte !== 수출총중량통화코드 ==! */
+                 , #{expNtwgUtPrc}              /** Prix unitaire du poids net exporte !== 수출순중량단위가격 ==! */
+                 , #{expNtwgCurrCd}             /** Code de devise du poids net exportee !== 수출순중량통화코드 ==! */
+                 , #{expQtyUt1UtPrc}            /** Prix unitaire de l'unite1 de la quantite exportee !== 수출수량단위1단위가격 ==! */
+                 , #{expQtyUt1CurrCd}           /** Code de devise de l'unite1 de la quantite exportee !== 수출수량단위1통화코드 ==! */
+                 , #{expQtyUt2UtPrc}            /** Prix unitaire de l'unite2 de la quantite exportee !== 수출수량단위2단위가격 ==! */
+                 , #{expQtyUt2CurrCd}           /** Code de devise de l'unite2 de la quantite exportee !== 수출수량단위2통화코드 ==! */
+                 , #{expQtyUt3UtPrc}            /** Prix unitaire de l'unite3 de la quantite exportee !== 수출수량단위3단위가격 ==! */
+                 , #{expQtyUt3CurrCd}           /** Code de devise de l'unite3 de la quantite exportee !== 수출수량단위3통화코드 ==! */
+                 , #{topPrcYn}                  /** Valeur maximale O/N !== 최고가격여부 ==! */
+                 , #{txBasePrcChgYn}            /** Modification de la valeur de l'assiette O/N !== 과세기준가격변경여부 ==! */
+                 , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+                 , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                 , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                 , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                 , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+                 )
+    </insert>
+
+    <update id="updateClrMrktPrc" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmMrktPrcVo">
+        /** ClriHsmgntMrktPrcSvc_updateClriMrktPrcAplyEndDt : PK 기반 시장가격 정보 변경 **/
+        UPDATE	TB_CLRI_MRKT_PRC SET
+        <trim prefixOverrides="," >
+            MRKT_PRC_APLY_STRT_DT = TO_CHAR(TO_DATE(#{mrktPrcAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')  /** Date de début d'application de la valeur boursière !== 시장가격적용시작일자 ==! */
+            , MRKT_PRC_APLY_END_DT = TO_CHAR(TO_DATE(#{mrktPrcAplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')  /** Date de fin d'application de la valeur boursière !== 시장가격적용종료일자 ==! */
+            , MRKT_PRC_NM = #{mrktPrcNm}                  /** Nom de la valeur boursière !== 시장가격명 ==! */
+            , IMP_TTWG_UT_PRC = #{impTtwgUtPrc}           /** Prix unitaire du poids brut importe !== 수입총중량단위가격 ==! */
+            , IMP_TTWG_CURR_CD = #{impTtwgCurrCd}         /** Code de devise du poids brut importe !== 수입총중량통화코드 ==! */
+            , IMP_NTWG_UT_PRC = #{impNtwgUtPrc}           /** Prix unitaire du poids net importe !== 수입순중량단위가격 ==! */
+            , IMP_NTWG_CURR_CD = #{impNtwgCurrCd}         /** Code de devise du poids net importe !== 수입순중량통화코드 ==! */
+            , IMP_QTY_UT1_UT_PRC = #{impQtyUt1UtPrc}      /** Valeur unitaire 1 de l'unité de quanité de l'importation !== 수입수량단위1단위가격 ==! */
+            , IMP_QTY_UT1_CURR_CD = #{impQtyUt1CurrCd}    /** Code de devise de l'unite1 de la quantite importee !== 수입수량단위1통화코드 ==! */
+            , IMP_QTY_UT2_UT_PRC = #{impQtyUt2UtPrc}      /** Valeur unitaire 2 de l'unité de quantité de l'importation !== 수입수량단위2단위가격 ==! */
+            , IMP_QTY_UT2_CURR_CD = #{impQtyUt2CurrCd}    /** Code de devise de l'unite2 de la quantite importee !== 수입수량단위2통화코드 ==! */
+            , IMP_QTY_UT3_UT_PRC = #{impQtyUt3UtPrc}      /** Valeur unitaire 3 de l'unité de quantité de l'importation !== 수입수량단위3단위가격 ==! */
+            , IMP_QTY_UT3_CURR_CD = #{impQtyUt3CurrCd}    /** Code de devise de l'unite3 de la quanite importee !== 수입수량단위3통화코드 ==! */
+            , EXP_TTWG_UT_PRC = #{expTtwgUtPrc}           /** Prix unitaire du poids brut exporte !== 수출총중량단위가격 ==! */
+            , EXP_TTWG_CURR_CD = #{expTtwgCurrCd}         /** Code de devise du poids brut exporte !== 수출총중량통화코드 ==! */
+            , EXP_NTWG_UT_PRC = #{expNtwgUtPrc}           /** Prix unitaire du poids net exporte !== 수출순중량단위가격 ==! */
+            , EXP_NTWG_CURR_CD = #{expNtwgCurrCd}         /** Code de devise du poids net exportee !== 수출순중량통화코드 ==! */
+            , EXP_QTY_UT1_UT_PRC = #{expQtyUt1UtPrc}      /** Prix unitaire de l'unite1 de la quantite exportee !== 수출수량단위1단위가격 ==! */
+            , EXP_QTY_UT1_CURR_CD = #{expQtyUt1CurrCd}    /** Code de devise de l'unite1 de la quantite exportee !== 수출수량단위1통화코드 ==! */
+            , EXP_QTY_UT2_UT_PRC = #{expQtyUt2UtPrc}      /** Prix unitaire de l'unite2 de la quantite exportee !== 수출수량단위2단위가격 ==! */
+            , EXP_QTY_UT2_CURR_CD = #{expQtyUt2CurrCd}    /** Code de devise de l'unite2 de la quantite exportee !== 수출수량단위2통화코드 ==! */
+            , EXP_QTY_UT3_UT_PRC = #{expQtyUt3UtPrc}      /** Prix unitaire de l'unite3 de la quantite exportee !== 수출수량단위3단위가격 ==! */
+            , EXP_QTY_UT3_CURR_CD = #{expQtyUt3CurrCd}    /** Code de devise de l'unite3 de la quantite exportee !== 수출수량단위3통화코드 ==! */
+            , TOP_PRC_YN = #{topPrcYn}                    /** Valeur maximale O/N !== 최고가격여부 ==! */
+            , TX_BASE_PRC_CHG_YN = #{txBasePrcChgYn}      /** Modification de la valeur de l'assiette O/N !== 과세기준가격변경여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        </trim>
+        WHERE		DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+        AND			MRKT_PRC_CD = #{mrktPrcCd}                  /** Code de valeur boursière !== 시장가격코드 ==! */
+        AND			MRKT_PRC_APLY_STRT_DT = #{prevMrktPrcAplyStrtDt}
+    </update>
+
+</mapper>

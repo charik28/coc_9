@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.dcshmgmt.mapper.PotPmDcshComVrfcBaseMapper">
+
+  <!--
+     Consulter la liste des références communes de vérification !==공통검증기준 목록을 조회한다.==!
+   -->
+  <select id="selectListComVrfcBase" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComVrfcBaseDtlVo" resultType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComVrfcBaseDtlVo">
+    /** selectListComVrfcBase */
+    <include refid="pagination.header"/>
+    SELECT
+    A.DOC_CD                     /** Code de document !== 문서코드 ==! */
+    , C.DOC_RPRS_CD || '-' || C.DOC_DTL_CD  AS DOC_CD_FORMAT
+    , A.BFHN_VRFC_PRGM_ID          /** ID de programme de verification preliminaire !== 사전검증프로그램ID ==! */
+    , A.BSOP_CLSF_CD               /** Code de domaine de travail !== 업무분류코드 ==! */
+    , (SELECT FN_GET_CD_VDVAL_NM('COM_0022', A.BSOP_CLSF_CD, #{langCd}) FROM DUAL) AS BSOP_CLSF_NM
+    , B.DOC_NM                     /** Nom du document !== 문서명 ==! */
+    , A.BFHN_VRFC_YN               /** Verification preliminaire ON !== 사전검증여부 ==! */
+    , A.DEL_YN                     /** Suppression ON !== 삭제여부 ==! */
+    , (SELECT COUNT(1) FROM TB_COM_VRFC_BASE_D WHERE A.DOC_CD = DOC_CD AND DEL_YN = 'N') AS BFHN_VRFC_ITEM_CNT
+    , C.DOC_DTL_CD
+    , C.DOC_RPRS_CD
+    FROM   TB_COM_VRFC_BASE A, TB_COM_DOC_CD C , TB_COM_DOC_CD_LANG B
+    WHERE 1 = 1
+    AND A.DOC_CD = C.DOC_CD
+    AND   A.DEL_YN = 'N'
+    AND  A.DOC_CD = B.DOC_CD
+    AND  B.LANG_CD=#{langCd} AND B.DEL_YN=A.DEL_YN
+    <if test="bsopClsfCd != null and bsopClsfCd != ''">
+      AND   A.BSOP_CLSF_CD = #{bsopClsfCd}
+    </if>
+    <if test="docCd != null and docCd != ''">
+      AND   A.DOC_CD LIKE '%' || #{docCd} || '%'
+    </if>
+    <if test='docNm != null and !docNm.equals("")'>
+      AND   UPPER(B.DOC_NM) LIKE '%'|| UPPER(#{docNm}) || '%'
+    </if>
+    ORDER BY A.DOC_CD ASC
+    <include refid="pagination.footer"/>
+  </select>
+
+  <!-- 
+     Consulter la liste détaillée des références communes de vérification  !==공통검증기준상세 목록을 조회한다.==!
+   -->
+  <select id="selectListComVrfcBaseDtl" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComVrfcBaseDtlVo" resultType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComVrfcBaseDtlVo">
+    /** selectListComVrfcBaseDtl */
+    SELECT ROWNUM AS ITEM_SN,
+    A.* FROM (
+    SELECT
+    A.DOC_CD
+    , A.TRGT_TBL_NM
+    , A.TRGT_COL_NM                /** Nom de la colonne ciblee !== 대상컬럼명 ==! */
+    , A.CLUS_SORT_ORDR             /** Ordre d'alignement des elements !== 항목정렬순서 ==! */
+    , NVL(A.COMN_CD_VRFC_YN,'N') AS  COMN_CD_VRFC_YN           /** Verification de code commun ON  !== 공통코드검증여부 ==! */
+    , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.COMN_CD_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS COMN_CD_VRFC_YN_NM
+    , A.COMN_CD                    /** Code commun  !== 공통코드 ==! */
+    , NVL(A.INDV_CD_VRFC_YN,'N') AS  INDV_CD_VRFC_YN            /** Verification de code individuel ON  !== 개별코드검증여부 ==! */
+    , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.INDV_CD_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS INDV_CD_VRFC_YN_NM
+    , A.INDV_CD                    /** @TODO : 번역필요 !== 개별코드 ==! */
+    , A.INDV_CD_TBL_NM             /** Nom de la table de code individuel !== 개별코드테이블명 ==! */
+    , A.INDV_CD_COL_NM             /** Nom de la colonne de code individuel !== 개별코드컬럼명 ==! */
+    , A.INDV_CD_ADIT_QURY_CN       /** Contenu de la requete additionnelle de code individuel !== 개별코드추가쿼리내용 ==! */
+    , NVL(A.ESNT_INP_VRFC_YN,'N') AS  ESNT_INP_VRFC_YN           /** Verification d'elements obligatoires ON !== 필수입력검증여부 ==! */
+    , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.ESNT_INP_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS ESNT_INP_VRFC_YN_NM
+    , NVL(A.AMT_QTY_VRFC_YN,'N') AS  AMT_QTY_VRFC_YN            /** Verification de montantquantite ON !== 금액수량검증여부 ==! */
+    , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.AMT_QTY_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS AMT_QTY_VRFC_YN_NM
+    , NVL(A.DT_VLDT_VRFC_YN,'N') AS  DT_VLDT_VRFC_YN            /** Verification de validite de la date ON !== 일자유효성검증여부 ==! */
+    , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.DT_VLDT_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS DT_VLDT_VRFC_YN_NM
+    , A.DT_VLDT_TP_CN              /** @TODO : 번역필요 !== 일자유효성구분내용 ==! */
+    , NVL(A.NUM_VLDT_VRFC_YN,'N') AS  NUM_VLDT_VRFC_YN           /** Verification de validite des chiffres ON !== 숫자유효성검증여부 ==! */
+    , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.NUM_VLDT_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS NUM_VLDT_VRFC_YN_NM
+    , NVL(A.CLUS_LEN_VRFC_YN,'N') AS  CLUS_LEN_VRFC_YN           /** @TODO : 번역필요 !== 항목길이검증여부 ==! */
+    , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.CLUS_LEN_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS CLUS_LEN_VRFC_YN_NM
+    , A.CLUS_LEN                   /** @TODO : 번역필요 !== 항목길이 ==! */
+    , NVL(A.NUM_RSCO_VRFC_YN,'N') AS  NUM_RSCO_VRFC_YN           /** @TODO : 번역필요 !== 숫자자릿수검증여부 ==! */
+    , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.NUM_RSCO_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS NUM_RSCO_VRFC_YN_NM
+    , A.AL_RSCO                    /** Nombre total de chiffres !== 전체자릿수 ==! */
+    , A.DCML_UNDR_RSCO             /** Nombre(s) decimal(aux) !== 소수점미만자랏수 ==! */
+    , A.ERKY_ORDR                  /** @TODO : 번역필요 !== 오류키순서 ==! */
+    , NVL(A.PRTL_VRFC_YN,'N') AS  PRTL_VRFC_YN               /** @TODO : 번역필요 !== 포탈사전검증여부 ==! */
+    , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.PRTL_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS PRTL_VRFC_YN_NM
+    , A.DEL_YN                     /** Suppression ON !== 삭제여부 ==! */
+    , (SELECT FN_GET_CD_VDVAL_NM('COM_0022', B.BSOP_CLSF_CD, #{langCd}) FROM DUAL) AS BSOP_CLSF_CD_NM
+    , B.BSOP_CLSF_CD
+    , D.DOC_NM
+    , C.DOC_DTL_CD
+    , C.DOC_RPRS_CD
+    , A.VRFC_CLUS_LBL_ID
+    , (SELECT FN_GET_LBL_NM(A.VRFC_CLUS_LBL_ID,#{langCd}) FROM DUAL) AS BFHN_VRFC_CLUS_NM
+    , (SELECT FN_GET_LBL_NM(A.VRFC_CLUS_LBL_ID,'KO') FROM DUAL) AS BFHN_VRFC_CLUS_NM_KO
+    , (SELECT FN_GET_LBL_NM(A.VRFC_CLUS_LBL_ID,'EN') FROM DUAL) AS BFHN_VRFC_CLUS_NM_EN
+    , (SELECT FN_GET_LBL_NM(A.VRFC_CLUS_LBL_ID,'FR') FROM DUAL) AS BFHN_VRFC_CLUS_NM_FR
+    , A.VRFC_CLUS_LBL_ID  AS BFHN_VRFC_CLUS_LBL_ID
+    FROM   TB_COM_VRFC_BASE_D A, TB_COM_VRFC_BASE B , TB_COM_DOC_CD C, TB_COM_DOC_CD_LANG D
+    WHERE 1 = 1
+    AND A.DOC_CD = B.DOC_CD
+    AND B.DOC_CD = C.DOC_CD
+    AND  A.DOC_CD = D.DOC_CD
+    AND  D.LANG_CD=#{langCd}
+    AND D.DEL_YN = 'N'
+    AND A.DEL_YN = 'N'
+    AND B.DEL_YN = 'N'
+    <if test="bsopClsfCd != null and bsopClsfCd != ''">
+      AND   B.BSOP_CLSF_CD = #{bsopClsfCd}
+    </if>
+    <if test="docCd != null and docCd != ''">
+      AND   A.DOC_CD LIKE  '%' || UPPER(#{docCd}) || '%'
+    </if>
+    <if test='docNm != null and !docNm.equals("")'>
+      AND   UPPER(D.DOC_NM) LIKE '%'|| UPPER(#{docNm}) || '%'
+    </if>
+    <if test="trgtTblNm != null and trgtTblNm != ''">
+      AND   B.TRGT_TBL_NM like UPPER(#{trgtTblNm}) || '%'
+    </if>
+    <if test="trgtColNm != null and trgtColNm != ''">
+      AND   B.TRGT_COL_NM like UPPER(#{trgtColNm}) || '%'
+    </if>
+    <if test="bfhnVrfcPrgmId != null and bfhnVrfcPrgmId != ''">
+      AND   B.BFHN_VRFC_PRGM_ID like #{bfhnVrfcPrgmId} || '%'
+    </if>
+    ORDER BY A.CLUS_SORT_ORDR
+    ) A
+  </select>
+
+  <!-- 
+     Consulter la liste détaillée des références communes de vérification  !==공통검증기준 상세 목록을 조회한다.==!
+  -->
+  <select id="selectComVrfcBaseDtlInfo" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComVrfcBaseDtlVo" resultType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComVrfcBaseDtlVo">
+    /** selectComVrfcBaseDtlInfo */
+    SELECT
+      A.DOC_CD                     /** Code de document !== 문서코드 ==! */
+         , A.TRGT_TBL_NM                /** Nom de la table ciblee !== 대상테이블명 ==! */
+         , A.TRGT_COL_NM                /** Nom de la colonne ciblee !== 대상컬럼명 ==! */
+         , A.CLUS_SORT_ORDR             /** Ordre d'alignement des elements !== 항목정렬순서 ==! */
+         , (SELECT FN_GET_LBL_NM(A.VRFC_CLUS_LBL_ID,#{langCd}) FROM DUAL) AS BFHN_VRFC_CLUS_NM
+         , (SELECT FN_GET_LBL_NM(A.VRFC_CLUS_LBL_ID,'KO') FROM DUAL) AS BFHN_VRFC_CLUS_NM_KO
+         , (SELECT FN_GET_LBL_NM(A.VRFC_CLUS_LBL_ID,'EN') FROM DUAL) AS BFHN_VRFC_CLUS_NM_EN
+         , (SELECT FN_GET_LBL_NM(A.VRFC_CLUS_LBL_ID,'FR') FROM DUAL) AS BFHN_VRFC_CLUS_NM_FR
+         , NVL(A.COMN_CD_VRFC_YN,'N') AS  COMN_CD_VRFC_YN            /** Verification de code commun ON  !== 공통코드검증여부 ==! */
+         , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.COMN_CD_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS COMN_CD_VRFC_YN_NM
+         , A.COMN_CD                    /** Code commun  !== 공통코드 ==! */
+         , NVL(A.INDV_CD_VRFC_YN,'N') AS  INDV_CD_VRFC_YN            /** Verification de code individuel ON  !== 개별코드검증여부 ==! */
+         , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.INDV_CD_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS INDV_CD_VRFC_YN_NM
+         , A.INDV_CD                    /** @TODO : 번역필요 !== 개별코드 ==! */
+         , A.INDV_CD_TBL_NM             /** Nom de la table de code individuel !== 개별코드테이블명 ==! */
+         , A.INDV_CD_COL_NM             /** Nom de la colonne de code individuel !== 개별코드컬럼명 ==! */
+         , A.INDV_CD_ADIT_QURY_CN       /** Contenu de la requete additionnelle de code individuel !== 개별코드추가쿼리내용 ==! */
+         , NVL(A.ESNT_INP_VRFC_YN,'N') AS  ESNT_INP_VRFC_YN           /** Verification d'elements obligatoires ON !== 필수입력검증여부 ==! */
+         , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.ESNT_INP_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS ESNT_INP_VRFC_YN_NM
+         , NVL(A.AMT_QTY_VRFC_YN,'N') AS  AMT_QTY_VRFC_YN            /** Verification de montantquantite ON !== 금액수량검증여부 ==! */
+         , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.AMT_QTY_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS AMT_QTY_VRFC_YN_NM
+         , NVL(A.DT_VLDT_VRFC_YN,'N') AS  DT_VLDT_VRFC_YN            /** Verification de validite de la date ON !== 일자유효성검증여부 ==! */
+         , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.DT_VLDT_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS DT_VLDT_VRFC_YN_NM
+         , A.DT_VLDT_TP_CN              /** @TODO : 번역필요 !== 일자유효성구분내용 ==! */
+         , NVL(A.NUM_VLDT_VRFC_YN,'N') AS  NUM_VLDT_VRFC_YN           /** Verification de validite des chiffres ON !== 숫자유효성검증여부 ==! */
+         , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.NUM_VLDT_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS NUM_VLDT_VRFC_YN_NM
+         , NVL(A.CLUS_LEN_VRFC_YN,'N') AS  CLUS_LEN_VRFC_YN           /** @TODO : 번역필요 !== 항목길이검증여부 ==! */
+         , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.CLUS_LEN_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS CLUS_LEN_VRFC_YN_NM
+         , A.CLUS_LEN                   /** @TODO : 번역필요 !== 항목길이 ==! */
+         , NVL(A.NUM_RSCO_VRFC_YN,'N') AS  NUM_RSCO_VRFC_YN           /** @TODO : 번역필요 !== 숫자자릿수검증여부 ==! */
+         , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.NUM_RSCO_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS NUM_RSCO_VRFC_YN_NM
+         , A.AL_RSCO                    /** Nombre total de chiffres !== 전체자릿수 ==! */
+         , A.DCML_UNDR_RSCO             /** Nombre(s) decimal(aux) !== 소수점미만자랏수 ==! */
+         , A.ERKY_ORDR                  /** @TODO : 번역필요 !== 오류키순서 ==! */
+         , NVL(A.PRTL_VRFC_YN,'N') AS  PRTL_VRFC_YN               /** @TODO : 번역필요 !== 포탈사전검증여부 ==! */
+         , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.PRTL_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS PRTL_VRFC_YN_NM
+         , A.DEL_YN                     /** Suppression ON !== 삭제여부 ==! */
+         , A.FRST_REGST_ID              /** ID du premier enregistrant  !== 최초등록자ID ==! */
+         , A.FRST_RGSR_DTTM             /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+         , A.LAST_CHPR_ID               /** ID du modificateur final !== 최종변경자ID ==! */
+         , A.LAST_CHG_DTTM              /** Date et heure de modification finale !== 최종변경일시 ==! */
+         , B.BSOP_CLSF_CD
+         , FN_GET_CD_VDVAL_NM('COM_0022', B.BSOP_CLSF_CD, #{langCd}) AS BSOP_CLSF_CD_NM
+         , (SELECT MAX(DOC_NM) FROM TB_COM_DOC_CD_LANG WHERE A.DOC_CD = DOC_CD AND LANG_CD=#{langCd} AND DEL_YN='N') DOC_NM
+         , C.DOC_DTL_CD
+         , C.DOC_RPRS_CD
+         , A.VRFC_CLUS_LBL_ID  AS BFHN_VRFC_CLUS_LBL_ID
+    FROM   TB_COM_VRFC_BASE_D A, TB_COM_VRFC_BASE B , TB_COM_DOC_CD C
+    WHERE 1 = 1
+      AND A.DOC_CD = B.DOC_CD
+      AND B.DOC_CD = C.DOC_CD
+      AND A.DOC_CD = #{docCd}
+      AND A.TRGT_TBL_NM = #{trgtTblNm}
+      AND A.TRGT_COL_NM = #{trgtColNm}
+      AND A.DEL_YN = 'N'
+      AND B.DEL_YN = 'N'
+  </select>
+
+  <!--
+    Supprimer des détails des références communes de vérification !==공통검증기준 상세 내용을 등록한다.==!
+   -->
+  <insert id="insertComVrfcBaseDtl" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComVrfcBaseDtlVo">
+    /* insertComVrfcBaseDtl */
+    INSERT INTO TB_COM_VRFC_BASE_D
+    (
+      DOC_CD
+    , TRGT_TBL_NM
+    , TRGT_COL_NM
+    , CLUS_SORT_ORDR
+    , COMN_CD_VRFC_YN
+    , COMN_CD
+    , INDV_CD_VRFC_YN
+    , INDV_CD
+    , INDV_CD_TBL_NM
+    , INDV_CD_COL_NM
+    , INDV_CD_ADIT_QURY_CN
+    , ESNT_INP_VRFC_YN
+    , AMT_QTY_VRFC_YN
+    , DT_VLDT_VRFC_YN
+    , DT_VLDT_TP_CN
+    , NUM_VLDT_VRFC_YN
+    , CLUS_LEN_VRFC_YN
+    , CLUS_LEN
+    , NUM_RSCO_VRFC_YN
+    , AL_RSCO
+    , DCML_UNDR_RSCO
+    , ERKY_ORDR
+    , PRTL_VRFC_YN
+    , VRFC_CLUS_LBL_ID
+    , DEL_YN
+    , FRST_REGST_ID
+    , FRST_RGSR_DTTM
+    , LAST_CHPR_ID
+    , LAST_CHG_DTTM
+    )
+    VALUES
+      (
+        #{docCd}
+      , #{trgtTblNm}
+      , #{trgtColNm}
+      , #{clusSortOrdr}
+      , #{comnCdVrfcYn}
+      , #{comnCd}
+      , #{indvCdVrfcYn}
+      , #{indvCd}
+      , #{indvCdTblNm}
+      , #{indvCdColNm}
+      , #{indvCdAditQuryCn}
+      , #{esntInpVrfcYn}
+      , #{amtQtyVrfcYn}
+      , #{dtVldtVrfcYn}
+      , #{dtVldtTpCn}
+      , #{numVldtVrfcYn}
+      , #{clusLenVrfcYn}
+      , #{clusLen}
+      , #{numRscoVrfcYn}
+      , #{alRsco}
+      , #{dcmlUndrRsco}
+      , #{erkyOrdr}
+      , 'Y'
+      , #{bfhnVrfcClusLblId}
+      , 'N'
+      , #{frstRegstId}
+      , SYSTIMESTAMP
+      , #{lastChprId}
+      , SYSTIMESTAMP
+      )
+  </insert>
+
+  <!--
+     Modifier des détails des références communes de vérification !==공통검증기준 상세 내용을 수정한다.==!
+   -->
+  <update id="updateComVrfcBaseDtl" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComVrfcBaseDtlVo">
+    /* updateComVrfcBaseDtl */
+    UPDATE  TB_COM_VRFC_BASE_D SET
+    <trim prefixOverrides="," >
+      CLUS_SORT_ORDR = #{clusSortOrdr}
+      , COMN_CD_VRFC_YN = #{comnCdVrfcYn}
+      , COMN_CD = #{comnCd}
+      , INDV_CD_VRFC_YN = #{indvCdVrfcYn}
+      , INDV_CD = #{indvCd}
+      , INDV_CD_TBL_NM = #{indvCdTblNm}
+      , INDV_CD_COL_NM = #{indvCdColNm}
+      , INDV_CD_ADIT_QURY_CN = #{indvCdAditQuryCn}
+      , ESNT_INP_VRFC_YN = #{esntInpVrfcYn}
+      , AMT_QTY_VRFC_YN = #{amtQtyVrfcYn}
+      , DT_VLDT_VRFC_YN = #{dtVldtVrfcYn}
+      , DT_VLDT_TP_CN = #{dtVldtTpCn}
+      , NUM_VLDT_VRFC_YN = #{numVldtVrfcYn}
+      , CLUS_LEN_VRFC_YN = #{clusLenVrfcYn}
+      , CLUS_LEN = #{clusLen}
+      , NUM_RSCO_VRFC_YN = #{numRscoVrfcYn}
+      , AL_RSCO = #{alRsco}
+      , DCML_UNDR_RSCO = #{dcmlUndrRsco}
+      , ERKY_ORDR = #{erkyOrdr}
+      , PRTL_VRFC_YN = 'Y'
+      , VRFC_CLUS_LBL_ID = #{bfhnVrfcClusLblId}
+      , DEL_YN = 'N'
+      , LAST_CHPR_ID = #{lastChprId}
+      , LAST_CHG_DTTM = SYSTIMESTAMP
+    </trim>
+    WHERE  doc_cd = #{docCd}
+    AND TRGT_TBL_NM = #{trgtTblNm}
+    AND TRGT_COL_NM = #{trgtColNm}
+  </update>
+
+  <!-- 
+     Supprimer des détails des références communes de vérification !==공통검증기준 상세 내용을 삭제한다.==!
+   -->
+  <update id="deleteComVrfcBaseDtl" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComVrfcBaseDtlVo">
+    /* deleteComVrfcBaseDtl */
+    UPDATE  TB_COM_VRFC_BASE_D SET
+        DEL_YN = 'Y'
+     ,  LAST_CHPR_ID = #{lastChprId}
+     ,  LAST_CHG_DTTM = SYSTIMESTAMP
+    WHERE  DEL_YN = 'N'
+      AND DOC_CD = #{docCd}
+      AND TRGT_TBL_NM = #{trgtTblNm}
+      AND TRGT_COL_NM = #{trgtColNm}
+  </update>
+
+  <!-- 
+     Supprimer un code de document !==문서코드를 삭제한다.==!
+   -->
+  <delete id="deleteComVrfcBaseDByDocCd" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComVrfcBaseDtlVo">
+    /* deleteComVrfcBaseD */
+    DELETE FROM TB_COM_VRFC_BASE_D
+    WHERE  DEL_YN = 'N'
+      AND DOC_CD = #{docCd}
+  </delete>
+
+  <!-- 
+     Consulter la liste détaillée des références communes de vérification  !==공통검증기준상세 목록을 조회한다.==!
+   -->
+  <select id="selectListComVrfcTgtTblList" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComVrfcBaseDtlVo" resultType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComVrfcBaseDtlVo">
+    /** selectListComVrfcTgtTblList */
+    <include refid="pagination.header"/>
+    SELECT
+    TBL_ID,
+    TBL_NM,
+    TRGT_TBL_NM,
+    BSOP_CLSF_CD_NM
+    FROM (
+    SELECT
+    ps.relname TBL_ID
+    , pd.description TBL_NM
+    , ps.relname TRGT_TBL_NM
+    ,FN_GET_CD_VDVAL_NM('COM_0022', #{bsopClsfCd}, #{langCd}) AS BSOP_CLSF_CD_NM
+    FROM pg_stat_all_tables ps, pg_description pd
+    WHERE ps.relid = pd.objoid
+    and pd.objsubid = 0
+      <if test='bsopClsfCd != null and bsopClsfCd.equals("CAG")'>
+        AND ps.relname LIKE 'tb_car%'
+      </if>
+      <if test='bsopClsfCd != null and (bsopClsfCd.equals("CLR") or bsopClsfCd.equals("COL"))'>
+        AND (ps.relname LIKE 'tb_clr%' OR ps.relname LIKE 'tb_col%')
+      </if>
+      <if test='bsopClsfCd != null and bsopClsfCd.equals("POT")'>
+        AND ps.relname LIKE 'tb_pot%'
+      </if>
+      <if test='bsopClsfCd != null and bsopClsfCd.equals("COM")'>
+        AND ps.relname LIKE 'tb_com%'
+      </if>
+      <if test='bsopClsfCd != null and bsopClsfCd.equals("RMS")'>
+        AND ps.relname LIKE 'tb_rms%'
+      </if>
+      <if test='bsopClsfCd != null and bsopClsfCd.equals("AEO")'>
+        AND ps.relname LIKE 'tb_aeo%'
+      </if>
+      <if test='tblId != null and !tblId.equals("")'>
+        AND   ps.relname like '%' || lower(#{tblId}) || '%'
+      </if>
+      <if test='tblNm != null and !tblNm.equals("")'>
+        AND   pd.description like '%' || #{tblNm} || '%'
+      </if>
+    ) A
+    ORDER BY A.TBL_ID
+    <include refid="pagination.footer"/>
+  </select>
+
+  <!--
+     Consulter la liste des colonnes des éléments de la vérification préalable  !== 사전검증대상 컬럼 목록 조회 ==!
+   -->
+  <select id="selectListComVrfcTgtColList" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComVrfcBaseDtlVo" resultType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComVrfcBaseDtlVo">
+    /** selectListComVrfcTgtColList */
+    <include refid="pagination.header"/>
+    SELECT
+    TBL_ID,
+    COL_ID,
+    COL_NM,
+    TRGT_COL_NM
+    FROM (
+    select ps.relname TBL_ID
+    , pa.attname COL_ID
+    , pd.description COL_NM
+    , pa.attname TRGT_COL_NM
+    FROM pg_stat_all_tables ps, pg_description pd, pg_attribute pa
+    WHERE ps.relid = pd.objoid
+    and ps.relid = pa.attrelid
+    and pd.objsubid = pa.attnum
+    and pd.objsubid != 0
+    AND ps.relname = lower(#{tblId})
+    <if test='bsopClsfCd != null and bsopClsfCd.equals("CAG")'>
+      and ps.relname like 'tb_car%'
+    </if>
+    <if test='bsopClsfCd != null and bsopClsfCd.equals("POT")'>
+      and ps.relname like 'tb_pot%'
+    </if>
+    <if test='bsopClsfCd != null and bsopClsfCd.equals("COM")'>
+      and ps.relname like 'tb_com%'
+    </if>
+    <if test='bsopClsfCd != null and (bsopClsfCd.equals("CLR") or bsopClsfCd.equals("COL"))'>
+      AND (ps.relname LIKE 'tb_clr%' OR ps.relname LIKE 'tb_col%')
+    </if>
+    <if test='bsopClsfCd != null and bsopClsfCd.equals("RMS")'>
+      and ps.relname like 'tb_rms%'
+    </if>
+    <if test='bsopClsfCd != null and bsopClsfCd.equals("AEO")'>
+      and ps.relname like 'tb_aeo%'
+    </if>
+    <if test='colId != null and !colId.equals("")'>
+      AND  pa.attname like '%' || lower(#{colId}) || '%'
+    </if>
+    <if test='colNm != null and !colNm.equals("")'>
+      AND   pd.description like '%'|| #{colNm} || '%'
+    </if>
+    ) A
+    ORDER BY A.COL_ID
+    <include refid="pagination.footer"/>
+  </select>
+
+  <!--
+		 Consulter la liste des noms des libellés !==라벨명 목록을 조회한다.==!
+	 -->
+  <select id="selectComLblNmList" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComLblVo" resultType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComLblVo">
+    /* PotiDcshmgmt_selectComLblNmList */
+    <include refid="pagination.header"/>
+    SELECT
+    A.LBL_ID,
+    A.BSOP_CLSF_CD,
+    (SELECT FN_GET_CD_VDVAL_NM('COM_0022', A.BSOP_CLSF_CD, NVL(#{langCd},'FR')) FROM DUAL) AS BSOP_CLSF_NM,
+    A.LBL_TPCD,
+    A.USE_YN,
+    A.DEL_YN,
+    E.LBL_NM AS LBL_NM,
+    B.LBL_NM AS LBL_NM_FR,
+    C.LBL_NM AS LBL_NM_EN,
+    D.LBL_NM AS LBL_NM_KO
+    FROM TB_COM_LBL A, TB_COM_LBL_LANG E,TB_COM_LBL_LANG B,  TB_COM_LBL_LANG C,  TB_COM_LBL_LANG D
+    WHERE A.LBL_ID = E.LBL_ID
+    AND E.LANG_CD = NVL(#{langCd},'FR')
+    AND A.LBL_ID = B.LBL_ID
+    AND B.LANG_CD = 'FR'
+    AND A.LBL_ID = C.LBL_ID(+)
+    AND C.LANG_CD(+) = 'EN'
+    AND A.LBL_ID = D.LBL_ID(+)
+    AND D.LANG_CD(+) = 'KO'
+    AND A.DEL_YN = 'N'
+    AND B.DEL_YN = 'N'
+    AND C.DEL_YN(+) = 'N'
+    AND D.DEL_YN(+) = 'N'
+    AND E.DEL_YN = 'N'
+    AND A.USE_YN = 'Y'
+    AND A.LBL_TPCD = #{lblTpcd}
+    <if test='lblId != null and !lblId.equals("")'>
+      AND   A.LBL_ID LIKE '%' || UPPER(#{lblId}) || '%'
+    </if>
+    <if test='lblNm != null and !lblNm.equals("")'>
+      AND   UPPER(E.LBL_NM) LIKE '%' || UPPER(#{lblNm}) || '%'
+    </if>
+    <if test='bsopClsfCd != null and !bsopClsfCd.equals("")'>
+      AND   A.BSOP_CLSF_CD = #{bsopClsfCd}
+    </if>
+    ORDER BY LBL_ID
+    <include refid="pagination.footer"/>
+  </select>
+
+  <!--
+		 Consulter la liste des noms des libellés !==라벨명 목록을 조회한다.==!
+	 -->
+  <select id="selectDocCount" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotPmDcshComVrfcBaseDtlVo" resultType="int">
+    /* selectDocCount */
+    SELECT COUNT(1) FROM TB_COM_VRFC_BASE_D WHERE DOC_CD = #{docCd}
+                                              AND TRGT_TBL_NM = #{trgtTblNm}
+                                              AND TRGT_COL_NM = #{trgtColNm};
+  </select>
+
+  <!--
+		 Supprimer par lots des détails des références communes de vérification !==공통기준상세정보를 일괄삭제한다.==!
+	 -->
+  <delete id="deleteComVrfcBaseDtlInfoMulti" parameterType="java.util.Map">
+    /*deleteComVrfcBaseDtlInfoMulti*/
+    DELETE FROM TB_COM_VRFC_BASE_D
+    WHERE DOC_CD = #{docCd}
+  </delete>
+
+  <!--
+		 Enregistrer les informations des références communes de vérification !==공통기준상세정보를 등록한다.==!
+	 -->
+  <insert id="insertComVrfcBaseDtlInfoMulti" parameterType="java.util.Map">
+    /*insertComVrfcBaseDtlInfoMulti*/
+    INSERT INTO TB_COM_VRFC_BASE_D(
+    DOC_CD
+    , TRGT_TBL_NM
+    , TRGT_COL_NM
+    , CLUS_SORT_ORDR
+    , COMN_CD_VRFC_YN
+    , COMN_CD
+    , INDV_CD_VRFC_YN
+    , INDV_CD
+    , INDV_CD_TBL_NM
+    , INDV_CD_COL_NM
+    , INDV_CD_ADIT_QURY_CN
+    , ESNT_INP_VRFC_YN
+    , AMT_QTY_VRFC_YN
+    , DT_VLDT_VRFC_YN
+    , DT_VLDT_TP_CN
+    , NUM_VLDT_VRFC_YN
+    , CLUS_LEN_VRFC_YN
+    , CLUS_LEN
+    , NUM_RSCO_VRFC_YN
+    , AL_RSCO
+    , DCML_UNDR_RSCO
+    , ERKY_ORDR
+    , PRTL_VRFC_YN
+    , VRFC_CLUS_LBL_ID
+    , DEL_YN
+    , FRST_REGST_ID
+    , FRST_RGSR_DTTM
+    , LAST_CHPR_ID
+    , LAST_CHG_DTTM
+    )
+    <foreach collection="list" item="item" open="" index="index" separator="UNION ALL " close=" " >
+      SELECT #{docCd} , #{item.trgtTblNm}   , #{item.trgtColNm} ,TO_NUMBER( #{item.clusSortOrdr}), #{item.comnCdVrfcYn}, #{item.comnCd} , #{item.indvCdVrfcYn}, #{item.indvCd}, #{item.indvCdTblNm}, #{item.indvCdColNm}, #{item.indvCdAditQuryCn}, #{item.esntInpVrfcYn}, #{item.amtQtyVrfcYn}, #{item.dtVldtVrfcYn}, #{item.dtVldtTpCn}, #{item.numVldtVrfcYn}, #{item.clusLenVrfcYn}, TO_NUMBER( #{item.clusLen}), #{item.numRscoVrfcYn}, TO_NUMBER( #{item.alRsco}), TO_NUMBER( #{item.dcmlUndrRsco}), TO_NUMBER( #{item.erkyOrdr}), 'Y', #{item.bfhnVrfcClusLblId}  , 'N', #{frstRegstId}, SYSTIMESTAMP, #{lastChprId}, SYSTIMESTAMP FROM DUAL
+    </foreach>
+  </insert>
+
+  <!--
+     Modifier par lots des détails des références communes de vérification !==공통검증기준상세정보를 일괄변경한다.==!
+   -->
+  <insert id="updateComVrfcBaseDtlInfoMulti" parameterType="java.util.Map">
+    /*updateComVrfcBaseDtlInfoMulti*/
+    BEGIN
+    <foreach collection="list" item="item" open="" index="index" separator=" " close=" " >
+      with upsert as
+      (
+      UPDATE TB_COM_VRFC_BASE_D SET
+      CLUS_SORT_ORDR			= #{item.clusSortOrdr}
+      , COMN_CD_VRFC_YN       = #{item.comnCdVrfcYn}
+      , COMN_CD               = #{item.comnCd}
+      , INDV_CD_VRFC_YN       = #{item.indvCdVrfcYn}
+      , INDV_CD               = #{item.indvCd}
+      , INDV_CD_TBL_NM        = #{item.indvCdTblNm}
+      , INDV_CD_COL_NM        = #{item.indvCdColNm}
+      , INDV_CD_ADIT_QURY_CN  = #{item.indvCdAditQuryCn}
+      , ESNT_INP_VRFC_YN      = #{item.esntInpVrfcYn}
+      , AMT_QTY_VRFC_YN       = #{item.amtQtyVrfcYn}
+      , DT_VLDT_VRFC_YN       = #{item.dtVldtVrfcYn}
+      , DT_VLDT_TP_CN         = #{item.dtVldtTpCn}
+      , NUM_VLDT_VRFC_YN      = #{item.numVldtVrfcYn}
+      , CLUS_LEN_VRFC_YN      = #{item.clusLenVrfcYn}
+      , CLUS_LEN              = #{item.clusLen}
+      , NUM_RSCO_VRFC_YN      = #{item.numRscoVrfcYn}
+      , AL_RSCO               = #{item.alRsco}
+      , DCML_UNDR_RSCO        = #{item.dcmlUndrRsco}
+      , ERKY_ORDR             = #{item.erkyOrdr}
+      , PRTL_VRFC_YN          = 'Y'
+      , VRFC_CLUS_LBL_ID = #{bfhnVrfcClusLblId}
+      , LAST_CHPR_ID = #{lastChprId}
+      , LAST_CHG_DTTM = SYSTIMESTAMP
+      WHERE S.DOC_CD = #{docCd}   AND S.TRGT_TBL_NM = #{item.trgtTblNm} AND S.TRGT_COL_NM = #{item.trgtColNm}
+      returning *
+      )
+      INSERT INTO TB_COM_VRFC_BASE_D
+      (
+      DOC_CD
+      , TRGT_TBL_NM
+      , TRGT_COL_NM
+      , CLUS_SORT_ORDR
+      , COMN_CD_VRFC_YN
+      , COMN_CD
+      , INDV_CD_VRFC_YN
+      , INDV_CD
+      , INDV_CD_TBL_NM
+      , INDV_CD_COL_NM
+      , INDV_CD_ADIT_QURY_CN
+      , ESNT_INP_VRFC_YN
+      , AMT_QTY_VRFC_YN
+      , DT_VLDT_VRFC_YN
+      , DT_VLDT_TP_CN
+      , NUM_VLDT_VRFC_YN
+      , CLUS_LEN_VRFC_YN
+      , CLUS_LEN
+      , NUM_RSCO_VRFC_YN
+      , AL_RSCO
+      , DCML_UNDR_RSCO
+      , ERKY_ORDR
+      , PRTL_VRFC_YN
+      , VRFC_CLUS_LBL_ID
+      , DEL_YN
+      , FRST_REGST_ID
+      , FRST_RGSR_DTTM
+      , LAST_CHPR_ID
+      , LAST_CHG_DTTM
+      )
+      SELECT
+      #{item.docRprsCd}||#{docDtlCd}
+      , #{item.trgtTblNm}
+      , #{item.trgtColNm}
+      , #{item.clusSortOrdr}
+      , #{item.comnCdVrfcYn}
+      , #{item.comnCd}
+      , #{item.indvCdVrfcYn}
+      , #{item.indvCd}
+      , #{item.indvCdTblNm}
+      , #{item.indvCdColNm}
+      , #{item.indvCdAditQuryCn}
+      , #{item.esntInpVrfcYn}
+      , #{item.amtQtyVrfcYn}
+      , #{item.dtVldtVrfcYn}
+      , #{item.dtVldtTpCn}
+      , #{item.numVldtVrfcYn}
+      , #{item.clusLenVrfcYn}
+      , #{item.clusLen}
+      , #{item.numRscoVrfcYn}
+      , #{item.alRsco}
+      , #{item.dcmlUndrRsco}
+      , #{item.erkyOrdr}
+      , 'Y'
+      , #{bfhnVrfcClusLblId}
+      , 'N'
+      , #{frstRegstId}
+      , SYSTIMESTAMP
+      , #{lastChprId}
+      , SYSTIMESTAMP
+      WHERE NOT exists(select * from upsert)
+        ;
+    </foreach>
+    END
+  </insert>
+
+</mapper>

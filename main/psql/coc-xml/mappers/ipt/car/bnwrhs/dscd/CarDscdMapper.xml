@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.car.bnwrhs.dscd.mapper.CarDscdMapper">
+    <!--
+     Consulter la liste des demandes.
+      !== 신청 목록을 조회한다.==!
+    -->
+    <select id="selectCarDscdList" parameterType="alpass.ipt.car.bnwrhs.dscd.vo.CarDscdVo" resultType="alpass.ipt.car.bnwrhs.dscd.vo.CarDscdVo">
+        /** selectCariDscdList */
+    <include refid="pagination.header" />
+      SELECT A.DSCD_RQST_NO                                            AS DSCD_RQST_NO         , /** N° De Demande De Destruction !== 폐기신청번호 ==! */
+             TO_CHAR(A.TRSN_DTTM,'DD/MM/YYYY')                         AS TRSN_DTTM            ,
+             A.TRSN_CO_CD                                              AS TRSN_CO_CD           , /** Code d'entreprise transmettrice !== 전송업체코드 ==! */
+             A.JRSD_ORGN_CD                                            AS JRSD_ORGN_CD         , /** Code D'Unité Compétente !== 관할조직코드 ==! */
+             A.CAG_MGMT_NO                                             AS CAG_MGMT_NO          , /** Crn !== 화물관리번호 ==! */
+             A.IBOBZ_CD                                                AS IBOBZ_CD             , /** Code de zone sous douane !== 보세구역코드 ==! */
+             A.DCLS_DMGE_CFRM_TP_CD                                    AS DCLS_DMGE_CFRM_TP_CD , /** Code De Catégorie De Destruction/Perte De Brut/Constat D'Avarie !== 폐기멸실손상확인구분코드 ==! */
+             TO_CHAR(TO_DATE(A.DSCD_PRNG_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS DSCD_PRNG_DT         , /** Date Prévue De Destruction !== 폐기예정일자 ==! */
+             A.DSCD_PLC_NM                                             AS DSCD_PLC_NM          , /** Lieu De Destruction !== 폐기장소명 ==! */
+             A.DSCD_MEAN_CD                                            AS DSCD_MEAN_CD         , /** Code De Moyen De Destruction !== 폐기방법코드 ==! */
+             A.DSCD_MEAN_DTL_CN                                        AS DSCD_MEAN_DTL_CN     , /** Détail Du Moyen De Destruction !== 폐기방법상세내용 ==! */
+             A.DSCD_RSN_CD                                             AS DSCD_RSN_CD          , /** Code De Motif De Destruction !== 폐기사유코드 ==! */
+             A.DSCD_RSN_DTL_CN                                         AS DSCD_RSN_DTL_CN      , /** Détail Du Motif De La Destruction !== 폐기사유상세내용 ==! */
+             A.DSCD_RQST_PCKG_GCNT                                     AS DSCD_RQST_PCKG_GCNT  , /** Nombre de colis dans la demande de destruction !== 폐기신청포장개수 ==! */
+             A.DSCD_RQST_WGHT                                          AS DSCD_RQST_WGHT       , /** Poids Dans La Demande De Destruction !== 폐기신청중량 ==! */
+             A.DSCD_RQST_PRC                                           AS DSCD_RQST_PRC        , /** Prix Dans La Demande De Destruction !== 폐기신청가격 ==! */
+             A.CURR_CD                                                 AS CURR_CD              , /** Code De Devise !== 통화코드 ==! */
+             A.CO_NM                                                   AS CO_NM                , /** Nom De L'Entreprise !== 업체명 ==! */
+             A.CO_RPPN_NM                                              AS CO_RPPN_NM           , /** !==  ==! */
+             A.CO_TXPR_IDFY_NO                                         AS CO_TXPR_IDFY_NO      , /** !==  ==! */
+             A.CO_TLPH_NO                                              AS CO_TLPH_NO           , /** N° Téléphone De L'Opérateur !== 업체전화번호 ==! */
+             A.CO_ADDR                                                 AS CO_ADDR              , /** Adresse De L'Entreprise  !== 업체주소 ==! */
+             A.CNSI_NM                                                 AS CNSI_NM              , /** Nom de destinataire !== 수하인명 ==! */
+             A.CNSI_TXPR_IDFY_NO                                       AS CNSI_TXPR_IDFY_NO    , /** Niu Du Destinataire !== 수하인납세자식별번호 ==! */
+             A.CNSI_TLPH_NO                                            AS CNSI_TLPH_NO         , /** N° de téléphone de destinataire !== 수하인전화번호 ==! */
+             A.CNSI_ADDR                                               AS CNSI_ADDR            , /** Adresse de destinataire !== 수하인주소 ==! */
+             TO_CHAR(A.AUDT_DTTM,'DD/MM/YYYY')                         AS AUDT_DTTM            ,
+             A.AUDT_PT_CD                                              AS AUDT_PT_CD           , /** Code De Type De Contréle !== 심사유형코드 ==! */
+             A.AUDT_RSLT_CN                                            AS AUDT_RSLT_CN         , /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+             A.DEL_YN                                                  AS DEL_YN               , /** Suppression On !== 삭제여부 ==! */
+             A.FRST_REGST_ID                                           AS FRST_REGST_ID        , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+             TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDDHH24MISS')              AS FRST_RGSR_DTTM       ,
+             A.LAST_CHPR_ID                                            AS LAST_CHPR_ID         , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+             TO_CHAR(A.LAST_CHG_DTTM,'YYYYMMDDHH24MISS')               AS LAST_CHG_DTTM        ,
+             B.PRCS_STTS_CD                                            AS PRCS_STTS_CD         ,
+             B.AUDT_EMP_ID                                             AS AUDT_EMP_ID          ,
+             (SELECT LTRIM(CONCAT(L.EMP_FMNM,' ',L.EMP_NM))
+                FROM TB_POTI_EMP L
+               WHERE L.DEL_YN = 'N'
+                 AND L.PBSR_NO = B.AUDT_EMP_ID)                        AS AUDT_EMP_NM          ,
+             TO_CHAR(B.PRCS_DTTM,'DD/MM/YYYY')                         AS PRCS_DTTM            ,
+             C.CO_NM                                                   AS TRSN_CO_NM           ,
+             C.RPRS_TLPH_NO                                            AS TRSN_CO_TLPH_NO      ,
+             C.CO_ADDR                                                 AS TRSN_CO_ADDR         ,
+             BL.BL_NO                                                  AS BL_NO                ,
+             TO_CHAR(TO_DATE(RPRT.DSCD_DT,'YYYYMMDD'),'DD/MM/YYYY')    AS DSCD_DT
+        FROM TB_CARI_DSCD A
+             LEFT JOIN TB_CARI_CAG_PRCS_BRKD B
+                      ON     A.DSCD_RQST_NO    = B.CAG_RQST_NO
+                         AND B.CAG_RQST_TP_CD  = 'DVD'
+                         AND B.RQST_DGCNT      = 0
+             LEFT JOIN TB_CARI_CAG_DCSH_BL BL
+                    ON     BL.DEL_YN = 'N'
+                       AND BL.CAG_MGMT_NO = A.CAG_MGMT_NO
+             LEFT OUTER JOIN TB_CARI_DSCD_RPRT RPRT
+                          ON RPRT.DSCD_RQST_NO = A.DSCD_RQST_NO
+             LEFT OUTER JOIN (SELECT K1.CO_NM       ,
+                                       K1.RPRS_TLPH_NO,
+                                       K1.CO_ADDR     ,
+                                       K2.CO_DCLR_CD
+                                  FROM TB_COM_CO         K1,
+                                       TB_COM_CO_DCLR_CD K2
+                                 WHERE K1.NIF = K2.NIF
+                                   AND K1.DEL_YN = 'N'
+                                   AND K2.DEL_YN = 'N'
+                                   AND K1.PRCS_STTS_CD = 'O'
+                                   AND K2.USE_YN = 'Y') C
+                            ON A.TRSN_CO_CD = C.CO_DCLR_CD
+       WHERE A.DEL_YN = 'N'
+         <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(prcsDttmFrom)">
+         AND B.PRCS_DTTM BETWEEN TO_DATE(#{prcsDttmFrom}, 'DD/MM/YYYY') AND TO_DATE(#{prcsDttmTo}, 'DD/MM/YYYY') + 0.99999
+         </if>
+         <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(prcsSttsCd)">
+         AND B.PRCS_STTS_CD = #{prcsSttsCd}                        /** Code de statut de traitement !==처리상태코드==! */
+         </if>
+         <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(cagMgmtNo)">
+         AND A.CAG_MGMT_NO LIKE CONCAT(#{cagMgmtNo},'%')        /** CRN !== 화물관리번호  ==! */
+         </if>
+         <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(blNo)">
+         AND BL.BL_NO LIKE CONCAT('%',#{blNo},'%')        /** N° de B/L !== BL번호  ==! */
+         </if>
+         <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(dscdRqstNo)">
+         AND A.DSCD_RQST_NO LIKE CONCAT(#{dscdRqstNo},'%')        /** N° de demande !==신청번호  ==! */
+         </if>
+         <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(ibobzCd)">
+         AND A.IBOBZ_CD            = #{ibobzCd}
+         </if>
+         <choose>
+             <when test="@alpass.ipt.car.com.util.CarMyBatisUtil@isEqualsStr(scrnTp,'1')">
+         AND B.PRCS_STTS_CD IN ('B02', 'D08', 'D09', 'E07', 'D17')
+             </when>
+             <when test="@alpass.ipt.car.com.util.CarMyBatisUtil@isEqualsStr(scrnTp,'2')">
+         AND B.PRCS_STTS_CD IN ('B02', 'D01', 'D08', 'D09', 'E07', 'D17')
+             </when>
+             <when test="@alpass.ipt.car.com.util.CarMyBatisUtil@isEqualsStr(scrnTp,'3')">
+         AND B.PRCS_STTS_CD IN ('E07','D17')
+             </when>
+             <otherwise>
+         AND B.PRCS_STTS_CD IN ('D08', 'D09', 'E07', 'D17')
+             </otherwise>
+         </choose>
+         <choose>
+            <when test="roleId.equals('CAR080'.toString())">
+                AND B.AUDT_EMP_ID  = #{pbsrNo}
+            </when>
+            <otherwise>
+                AND A.JRSD_ORGN_CD LIKE SUBSTR(#{jrsdOrgnCd}, 1, 5) || '%'
+            </otherwise>
+         </choose>
+    ORDER BY B.PRCS_DTTM DESC
+    <include refid="pagination.footer" />
+</select>
+
+    <!--
+    Consulter les détails de la demande.
+    !== 신청 상세를 조회한다.==!
+    -->
+    <select id="selectCarDscd" parameterType="alpass.ipt.car.bnwrhs.dscd.vo.CarDscdVo" resultType="alpass.ipt.car.bnwrhs.dscd.vo.CarDscdVo">
+        /** selectCarDscd */
+        SELECT A.DSCD_RQST_NO                                            AS DSCD_RQST_NO         , /** N° De Demande De Destruction !== 폐기신청번호 ==! */
+               TO_CHAR(A.TRSN_DTTM,'DD/MM/YYYY')                         AS TRSN_DT              , 
+               TO_CHAR(A.TRSN_DTTM,'DD/MM/YYYY HH24:MI')                 AS TRSN_DTTM            , 
+               A.TRSN_CO_CD                                              AS TRSN_CO_CD           , /** Code d'entreprise transmettrice !== 전송업체코드 ==! */
+               D.JRSD_CSTM_CD                                            AS JRSD_CSTM_CD         , /** Code de bureau compétent !== 관할세관코드 ==! */
+               A.JRSD_ORGN_CD                                            AS JRSD_ORGN_CD         , /** Code D'Unité Compétente !== 관할조직코드 ==! */
+               A.CAG_MGMT_NO                                             AS CAG_MGMT_NO          , /** Crn !== 화물관리번호 ==! */
+               A.IBOBZ_CD                                                AS IBOBZ_CD             , /** Code de zone sous douane !== 보세구역코드 ==! */
+               A.DCLS_DMGE_CFRM_TP_CD                                    AS DCLS_DMGE_CFRM_TP_CD , /** Code De Catégorie De Destruction/Perte De Brut/Constat D'Avarie !== 폐기멸실손상확인구분코드 ==! */
+               TO_CHAR(TO_DATE(A.DSCD_PRNG_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS DSCD_PRNG_DT         , /** Date Prévue De Destruction !== 폐기예정일자 ==! */
+               A.DSCD_PLC_NM                                             AS DSCD_PLC_NM          , /** Lieu De Destruction !== 폐기장소명 ==! */
+               A.DSCD_MEAN_CD                                            AS DSCD_MEAN_CD         , /** Code De Moyen De Destruction !== 폐기방법코드 ==! */
+               A.DSCD_MEAN_DTL_CN                                        AS DSCD_MEAN_DTL_CN     , /** Détail Du Moyen De Destruction !== 폐기방법상세내용 ==! */
+               A.DSCD_RSN_CD                                             AS DSCD_RSN_CD          , /** Code De Motif De Destruction !== 폐기사유코드 ==! */
+               A.DSCD_RSN_DTL_CN                                         AS DSCD_RSN_DTL_CN      , /** Détail Du Motif De La Destruction !== 폐기사유상세내용 ==! */
+               A.DSCD_RQST_PCKG_GCNT                                     AS DSCD_RQST_PCKG_GCNT  , /** Nombre de colis dans la demande de destruction !== 폐기신청포장개수 ==! */
+               A.DSCD_RQST_WGHT                                          AS DSCD_RQST_WGHT       , /** Poids Dans La Demande De Destruction !== 폐기신청중량 ==! */
+               A.DSCD_RQST_PRC                                           AS DSCD_RQST_PRC        , /** Prix Dans La Demande De Destruction !== 폐기신청가격 ==! */
+               A.CURR_CD                                                 AS CURR_CD              , /** Code De Devise !== 통화코드 ==! */
+               A.CO_NM                                                   AS CO_NM                , /** Nom De L'Entreprise !== 업체명 ==! */
+               A.CO_RPPN_NM                                              AS CO_RPPN_NM           , /** !==  ==! */
+               A.CO_TXPR_IDFY_NO                                         AS CO_TXPR_IDFY_NO      , /** !==  ==! */
+               A.CO_TLPH_NO                                              AS CO_TLPH_NO           , /** N° Téléphone De L'Opérateur !== 업체전화번호 ==! */
+               A.CO_ADDR                                                 AS CO_ADDR              , /** Adresse De L'Entreprise  !== 업체주소 ==! */
+               A.CNSI_NM                                                 AS CNSI_NM              , /** Nom de destinataire !== 수하인명 ==! */
+               A.CNSI_TXPR_IDFY_NO                                       AS CNSI_TXPR_IDFY_NO    , /** Niu Du Destinataire !== 수하인납세자식별번호 ==! */
+               A.CNSI_TLPH_NO                                            AS CNSI_TLPH_NO         , /** N° de téléphone de destinataire !== 수하인전화번호 ==! */
+               A.CNSI_ADDR                                               AS CNSI_ADDR            , /** Adresse de destinataire !== 수하인주소 ==! */
+               TO_CHAR(A.AUDT_DTTM,'DD/MM/YYYY')                         AS AUDT_DT              ,
+               TO_CHAR(A.AUDT_DTTM,'DD/MM/YYYY HH24:MI')                 AS AUDT_DTTM            ,
+               A.AUDT_PT_CD                                              AS AUDT_PT_CD           , /** Code De Type De Contréle !== 심사유형코드 ==! */
+               A.AUDT_RSLT_CN                                            AS AUDT_RSLT_CN         , /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+               A.DEL_YN                                                  AS DEL_YN               , /** Suppression On !== 삭제여부 ==! */
+               A.FRST_REGST_ID                                           AS FRST_REGST_ID        , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+               TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDDHH24MISS')              AS FRST_RGSR_DTTM       , 
+               A.LAST_CHPR_ID                                            AS LAST_CHPR_ID         , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+               TO_CHAR(A.LAST_CHG_DTTM,'YYYYMMDDHH24MISS')               AS LAST_CHG_DTTM        ,
+               B.PRCS_STTS_CD                                            AS PRCS_STTS_CD         ,
+               B.AUDT_EMP_ID                                             AS AUDT_EMP_ID          ,
+               (SELECT EMP_NM                                                                    
+                  FROM TB_POTI_EMP L                                                             
+                 WHERE L.DEL_YN = 'N'                                                            
+                   AND L.PBSR_NO = B.AUDT_EMP_ID)                        AS AUDT_EMP_NM          ,
+               TO_CHAR(B.PRCS_DTTM,'DD/MM/YYYY')                         AS PRCS_DTTM            ,
+               C.CO_NM                                                   AS TRSN_CO_NM           ,
+               C.RPRS_TLPH_NO                                            AS TRSN_CO_TLPH_NO      ,
+               C.CO_ADDR                                                 AS TRSN_CO_ADDR         ,
+               BL.BL_NO                                                  AS BL_NO                ,
+               BL.PCKG_GCNT                                              AS PCKG_GCNT            ,
+               BL.TTWG                                                   AS TTWG                 ,
+               BL.PDLS_NM                                                AS PDLS_NM              ,
+               INVN.INVN_PCKG_GCNT                                       AS INVN_PCKG_GCNT       ,
+               INVN.INVN_WGHT                                            AS INVN_WGHT            ,
+               (SELECT G.DSCD_RQST_MGMT_NO
+                  FROM TB_CARE_DSCD G
+                 WHERE G.DEL_YN = 'N'
+                   AND G.DSCD_RQST_NO = A.DSCD_RQST_NO)                  AS DSCD_RQST_MGMT_NO    ,
+               TO_CHAR(TO_DATE(RPRT.DSCD_DT,'YYYYMMDD'),'DD/MM/YYYY')    AS DSCD_DT              
+          FROM TB_CARI_DSCD A
+               LEFT JOIN TB_CARI_CAG_PRCS_BRKD B 
+                 ON A.DSCD_RQST_NO   = B.CAG_RQST_NO
+                AND B.CAG_RQST_TP_CD = 'DVD'
+                AND B.RQST_DGCNT     = 0
+               LEFT JOIN TB_CARI_CAG_DCSH_BL BL
+                 ON BL.DEL_YN = 'N'
+                AND BL.CAG_MGMT_NO = A.CAG_MGMT_NO
+               LEFT JOIN TB_CARI_INVN INVN
+                 ON INVN.DEL_YN = 'N'
+                AND INVN.CAG_MGMT_NO = A.CAG_MGMT_NO
+                AND INVN.IBOBZ_CD    = A.IBOBZ_CD
+               LEFT OUTER JOIN TB_CARI_DSCD_RPRT RPRT
+                 ON RPRT.DSCD_RQST_NO = A.DSCD_RQST_NO
+               LEFT OUTER JOIN (SELECT K1.CO_NM       ,
+                                       K1.RPRS_TLPH_NO,
+                                       K1.CO_ADDR     ,
+                                       K2.CO_DCLR_CD
+                                  FROM TB_COM_CO         K1,
+                                       TB_COM_CO_DCLR_CD K2
+                                 WHERE K1.NIF = K2.NIF
+                                   AND K1.DEL_YN = 'N'
+                                   AND K2.DEL_YN = 'N'
+                                   AND K1.PRCS_STTS_CD = 'O'
+                                   AND K2.USE_YN = 'Y') C
+                 ON A.TRSN_CO_CD = C.CO_DCLR_CD
+               LEFT JOIN ( SELECT C1.ORGN_CD
+                                , C2.ORGN_CD JRSD_CSTM_CD
+                             FROM TB_POTI_ORGN C1
+                             LEFT JOIN  TB_POTI_ORGN C2
+                               ON C1.UPR_ORGN_MGMT_CD = C2.ORGN_MGMT_CD
+                            WHERE C1.DEL_YN = 'N'
+               ) D
+                 ON A.JRSD_ORGN_CD = D.ORGN_CD
+         WHERE A.DEL_YN       = 'N'
+           <if test="dscdRqstNo != null and dscdRqstNo != ''">
+           AND A.DSCD_RQST_NO = #{dscdRqstNo}
+           </if>
+           <if test="cagMgmtNo != null and cagMgmtNo != ''">
+           AND A.CAG_MGMT_NO = #{cagMgmtNo}
+           </if>
+    </select>
+    
+    <!--
+    Traiter le contrôle de la demande de destruction.
+    !== 폐기신청 심사처리를 한다.==!
+    -->
+    <update id="updateCarDscdAudt" parameterType="alpass.ipt.car.bnwrhs.dscd.vo.CarDscdVo">
+        /** updateCarDscdAudt */
+        UPDATE TB_CARI_DSCD
+           SET  LAST_CHPR_ID  = #{lastChprId}
+               ,LAST_CHG_DTTM = SYSTIMESTAMP
+               <!--  
+               ,AUDT_DT       = TO_CHAR(TO_DATE(#{audtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+               -->
+               ,AUDT_DTTM      = TO_TIMESTAMP(#{lastChgDttm}, 'DDMMYYYYHH24MISS')
+               ,AUDT_PT_CD    = #{audtPtCd}
+               ,AUDT_RSLT_CN  = #{audtRsltCn}
+         WHERE DSCD_RQST_NO   = #{dscdRqstNo}
+    </update>
+    
+    <!--
+    Envoyer le résultat du contrôle de la demande de destruction dans la table externe.
+    !== 외부 테이블에 폐기신청 심사 결과를 전송한다.==!
+    -->
+    <update id="updateCarDscdAudtForEpt" parameterType="alpass.ipt.car.bnwrhs.dscd.vo.CarDscdVo">
+        /** updateCarDscdAudt */
+        UPDATE ALPASSEXT.TB_CARE_DSCD
+           SET  LAST_CHPR_ID  = #{lastChprId}
+               ,LAST_CHG_DTTM = SYSTIMESTAMP
+               ,PRCS_STTS_CD  = (CASE WHEN #{audtPtCd} = 'O' 
+                                      THEN 'D08'
+                                      ELSE 'D09'
+                                      END)
+               ,PRCS_DTTM      = TO_TIMESTAMP(#{lastChgDttm}, 'DDMMYYYYHH24MISS')
+         WHERE DSCD_RQST_NO   = #{dscdRqstNo}
+    </update>
+    
+    <!--
+    Envoyer le résultat de la demande de destruction dans la table externe.
+    !== 외부 테이블에 폐기신청 결과를 전송한다.==!
+    -->
+    <update id="updateCarDscdAudtForEpt2" parameterType="alpass.ipt.car.bnwrhs.dscd.vo.CarDscdVo">
+        /** updateCarDscdAudt */
+        UPDATE ALPASSEXT.TB_CARE_DSCD
+           SET  LAST_CHPR_ID  = #{lastChprId}
+               ,LAST_CHG_DTTM = SYSTIMESTAMP
+               ,PRCS_STTS_CD  = 'D17'
+               ,PRCS_DTTM      = TO_TIMESTAMP(#{lastChgDttm}, 'DDMMYYYYHH24MISS')
+         WHERE DSCD_RQST_NO   = #{dscdRqstNo}
+    </update>
+    
+    <!--
+    Rapport de destruction
+    !==폐기보고==!
+    -->
+    <select id="selectCarDscdRprt" parameterType="alpass.ipt.car.bnwrhs.dscd.vo.CarDscdRprtVo" resultType="alpass.ipt.car.bnwrhs.dscd.vo.CarDscdRprtVo">
+        /** selectCariDscdRprt */
+        SELECT A.DSCD_RQST_NO                                      AS DSCD_RQST_NO  , /** N° De Demande De Destruction !== 폐기신청번호 ==! */
+               A.RPRT_EMP_ID                                       AS RPRT_EMP_ID   , /** Identifiant Du Chargé De Rapport !== 보고직원ID ==! */
+               (SELECT H.EMP_NM
+                  FROM TB_POTI_EMP H
+                 WHERE H.DEL_YN  = 'N'
+                   AND H.PBSR_NO = A.RPRT_EMP_ID)                  AS RPRT_EMP_NM   ,
+               TO_CHAR(TO_DATE(A.RPRT_DT,'YYYYMMDD'),'DD/MM/YYYY') AS RPRT_DT       , 
+               TO_CHAR(TO_DATE(A.DSCD_DT,'YYYYMMDD'),'DD/MM/YYYY') AS DSCD_DT       , /** Date De Rejet !== 폐기일자 ==! */
+               A.DSCD_PLC_NM                                       AS DSCD_PLC_NM   , /** Lieu De Destruction !== 폐기장소명 ==! */
+               A.PRCS_PCKG_GCNT                                    AS PRCS_PCKG_GCNT, /** Nombre De Colis Traité !== 처리포장개수 ==! */
+               A.PRCS_TTWG                                         AS PRCS_TTWG     , /** Poids Brut De Traité !== 처리총중량 ==! */
+               A.DMGE_PT_CD                                        AS DMGE_PT_CD    , /** Code De Type D'Avarie !== 손상유형코드 ==! */
+               A.PRCS_RSLT_CN                                      AS PRCS_RSLT_CN  , /** Résultat De Traitement !== 처리결과내용 ==! */
+               A.ATCH_FILE_ID                                      AS ATCH_FILE_ID  ,
+               A.DEL_YN                                            AS DEL_YN        , /** Suppression On !== 삭제여부 ==! */
+               A.FRST_REGST_ID                                     AS FRST_REGST_ID , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+               TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY')              AS FRST_RGSR_DTTM,
+               A.LAST_CHPR_ID                                      AS LAST_CHPR_ID  , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+               TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY')               AS LAST_CHG_DTTM 
+          FROM TB_CARI_DSCD_RPRT A
+         WHERE A.DSCD_RQST_NO = #{dscdRqstNo}
+    </select>
+    
+    <!--
+    Sauvegarder le rapport de destruction
+    !==완료보고 저장==!
+    -->
+    <insert id="insertCarDscdRprt" parameterType="alpass.ipt.car.bnwrhs.dscd.vo.CarDscdRprtVo">
+        /** insertCarDscdRprt */
+        INSERT INTO TB_CARI_DSCD_RPRT ( DSCD_RQST_NO                                        , /** N° De Demande De Destruction !== 폐기신청번호 ==! */
+                                        RPRT_EMP_ID                                         , /** Identifiant Du Chargé De Rapport !== 보고직원ID ==! */
+                                        RPRT_DT                                             ,
+                                        DSCD_DT                                             , /** Date De Rejet !== 폐기일자 ==! */
+                                        DSCD_PLC_NM                                         , /** Lieu De Destruction !== 폐기장소명 ==! */
+                                        PRCS_PCKG_GCNT                                      , /** Nombre De Colis Traité !== 처리포장개수 ==! */
+                                        PRCS_TTWG                                           , /** Poids Brut De Traité !== 처리총중량 ==! */
+                                        DMGE_PT_CD                                          , /** Code De Type D'Avarie !== 손상유형코드 ==! */
+                                        PRCS_RSLT_CN                                        , /** Résultat De Traitement !== 처리결과내용 ==! */
+                                        ATCH_FILE_ID                                        ,
+                                        DEL_YN                                              , /** Suppression On !== 삭제여부 ==! */
+                                        FRST_REGST_ID                                       , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                                        FRST_RGSR_DTTM                                      , /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                                        LAST_CHPR_ID                                        , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                                        LAST_CHG_DTTM                                       ) /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+                               VALUES ( #{dscdRqstNo}                                       , /** N° De Demande De Destruction !== 폐기신청번호 ==! */
+                                        #{rprtEmpId}                                        , /** Identifiant Du Chargé De Rapport !== 보고직원ID ==! */
+                                        #{rprtDt}                                           ,
+                                        TO_CHAR(TO_DATE(#{dscdDt},'DD/MM/YYYY'),'YYYYMMDD') , /** Date De Rejet !== 폐기일자 ==! */
+                                        #{dscdPlcNm}                                        , /** Lieu De Destruction !== 폐기장소명 ==! */
+                                        #{prcsPckgGcnt}                                     , /** Nombre De Colis Traité !== 처리포장개수 ==! */
+                                        #{prcsTtwg}                                         , /** Poids Brut De Traité !== 처리총중량 ==! */
+                                        #{dmgePtCd}                                         , /** Code De Type D'Avarie !== 손상유형코드 ==! */
+                                        #{prcsRsltCn}                                       , /** Résultat De Traitement !== 처리결과내용 ==! */
+                                        #{atchFileId}                                       ,
+                                        'N'                                                 , /** Suppression On !== 삭제여부 ==! */
+                                        #{frstRegstId}                                      , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                                        SYSTIMESTAMP                                        , /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                                        #{lastChprId}                                       , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                                        SYSTIMESTAMP                                        ) /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+                          ON CONFLICT ( DSCD_RQST_NO )
+                          DO UPDATE
+                                SET  LAST_CHPR_ID   = #{lastChprId}
+                                    ,LAST_CHG_DTTM  = SYSTIMESTAMP
+                                    ,RPRT_EMP_ID    = #{rprtEmpId}                                        /** Identifiant Du Chargé De Rapport !== 보고직원ID ==! */
+                                    ,RPRT_DT        = #{rprtDt}
+                                    ,DSCD_DT        = TO_CHAR(TO_DATE(#{dscdDt},'DD/MM/YYYY'),'YYYYMMDD') /** Date De Rejet !== 폐기일자 ==! */
+                                    ,DSCD_PLC_NM    = #{dscdPlcNm}                                        /** Lieu De Destruction !== 폐기장소명 ==! */
+                                    ,PRCS_PCKG_GCNT = #{prcsPckgGcnt}                                     /** Nombre De Colis Traité !== 처리포장개수 ==! */
+                                    ,PRCS_TTWG      = #{prcsTtwg}                                         /** Poids Brut De Traité !== 처리총중량 ==! */
+                                    ,DMGE_PT_CD     = #{dmgePtCd}                                         /** Code De Type D'Avarie !== 손상유형코드 ==! */
+                                    ,PRCS_RSLT_CN   = #{prcsRsltCn}                                       /** Résultat De Traitement !== 처리결과내용 ==! */
+                                    ,ATCH_FILE_ID   = #{atchFileId}
+                                    ,DEL_YN         = 'N'                                                 /** Suppression On !== 삭제여부 ==! */
+    </insert>
+    
+    <!--
+      Supprimer la "Demande de destruction" !==폐기보고를 삭제한다==!
+     -->
+    <update id="deleteCarDscdRprt" parameterType="alpass.ipt.car.bnwrhs.dscd.vo.CarDscdRprtVo">
+        /** deleteCarDscdRprt */
+        UPDATE TB_CARI_DSCD_RPRT
+           SET  LAST_CHPR_ID  = #{lastChprId}
+               ,LAST_CHG_DTTM = SYSTIMESTAMP
+               ,DEL_YN        = 'Y'
+         WHERE DSCD_RQST_NO   = #{dscdRqstNo} /** N° De Demande De Destruction !== 폐기신청번호 ==! */
+    </update>
+    
+</mapper>

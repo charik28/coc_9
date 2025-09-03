@@ -1,0 +1,640 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.clr.cdm.iam.mapper.ClrSpotCkerHnotMgmtMapper">
+
+    <!--
+      Recherche dans la liste de gestion des inspecteurs sur le
+      !== 현장검사원관리 목록 조회 ==!
+      -->
+    <select id="selectClrSpotCkerApntList" parameterType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerApntVo" resultType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerApntVo">
+        /* ClrSpotCkerApntMapper.selectClrSpotCkerApntList */
+        <include refid="pagination.header" ></include>
+        SELECT
+              A.CSTM_CD                                     /** Code Du Bureau !== 세관코드 ==! */
+            , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_CD = A.CSTM_CD AND ROWNUM=1)  AS CSTM_NM
+            , A.DEPT_CD                                     /** Code de service !== 부서코드 ==! */
+            , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_CD = A.DEPT_CD AND ROWNUM=1) AS DEPT_NM
+            , A.INSC_EMP_ID                                 /** ID de l'vérificateur !== 검사직원ID ==! */
+            , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.INSC_EMP_ID ) AS INSC_EMP_NM
+            , TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDD') as FRST_RGSR_DTTM
+        FROM  TB_CLRI_SPOT_CKER_APNT A
+        WHERE DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+        <if test="cstmCd != null and cstmCd != ''">
+            AND  A.CSTM_CD = #{cstmCd}                      /** Code Du Bureau !== 세관코드 ==! */
+        </if>
+        <if test="deptCd != null and deptCd != ''">
+            AND  A.DEPT_CD = #{deptCd}                      /** Code de service !== 부서코드 ==! */
+        </if>
+        <if test="inscEmpId != null and inscEmpId != ''">
+            AND  A.INSC_EMP_ID = #{inscEmpId}               /** ID de l'vérificateur !== 검사직원ID ==! */
+        </if>
+        ORDER BY A.DEPT_CD, A.INSC_EMP_ID
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <!--
+      Enquête pour confirmer si un inspecteur sur place est désigné
+      !== 현장검사원지정 여부 확인 조회 ==!
+      -->
+    <select id="selectClrSpotCkerApntCheck" parameterType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerApntVo" resultType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerApntVo">
+        /* ClrSpotCkerApntMapper.selectClrSpotCkerApntCheck */
+        SELECT
+              A.INSC_EMP_ID                                 /** ID de l'vérificateur !== 검사직원ID ==! */
+        FROM  TB_CLRI_SPOT_CKER_APNT A
+        WHERE DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+            AND  A.CSTM_CD = #{cstmCd}                      /** Code Du Bureau !== 세관코드 ==! */
+            AND  A.DEPT_CD = #{deptCd}                      /** Code de service !== 부서코드 ==! */
+            AND  A.INSC_EMP_ID = #{inscEmpId}               /** ID de l'vérificateur !== 검사직원ID ==! */
+    </select>
+
+    <!--
+      Enregistrement de la gestion des inspecteurs sur place
+      !== 현장검사원관리 등록 ==!
+      -->
+    <insert id="insertClrSpotCkerApnt" parameterType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerApntVo">
+        /* ClrSpotCkerHnotMgmtMapper.insertClrSpotCkerApnt */
+        WITH UPSERT AS (
+            UPDATE TB_CLRI_SPOT_CKER_APNT
+            SET
+                  LAST_CHPR_ID = #{lastChprId}              /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+                , DEL_YN = 'N'                              /** Suppression On !== 삭제여부 ==! */
+            WHERE
+                  CSTM_CD = #{cstmCd}                       /** Code Du Bureau !== 세관코드 ==! */
+            AND   DEPT_CD = #{deptCd}                       /** Code de service !== 부서코드 ==! */
+            AND   INSC_EMP_ID = #{inscEmpId}                /** ID de l'vérificateur !== 검사직원ID ==! */
+            RETURNING*
+        )
+        INSERT INTO TB_CLRI_SPOT_CKER_APNT
+            (
+              CSTM_CD                                   /** Code Du Bureau !== 세관코드 ==! */
+            , DEPT_CD                                   /** Code de service !== 부서코드 ==! */
+            , INSC_EMP_ID                               /** ID de l'vérificateur !== 검사직원ID ==! */
+            , DEL_YN                                    /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                             /** Id Du Premier Enregistrant !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM                            /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                              /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                             /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+            )
+        SELECT
+              #{cstmCd}                                 /** Code Du Bureau !== 세관코드 ==! */
+            , #{deptCd}                                 /** Code de service !== 부서코드 ==! */
+            , #{inscEmpId}                              /** ID de l'vérificateur !== 검사직원ID ==! */
+            , 'N'                                       /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}                            /** Id Du Premier Enregistrant !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                              /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                             /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE
+        NOT EXISTS(SELECT * FROM UPSERT)
+    </insert>
+
+    <!--
+      Supprimer la gestion des inspecteurs sur le terrain !== 현장검사원관리 삭제 ==!
+      (Park Byoungkyu)
+      -->
+    <update id="deleteClrSpotCkerApnt" parameterType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerApntVo">
+        /* ClrSpotCkerHnotMgmtMapper.deleteClrSpotCkerApnt */
+        UPDATE TB_CLRI_SPOT_CKER_APNT SET
+               DEL_YN = 'Y'                             /** Suppression ON !== 삭제여부 ==! */
+             , LAST_CHPR_ID = #{lastChprId}             /** ID du modificateur final !== 최종변경자ID ==! */
+             , LAST_CHG_DTTM = SYSTIMESTAMP             /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                             /** Suppression ON !== 삭제여부 ==! */
+        AND    CSTM_CD = #{cstmCd}                      /** Code Du Bureau !== 세관코드 ==! */
+        AND    DEPT_CD = #{deptCd}                      /** Code de service !== 부서코드 ==! */
+        AND    INSC_EMP_ID = #{inscEmpId}               /** ID de l'vérificateur !== 검사직원ID ==! */
+    </update>
+
+    <!--
+      Consultation de la liste des la gestion agents de visite non cotés !==현장검사원미배부관리 목록 조회==!
+      (Park Byoungkyu)
+      -->
+    <select id="selectClrSpotCkerNhnotList" parameterType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerApntVo" resultType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerApntVo">
+        /* ClrSpotCkerHnotMgmtMapper.selectClrSpotCkerNhnotList */
+        <include refid="pagination.header" ></include>
+        SELECT
+              A.DTL_DCSH_NO               /** Numéro du DAU !== DED번호 ==! */
+            , TO_CHAR(TO_DATE(A.DCLR_DT,'YYYYMMDD'),'DD/MM/YYYY') AS DCLR_DT  /** Date de DAU !== DED일자 ==! */
+            , A.DCLR_PT_CD                /** Code de type de declaration !== 신고유형코드 ==! */
+            , A.CSCL_PLN_CD               /** Code de plan de dedouanement !== 통관계획코드 ==! */
+            , A.DCLR_CSTM_CD AS CSTM_CD   /** Code de bureau de declaration !== 신고세관코드 ==! */
+            , (SELECT CONCAT(A.DCLR_CSTM_CD,' | ',ORGN_NM) FROM TB_POTI_ORGN WHERE ORGN_CD = A.DCLR_CSTM_CD AND ROWNUM=1)  AS CSTM_NM
+            , A.DEPT_CD
+            , (SELECT CONCAT(A.DEPT_CD,' | ',ORGN_NM) FROM TB_POTI_ORGN WHERE ORGN_CD = A.DEPT_CD AND ROWNUM=1) AS DEPT_NM
+            , A.AUDT_DEPT_CD              /** Code de Section du contrôle !== 심사부서코드 ==! */
+            , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_CD = A.AUDT_DEPT_CD AND ROWNUM=1) AS AUDT_DEPT_NM
+            , A.EXPPN_IDFY_NO_TP_CD        /** Code de type du N° d'identification de l'exportateur !== 수출자식별번호구분코드 ==! */
+            , A.EXPPN_IDFY_NO              /** N° d'identification de l'exportateur !== 수출자식별번호 ==! */
+            , B.EXPPN_CO_NM AS EXPPN_NM
+            , A.IMPPN_IDFY_NO_TP_CD        /** Code de type du N° d'identification de l'importateur !== 수입자식별번호구분코드 ==! */
+            , A.IMPPN_IDFY_NO              /** N° d'identification de l'importateur !== 수입자식별번호 ==! */
+            , B.IMPPN_CO_NM AS IMPPN_NM
+            , A.DCER_CD                    /** Code du declarant !== 신고인코드 ==! */
+            , B.DCER_CO_NM AS DCER_NM
+            , A.PRCS_STTS_CD
+            , A.SELC_RSLT_CD
+            , A.AUDT_EMP_ID
+            , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.AUDT_EMP_ID ) AS AUDT_EMP_NM
+            , A.INSC_EMP_ID
+            , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.INSC_EMP_ID ) AS INSC_EMP_NM
+            , (SELECT BB.ORGN_CD FROM TB_POTI_ORGN BB, TB_POTI_EMP AA WHERE AA.PBSR_NO = A.INSC_EMP_ID AND BB.ORGN_MGMT_CD = AA.ORGN_MGMT_CD ) AS INSC_DEPT_CD
+            , (SELECT BB.ORGN_NM FROM TB_POTI_ORGN BB, TB_POTI_EMP AA WHERE AA.PBSR_NO = A.INSC_EMP_ID AND BB.ORGN_MGMT_CD = AA.ORGN_MGMT_CD ) AS INSC_DEPT_NM
+            , TO_CHAR(C.INSC_FIX_DTTM,'DD/MM/YYYY HH24:MI') AS INSC_FIX_DTTM
+        FROM   TB_CLRI_DED_COMN A
+             , TB_CLRI_DED_CO B
+             , TB_CLRI_DED_INSC_INFM C
+        WHERE  A.DEL_YN = 'N'
+        AND    A.SELC_RSLT_CD = 'R'                                                 /* 1 선별결과 R 인 경우 */
+        AND    A.DTL_DCSH_NO = B.DTL_DCSH_NO
+        AND    B.DEL_YN = 'N'
+        AND    A.DTL_DCSH_NO = C.DTL_DCSH_NO
+        AND    (NVL(A.INSC_EMP_ID,'') = ''
+                  AND ( A.ISPR_HNOT_PRCS_YN = 'Y'                                   /* 2 배치 수행 후 현장검사원 미배부된 경우 */
+                          OR TRUNC(C.INSC_FIX_DTTM,'D') = TRUNC(SYSDATE,'D') ) )    /* 3 당일 검사일 건도 배부 대상에 포함 */
+        AND    C.INSC_FIX_DTTM IS NOT NULL                                          /* 검사일자 : 입력된 경우만 조회 */
+        AND    C.VIST_INSC_RQST_DGCNT = (SELECT MAX(VIST_INSC_RQST_DGCNT) FROM TB_CLRI_DED_INSC_INFM WHERE DTL_DCSH_NO = A.DTL_DCSH_NO)
+        AND    C.DEL_YN = 'N'
+        <if test="cstmCd != null and cstmCd != ''">
+            AND    A.DCLR_CSTM_CD = #{cstmCd}
+        </if>
+        <choose>
+            <when test="dtlDcshNo != null and dtlDcshNo != ''">
+                AND    A.DTL_DCSH_NO = #{dtlDcshNo}
+            </when>
+            <otherwise>
+                <if test="deptCd != null and deptCd != ''">
+                    AND    A.DEPT_CD = #{deptCd}
+                </if>
+                <if test="rgsrDtFrom != null and rgsrDtFrom != ''">
+                    AND	   A.DCLR_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{rgsrDtFrom},'DD/MM/YYYY'), 'YYYYMMDD')
+                    AND	   A.DCLR_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{rgsrDtTo},'DD/MM/YYYY'), 'YYYYMMDD')
+                </if>
+            </otherwise>
+        </choose>
+        ORDER BY A.DCLR_DT DESC, A.DTL_DCSH_NO
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <!--
+      Enregistrement des agents de visite cotés !== 현장검사원 배부 등록==!
+      (Park Byoungkyu)
+      -->
+    <update id="updateClrInscEmpHnotDedComn" parameterType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerApntVo">
+        /* ClrSpotCkerHnotMgmtMapper.updateClrInscEmpHnotDedComn*/
+        UPDATE TB_CLRI_DED_COMN
+        SET    INSC_EMP_ID    = #{inscEmpId}
+        , ISPR_HNOT_PRCS_YN = 'Y'   /**미배부된 당일 건은 업데이트 해줘야 함*/
+        , LAST_CHPR_ID   = #{lastChprId}
+        , LAST_CHG_DTTM  = SYSTIMESTAMP
+        WHERE  DEL_YN = 'N'
+        AND    DTL_DCSH_NO = #{dtlDcshNo}
+    </update>
+
+    <!--
+      Consultation des agents de visite faisant l'objet de la cotation aléatoire/équilibrée !== 랜덤/균등 배부 대상 현장검사원 조회 ==!
+      (Park Byoungkyu)
+      -->
+    <select id="selectHnotIsprByRndEql" parameterType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerApntVo" resultType="alpass.ipt.clr.cdm.jam.vo.ClrAdorHnotInfoVo">
+        /* ClrSpotCkerHnotMgmtMapper.selectHnotIsprByRndEql */
+		with vw_ador_list as (
+			select s1.dclr_cstm_cd as cstm_cd  /**세관코드*/
+				 , s1.dept_cd                  /**부서코드*/
+				 , s3.dept_cd as audt_dept_cd  /**검사부서코드*/
+				 , s3.insc_emp_id              /**검사직원ID*/
+                 , count(*) over() as ador_tgcnt
+			  from tb_clri_ded_comn s1
+				 , tb_clri_dclr_audt_dept_mpng_brkd s2
+				 , tb_clri_spot_cker_apnt s3
+			 where s1.dtl_dcsh_no = #{dtlDcshNo}   /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+			   and s1.dclr_cstm_cd = s2.cstm_cd
+			   and s1.dept_cd = s2.dept_cd
+			   and s1.audt_dept_cd = s2.audt_dept_cd
+			   and s2.del_yn = 'N'
+			   and s1.dclr_cstm_cd = s3.cstm_cd
+			   and s2.insc_dept_cd = s3.dept_cd
+             <if test="inscEmpId != null and inscEmpId != ''">
+               and s3.insc_emp_id != #{inscEmpId}
+             </if>
+			   and s3.del_yn = 'N'
+               and substr(s1.dclr_pt_cd,1,2) = s2.imex_tp_cd  /**수출입구분에 따라 검사부서 선택*/
+             <if test='hldyYn != null and hldyYn.equals("Y")'>
+               and case when nvl((select prmt_val_cn
+                                from tb_com_prmt
+                               where prmt_id = 'CLR_0018'  /** 당직자적용여부 */
+                                 and #{prcsDt} between aply_strt_dt and aply_end_dt),'N') = 'Y'
+                        then exists(select 1
+                                      from tb_poti_wtchr  /** 당직자관리 */
+                                     where del_yn = 'N'
+                                       and papo_strt_dttm <![CDATA[ < ]]> to_date(#{prcsDt},'yyyymmdd') + 1
+                                       and papo_end_dttm <![CDATA[ >= ]]> to_date(#{prcsDt},'yyyymmdd')
+                                       and pbsr_no = s3.insc_emp_id) /**휴일일때 당직인 현장검사자에게 배부*/
+                        else true
+                   end
+             </if>
+        )
+        select f1.cstm_cd
+             , f1.dept_cd
+             , f1.audt_dept_cd
+             , f1.insc_emp_id
+             /** 전체 배부 건수가 검사자수보다 크면 당일 배부 건수로 배부, 작으면 전체 배부 건수로 배부 */
+             , case when sum(f1.hnot_gcnt) over() <![CDATA[ > ]]> f1.ador_tgcnt then f1.tday_hnot_gcnt else f1.hnot_gcnt end as hnot_gcnt
+             , round(dbms_random.value() * 1000) + 1 as random_num
+          from (
+		       select m.cstm_cd
+		            , m.dept_cd
+		            , m.audt_dept_cd
+		            , m.insc_emp_id
+		            , max(m.ador_tgcnt) as ador_tgcnt
+		            , nvl(sum(n.hnot_gcnt),0) as hnot_gcnt
+		            , nvl(sum(n.tday_hnot_gcnt),0) as tday_hnot_gcnt
+		        from vw_ador_list m
+		           , (
+		             select t1.audt_dept_cd
+		                  , t1.insc_emp_id
+		                  , t2.hnot_gcnt
+		                  , case when t2.hnot_dt = #{prcsDt} then t2.hnot_gcnt else 0 end as tday_hnot_gcnt
+		                  , t2.hnot_dt
+		                  , dense_rank() over(order by t2.hnot_dt desc) as rnk
+		               from vw_ador_list t1
+		                  , tb_clri_ador_hnot_stats_bscs t2
+		              where t1.cstm_cd = t2.cstm_cd
+		                and t1.dept_cd = t2.dept_cd
+		                and t1.audt_dept_cd = t2.audt_dept_cd
+		                and t1.insc_emp_id = t2.audt_emp_id
+		                and t2.ador_ispr_tp_cd = 'B'  /** 심사자검사자구분코드:검사자 */
+		                and t2.hnot_dt <![CDATA[ <= ]]> #{prcsDt}  /** 배부이전일자에서만 조회 */
+		                and t2.del_yn = 'N'
+		       ) n
+		       where m.audt_dept_cd = n.audt_dept_cd(+)
+		         and m.insc_emp_id = n.insc_emp_id(+)
+		         and m.ador_tgcnt <![CDATA[ >= ]]> n.rnk(+)  /** 검사자수 만큼 이전 날짜만 합산 */
+		       group
+		          by m.cstm_cd
+		           , m.dept_cd
+		           , m.audt_dept_cd
+		           , m.insc_emp_id
+		     ) f1
+       order
+          by hnot_gcnt, random_num
+       limit 1
+    </select>
+
+    <!--
+      Mise à jour du nombre de la cotation des agents de visite !== 현장검사원 배부 건수 업데이트 ==!
+      (Park Byoungkyu)
+      -->
+    <update id="updateClrSpotCkerHnotCnt" parameterType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerHnotStatsBscsVo">
+        /* ClrSpotCkerHnotMgmtMapper.updateClrSpotCkerHnotCnt */
+        WITH UPSERT AS (
+        UPDATE TB_CLRI_ADOR_HNOT_STATS_BSCS
+        SET
+              HNOT_GCNT = HNOT_GCNT + 1                   /** Nombre d'affectations !== 배부개수 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE
+              CSTM_CD = #{cstmCd}                         /** Code du bureau !== 세관코드 ==! */
+              AND DEPT_CD = #{deptCd}                     /** Code de section !== 부서코드 ==! */
+              AND AUDT_DEPT_CD = #{audtDeptCd}            /** Code de Section du contrôle !== 심사부서코드 ==! */
+              AND AUDT_EMP_ID = #{audtEmpId}              /** ID de la personne vérifiant !== 심사직원ID ==! */
+              AND HNOT_DT = #{hnotDt}                     /** Date de cotation !== 배부일자 ==! */
+              RETURNING *
+        )
+        INSERT INTO TB_CLRI_ADOR_HNOT_STATS_BSCS
+        (
+              CSTM_CD                      /** Code du bureau !== 세관코드 ==! */
+            , DEPT_CD                      /** Code de section !== 부서코드 ==! */
+            , AUDT_DEPT_CD                 /** Code de Section du contrôle !== 심사부서코드 ==! */
+            , ADOR_ISPR_TP_CD              /** Code de division inpsecteur/vérificateur !== 심사자검사자구분코드 ==! */
+            , AUDT_EMP_ID                  /** ID de la personne vérifiant !== 심사직원ID ==! */
+            , HNOT_DT                      /** Date de cotation !== 배부일자 ==! */
+            , HNOT_GCNT                    /** Nombre d'affectations !== 배부개수 ==! */
+            , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        )
+        SELECT
+              #{cstmCd}                    /** Code du bureau !== 세관코드 ==! */
+            , #{deptCd}                    /** Code de section !== 부서코드 ==! */
+            , #{audtDeptCd}                /** Code de Section du contrôle !== 심사부서코드 ==! */
+            , #{adorIsprTpCd}              /** Code de division inpsecteur/vérificateur !== 심사자검사자구분코드 ==! */
+            , #{audtEmpId}                 /** ID de la personne vérifiant !== 심사직원ID ==! */
+            , #{hnotDt}                    /** Date de cotation !== 배부일자 ==! */
+            , 1                            /** Nombre d'affectations !== 배부개수 ==! */
+            , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+            , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE
+        NOT   EXISTS(SELECT * FROM UPSERT)
+    </update>
+
+    <!--
+      Mise à jour du nombre de la cotation des agents de visite !== 현장검사원 배부 건수 차감 업데이트 ==!
+      (Park Byoungkyu)
+      -->
+    <update id="updateClrSpotCkerHnotCntSbtr" parameterType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerHnotStatsBscsVo">
+        /* ClrSpotCkerHnotMgmtMapper.updateClrSpotCkerHnotCntSbtr */
+        UPDATE TB_CLRI_ADOR_HNOT_STATS_BSCS
+        SET
+              HNOT_GCNT = HNOT_GCNT - 1                   /** Nombre d'affectations !== 배부개수 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE
+              CSTM_CD = #{cstmCd}                         /** Code du bureau !== 세관코드 ==! */
+              AND DEPT_CD = #{deptCd}                     /** Code de section !== 부서코드 ==! */
+              AND AUDT_DEPT_CD = #{audtDeptCd}            /** Code de Section du contrôle !== 심사부서코드 ==! */
+              AND AUDT_EMP_ID = #{audtEmpId}              /** ID de la personne vérifiant !== 심사직원ID ==! */
+              AND HNOT_DT = #{hnotDt}                     /** Date de cotation !== 배부일자 ==! */
+    </update>
+
+    <!--
+      Consultation de la liste pour la gestion de modification de cotation des agents de visite !==현장검사원배부변경관리 목록 조회==!
+      (Park Byoungkyu)
+      -->
+    <select id="selectClrSpotCkerChgList" parameterType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerApntVo" resultType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerApntVo">
+        /* ClrSpotCkerHnotMgmtMapper.selectClrSpotCkerChgList */
+        <include refid="pagination.header" ></include>
+        SELECT
+        A.DTL_DCSH_NO                               /** Numéro du DAU !== DED번호 ==! */
+        , TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS DCLR_DT  /** Date de DAU !== DED일자 ==! */
+        , A.DCLR_PT_CD                                /** Code de type de declaration !== 신고유형코드 ==! */
+        , A.CSCL_PLN_CD                               /** Code de plan de dedouanement !== 통관계획코드 ==! */
+        , A.DCLR_CSTM_CD AS CSTM_CD                   /** Code de bureau de declaration !== 신고세관코드 ==! */
+        , (SELECT CONCAT(A.DCLR_CSTM_CD,' | ',ORGN_NM) FROM TB_POTI_ORGN WHERE ORGN_CD = A.DCLR_CSTM_CD AND ROWNUM=1) AS CSTM_NM
+        , A.DEPT_CD
+        , (SELECT CONCAT(A.DEPT_CD,' | ',ORGN_NM) FROM TB_POTI_ORGN WHERE ORGN_CD = A.DEPT_CD AND ROWNUM=1) AS DEPT_NM
+        , A.AUDT_DEPT_CD                              /** Code de Section du contrôle !== 심사부서코드 ==! */
+        , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_CD = A.AUDT_DEPT_CD AND ROWNUM=1) AS AUDT_DEPT_NM
+        , A.EXPPN_IDFY_NO_TP_CD                       /** Code de type du N° d'identification de l'exportateur !== 수출자식별번호구분코드 ==! */
+        , A.EXPPN_IDFY_NO                             /** N° d'identification de l'exportateur !== 수출자식별번호 ==! */
+        , D.EXPPN_CO_NM AS EXPPN_NM
+        , A.IMPPN_IDFY_NO_TP_CD                       /** Code de type du N° d'identification de l'importateur !== 수입자식별번호구분코드 ==! */
+        , A.IMPPN_IDFY_NO                             /** N° d'identification de l'importateur !== 수입자식별번호 ==! */
+        , D.IMPPN_CO_NM AS IMPPN_NM
+        , A.DCER_CD                                   /** Code du declarant !== 신고인코드 ==! */
+        , D.DCER_CO_NM AS DCER_NM
+        , A.PRCS_STTS_CD
+        , A.SELC_RSLT_CD
+        , A.AUDT_EMP_ID
+        , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.AUDT_EMP_ID ) AS AUDT_EMP_NM
+        , A.INSC_EMP_ID
+        , (SELECT CONCAT(A.INSC_EMP_ID,' | ',EMP_NM) FROM TB_POTI_EMP WHERE PBSR_NO = A.INSC_EMP_ID ) AS INSC_EMP_NM
+        , (SELECT BB.ORGN_CD FROM TB_POTI_ORGN BB, TB_POTI_EMP AA WHERE AA.PBSR_NO = A.INSC_EMP_ID AND BB.ORGN_MGMT_CD = AA.ORGN_MGMT_CD ) AS INSC_DEPT_CD
+        , (SELECT CONCAT(BB.ORGN_CD,' | ',BB.ORGN_NM) FROM TB_POTI_ORGN BB, TB_POTI_EMP AA WHERE AA.PBSR_NO = A.INSC_EMP_ID AND BB.ORGN_MGMT_CD = AA.ORGN_MGMT_CD ) AS INSC_DEPT_NM
+        , B.IPRT_PRCS_STTS_CD
+        , TO_CHAR(C.INSC_FIX_DTTM,'DD/MM/YYYY HH24:MI') AS INSC_FIX_DTTM
+        FROM    TB_CLRI_DED_COMN A
+        , TB_CLRI_DED_INSC_RSLT B
+        , TB_CLRI_DED_INSC_INFM C
+        , TB_CLRI_DED_CO D
+        WHERE   A.DEL_YN = 'N'
+        AND     A.SELC_RSLT_CD = 'R'
+        AND     NVL(A.INSC_EMP_ID,'') != ''
+        AND     A.DTL_DCSH_NO = B.DTL_DCSH_NO
+        AND     A.DTL_DCSH_NO = C.DTL_DCSH_NO
+        AND 	B.VIST_INSC_RQST_DGCNT = C.VIST_INSC_RQST_DGCNT
+        AND     B.VIST_INSC_RQST_DGCNT = (SELECT MAX(VIST_INSC_RQST_DGCNT) FROM TB_CLRI_DED_INSC_RSLT WHERE DTL_DCSH_NO = A.DTL_DCSH_NO)
+        AND     A.PRCS_STTS_CD IN ('D02','F01','F02','F03','G02')  /* 신고서처리상태 : D02심사중,F01정정접수,F02정정거절,F03정정완료,G02취소거절 */
+        AND     B.IPRT_PRCS_STTS_CD != 'DD5'  /* 검사결과처리상태 : DD1 검사통보, DD2 검사확정, DD3 검사참석확정, DD4 검사결과 등록, DD5 검사완료, DD6 검사자 검사결과 등록, DD7 검사자 검사완료 */
+        AND     C.INSC_FIX_DTTM IS NOT NULL   /* 검사일자 : 입력된 경우만 조회 */
+        <if test="cstmCd != null and cstmCd != ''">
+            AND    A.DCLR_CSTM_CD = #{cstmCd}
+        </if>
+        <choose>
+            <when test="dtlDcshNo != null and dtlDcshNo != ''">
+                AND    A.DTL_DCSH_NO = #{dtlDcshNo}
+            </when>
+            <otherwise>
+                <if test="deptCd != null and deptCd != ''">
+                    AND    A.DEPT_CD = #{deptCd}
+                </if>
+                <if test="rgsrDtFrom != null and rgsrDtFrom != ''">
+                    AND	   A.DCLR_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{rgsrDtFrom},'DD/MM/YYYY'), 'YYYYMMDD')
+                    AND	   A.DCLR_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{rgsrDtTo},'DD/MM/YYYY'), 'YYYYMMDD')
+                </if>
+            </otherwise>
+        </choose>
+        AND A.DTL_DCSH_NO = D.DTL_DCSH_NO
+        AND D.DEL_YN = 'N'
+        ORDER BY A.DCLR_DT DESC, A.DTL_DCSH_NO
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <!--
+      Enregistrement de la modification de la cotation des agents de visite !== 현장검사원 배부 변경 등록 ==!
+      (Park Byoungkyu)
+      -->
+    <insert id="insertClrSpotCkerChgBrkd" parameterType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerChgBrkdVo">
+        /* ClrSpotCkerHnotMgmtMapper.insertClrSpotCkerChgBrkd */
+        INSERT INTO TB_CLRI_ADOR_CHG_BRKD
+        (
+              DTL_DCSH_NO                  /** Numéro du DAU !== DED번호 ==! */
+            , CHG_SRNO                     /** N° de modification !== 변경일련번호 ==! */
+            , ADOR_ISPR_TP_CD              /** Code de division inpsecteur/vérificateur !== 심사자검사자구분코드 ==! */
+            , BFCH_INSC_EMP_ID             /** Id Du Prépose À La Visite Initial !== 변경전검사직원ID ==! */
+            , AFCH_INSC_EMP_ID             /** Id Du Nouveau Préposé À La Visite !== 변경후검사직원ID ==! */
+            , ADOR_CHG_RSN_CD              /** Code de motif de la modification de vérificateur !== 심사자변경사유코드 ==! */
+            , CHG_RSN_CN                   /** Motif de la modification !== 변경사유내용 ==! */
+            , CHG_DT                       /** Date de modification !== 변경일자 ==! */
+            , CHG_EMP_ID                   /** ID de la personne modifiant !== 변경직원ID ==! */
+            , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        )
+        VALUES
+        (
+              #{dtlDcshNo}                 /** Numéro du DAU !== DED번호 ==! */
+            , (SELECT NVL(MAX(CHG_SRNO), 0) + 1 FROM TB_CLRI_ADOR_CHG_BRKD WHERE DTL_DCSH_NO = #{dtlDcshNo})  /** N° de modification !== 변경일련번호 ==! */
+            , #{adorIsprTpCd}              /** Code de division inpsecteur/vérificateur !== 심사자검사자구분코드 ==! */
+            , #{bfchInscEmpId}             /** Id Du Prépose À La Visite Initial !== 변경전검사직원ID ==! */
+            , #{afchInscEmpId}             /** Id Du Nouveau Préposé À La Visite !== 변경후검사직원ID ==! */
+            , #{adorChgRsnCd}              /** Code de motif de la modification de vérificateur !== 심사자변경사유코드 ==! */
+            , #{chgRsnCn}                  /** Motif de la modification !== 변경사유내용 ==! */
+            , TO_CHAR(SYSDATE, 'YYYYMMDD') /** Date de modification !== 변경일자 ==! */
+            , #{chgEmpId}                  /** ID de la personne modifiant !== 변경직원ID ==! */
+            , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+            , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      Consultation de l'historique de modification de la cotation de l'agent de visite !== 현장검사원 배부 변경 이력조회 ==!
+      (Park Byoungkyu)
+      -->
+    <select id="selectClrSpotCkerChgBrkdList" parameterType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerChgBrkdVo" resultType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerChgBrkdVo">
+        /* ClrSpotCkerHnotMgmtMapper.selectClrSpotCkerChgBrkdList */
+        SELECT A.DTL_DCSH_NO                  /** Numéro du DAU !== DED번호 ==! */
+             , A.CHG_SRNO                     /** N° de modification !== 변경일련번호 ==! */
+             , A.BFCH_INSC_EMP_ID             /** Id Du Prépose À La Visite Initial !== 변경전검사직원ID ==! */
+             , (SELECT CONCAT(A.BFCH_INSC_EMP_ID,' | ',EMP_NM) FROM TB_POTI_EMP WHERE PBSR_NO = A.BFCH_INSC_EMP_ID ) AS BFCH_INSC_EMP_NM
+             , A.AFCH_INSC_EMP_ID             /** Id Du Nouveau Préposé À La Visite !== 변경후검사직원ID ==! */
+             , (SELECT CONCAT(A.AFCH_INSC_EMP_ID,' | ',EMP_NM) FROM TB_POTI_EMP WHERE PBSR_NO = A.AFCH_INSC_EMP_ID ) AS AFCH_INSC_EMP_NM
+             , A.ADOR_CHG_RSN_CD              /** Code de motif de la modification de vérificateur !== 심사자변경사유코드 ==! */
+             , A.CHG_RSN_CN                   /** Motif de la modification !== 변경사유내용 ==! */
+             , TO_CHAR(TO_DATE(A.CHG_DT,'YYYYMMDD'),'DD/MM/YYYY') AS CHG_DT   /** Date de modification !== 변경일자 ==! */
+             , A.CHG_EMP_ID                   /** ID de la personne modifiant !== 변경직원ID ==! */
+             , (SELECT CONCAT(A.CHG_EMP_ID,' | ',EMP_NM) FROM TB_POTI_EMP WHERE PBSR_NO = A.CHG_EMP_ID ) AS CHG_EMP_NM
+        FROM   TB_CLRI_ADOR_CHG_BRKD A
+        WHERE  A.DEL_YN = 'N'
+        AND    A.DTL_DCSH_NO = #{dtlDcshNo}
+        AND    A.ADOR_ISPR_TP_CD = 'B'        /** Code de division inpsecteur/vérificateur !== 심사자검사자구분코드 ==! */
+        ORDER  BY A.CHG_SRNO DESC
+    </select>
+
+    <!--
+      Recherche de la liste d'état de distribution de l'inspecteur sur place
+      !== 현장검사원 배부 현황 목록조회 ==!
+      -->
+    <select id="selectClrSpotCkerHnotPcdnList" parameterType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerApntVo" resultType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerApntVo">
+        /* ClrSpotCkerHnotMgmtMapper.selectClrSpotCkerHnotPcdnList */
+        <include refid="pagination.header" ></include>
+        SELECT
+              A.DTL_DCSH_NO                /** Numéro du DAU !== DED번호 ==! */
+            , TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS DCLR_DT  /** Date de DAU !== DED일자 ==! */
+            , A.DCLR_PT_CD                 /** Code de type de declaration !== 신고유형코드 ==! */
+            , A.CSCL_PLN_CD                /** Code de plan de dedouanement !== 통관계획코드 ==! */
+            , A.DCLR_CSTM_CD AS CSTM_CD    /** Code de bureau de declaration !== 신고세관코드 ==! */
+            , (SELECT CONCAT(A.DCLR_CSTM_CD,' | ',ORGN_NM) FROM TB_POTI_ORGN WHERE ORGN_CD = A.DCLR_CSTM_CD AND ROWNUM=1) AS CSTM_NM
+            , A.DEPT_CD
+            , (SELECT CONCAT(A.DEPT_CD,' | ',ORGN_NM) FROM TB_POTI_ORGN WHERE ORGN_CD = A.DEPT_CD AND ROWNUM=1) AS DEPT_NM
+            , A.AUDT_DEPT_CD               /** Code de Section du contrôle !== 심사부서코드 ==! */
+            , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_CD = A.AUDT_DEPT_CD AND ROWNUM=1) AS AUDT_DEPT_NM
+            , A.SELC_RSLT_CD
+            , A.PRCS_STTS_CD
+            , FN_GET_CD_VDVAL_NM('CLR_0011', A.PRCS_STTS_CD, #{langCd}) AS PRCS_STTS_NM
+            , A.PDLS_GCNT
+            , A.EXPPN_IDFY_NO_TP_CD        /** Code de type du N° d'identification de l'exportateur !== 수출자식별번호구분코드 ==! */
+            , A.EXPPN_IDFY_NO              /** N° d'identification de l'exportateur !== 수출자식별번호 ==! */
+            , B.EXPPN_CO_NM AS EXPPN_NM
+            , A.IMPPN_IDFY_NO_TP_CD        /** Code de type du N° d'identification de l'importateur !== 수입자식별번호구분코드 ==! */
+            , A.IMPPN_IDFY_NO              /** N° d'identification de l'importateur !== 수입자식별번호 ==! */
+            , B.IMPPN_CO_NM AS IMPPN_NM
+            , A.DCER_CD                    /** Code du declarant !== 신고인코드 ==! */
+            , B.DCER_CO_NM AS DCER_NM
+            , A.AUDT_EMP_ID
+            , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.AUDT_EMP_ID ) AS AUDT_EMP_NM
+            , A.INSC_EMP_ID
+            , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.INSC_EMP_ID ) AS INSC_EMP_NM
+            , (SELECT BB.ORGN_CD FROM TB_POTI_ORGN BB, TB_POTI_EMP AA WHERE AA.PBSR_NO = A.INSC_EMP_ID AND BB.ORGN_MGMT_CD = AA.ORGN_MGMT_CD ) AS INSC_DEPT_CD
+            , (SELECT CONCAT(BB.ORGN_CD,' | ',BB.ORGN_NM) FROM TB_POTI_ORGN BB, TB_POTI_EMP AA WHERE AA.PBSR_NO = A.INSC_EMP_ID AND BB.ORGN_MGMT_CD = AA.ORGN_MGMT_CD ) AS INSC_DEPT_NM
+        FROM   TB_CLRI_DED_COMN A
+             , TB_CLRI_DED_CO B
+        WHERE  A.DEL_YN = 'N'
+        AND    A.SELC_RSLT_CD = 'R'                     /* 선별결과 R 인 경우 */
+        AND    A.ISPR_HNOT_PRCS_YN = 'Y'                /* 현장검사원 배치가 수행된 경우 */
+        AND    NVL(A.INSC_EMP_ID,'') != ''              /* 현장검사원이 배부된 경우 */
+        AND    A.DTL_DCSH_NO = B.DTL_DCSH_NO
+        AND    B.DEL_YN = 'N'
+        <if test="cstmCd != null and cstmCd != ''">
+            AND    A.DCLR_CSTM_CD = #{cstmCd}
+        </if>
+        <choose>
+            <when test="dtlDcshNo != null and dtlDcshNo != ''">
+                AND    A.DTL_DCSH_NO = #{dtlDcshNo}
+            </when>
+            <otherwise>
+                <if test="rgsrDtFrom != null and rgsrDtFrom != ''">
+                    AND	   A.DCLR_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{rgsrDtFrom},'DD/MM/YYYY'), 'YYYYMMDD')
+                    AND	   A.DCLR_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{rgsrDtTo},'DD/MM/YYYY'), 'YYYYMMDD')
+                </if>
+                <if test="deptCd != null and deptCd != ''">
+                    AND    A.DEPT_CD = #{deptCd}
+                </if>
+                <if test="inscEmpId != null and inscEmpId != ''">
+                    AND    A.INSC_EMP_ID = #{inscEmpId}
+                </if>
+                <if test="dclrPtCd != null and dclrPtCd != ''">
+                    AND    A.DCLR_PT_CD = #{dclrPtCd}
+                </if>
+                <if test="csclPlnCd != null and csclPlnCd != ''">
+                    AND    A.CSCL_PLN_CD = #{csclPlnCd}
+                </if>
+                <if test="exppnIdfyNo != null and exppnIdfyNo != ''">
+                    AND A.EXPPN_IDFY_NO = #{exppnIdfyNo}
+                </if>
+                <if test="imppnIdfyNo != null and imppnIdfyNo != ''">
+                    AND A.IMPPN_IDFY_NO = #{imppnIdfyNo}
+                </if>
+                <if test="dcerCd != null and dcerCd != ''">
+                    AND A.DCER_CD = #{dcerCd}
+                </if>
+            </otherwise>
+        </choose>
+        ORDER BY A.DCLR_DT DESC, A.DTL_DCSH_NO
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <!--
+      Enquête sur les statistiques de distribution des inspecteurs sur le terrain
+      !== 현장검사원 배부 집계 현황 목록 조회 ==!
+      -->
+    <select id="selectClrSpotCkerHnotAggtPcdnList" parameterType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerApntVo" resultType="alpass.ipt.clr.cdm.iam.vo.ClrSpotCkerApntVo">
+        /* ClrSpotCkerHnotMgmtMapper.selectClrSpotCkerHnotAggtPcdnList */
+        <include refid="pagination.header" ></include>
+        SELECT CSTM_CD
+            , CSTM_NM
+            , DEPT_CD
+            , DEPT_NM
+            , INSC_EMP_ID
+            , INSC_EMP_NM
+            , SUM(HNOT_CNT) AS HNOT_CNT
+            , SUM(INSC_INFM_BF) AS INSC_INFM_BF
+            , SUM(SPOT_CKER_PRGS) AS SPOT_CKER_PRGS
+            , SUM(SPOT_CKER_CMPL) AS SPOT_CKER_CMPL
+        FROM (
+            SELECT T1.DCLR_CSTM_CD AS CSTM_CD
+                , FN_GET_ORGN_NM(T1.DCLR_CSTM_CD) AS CSTM_NM
+                , T1.DEPT_CD
+                , FN_GET_ORGN_NM(T1.DEPT_CD) AS DEPT_NM
+                , T1.INSC_EMP_ID
+                , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = T1.INSC_EMP_ID) AS INSC_EMP_NM
+                , 1 AS HNOT_CNT
+                , CASE WHEN T2.IPRT_PRCS_STTS_CD IS NULL THEN 1 ELSE 0 END AS INSC_INFM_BF
+                , CASE WHEN T2.IPRT_PRCS_STTS_CD != 'DD5' THEN 1 ELSE 0 END AS SPOT_CKER_PRGS
+                , CASE WHEN T2.IPRT_PRCS_STTS_CD = 'DD5' THEN 1 ELSE 0 END AS SPOT_CKER_CMPL
+            FROM  TB_CLRI_DED_COMN T1
+                , TB_CLRI_DED_INSC_RSLT T2
+            WHERE T1.DEL_YN = 'N'
+            AND T1.ISPR_HNOT_PRCS_YN = 'Y'
+            AND NVL(T1.INSC_EMP_ID,'') != ''
+            AND T1.DCLR_CSTM_CD = #{cstmCd}
+            <if test="deptCd != null and deptCd != ''">
+                AND T1.DEPT_CD = #{deptCd}
+            </if>
+            <if test="rgsrDtFrom != null and rgsrDtFrom != '' and rgsrDtTo != null and rgsrDtTo != ''">
+                AND T1.DCLR_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{rgsrDtFrom},'DD/MM/YYYY'), 'YYYYMMDD')
+                AND T1.DCLR_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{rgsrDtTo},'DD/MM/YYYY'), 'YYYYMMDD')
+            </if>
+            <if test="inscEmpId != null and inscEmpId != ''">
+                AND T1.INSC_EMP_ID = #{inscEmpId}
+            </if>
+            AND T1.DTL_DCSH_NO = T2.DTL_DCSH_NO(+)
+            AND T2.VIST_INSC_RQST_DGCNT(+) = (SELECT MAX(VIST_INSC_RQST_DGCNT)
+                                              FROM TB_CLRI_DED_INSC_RSLT
+                                              WHERE DEL_YN = 'N'
+                                              AND DTL_DCSH_NO = T2.DTL_DCSH_NO)
+            AND T2.DEL_YN(+) = 'N'
+            )
+        GROUP
+            BY CSTM_CD
+            , CSTM_NM
+            , DEPT_CD
+            , DEPT_NM
+            , INSC_EMP_ID
+            , INSC_EMP_NM
+        ORDER
+            BY CSTM_CD
+            , DEPT_CD
+            , INSC_EMP_ID
+        <include refid="pagination.footer" ></include>
+    </select>
+
+</mapper>

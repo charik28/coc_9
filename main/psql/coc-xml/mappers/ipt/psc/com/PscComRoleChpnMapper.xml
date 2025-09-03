@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+TODO [AEO]Mapper : 번역필요 !== [PSC 공통] Role별 담당자 Mapper ==!
+-->
+<mapper namespace="alpass.ipt.psc.com.mapper.PscComRoleChpnMapper">
+
+  <select id="selectPscComRegnCstmChpnList"
+      parameterType="alpass.ipt.psc.com.vo.PscComRoleChpnVo"
+      resultType="alpass.ipt.psc.com.vo.PscComRoleChpnVo">
+    /* selectPscComRegnCstmChpnList */
+      SELECT
+          A.PBSR_NO
+                , A.EMP_NM
+                , A.MOBL_NO
+                , A.DEPT_TLPH_NO 
+                , A.EML
+                , A.CSTM_MGMT_CD 
+                , A.SCTR_MGMT_CD 
+                , A.DEPT_MGMT_CD 
+                , C.ORGN_MGMT_CD AS CSTM_CD
+                , C.UPR_ORGN_MGMT_CD AS UPR_CSTM_CD
+      FROM
+            ALPASSINT.TB_POTI_EMP A
+        ,   ALPASSINT.VW_POTI_ROLE_UNFC B
+          , (
+        SELECT AA.UPR_ORGN_MGMT_CD 
+        ,      AA.ORGN_MGMT_CD
+                       FROM   TB_POTI_ORGN AA 
+                       WHERE  AA.DEL_YN ='N' 
+                       AND    AA.ORGN_CD= #{cstmCd}       
+          ) C
+     WHERE
+           A.DEL_YN = 'N'
+       AND    ( (A.CSTM_MGMT_CD = C.ORGN_MGMT_CD) OR ( A.ORGN_MGMT_CD = C.ORGN_MGMT_CD) )
+       AND     B.PBSR_NO= A.PBSR_NO
+       AND     B.ROLE_ID = #{roleId}
+  </select>
+
+  <select id="selectPscComHdqrCstmChpnList"
+      parameterType="alpass.ipt.psc.com.vo.PscComRoleChpnVo"
+      resultType="alpass.ipt.psc.com.vo.PscComRoleChpnVo">
+    /* selectPscComHdqrCstmChpnList */
+    SELECT
+          A.PBSR_NO
+                , A.EMP_NM
+                , A.MOBL_NO
+                , A.DEPT_TLPH_NO 
+                , A.EML
+                , A.CSTM_MGMT_CD 
+                , A.SCTR_MGMT_CD 
+                , A.DEPT_MGMT_CD 
+                , C.ORGN_MGMT_CD AS CSTM_CD
+                , C.UPR_ORGN_MGMT_CD AS UPR_CSTM_CD
+      FROM
+            TB_POTI_EMP A
+        , TB_POTI_EMP_AUTH B
+          , (
+        SELECT AA.UPR_ORGN_MGMT_CD 
+        ,      AA.ORGN_MGMT_CD
+                       FROM   TB_POTI_ORGN AA 
+                       WHERE  AA.DEL_YN ='N' 
+                       AND    AA.ORGN_CD= #{cstmCd}      
+          ) C
+     WHERE
+       A.DEL_YN = 'N'
+       AND     B.DEL_YN = 'N'
+       AND     A.ORGN_MGMT_CD = C.UPR_ORGN_MGMT_CD
+       AND     B.PBSR_NO= A.PBSR_NO
+       AND     B.ROLE_ID = #{roleId}
+  </select>
+
+  <select id="selectPscComAudtCstmChpnList"
+      parameterType="alpass.ipt.psc.com.vo.PscComRoleChpnVo"
+      resultType="alpass.ipt.psc.com.vo.PscComRoleChpnVo">
+    /* selectPscComAudtCstmChpnList */
+    SELECT
+          A.PBSR_NO
+                , A.EMP_NM
+                , A.MOBL_NO
+                , A.DEPT_TLPH_NO 
+                , A.EML
+                , A.CSTM_MGMT_CD 
+                , A.SCTR_MGMT_CD 
+                , A.DEPT_MGMT_CD 
+                , C.ORGN_MGMT_CD AS CSTM_CD
+                , C.UPR_ORGN_MGMT_CD AS UPR_CSTM_CD
+      FROM
+            TB_POTI_EMP A
+        , TB_POTI_EMP_AUTH B
+          , (
+        SELECT AA.UPR_ORGN_MGMT_CD 
+        ,      AA.ORGN_MGMT_CD
+                       FROM   TB_POTI_ORGN AA 
+                       WHERE  AA.DEL_YN ='N' 
+                       AND    AA.ORGN_CD= #{cstmCd}      
+          ) C
+     WHERE
+       A.DEL_YN = 'N'
+       AND     B.DEL_YN = 'N'
+       AND     A.SCTR_MGMT_CD = C.UPR_ORGN_MGMT_CD
+       AND     B.PBSR_NO= A.PBSR_NO
+       AND     B.ROLE_ID = #{roleId}
+  </select>  
+  
+  
+  <select id="selectPscComCstmRoleChpnCnt"
+    parameterType="alpass.ipt.psc.com.vo.PscComRoleChpnVo"
+    resultType="java.math.BigDecimal">
+    /* selectPscComCstmRoleChpnCnt */
+    SELECT
+          COUNT(A.PBSR_NO) AS CHPN_CNT
+      FROM
+            TB_POTI_EMP A
+        , TB_POTI_EMP_AUTH B
+          , (
+        SELECT AA.UPR_ORGN_MGMT_CD 
+        ,      AA.ORGN_MGMT_CD
+                       FROM   TB_POTI_ORGN AA 
+                       WHERE  AA.DEL_YN ='N' 
+                       AND    AA.ORGN_CD= #{cstmCd}      
+          ) C
+     WHERE
+     A.DEL_YN = 'N'
+     AND     B.DEL_YN = 'N'
+     AND     A.SCTR_MGMT_CD = C.UPR_ORGN_MGMT_CD
+     AND     B.PBSR_NO= A.PBSR_NO
+     AND     B.ROLE_ID = #{roleId}
+  </select>  
+</mapper>

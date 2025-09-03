@@ -1,0 +1,1318 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="alpass.ipt.col.fine.mapper.ColFineMgmtMapper">
+
+    <!--
+    Voir la liste des Gérer les amendes !==벌금관리 목록 조회한다.==!
+    -->
+    <select id="selectFineMgmtLst" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo" resultType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /** colFineMgmt_selectFineMgmtLst **/
+        <include refid="pagination.header" />
+        SELECT
+                A.FINE_LVY_RQST_NO           /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+                , A.CSTM_CD                    /** Code du bureau !== 세관코드 ==! */
+                , FN_GET_ORGN_NM(A.CSTM_CD) AS CSTM_NM                    /** Code du bureau !== 세관코드 ==! */
+                , A.DEPT_CD
+                , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_CD = UPPER(A.DEPT_CD) AND DEL_YN = 'N') AS DEPT_NM
+                , A.TXPR_IDFY_NO_TP_CD         /** Code de caterogie de NIU !== 납세자식별번호구분코드 ==! */
+                , A.TXPR_IDFY_NO_TP_NM         /** Nom du catégorie de NIF !== 납세자식별번호구분명 ==! */
+                , A.TXPR_IDFY_NO               /** NIU !== 납세자식별번호 ==! */
+                , A.TXPR_NM                    /** Nom du responsable financier !== 납세자명 ==! */
+                , A.REFF_NO_PT_CD              /** Code de type de numero de reference !== 참조번호유형코드 ==! */
+                , A.REFF_NO_PT_TP_NM           /** Nom du type de numéro de référence !== 참조번호유형구분명 ==! */
+                , A.REFF_NO                    /** N° de reference !== 참조번호 ==! */
+                , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COL_0021' AND LANG_CD = #{langCd} AND CD_VDVAL = D.REFF_NO_PT_CD) AS REFF_NO_PT_NM /** Code de type de numéro de référence !== 참조번호유형코드명 ==! */
+                , A.DCER_CD                    /** Code du déclarant !== 신고인코드 ==! */
+                , A.FINE_AMT AS OFINE_AMT      /** Montant d'amende !== 원벌금금액 ==! */
+                , 0 AS ADJU_FINE_AMT  /** Montant d'amende !== 조정된벌금금액 ==! */
+                , A.FINE_AMT                   /** Montant d'amende !== 벌금금액 ==! */
+                , A.FINE_EUR_AMT               /** Montant d'amende en EUR !== 벌금EUR금액 ==! */
+                , A.FINE_USD_AMT               /** Montant d'amende en USD !== 벌금USD금액 ==! */
+                , A.FINE_RGSR_RSN_CN           /** Contenu du motif d'enregistrement d'amende !== 벌금등록사유내용 ==! */
+                , A.PRNG_INFM_TRGT_YN          /** Notification necessaire (ON) !== 예정통보대상여부 ==! */
+                , TO_CHAR(TO_DATE(A.RQST_DT,'YYYYMMDD'),'DD/MM/YYYY') RQST_DT                    /** Date de demande !== 신청일자 ==! */
+                , A.REPN_ID                    /** ID de la personne demandant !== 신청자ID ==! */
+                , A.APRV_ID                    /** ID d'approbation  !== 결재ID ==! */
+                , A.PYR_ACPE_YN                /** Accepte par le contribuable (ON) !== 납부자수용여부 ==! */
+                , A.PYR_ACPE_DTTM              /** Moment d'acceptation par le contribuable !== 납부자수용일시 ==! */
+                , A.PYR_OPIN_YN                /** Opinion enregistree par le contribuable (ON) !== 납부자의견여부 ==! */
+                , A.ATCH_FILE_ID               /** Date et heure de modification finale !== 첨부파일ID ==! */
+                , A.DEL_YN                     /** Suppression ON !== 삭제여부 ==! */
+                , A.FRST_REGST_ID              /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , A.FRST_RGSR_DTTM             /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , A.LAST_CHPR_ID               /** ID du modificateur final !== 최종변경자ID ==! */
+                , A.LAST_CHG_DTTM              /** Date et heure de modification finale !== 최종변경일시 ==! */
+                , B.NTFC_NO                    /** N° d'avis !== 고지번호 ==! */
+                , C.APRV_PRCS_STTS_CD          /** Code de statut du traitement d'approbation !== 결재처리상태코드 ==! */
+                , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = C.APRV_RQST_EMP_PBSR_NO) AS REPN    /** N° de matricule solde du demandeur d'approbation !== 결재신청직원공무원번호 ==! */
+                , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = C.APRV_EMP_PBSR_NO) AS APRV_APPN    /** N° de matricule solde de l'approbateur !== 결재직원공무원번호 ==! */
+                , TO_CHAR(C.APRV_PRCS_DTTM, 'DD/MM/YYYY') APRV_PRCS_DTTM        /** Date et heure du traitement de l'approbation !== 결재처리일시 ==! */
+                , TO_CHAR(TO_DATE(B.RGSR_DT,'YYYYMMDD'),'DD/MM/YYYY') AS RGSR_DT
+                , B.REGST_ID                                                                    /** ID de la personne enregistrant !== 등록자ID ==! */
+                , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = B.REGST_ID) AS REGST_NM       /** Enregistré par !== 등록자명 ==! */
+                , (SELECT VLTN_CD FROM TB_COLI_FINE_BSS_RQST WHERE FINE_LVY_RQST_NO = A.FINE_LVY_RQST_NO AND DEL_YN = 'N') AS VLTN_CD
+                , (SELECT VLTN_CD_DESC FROM TB_COLI_VLTN_CD WHERE VLTN_CD = (SELECT VLTN_CD FROM TB_COLI_FINE_BSS_RQST WHERE FINE_LVY_RQST_NO = A.FINE_LVY_RQST_NO AND DEL_YN = 'N')) AS VLTN_CD_DESC
+                , TO_CHAR(TO_DATE(D.PAY_TMLM_DT,'YYYYMMDD'),'DD/MM/YYYY') AS PAY_TMLM_DT
+                , TO_CHAR(TO_DATE(D.NTFC_DT,'YYYYMMDD'),'DD/MM/YYYY') AS NTFC_DT
+                , TO_CHAR(TO_DATE(A.REFF_NO_DT,'YYYYMMDD'),'DD/MM/YYYY') AS REFF_NO_DT
+                , F.RCVE_NO
+                , F.RCVE_DT AS PBLS_DTTM
+                , D.DLPY_INST_AMT
+                , D.RCVE_YN
+        FROM   TB_COLI_FINE_RQST A
+                , TB_COLI_FINE B
+                , (
+                    SELECT
+                            G.APRV_ID                    /** ID d'approbation  !== 결재ID ==! */
+                            , G.APRV_RQST_EMP_PBSR_NO      /** N° de matricule solde du demandeur d'approbation !== 결재신청직원공무원번호 ==! */
+                            , H.APRV_SRNO                  /** N° de série de l'approbation !== 결재일련번호 ==! */
+                            , G.APRV_PRCS_STTS_CD          /** Code de statut du traitement d'approbation !== 결재처리상태코드 ==! */
+                            , H.APRV_EMP_PBSR_NO           /** N° de matricule solde de l'approbateur !== 결재직원공무원번호 ==! */
+                            , H.APRV_PRCS_DTTM             /** Date et heure du traitement de l'approbation !== 결재처리일시 ==! */
+                    FROM   TB_POTI_APRV G
+                            , TB_POTI_APRV_D H
+                    WHERE  G.APRV_ID = H.APRV_ID        /** ID d'approbation  !== 결재ID ==! */
+                    AND    G.DEL_YN = 'N'
+                    AND    H.APRV_SRNO = (SELECT MAX(APRV_SRNO) FROM TB_POTI_APRV_D WHERE APRV_ID = G.APRV_ID)
+                ) C
+                , TB_COLI_NTFC D
+                , TB_COLI_RCVE F
+        WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+        AND  A.DEL_YN = B.DEL_YN(+)
+        AND  A.FINE_LVY_RQST_NO = B.FINE_LVY_RQST_NO(+)
+        AND  A.APRV_ID = C.APRV_ID(+)
+        AND  B.NTFC_NO = D.NTFC_NO(+)
+        AND  B.NTFC_NO = F.NTFC_NO(+)
+<!--        <if test='searchAllYn == null or searchAllYn !="Y" '>
+&lt;!&ndash;           AND A.CSTM_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = (SELECT ORGN_MGMT_CD FROM TB_POTI_EMP WHERE PBSR_NO = #{sessPbsrNo})) &ndash;&gt;
+          AND A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = (SELECT ORGN_MGMT_CD FROM TB_POTI_EMP WHERE PBSR_NO = #{sessPbsrNo}))
+        </if>-->
+        <if test="sctrCd != null and sctrCd != ''">
+            AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+        </if>
+        <if test="uprOrgnCd != null and uprOrgnCd != ''">
+            AND  A.CSTM_CD = #{uprOrgnCd}
+        </if>
+        <if test="orgnCd != null and orgnCd != ''">
+            AND  (A.DEPT_CD = #{orgnCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                        OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}))))
+			AND CASE WHEN (SELECT COUNT(1) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd})) AND ORGN_AUTH ='C') <![CDATA[ >= ]]> 1 THEN
+					CASE WHEN (SELECT ORGN_AUTH FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) = 'C'
+						 THEN D.NTFC_PT_CD = 'A'
+						 ELSE D.NTFC_PT_CD <![CDATA[ <> ]]> 'A'
+					END
+				ELSE TRUE END
+        </if>
+        <if test="aprvPrcsSttsCd != null and aprvPrcsSttsCd != ''">
+            AND  C.APRV_PRCS_STTS_CD = #{aprvPrcsSttsCd}
+        </if>
+        <if test="repn != null and repn != ''">
+            AND  C.APRV_RQST_EMP_PBSR_NO = #{repn}
+        </if>
+        <if test="aprvAppn != null and aprvAppn != ''">
+            AND  C.APRV_EMP_PBSR_NO = #{aprvAppn}
+        </if>
+        <if test="aprvDtTo != null and aprvDtTo != '' and aprvDtFrom != null and aprvDtFrom != ''">
+            AND  C.APRV_PRCS_DTTM BETWEEN TO_DATE(#{aprvDtFrom},'DD/MM/YYYY')+000001 AND TO_DATE(#{aprvDtTo},'DD/MM/YYYY')+235959        /** Date et heure du traitement de l'approbation !== 결재처리일시 ==! */
+        </if>
+        <if test="cstmCd != null and cstmCd != ''">
+            AND  A.CSTM_CD = #{cstmCd}
+        </if>
+        <if test='deptCd != null and deptCd !=""'>
+            AND  (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                        OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                                                                          OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+			AND CASE WHEN (SELECT COUNT(1) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd})) AND ORGN_AUTH ='C') <![CDATA[ >= ]]> 1 THEN
+					CASE WHEN (SELECT ORGN_AUTH FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) = 'C'
+						 THEN D.NTFC_PT_CD = 'A'
+						 ELSE D.NTFC_PT_CD <![CDATA[ <> ]]> 'A'
+					END
+				ELSE TRUE END
+        </if>
+        <if test="rqstDtTo != null and rqstDtTo != '' and rqstDtFrom != null and rqstDtFrom != ''">
+            AND A.RQST_DT BETWEEN TO_CHAR(TO_DATE(#{rqstDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{rqstDtTo},'DD/MM/YYYY'),'YYYYMMDD')        /** Date de demande !== 신청일자 ==! */
+        </if>
+        <if test="rgsrDtTo != null and rgsrDtTo != '' and rgsrDtFrom != null and rgsrDtFrom != ''">
+            AND B.RGSR_DT BETWEEN TO_CHAR(TO_DATE(#{rgsrDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{rgsrDtTo},'DD/MM/YYYY'),'YYYYMMDD')        /** Date D'Enregistrement !== 등록일자 ==! */
+        </if>
+        <if test="ntfcDtTo != null and ntfcDtTo != '' and ntfcDtFrom != null and ntfcDtFrom != ''">
+            AND D.NTFC_DT BETWEEN TO_CHAR(TO_DATE(#{ntfcDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{ntfcDtTo},'DD/MM/YYYY'),'YYYYMMDD')        /** Date D'Enregistrement !== 등록일자 ==! */
+        </if>
+        <if test="reffNoDtTo != null and reffNoDtTo != '' and reffNoDtFrom != null and reffNoDtFrom != ''">
+          AND D.REFF_NO_DT BETWEEN TO_CHAR(TO_DATE(#{reffNoDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND
+          TO_CHAR(TO_DATE(#{reffNoDtTo},'DD/MM/YYYY'),'YYYYMMDD') /** Date du titre de perception !== 결재요청일자 ==!*/
+        </if>
+        <if test="pblsDttmTo != null and pblsDttmTo != '' and pblsDttmForm != null and pblsDttmForm != ''">
+          AND F.RCVE_DT BETWEEN TO_CHAR(TO_DATE(#{pblsDttmForm},'DD/MM/YYYY'),'YYYYMMDD') AND
+          TO_CHAR(TO_DATE(#{pblsDttmTo},'DD/MM/YYYY'),'YYYYMMDD') /** Date du titre de perception !== 결재요청일자 ==!*/
+        </if>
+        <if test="txprIdfyNoTpCd != null and txprIdfyNoTpCd != ''">
+            AND  A.TXPR_IDFY_NO_TP_CD = #{txprIdfyNoTpCd}    /** Code de caterogie de NIU !== 납세자식별번호구분코드 ==! */
+        </if>
+        <if test="txprIdfyNo != null and txprIdfyNo != ''">
+            AND  A.TXPR_IDFY_NO LIKE #{txprIdfyNo} || '%'              /** NIU !== 납세자식별번호 ==! */
+        </if>
+        <if test="aprvId != null and aprvId != ''">
+            AND  A.APRV_ID = #{aprvId}                                 /** ID d'approbation  !== 결재ID ==! */
+        </if>
+        <if test="fineLvyRqstNo != null and fineLvyRqstNo != ''">
+            AND  A.FINE_LVY_RQST_NO LIKE #{fineLvyRqstNo} || '%'       /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+        </if>
+        <if test="reffNoPtCd != null and reffNoPtCd != ''">
+            AND  A.REFF_NO_PT_CD = #{reffNoPtCd}       /** Code de type de numero de reference !== 참조번호유형코드 ==! */
+        </if>
+        <if test="reffNo != null and reffNo != ''">
+            AND  (A.REFF_NO LIKE #{reffNo} || '%' OR A.REFF_NO LIKE REPLACE(#{reffNo},'-','') || '%')       /** N° de référence !== 참조번호 ==! */
+        </if>
+        <if test="ntfcNo != null and ntfcNo != ''">
+            AND  B.NTFC_NO LIKE #{ntfcNo} || '%'       /** N° d'avis !== 고지번호 ==! */
+        </if>
+        <if test="rcveNo != null and rcveNo != ''">
+            AND  F.RCVE_NO LIKE #{rcveNo} || '%'       /** N° de Quittance !== 영수증번호 ==! */
+        </if>
+        ORDER BY A.FRST_RGSR_DTTM DESC
+        <include refid="pagination.footer" />
+    </select>
+
+    <!--
+    Voir les détails de la Gérer les amendes !== 벌금관리 조회 ==!
+    -->
+    <select id="selectColFineMgmt" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo" resultType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /* ColFineMgmt_selectColFineMgmt */
+        SELECT
+            A.FINE_LVY_RQST_NO           /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+             , A.CSTM_CD                    /** Code du bureau !== 세관코드 ==! */
+             , FN_GET_ORGN_NM(A.CSTM_CD) AS CSTM_NM                    /** Code du bureau !== 세관코드 ==! */
+             , A.DEPT_CD
+             , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_CD = UPPER(A.DEPT_CD) AND DEL_YN = 'N') AS DEPT_NM
+             , A.TXPR_IDFY_NO_TP_CD         /** Code de caterogie de NIU !== 납세자식별번호구분코드 ==! */
+             , A.TXPR_IDFY_NO_TP_NM         /** Nom du catégorie de NIF !== 납세자식별번호구분명 ==! */
+             , A.TXPR_IDFY_NO               /** NIU !== 납세자식별번호 ==! */
+             , A.TXPR_NM                    /** Nom du responsable financier !== 납세자명 ==! */
+             , A.REFF_NO_PT_CD              /** Code de type de numero de reference !== 참조번호유형코드 ==! */
+             , A.REFF_NO_PT_TP_NM           /** Nom du type de numéro de référence !== 참조번호유형구분명 ==! */
+             , A.REFF_NO                    /** N° de reference !== 참조번호 ==! */
+             , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COL_0021' AND LANG_CD = #{langCd} AND CD_VDVAL = D.REFF_NO_PT_CD) AS REFF_NO_PT_NM /** Code de type de numéro de référence !== 참조번호유형코드명 ==! */
+             , A.DCER_CD                    /** Code du déclarant !== 신고인코드 ==! */
+             , A.FINE_AMT AS OFINE_AMT      /** Montant d'amende !== 원벌금금액 ==! */
+             , 0 AS ADJU_FINE_AMT  /** Montant d'amende !== 조정된벌금금액 ==! */
+             , A.FINE_AMT                   /** Montant d'amende !== 벌금금액 ==! */
+             , A.FINE_EUR_AMT               /** Montant d'amende en EUR !== 벌금EUR금액 ==! */
+             , A.FINE_USD_AMT               /** Montant d'amende en USD !== 벌금USD금액 ==! */
+             , A.FINE_RGSR_RSN_CN           /** Contenu du motif d'enregistrement d'amende !== 벌금등록사유내용 ==! */
+             , A.PRNG_INFM_TRGT_YN          /** Notification necessaire (ON) !== 예정통보대상여부 ==! */
+             , TO_CHAR(TO_DATE(A.RQST_DT,'YYYYMMDD'),'DD/MM/YYYY') RQST_DT                    /** Date de demande !== 신청일자 ==! */
+             , A.REPN_ID                    /** ID de la personne demandant !== 신청자ID ==! */
+             , A.APRV_ID                    /** ID d'approbation  !== 결재ID ==! */
+             , A.PYR_ACPE_YN                /** Accepte par le contribuable (ON) !== 납부자수용여부 ==! */
+             , A.PYR_ACPE_DTTM              /** Moment d'acceptation par le contribuable !== 납부자수용일시 ==! */
+             , A.PYR_OPIN_YN                /** Opinion enregistree par le contribuable (ON) !== 납부자의견여부 ==! */
+             , A.ATCH_FILE_ID               /** Date et heure de modification finale !== 첨부파일ID ==! */
+             , A.DEL_YN                     /** Suppression ON !== 삭제여부 ==! */
+             , A.FRST_REGST_ID              /** ID du premier enregistrant  !== 최초등록자ID ==! */
+             , A.FRST_RGSR_DTTM             /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+             , A.LAST_CHPR_ID               /** ID du modificateur final !== 최종변경자ID ==! */
+             , A.LAST_CHG_DTTM              /** Date et heure de modification finale !== 최종변경일시 ==! */
+             , B.NTFC_NO                    /** N° d'avis !== 고지번호 ==! */
+             , C.APRV_PRCS_STTS_CD          /** Code de statut du traitement d'approbation !== 결재처리상태코드 ==! */
+             , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = C.APRV_RQST_EMP_PBSR_NO) AS REPN    /** N° de matricule solde du demandeur d'approbation !== 결재신청직원공무원번호 ==! */
+             , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = C.APRV_EMP_PBSR_NO) AS APRV_APPN    /** N° de matricule solde de l'approbateur !== 결재직원공무원번호 ==! */
+             , TO_CHAR(C.APRV_PRCS_DTTM, 'DD/MM/YYYY') APRV_PRCS_DTTM        /** Date et heure du traitement de l'approbation !== 결재처리일시 ==! */
+             , TO_CHAR(TO_DATE(B.RGSR_DT,'YYYYMMDD'),'DD/MM/YYYY') AS RGSR_DT
+             , B.REGST_ID                                                                    /** ID de la personne enregistrant !== 등록자ID ==! */
+             , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = B.REGST_ID) AS REGST_NM       /** Enregistré par !== 등록자명 ==! */
+             , (SELECT VLTN_CD FROM TB_COLI_FINE_BSS_RQST WHERE FINE_LVY_RQST_NO = A.FINE_LVY_RQST_NO AND DEL_YN = 'N') AS VLTN_CD
+             , (SELECT VLTN_CD_DESC FROM TB_COLI_VLTN_CD WHERE VLTN_CD = (SELECT VLTN_CD FROM TB_COLI_FINE_BSS_RQST WHERE FINE_LVY_RQST_NO = A.FINE_LVY_RQST_NO AND DEL_YN = 'N')) AS VLTN_CD_DESC
+             , TO_CHAR(TO_DATE(D.PAY_TMLM_DT,'YYYYMMDD'),'DD/MM/YYYY') AS PAY_TMLM_DT
+             , TO_CHAR(TO_DATE(D.NTFC_DT,'YYYYMMDD'),'DD/MM/YYYY') AS NTFC_DT
+             , TO_CHAR(TO_DATE(A.REFF_NO_DT,'YYYYMMDD'),'DD/MM/YYYY') AS REFF_NO_DT
+             , E.RCVE_NO
+             , F.RCVE_DT
+             , D.NTFC_PT_CD
+             , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COL_0003' AND LANG_CD = #{langCd} AND CD_VDVAL = D.NTFC_PT_CD) AS NTFC_PT_NM /** Désignation du code de type d'avis !== 고지유형코드명 ==! */
+             , (SELECT TO_CHAR(PBLS_DTTM,'DD/MM/YYYY') FROM TB_COLI_RECP_PBLS WHERE RCVE_NO = E.RCVE_NO AND PBLS_DGCNT = E.PBLS_DGCNT AND DEL_YN = 'N') AS PBLS_DTTM
+             , D.DLPY_INST_AMT
+             , D.RCVE_YN
+        FROM   TB_COLI_FINE_RQST A
+               , TB_COLI_FINE B
+               , (
+                SELECT
+                    G.APRV_ID                    /** ID d'approbation  !== 결재ID ==! */
+                     , G.APRV_RQST_EMP_PBSR_NO      /** N° de matricule solde du demandeur d'approbation !== 결재신청직원공무원번호 ==! */
+                     , H.APRV_SRNO                  /** N° de série de l'approbation !== 결재일련번호 ==! */
+                     , G.APRV_PRCS_STTS_CD          /** Code de statut du traitement d'approbation !== 결재처리상태코드 ==! */
+                     , H.APRV_EMP_PBSR_NO           /** N° de matricule solde de l'approbateur !== 결재직원공무원번호 ==! */
+                     , H.APRV_PRCS_DTTM             /** Date et heure du traitement de l'approbation !== 결재처리일시 ==! */
+                FROM   TB_POTI_APRV G
+                   , TB_POTI_APRV_D H
+                WHERE  G.APRV_ID = H.APRV_ID        /** ID d'approbation  !== 결재ID ==! */
+                  AND    G.DEL_YN = 'N'
+                  AND    H.APRV_SRNO = (SELECT MAX(APRV_SRNO) FROM TB_POTI_APRV_D WHERE APRV_ID = G.APRV_ID)
+                ) C
+               , TB_COLI_NTFC D
+               , (
+                    SELECT *
+                    FROM TB_COLI_RECP_PBLS_NTFC A
+                    WHERE A.DEL_YN = 'N'
+                      AND A.PBLS_DGCNT = (SELECT MAX(PBLS_DGCNT) FROM TB_COLI_RECP_PBLS_NTFC WHERE NTFC_NO = A.NTFC_NO AND DEL_YN = 'N' )
+                ) E
+               , TB_COLI_RCVE F
+        WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+          AND  A.DEL_YN = B.DEL_YN(+)
+          AND  A.FINE_LVY_RQST_NO = B.FINE_LVY_RQST_NO(+)
+          AND  A.APRV_ID = C.APRV_ID(+)
+          AND  B.NTFC_NO = D.NTFC_NO(+)
+          AND  B.NTFC_NO = E.NTFC_NO(+)
+          AND  B.NTFC_NO = F.NTFC_NO(+)
+          AND  A.FINE_LVY_RQST_NO = #{fineLvyRqstNo}
+    </select>
+
+
+    <!--
+     Consulter le contenu du classement des éléments de l'infraction !==위반사항항목분류내용을 조회한다==!
+     -->
+    <select id="selectVltnMtrList" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo" resultType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /* ColFineMgmt_selectVltnMtrList */
+        SELECT B.VLTN_MTR_CD, B.VLTN_MTR_CLUS_CLSF_CN FROM TB_CLRI_DED_DPUT_FINE A, TB_CLRI_DPUT_VLTN_MTR_CD B
+        WHERE A.VLTN_MTR_CD = B.VLTN_MTR_CD
+          AND DTL_DCSH_NO = #{reffNo}
+    </select>
+
+    <!--
+     Nombre de fois définitif des commentaires !== 의견 최종차수 ==!
+     -->
+    <select id="selectColFineOpinReqtMaxCnt" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo" resultType="int">
+        /* ColFineMgmt_selectColFineOpinReqtMaxCnt */
+        SELECT
+            NVL(MAX(OPIN_DGCNT), 0) CNT
+        FROM  TB_COLI_FINE_OBJT_LDGG
+        WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+          AND  FINE_LVY_RQST_NO = #{fineLvyRqstNo}
+    </select>
+
+    <!--
+    Voir les détails de la Gérer les amendes !== 벌금관리 조회 (벌금의견목록조회용) ==!
+    -->
+    <select id="selectColFineOpinReqtCn" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo" resultType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /* ColFineMgmt_selectColFineOpinReqtCn */
+        SELECT
+            A.FINE_LVY_RQST_NO           /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+             , A.CSTM_CD                    /** Code du bureau !== 세관코드 ==! */
+             , FN_GET_ORGN_NM(A.CSTM_CD) AS CSTM_NM                    /** Code du bureau !== 세관코드 ==! */
+             , A.TXPR_IDFY_NO_TP_CD         /** Code de caterogie de NIU !== 납세자식별번호구분코드 ==! */
+             , A.TXPR_IDFY_NO_TP_NM         /** Nom du catégorie de NIF !== 납세자식별번호구분명 ==! */
+             , A.TXPR_IDFY_NO               /** NIU !== 납세자식별번호 ==! */
+             , A.TXPR_NM                    /** Nom du responsable financier !== 납세자명 ==! */
+             , A.REFF_NO_PT_CD              /** Code de type de numero de reference !== 참조번호유형코드 ==! */
+             , A.REFF_NO_PT_TP_NM           /** Nom du type de numéro de référence !== 참조번호유형구분명 ==! */
+             , A.REFF_NO                    /** N° de reference !== 참조번호 ==! */
+             , A.DCER_CD                    /** Code du déclarant !== 신고인코드 ==! */
+             , A.FINE_AMT                   /** Montant d'amende !== 벌금금액 ==! */
+             -- , A.FINE_EUR_AMT               /** Montant d'amende en EUR !== 벌금EUR금액 ==! */
+             -- , A.FINE_USD_AMT               /** Montant d'amende en USD !== 벌금USD금액 ==! */
+             , A.FINE_RGSR_RSN_CN           /** Contenu du motif d'enregistrement d'amende !== 벌금등록사유내용 ==! */
+             , A.PRNG_INFM_TRGT_YN          /** Notification necessaire (ON) !== 예정통보대상여부 ==! */
+             , TO_CHAR(TO_DATE(A.RQST_DT,'YYYYMMDD'),'DD/MM/YYYY') RQST_DT                    /** Date de demande !== 신청일자 ==! */
+             , A.REPN_ID                    /** ID de la personne demandant !== 신청자ID ==! */
+             , A.APRV_ID                    /** ID d'approbation  !== 결재ID ==! */
+             , A.PYR_ACPE_YN                /** Accepte par le contribuable (ON) !== 납부자수용여부 ==! */
+             , A.PYR_ACPE_DTTM              /** Moment d'acceptation par le contribuable !== 납부자수용일시 ==! */
+             , A.PYR_OPIN_YN                /** Opinion enregistree par le contribuable (ON) !== 납부자의견여부 ==! */
+             , A.ATCH_FILE_ID               /** Date et heure de modification finale !== 첨부파일ID ==! */
+             , A.DEL_YN                     /** Suppression ON !== 삭제여부 ==! */
+             , A.FRST_REGST_ID              /** ID du premier enregistrant  !== 최초등록자ID ==! */
+             , A.FRST_RGSR_DTTM             /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+             , A.LAST_CHPR_ID               /** ID du modificateur final !== 최종변경자ID ==! */
+             , A.LAST_CHG_DTTM              /** Date et heure de modification finale !== 최종변경일시 ==! */
+             , B.NTFC_NO                    /** N° d'avis !== 고지번호 ==! */
+             , C.APRV_PRCS_STTS_CD          /** Code de statut du traitement d'approbation !== 결재처리상태코드 ==! */
+             , NVL((SELECT MAX(OPIN_DGCNT) FROM TB_COLI_FINE_OBJT_LDGG WHERE DEL_YN = 'N' AND FINE_LVY_RQST_NO = #{fineLvyRqstNo}), 0) AS OPIN_DGCNT      /** Nombre de fois d'opinion !== 의견차수 ==! */
+        FROM   TB_COLI_FINE_RQST_HIST A
+           , TB_COLI_FINE B
+           , (
+            SELECT
+                G.APRV_ID                    /** ID d'approbation  !== 결재ID ==! */
+                 , G.APRV_RQST_EMP_PBSR_NO      /** N° de matricule solde du demandeur d'approbation !== 결재신청직원공무원번호 ==! */
+                 , H.APRV_SRNO                  /** N° de série de l'approbation !== 결재일련번호 ==! */
+                 , G.APRV_PRCS_STTS_CD          /** Code de statut du traitement d'approbation !== 결재처리상태코드 ==! */
+                 , H.APRV_EMP_PBSR_NO           /** N° de matricule solde de l'approbateur !== 결재직원공무원번호 ==! */
+                 , H.APRV_PRCS_DTTM             /** Date et heure du traitement de l'approbation !== 결재처리일시 ==! */
+            FROM   TB_POTI_APRV G
+               , TB_POTI_APRV_D H
+            WHERE  G.APRV_ID = H.APRV_ID        /** ID d'approbation  !== 결재ID ==! */
+              AND    G.DEL_YN = 'N'
+              AND    H.APRV_SRNO = (SELECT MAX(APRV_SRNO) FROM TB_POTI_APRV_D WHERE APRV_ID = G.APRV_ID)
+        ) C
+        WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+          AND  A.FINE_LVY_RQST_NO = #{fineLvyRqstNo}
+          AND  A.DEL_YN = B.DEL_YN(+)
+          AND  A.FINE_LVY_RQST_NO = B.FINE_LVY_RQST_NO(+)
+          AND  A.APRV_ID = C.APRV_ID(+)
+          AND  A.RQST_DGCNT = (#{opinDgcnt}+1)
+    </select>
+
+    <!--
+    Traitement de l'approbation/rejet de la gestion des amendes !==벌금 관리 승인/기각 처리==!
+    -->
+    <update id="updateFineMgmtPrcsSttsCd" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo" >
+        /** colFineMgmt_updateFineMgmtPrcsSttsCd **/
+        UPDATE TB_COLI_MG SET
+                PRCS_STTS_CD = #{prcsSttsCd}
+                , APRV_ID = #{lastChprId}
+                , LAST_CHPR_ID = #{lastChprId}     	/* ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP 		/* Date et heure de modification finale !== 최종변경일시 ==! */
+                <if test="prcsSttsCd != null and prcsSttsCd == '02'.toString()">
+                    , REFS_YN = 'N'
+                    , VALD_STRT_DT = TO_CHAR(SYSTIMESTAMP,'YYYYMMDD')
+                </if>
+
+                <if test="prcsSttsCd != null and prcsSttsCd == '03'.toString()">
+                    , MG_RTRN_RSN_CD = #{mgRtrnRsnCd}
+                    , REFS_YN = 'Y'
+                </if>
+        WHERE 1 = 1
+          AND RQST_NO = #{rqstNo}                         /* 신청번호 !== 신청번호 ==!*/
+    </update>
+
+    <!--
+    Enregistrer l'amende dans la table de l'avis de paiement !==고지테이블 벌금 등록한다==!
+    -->
+    <insert id="insertColNtfcNo" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /** colFineMgmt_insertColNtfcNo */
+        with upsert as
+        (
+            UPDATE TB_COLI_NTFC SET
+                    CSTM_CD = #{cstmCd}
+                    , NTFC_PT_CD = #{ntfcPtCd}
+                    , NTFC_DT = TO_CHAR(TO_DATE(#{ntfcDt},'DD/MM/YYYY'),'YYYYMMDD')
+                    , PAY_TMLM_DT = TO_CHAR(TO_DATE(#{payTmlmDt},'DD/MM/YYYY'),'YYYYMMDD')
+                    , TXPR_IDFY_NO_TP_CD = #{txprIdfyNoTpCd}
+                    , TXPR_IDFY_NO = #{txprIdfyNo}
+                    , TXPR_NM = #{txprNm}
+                    , TAMT = #{tamt}
+                    , DRWB_AMT = #{drwbAmt}
+                    , REFF_NO = #{reffNo}
+                    , NTFC_PRCS_STTS_CD = #{ntfcPrcsSttsCd}
+                    , DEL_YN = 'N'
+                    , LAST_CHPR_ID = #{lastChprId}
+                    , LAST_CHG_DTTM = SYSTIMESTAMP
+                    , DEPT_CD = #{deptCd}
+                    , TXRE_DEPT_CD  = NVL(FN_GET_TXRE_DEPT_CD(#{deptCd},#{ntfcPtCd}) ,#{deptCd})
+            WHERE NTFC_NO = #{ntfcNo}
+                returning *
+        )
+        INSERT INTO TB_COLI_NTFC
+        (
+            NTFC_NO
+            , CSTM_CD
+            , NTFC_PT_CD
+            , NTFC_DT
+            , PAY_TMLM_DT
+            , TXPR_IDFY_NO_TP_CD
+            , TXPR_IDFY_NO
+            , TXPR_NM
+            , TAMT
+            , DRWB_AMT
+            , REFF_NO
+            , NTFC_PRCS_STTS_CD
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+            , DEPT_CD
+            , RCVE_YN
+            , DLPY_YN
+            , DLPY_INST_ADJU_YN
+            , NTFC_DIVD_YN
+            , RECP_PBLS_YN
+            , CNCL_YN
+            , PAY_TMLM_XTNS_YN
+            , TXRE_DEPT_CD                  /** Code de recette !== 세입부서코드 ==! */
+        )
+        SELECT
+            #{ntfcNo}
+            , #{cstmCd}
+            , #{ntfcPtCd}
+            , TO_CHAR(TO_DATE(#{ntfcDt},'DD/MM/YYYY'),'YYYYMMDD')
+            , TO_CHAR(TO_DATE(#{payTmlmDt},'DD/MM/YYYY'),'YYYYMMDD')
+            , #{txprIdfyNoTpCd}
+            , #{txprIdfyNo}
+            , #{txprNm}
+            , #{tamt}
+            , #{drwbAmt}
+            , #{reffNo}
+            , #{ntfcPrcsSttsCd}
+            , 'N'
+            , #{frstRegstId}
+            , SYSTIMESTAMP
+            , #{lastChprId}
+            , SYSTIMESTAMP
+            , #{deptCd}
+            , 'N'
+            , 'N'
+            , 'N'
+            , 'N'
+            , 'N'
+            , 'N'
+            , 'N'
+            , NVL(FN_GET_TXRE_DEPT_CD(#{deptCd},#{ntfcPtCd}) ,#{deptCd})  /** Code de recette !== 세입부서코드 ==! */
+        WHERE NOT EXISTS(select * from upsert)
+    </insert>
+
+
+
+    <!--
+    벌금 등록한다 !==벌금 등록한다==!
+    -->
+    <insert id="insertFineMgmt" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /** colFineMgmt_insertFineMgmt */
+        with upsert as
+        (
+            UPDATE TB_COLI_DPSIT_NTFC SET
+                LAST_CHPR_ID = #{lastChprId}
+                , LAST_CHG_DTTM = SYSTIMESTAMP
+                , DEL_YN = 'N'
+                , CSTM_CD = #{cstmCd}
+                , TXPR_IDFY_NO_TP_CD = #{txprIdfyNoTpCd}
+                , TXPR_IDFY_NO_TP_NM = (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COL_0006' AND LANG_CD = #{langCd} AND CD_VDVAL = #{txprIdfyNoTpCd})
+                , TXPR_IDFY_NO = #{txprIdfyNo}
+                , TXPR_NM = #{txprNm}
+                , DPSTM_PT_CD = #{finePtCd}
+                , REFF_NO = #{reffNo}
+                , DPSIT_AMT = #{dpsitAmt}
+                , RGSR_RSN_CN = #{rgsrRsnCn}
+                , DEPT_CD = #{deptCd}
+            WHERE NTFC_NO = #{ntfcNo}
+                returning *
+        )
+        INSERT INTO TB_COLI_DPSIT_NTFC
+        (
+            NTFC_NO
+            , CSTM_CD
+            , TXPR_IDFY_NO_TP_CD
+            , TXPR_IDFY_NO_TP_NM
+            , TXPR_IDFY_NO
+            , TXPR_NM
+            , DPSTM_PT_CD
+            , REFF_NO
+            , DPSIT_AMT
+            , RGSR_RSN_CN
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_CHG_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+            , DEPT_CD
+        )
+        SELECT
+            #{ntfcNo}
+            , #{cstmCd}
+            , #{txprIdfyNoTpCd}
+            , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COL_0006' AND LANG_CD = #{langCd} AND CD_VDVAL = #{txprIdfyNoTpCd})
+            , #{txprIdfyNo}
+            , #{txprNm}
+            , #{finePtCd}
+            , #{reffNo}
+            , #{dpsitAmt}
+            , #{rgsrRsnCn}
+            , 'N'
+            , #{frstRegstId}
+            , SYSTIMESTAMP
+            , #{lastChprId}
+            , SYSTIMESTAMP
+            , #{deptCd}
+        WHERE NOT EXISTS(select * from upsert)
+    </insert>
+
+    <!--
+    고지테이블 고지번호 조회 !==고지테이블 고지번호 조회==!
+    -->
+    <select id="selectColNtfcNoYnCnt" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo" resultType="java.lang.Integer">
+        /** colFineMgmt_selectColNtfcNoYnCnt */
+        SELECT
+            COUNT(1) AS CNT
+        FROM  TB_COLI_NTFC
+        WHERE DEL_YN = 'N'
+          AND NTFC_NO = #{ntfcNo}
+    </select>
+
+    <!--
+    벌금 고지번호 조회 !==벌금 고지번호 조회==!
+    -->
+    <select id="selectFineNtfcNoYnCnt" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo" resultType="java.lang.Integer">
+        /** colFineMgmt_selectFineNtfcNoYnCnt */
+        SELECT
+            COUNT(1) AS CNT
+        FROM  TB_COLI_DPSIT_NTFC
+        WHERE DEL_YN = 'N'
+          AND NTFC_NO = #{ntfcNo}
+    </select>
+
+    <!--
+    Créer un numéro d'avis de paiement !==고지번호 생성==!
+    -->
+    <select id="selectColNtfcNoCreate" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo" resultType="java.lang.String">
+        /** colFineMgmt_selectColNtfcNoCreate */
+        SELECT #{cstmCd}||TO_CHAR(SYSTIMESTAMP,'YYYY')||'AMD'||LPAD(NVL(MAX(TO_NUMBER(SUBSTR(NTFC_NO, 13, 6))),0)+1, 6, '0')||'I' FROM TB_COLI_NTFC
+    </select>
+
+    <!--
+    벌금 삭제 처리!==벌금 삭제 처리==!
+    -->
+    <update id="deleteFineMgmt" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /** colFineMgmt_deleteFineMgmt */
+        UPDATE  TB_COLI_DPSIT_NTFC SET
+            DEL_YN = 'Y'
+            , LAST_CHPR_ID = #{lastChprId}
+            , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE  DEL_YN = 'N'                                                  /** Suppression ON !== 삭제여부 ==! */
+          AND NTFC_NO = #{ntfcNo}
+    </update>
+
+    <!--
+    Traitement de la suppression de la table de l'avis de paiement !==고지테이블 삭제 처리==!
+    -->
+    <update id="deleteColNtfcNo" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /** colFineMgmt_deleteColNtfcNo */
+        UPDATE  TB_COLI_NTFC SET
+            DEL_YN = 'Y'
+            , LAST_CHPR_ID = #{lastChprId}
+            , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE  DEL_YN = 'N'                                                  /** Suppression ON !== 삭제여부 ==! */
+          AND NTFC_NO = #{ntfcNo}
+    </update>
+
+
+
+
+
+
+    <!--
+    Voir la liste des Gérer les amendes !== 벌금관리 목록 조회 ==!
+    -->
+    <select id="ColFineMgmt_selectColFineMgmtList" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo" resultType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /* ColFineMgmt_selectColFineMgmtList */
+        <include refid="pagination.header" ></include>
+        SELECT
+            A.FINE_LVY_RQST_NO           /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+            , A.CSTM_CD                    /** Code du bureau !== 세관코드 ==! */
+            , FN_GET_ORGN_NM(A.CSTM_CD) AS CSTM_NM                    /** Code du bureau !== 세관코드 ==! */
+            , A.TXPR_IDFY_NO_TP_CD         /** Code de caterogie de NIU !== 납세자식별번호구분코드 ==! */
+            , A.TXPR_IDFY_NO_TP_NM         /** Nom du catégorie de NIF !== 납세자식별번호구분명 ==! */
+            , A.TXPR_IDFY_NO               /** NIU !== 납세자식별번호 ==! */
+            , A.TXPR_NM                    /** Nom du responsable financier !== 납세자명 ==! */
+            , A.REFF_NO_PT_CD              /** Code de type de numero de reference !== 참조번호유형코드 ==! */
+            , A.REFF_NO_PT_TP_NM           /** Nom du type de numéro de référence !== 참조번호유형구분명 ==! */
+            , A.REFF_NO                    /** N° de reference !== 참조번호 ==! */
+            , A.DCER_CD                    /** Code du déclarant !== 신고인코드 ==! */
+            , A.FINE_AMT AS OFINE_AMT      /** Montant d'amende !== 원벌금금액 ==! */
+            , 0 AS ADJU_FINE_AMT  /** Montant d'amende !== 조정된벌금금액 ==! */
+            , A.FINE_AMT                   /** Montant d'amende !== 벌금금액 ==! */
+            , A.FINE_EUR_AMT               /** Montant d'amende en EUR !== 벌금EUR금액 ==! */
+            , A.FINE_USD_AMT               /** Montant d'amende en USD !== 벌금USD금액 ==! */
+            , A.FINE_RGSR_RSN_CN           /** Contenu du motif d'enregistrement d'amende !== 벌금등록사유내용 ==! */
+            , A.PRNG_INFM_TRGT_YN          /** Notification necessaire (ON) !== 예정통보대상여부 ==! */
+            , TO_CHAR(TO_DATE(A.RQST_DT,'YYYYMMDD'),'DD/MM/YYYY') RQST_DT                    /** Date de demande !== 신청일자 ==! */
+            , A.REPN_ID                    /** ID de la personne demandant !== 신청자ID ==! */
+            , A.APRV_ID                    /** ID d'approbation  !== 결재ID ==! */
+            , A.PYR_ACPE_YN                /** Accepte par le contribuable (ON) !== 납부자수용여부 ==! */
+            , A.PYR_ACPE_DTTM              /** Moment d'acceptation par le contribuable !== 납부자수용일시 ==! */
+            , A.PYR_OPIN_YN                /** Opinion enregistree par le contribuable (ON) !== 납부자의견여부 ==! */
+            , A.ATCH_FILE_ID               /** Date et heure de modification finale !== 첨부파일ID ==! */
+            , A.DEL_YN                     /** Suppression ON !== 삭제여부 ==! */
+            , A.FRST_REGST_ID              /** ID du premier enregistrant  !== 최초등록자ID ==! */
+            , A.FRST_RGSR_DTTM             /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+            , A.LAST_CHPR_ID               /** ID du modificateur final !== 최종변경자ID ==! */
+            , A.LAST_CHG_DTTM              /** Date et heure de modification finale !== 최종변경일시 ==! */
+            , B.NTFC_NO                    /** N° d'avis !== 고지번호 ==! */
+            , C.APRV_PRCS_STTS_CD          /** Code de statut du traitement d'approbation !== 결재처리상태코드 ==! */
+            , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = C.APRV_RQST_EMP_PBSR_NO) AS REPN    /** N° de matricule solde du demandeur d'approbation !== 결재신청직원공무원번호 ==! */
+            , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = C.APRV_EMP_PBSR_NO) AS APRV_APPN    /** N° de matricule solde de l'approbateur !== 결재직원공무원번호 ==! */
+            , TO_CHAR(C.APRV_PRCS_DTTM, 'DD/MM/YYYY') APRV_PRCS_DTTM        /** Date et heure du traitement de l'approbation !== 결재처리일시 ==! */
+        FROM   TB_COLI_FINE_RQST A
+                , TB_COLI_FINE B
+                , (
+                    SELECT
+                    G.APRV_ID                    /** ID d'approbation  !== 결재ID ==! */
+                    , G.APRV_RQST_EMP_PBSR_NO      /** N° de matricule solde du demandeur d'approbation !== 결재신청직원공무원번호 ==! */
+                    , H.APRV_SRNO                  /** N° de série de l'approbation !== 결재일련번호 ==! */
+                    , G.APRV_PRCS_STTS_CD          /** Code de statut du traitement d'approbation !== 결재처리상태코드 ==! */
+                    , H.APRV_EMP_PBSR_NO           /** N° de matricule solde de l'approbateur !== 결재직원공무원번호 ==! */
+                    , H.APRV_PRCS_DTTM             /** Date et heure du traitement de l'approbation !== 결재처리일시 ==! */
+                    FROM   TB_POTI_APRV G
+                    , TB_POTI_APRV_D H
+                    WHERE  G.APRV_ID = H.APRV_ID        /** ID d'approbation  !== 결재ID ==! */
+                    AND    G.DEL_YN = 'N'
+                    AND    H.APRV_SRNO = (SELECT MAX(APRV_SRNO) FROM TB_POTI_APRV_D WHERE APRV_ID = G.APRV_ID)
+                ) C
+        WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+        AND  A.DEL_YN = B.DEL_YN(+)
+        AND  A.FINE_LVY_RQST_NO = B.FINE_LVY_RQST_NO(+)
+        AND  A.APRV_ID = C.APRV_ID(+)
+        <if test="aprvPrcsSttsCd != null and aprvPrcsSttsCd != ''">
+            AND  C.APRV_PRCS_STTS_CD = #{aprvPrcsSttsCd}
+        </if>
+        <if test="repn != null and repn != ''">
+            AND  C.APRV_RQST_EMP_PBSR_NO = #{repn}
+        </if>
+        <if test="aprvAppn != null and aprvAppn != ''">
+            AND  C.APRV_EMP_PBSR_NO = #{aprvAppn}
+        </if>
+        <if test="aprvDtTo != null and aprvDtTo != '' and aprvDtFrom != null and aprvDtFrom != ''">
+            AND  C.APRV_PRCS_DTTM BETWEEN TO_DATE(#{aprvDtFrom},'DD/MM/YYYY')+000001 AND TO_DATE(#{aprvDtTo},'DD/MM/YYYY')+235959        /** Date et heure du traitement de l'approbation !== 결재처리일시 ==! */
+        </if>
+        <if test='searchAllYn == null or searchAllYn !="Y" '>
+<!--             AND  A.CSTM_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = (SELECT ORGN_MGMT_CD FROM TB_POTI_EMP WHERE PBSR_NO  = #{sessPbsrNo})) -->
+            AND  A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = (SELECT ORGN_MGMT_CD FROM TB_POTI_EMP WHERE PBSR_NO  = #{sessPbsrNo}))
+        </if>
+        <if test="cstmCd != null and cstmCd != ''">
+            AND  A.CSTM_CD = #{cstmCd}
+        </if>
+        <if test="rqstDtTo != null and rqstDtTo != '' and rqstDtFrom != null and rqstDtFrom != ''">
+            AND A.RQST_DT BETWEEN TO_CHAR(TO_DATE(#{rqstDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{rqstDtTo},'DD/MM/YYYY'),'YYYYMMDD')        /** Date de demande !== 신청일자 ==! */
+        </if>
+        <if test="txprIdfyNoTpCd != null and txprIdfyNoTpCd != ''">
+            AND  A.TXPR_IDFY_NO_TP_CD = #{txprIdfyNoTpCd}    /** Code de caterogie de NIU !== 납세자식별번호구분코드 ==! */
+        </if>
+        <if test="txprIdfyNo != null and txprIdfyNo != ''">
+            AND  A.TXPR_IDFY_NO LIKE #{txprIdfyNo} || '%'              /** NIU !== 납세자식별번호 ==! */
+        </if>
+        <if test="aprvId != null and aprvId != ''">
+            AND  A.APRV_ID = #{aprvId}                                 /** ID d'approbation  !== 결재ID ==! */
+        </if>
+        <if test="fineLvyRqstNo != null and fineLvyRqstNo != ''">
+            AND  A.FINE_LVY_RQST_NO LIKE #{fineLvyRqstNo} || '%'       /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+        </if>
+        <if test="reffNoPtCd != null and reffNoPtCd != ''">
+            AND  A.REFF_NO_PT_CD = #{reffNoPtCd}       /** Code de type de numero de reference !== 참조번호유형코드 ==! */
+        </if>
+        <if test="reffNo != null and reffNo != ''">
+            AND  (A.REFF_NO LIKE #{reffNo} || '%' OR A.REFF_NO LIKE REPLACE(#{reffNo},'-','') || '%')       /** N° de référence !== 참조번호 ==! */
+        </if>
+        <if test="ntfcNo != null and ntfcNo != ''">
+            AND  B.NTFC_NO LIKE #{ntfcNo} || '%'       /** N° d'avis !== 고지번호 ==! */
+        </if>
+        ORDER BY A.FRST_RGSR_DTTM DESC
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <!--
+    Consulter la liste des motifs des amendes dans la gestion des amendes !== 벌금관리 벌금근거목록 조회 ==!
+    -->
+    <select id="selectColFineMgmtBssList" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo" resultType="alpass.ipt.col.fine.vo.ColFineMgmtBssRqstVo">
+        /* ColFineMgmt_selectColFineMgmtBssList */
+        SELECT
+            A.FINE_LVY_RQST_NO           /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+             , A.VLTN_CD                    /** Code d'infraction !== 위반코드 ==! */
+             , B.VLTN_CD_NM                 /** Libellé infraction !== 위반코드명 ==! */
+             , B.VLTN_CD_DESC               /** Qualification de l'infraction !== 위반코드설명 ==! */
+             , B.FINE_TAX_CD                /** Code de taxe concernant les amendes !== 벌금세금코드 ==! */
+             , A.SORT_ORDR                  /** Ordre d'alignement !== 정렬순서 ==! */
+             , A.FINE_TAX_CD                /** Code de taxe concernant les amendes !== 벌금세금코드 ==! */
+             , A.LWLM_AMT                   /** Montant plancher !== 하한금액 ==! */
+             , A.UPLM_AMT                   /** Montant plafonne !== 상한금액 ==! */
+             , A.FINE_AMT                   /** Montant d'amende !== 벌금금액 ==! */
+             , A.BSOP_TP_CD                 /** Code de catégorie de service !== 업무구분코드 ==! */
+             , A.DEL_YN                     /** Suppression ON !== 삭제여부 ==! */
+             , A.FRST_REGST_ID              /** ID du premier enregistrant  !== 최초등록자ID ==! */
+             , A.FRST_RGSR_DTTM             /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+             , A.LAST_CHPR_ID               /** ID du modificateur final !== 최종변경자ID ==! */
+             , A.LAST_CHG_DTTM              /** Date et heure de modification finale !== 최종변경일시 ==! */
+             , ROW_NUMBER() OVER(ORDER BY A.SORT_ORDR) AS RNUM
+        FROM  TB_COLI_FINE_BSS_RQST A, TB_COLI_VLTN_CD B
+        WHERE  A.DEL_YN = 'N'                              /** Suppression ON !== 삭제여부 ==! */
+          AND  A.DEL_YN = B.DEL_YN
+          AND  A.VLTN_CD = B.VLTN_CD
+          AND  A.FINE_LVY_RQST_NO = #{fineLvyRqstNo}       /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+        ORDER  BY A.SORT_ORDR
+    </select>
+
+    <!--
+    Consulter l'historique de la liste des motifs des amendes !== 벌금관리 벌금근거목록 히스토리 조회 ==!
+    -->
+    <select id="selectColFineMgmtBssHistList" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo" resultType="alpass.ipt.col.fine.vo.ColFineMgmtBssRqstVo">
+        /* ColFineMgmt_selectColFineMgmtBssHistList */
+        SELECT
+            A.FINE_LVY_RQST_NO           /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+             , A.VLTN_CD                    /** Code d'infraction !== 위반코드 ==! */
+             , B.VLTN_CD_NM                 /** Libellé infraction !== 위반코드명 ==! */
+             , B.VLTN_CD_DESC               /** Qualification de l'infraction !== 위반코드설명 ==! */
+             , B.FINE_TAX_CD                /** Code de taxe concernant les amendes !== 벌금세금코드 ==! */
+             , A.SORT_ORDR                  /** Ordre d'alignement !== 정렬순서 ==! */
+             , A.FINE_TAX_CD                /** Code de taxe concernant les amendes !== 벌금세금코드 ==! */
+             , A.LWLM_AMT                   /** Montant plancher !== 하한금액 ==! */
+             , A.UPLM_AMT                   /** Montant plafonne !== 상한금액 ==! */
+             , A.FINE_AMT                   /** Montant d'amende !== 벌금금액 ==! */
+             , A.BSOP_TP_CD                 /** Code de catégorie de service !== 업무구분코드 ==! */
+             , A.DEL_YN                     /** Suppression ON !== 삭제여부 ==! */
+             , A.FRST_REGST_ID              /** ID du premier enregistrant  !== 최초등록자ID ==! */
+             , A.FRST_RGSR_DTTM             /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+             , A.LAST_CHPR_ID               /** ID du modificateur final !== 최종변경자ID ==! */
+             , A.LAST_CHG_DTTM              /** Date et heure de modification finale !== 최종변경일시 ==! */
+             , ROW_NUMBER() OVER(ORDER BY A.SORT_ORDR) AS RNUM
+        FROM  TB_COLI_FINE_BSS_RQST_HIST A, TB_COLI_VLTN_CD B
+        WHERE  A.DEL_YN = 'N'                              /** Suppression ON !== 삭제여부 ==! */
+          AND  A.DEL_YN = B.DEL_YN
+          AND  A.VLTN_CD = B.VLTN_CD
+          AND  A.FINE_LVY_RQST_NO = #{fineLvyRqstNo}       /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+          AND  A.RQST_DGCNT = ( #{opinDgcnt} + 1 )
+        ORDER  BY A.SORT_ORDR
+    </select>
+
+
+    <!--
+    Enregistrement de la Gérer les amendes !== 벌금관리 등록 ==!
+    -->
+    <insert id="insertColFineMgmt" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /* ColFineMgmt_insertColFineMgmt */
+        INSERT INTO TB_COLI_FINE_RQST
+        (
+            FINE_LVY_RQST_NO             /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+        , CSTM_CD                      /** Code du bureau !== 세관코드 ==! */
+        , TXPR_IDFY_NO_TP_CD           /** Code de caterogie de NIU !== 납세자식별번호구분코드 ==! */
+        , TXPR_IDFY_NO_TP_NM           /** Nom du catégorie de NIF !== 납세자식별번호구분명 ==! */
+        , TXPR_IDFY_NO                 /** NIU !== 납세자식별번호 ==! */
+        , TXPR_NM                      /** Nom du responsable financier !== 납세자명 ==! */
+        , REFF_NO_PT_CD                /** Code de type de numero de reference !== 참조번호유형코드 ==! */
+        , REFF_NO_PT_TP_NM             /** Nom du type de numéro de référence !== 참조번호유형구분명 ==! */
+        , REFF_NO                      /** N° de reference !== 참조번호 ==! */
+        , REFF_NO_DT                   /** Date du titre de perception !== 결제 요청서 일자 ==! */
+        , DCER_CD                      /** Code du déclarant !== 신고인코드 ==! */
+        , FINE_AMT                     /** Montant d'amende !== 벌금금액 ==! */
+        , FINE_EUR_AMT                 /** Montant d'amende en EUR !== 벌금EUR금액 ==! */
+        , FINE_USD_AMT                 /** Montant d'amende en USD !== 벌금USD금액 ==! */
+        , FINE_RGSR_RSN_CN             /** Contenu du motif d'enregistrement d'amende !== 벌금등록사유내용 ==! */
+        , PRNG_INFM_TRGT_YN            /** Notification necessaire (ON) !== 예정통보대상여부 ==! */
+        , RQST_DT                      /** Date de demande !== 신청일자 ==! */
+        , REPN_ID                      /** ID de la personne demandant !== 신청자ID ==! */
+        , APRV_ID                      /** ID d'approbation  !== 결재ID ==! */
+        , PYR_ACPE_YN                  /** Accepte par le contribuable (ON) !== 납부자수용여부 ==! */
+        , PYR_ACPE_DTTM                /** Moment d'acceptation par le contribuable !== 납부자수용일시 ==! */
+        , PYR_OPIN_YN                  /** Opinion enregistree par le contribuable (ON) !== 납부자의견여부 ==! */
+        , ATCH_FILE_ID                 /** Date et heure de modification finale !== 첨부파일ID ==! */
+        , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+        , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+        , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+        , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+        , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        , DEPT_CD
+        )
+        VALUES
+            (
+                #{fineLvyRqstNo}             /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+            , #{cstmCd}                    /** Code du bureau !== 세관코드 ==! */
+            , #{txprIdfyNoTpCd}            /** Code de caterogie de NIU !== 납세자식별번호구분코드 ==! */
+            , #{txprIdfyNoTpNm}            /** Nom du catégorie de NIF !== 납세자식별번호구분명 ==! */
+            , #{txprIdfyNo}                /** NIU !== 납세자식별번호 ==! */
+            , #{txprNm}                    /** Nom du responsable financier !== 납세자명 ==! */
+            , #{reffNoPtCd}                /** Code de type de numero de reference !== 참조번호유형코드 ==! */
+            , #{reffNoPtTpNm}              /** Nom du type de numéro de référence !== 참조번호유형구분명 ==! */
+            , #{reffNo}                    /** N° de reference !== 참조번호 ==! */
+            , TO_CHAR(TO_DATE(#{reffNoDt}, 'DD/MM/YYYY'), 'YYYYMMDD')       /** Date du titre de perception !== 결제 요청서 일자 ==! */
+            , #{dcerCd}                    /** Code du déclarant !== 신고인코드 ==! */
+            , #{fineAmt}                   /** Montant d'amende !== 벌금금액 ==! */
+            , (
+                    SELECT
+                        TRUNC(#{fineAmt} / B.BUY_AMT) AS BUY_AMT
+                    FROM   TB_COM_FXRT A, TB_COM_FXRT_D B
+                    WHERE A.RGSR_DT = B.RGSR_DT
+                      AND   A.SRNO = B.SRNO
+                      AND   A.DEL_YN = 'N'
+                      AND   B.DEL_YN = 'N'
+                      AND   A.XTRN_OFR_YN = 'Y'
+                      AND   TO_CHAR(SYSDATE, 'YYYYMMDD') BETWEEN A.APLY_BGN_DT AND NVL(A.APLY_END_DT, '99991231')
+                      AND   CURR_CD = 'EUR'
+                      AND   B.FXRT_TP_CD = '01'
+                )                /** Montant d'amende en EUR !== 벌금EUR금액 ==! */
+            , (
+                    SELECT
+                        TRUNC(#{fineAmt} / B.BUY_AMT) AS BUY_AMT
+                    FROM   TB_COM_FXRT A, TB_COM_FXRT_D B
+                    WHERE A.RGSR_DT = B.RGSR_DT
+                      AND   A.SRNO = B.SRNO
+                      AND   A.DEL_YN = 'N'
+                      AND   B.DEL_YN = 'N'
+                      AND   A.XTRN_OFR_YN = 'Y'
+                      AND   TO_CHAR(SYSDATE, 'YYYYMMDD') BETWEEN A.APLY_BGN_DT AND NVL(A.APLY_END_DT, '99991231')
+                      AND   CURR_CD = 'USD'
+                      AND   B.FXRT_TP_CD = '01'
+                )                /** Montant d'amende en USD !== 벌금USD금액 ==! */
+            , #{fineRgsrRsnCn}             /** Contenu du motif d'enregistrement d'amende !== 벌금등록사유내용 ==! */
+            , #{prngInfmTrgtYn}            /** Notification necessaire (ON) !== 예정통보대상여부 ==! */
+            , TO_CHAR(SYSDATE,'YYYYMMDD')  /** Date de demande !== 신청일자 ==! */
+            , #{repnId}                    /** ID de la personne demandant !== 신청자ID ==! */
+            , #{aprvId}                    /** ID d'approbation  !== 결재ID ==! */
+            , 'Y'                          /** Accepte par le contribuable (ON) !== 납부자수용여부 ==! */
+            , SYSTIMESTAMP                 /** Moment d'acceptation par le contribuable !== 납부자수용일시 ==! */
+            , NULL                         /** Opinion enregistree par le contribuable (ON) !== 납부자의견여부 ==! */
+            , #{atchFileId}                /** Date et heure de modification finale !== 첨부파일ID ==! */
+            , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+            , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+            , #{deptCd}
+            )
+    </insert>
+
+
+    <!--
+    Modifier la Gérer les amendes !== 벌금관리 수정 ==!
+    세관코드(CSTM_CD)는 수정대상 항목이 아님 수정 쿼리에서 삭제함. (2019.12.26)
+    -->
+    <update id="updateColFineMgmt" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /* ColFineMgmt_updateColFineMgmt */
+        UPDATE  TB_COLI_FINE_RQST SET
+        <trim prefixOverrides="," >
+            TXPR_IDFY_NO_TP_CD = #{txprIdfyNoTpCd}      /** Code de caterogie de NIU !== 납세자식별번호구분코드 ==! */
+            , TXPR_IDFY_NO_TP_NM = #{txprIdfyNoTpNm}      /** Nom du catégorie de NIF !== 납세자식별번호구분명 ==! */
+            , TXPR_IDFY_NO = #{txprIdfyNo}                /** NIU !== 납세자식별번호 ==! */
+            , TXPR_NM = #{txprNm}                         /** Nom du responsable financier !== 납세자명 ==! */
+            , REFF_NO_PT_CD = #{reffNoPtCd}               /** Code de type de numero de reference !== 참조번호유형코드 ==! */
+            , REFF_NO_PT_TP_NM = #{reffNoPtTpNm}          /** Nom du type de numéro de référence !== 참조번호유형구분명 ==! */
+            , REFF_NO = #{reffNo}                         /** N° de reference !== 참조번호 ==! */
+            , DCER_CD = #{dcerCd}                         /** Code du déclarant !== 신고인코드 ==! */
+            , FINE_AMT = #{fineAmt}                       /** Montant d'amende !== 벌금금액 ==! */
+            , FINE_EUR_AMT = (
+                                SELECT
+                                TRUNC(#{fineAmt} / B.FXRT) AS FXRT
+                                FROM   TB_COM_FXRT A, TB_COM_FXRT_D B
+                                WHERE A.RGSR_DT = B.RGSR_DT
+                                AND   A.SRNO = B.SRNO
+                                AND   A.DEL_YN = 'N'
+                                AND   B.DEL_YN = 'N'
+                                AND   A.XTRN_OFR_YN = 'Y'
+                                AND   TO_CHAR(SYSDATE, 'YYYYMMDD') BETWEEN A.APLY_BGN_DT AND NVL(A.APLY_END_DT, '99991231')
+                                AND   CURR_CD = 'EUR'
+                                )                /** Montant d'amende en EUR !== 벌금EUR금액 ==! */
+            , FINE_USD_AMT = (
+                                SELECT
+                                TRUNC(#{fineAmt} / B.FXRT) AS FXRT
+                                FROM   TB_COM_FXRT A, TB_COM_FXRT_D B
+                                WHERE A.RGSR_DT = B.RGSR_DT
+                                AND   A.SRNO = B.SRNO
+                                AND   A.DEL_YN = 'N'
+                                AND   B.DEL_YN = 'N'
+                                AND   A.XTRN_OFR_YN = 'Y'
+                                AND   TO_CHAR(SYSDATE, 'YYYYMMDD') BETWEEN A.APLY_BGN_DT AND NVL(A.APLY_END_DT, '99991231')
+                                AND   CURR_CD = 'USD'
+                                )                /** Montant d'amende en USD !== 벌금USD금액 ==! */
+            , FINE_RGSR_RSN_CN = #{fineRgsrRsnCn}         /** Contenu du motif d'enregistrement d'amende !== 벌금등록사유내용 ==! */
+            , PRNG_INFM_TRGT_YN = #{prngInfmTrgtYn}       /** Notification necessaire (ON) !== 예정통보대상여부 ==! */
+            , ATCH_FILE_ID = #{atchFileId}                /** Date et heure de modification finale !== 첨부파일ID ==! */
+            , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+            , DEPT_CD = #{deptCd}
+        </trim>
+        WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+        AND  FINE_LVY_RQST_NO = #{fineLvyRqstNo}         /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+    </update>
+
+    <!--
+    Modification du contenu de la réponse aux commentaires sur l'amende !== 벌금의견 답변내용 수정 ==!
+    -->
+    <update id="updateColFineMgmtOpinWnsw" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /* ColFineMgmt_updateColFineMgmtOpinWnsw */
+        UPDATE  TB_COLI_FINE_OBJT_LDGG SET
+            ANSW_CN = #{answCn}                         /** Contenu de la réponse !== 답변내용 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+          AND  FINE_LVY_RQST_NO = #{fineLvyRqstNo}         /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+          AND  OPIN_DGCNT = (SELECT MAX(OPIN_DGCNT) FROM TB_COLI_FINE_OBJT_LDGG WHERE DEL_YN = 'N' AND FINE_LVY_RQST_NO = #{fineLvyRqstNo})
+    </update>
+
+
+    <!--
+    Supprimer la Gérer les amendes !== 벌금관리 삭제 ==!
+    -->
+    <update id="deleteColFineMgmt" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /* ColFineMgmt_deleteColFineMgmt */
+        UPDATE  TB_COLI_FINE_RQST SET
+            DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+                                    ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+                                    ,  LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+          AND  FINE_LVY_RQST_NO = #{fineLvyRqstNo}           /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+    </update>
+
+
+    <!--
+    Suppression de To-do de la gestion des amendes
+    !== POTI_TODO 벌금관리 할일삭제 ==!
+           (KIM SUN GOO)
+           2020.02.06
+   -->
+    <update id="deletePotiTodoFineMgmt" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /* ColFineMgmt_deletePotiTodoFineMgmt sg0730 */
+        UPDATE  TB_POTI_TODO SET
+            DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+                               ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+                               ,  LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+          AND  CHPN_ID = #{sessPbsrNo}           /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+          AND  TODO_REFF_NO = #{fineLvyRqstNo}
+    </update>
+
+
+    <!--
+    Supression de la demande de motifs des amendes dans la gestion des amendes !== 벌금관리의 벌금근거신청 삭제 ==!
+    -->
+    <update id="deleteColFineBssRqst" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /* ColFineBssRqst_deleteColFineBssRqst */
+        UPDATE  TB_COLI_FINE_BSS_RQST SET
+            DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+            ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+            ,  LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+          AND  FINE_LVY_RQST_NO = #{fineLvyRqstNo}           /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+    </update>
+
+    <!--
+    Enregistrer la demande de motifs des amendes !== 벌금근거요청 등록 ==!
+    -->
+    <insert id="insertColFineMgmtBssRqst" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtBssRqstVo">
+        /* ColFineMgmt_insertColFineMgmtBssRqst */
+        INSERT INTO TB_COLI_FINE_BSS_RQST
+        (
+            FINE_LVY_RQST_NO             /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+        , VLTN_CD                      /** Code d'infraction !== 위반코드 ==! */
+        , SORT_ORDR                    /** Ordre d'alignement !== 정렬순서 ==! */
+        , FINE_TAX_CD                  /** Code de taxe concernant les amendes !== 벌금세금코드 ==! */
+        , LWLM_AMT                     /** Montant plancher !== 하한금액 ==! */
+        , UPLM_AMT                     /** Montant plafonne !== 상한금액 ==! */
+        , FINE_AMT                     /** Montant d'amende !== 벌금금액 ==! */
+        , BSOP_TP_CD                   /** Code de catégorie de service !== 업무구분코드 ==! */
+        , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+        , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+        , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+        , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+        , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        )
+        SELECT
+            #{fineLvyRqstNo}             /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+             , #{vltnCd}                    /** Code d'infraction !== 위반코드 ==! */
+             , #{sortOrdr}                  /** Ordre d'alignement !== 정렬순서 ==! */
+             , FINE_TAX_CD                  /** Code de taxe concernant les amendes !== 벌금세금코드 ==! */
+             , LWLM_AMT                     /** Montant plancher !== 하한금액 ==! */
+             , UPLM_AMT                     /** Montant plafonne !== 상한금액 ==! */
+             , #{fineAmt}                   /** Montant d'amende !== 벌금금액 ==! */
+             , BSOP_TP_CD                   /** Code de catégorie de service !== 업무구분코드 ==! */
+             , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+             , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+             , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+             , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+             , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+        FROM TB_COLI_VLTN_CD
+        WHERE VLTN_CD = #{vltnCd}
+          AND DEL_YN = 'N'
+    </insert>
+
+
+    <!--
+    Modifier la demande de motifs des amendes !== 벌금근거요청 수정 ==!
+    -->
+    <update id="updateColFineMgmtBssRqst" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtBssRqstVo">
+        /* ColFineMgmt_updateColFineMgmtBssRqst */
+        UPDATE  TB_COLI_FINE_BSS_RQST SET
+        <trim prefixOverrides="," >
+            SORT_ORDR = #{sortOrdr}                     /** Ordre d'alignement !== 정렬순서 ==! */
+            , FINE_TAX_CD = #{fineTaxCd}                  /** Code de taxe concernant les amendes !== 벌금세금코드 ==! */
+            , LWLM_AMT = #{lwlmAmt}                       /** Montant plancher !== 하한금액 ==! */
+            , UPLM_AMT = #{uplmAmt}                       /** Montant plafonne !== 상한금액 ==! */
+            , FINE_AMT = #{fineAmt}                       /** Montant d'amende !== 벌금금액 ==! */
+            , BSOP_TP_CD = #{bsopTpCd}                    /** Code de catégorie de service !== 업무구분코드 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        </trim>
+        WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+        AND  FINE_LVY_RQST_NO = #{fineLvyRqstNo}         /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+        AND  VLTN_CD = #{vltnCd}                         /** Code d'infraction !== 위반코드 ==! */
+    </update>
+
+
+    <!--
+    Supprimer la demande de motifs des amendes !== 벌금근거요청 삭제 ==!
+    -->
+    <delete id="deleteColFineMgmtBssRqst" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /* ColFineMgmt_deleteColFineMgmtBssRqst */
+        DELETE FROM  TB_COLI_FINE_BSS_RQST
+        WHERE  FINE_LVY_RQST_NO = #{fineLvyRqstNo}           /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+    </delete>
+
+
+    <!--
+    Vérification des données redondantes avant l'enregistrement de la table des amendes !== 벌금 테이블 등록 전 중복데이터 체크 ==!
+    -->
+    <select id="selectColFineDupliCnt" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo" resultType="int">
+        /* ColFineMgmt_selectColFineDupliCnt */
+        SELECT COUNT(*) CNT FROM TB_COLI_FINE
+        WHERE DEL_YN = 'N'                                   /** Suppression ON !== 삭제여부 ==! */
+          AND FINE_LVY_RQST_NO = TRIM(#{fineLvyRqstNo})      /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+    </select>
+
+    <!--
+    Enregistrer une table des amendes !== 벌금 테이블 등록 ==!
+    -->
+    <insert id="insertColFine" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /* ColFineMgmt_insertColFine */
+
+        INSERT INTO TB_COLI_FINE
+        (
+          NTFC_NO
+        , CSTM_CD
+        , DEPT_CD
+        , TXPR_IDFY_NO_TP_CD
+        , TXPR_IDFY_NO_TP_NM
+        , TXPR_IDFY_NO
+        , TXPR_NM
+        , REFF_NO_PT_CD
+        , REFF_NO_PT_TP_NM
+        , REFF_NO
+        , REFF_NO_DT
+        , DCER_CD
+        , FINE_AMT
+        , FINE_EUR_AMT
+        , FINE_USD_AMT
+        , FINE_RGSR_RSN_CN
+        , PRNG_INFM_TRGT_YN
+        , RGSR_DT
+        , REGST_ID
+        , FINE_RELE_DT
+        , FINE_RELE_RSN_CN
+        , FINE_CLPN_ID
+        , FINE_LVY_RQST_NO
+        , FINE_RELE_RQST_NO
+        , ATCH_FILE_ID
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM
+        )
+        SELECT
+            #{ntfcNo} AS NTFC_NO
+             , CSTM_CD
+             , DEPT_CD
+             , TXPR_IDFY_NO_TP_CD
+             , TXPR_IDFY_NO_TP_NM
+             , TXPR_IDFY_NO
+             , TXPR_NM
+             , REFF_NO_PT_CD
+             , REFF_NO_PT_TP_NM
+             , REFF_NO
+             , REFF_NO_DT
+             , DCER_CD
+             , FINE_AMT
+             , FINE_EUR_AMT
+             , FINE_USD_AMT
+             , FINE_RGSR_RSN_CN
+             , PRNG_INFM_TRGT_YN
+             , TO_CHAR(SYSDATE,'YYYYMMDD') AS RGSR_DT
+             , #{frstRegstId} AS REGST_ID
+             , '' AS FINE_RELE_DT
+             , '' AS FINE_RELE_RSN_CN
+             , '' AS FINE_CLPN_ID
+             , FINE_LVY_RQST_NO
+             , '' AS FINE_RELE_RQST_NO
+             , ATCH_FILE_ID
+             , 'N' AS DEL_YN
+             , #{frstRegstId} AS FRST_REGST_ID
+             , SYSTIMESTAMP AS FRST_RGSR_DTTM
+             , #{lastChprId} AS LAST_CHPR_ID
+             , SYSTIMESTAMP AS LAST_CHG_DTTM
+        FROM TB_COLI_FINE_RQST
+        WHERE DEL_YN = 'N'
+          AND  FINE_LVY_RQST_NO = #{fineLvyRqstNo}
+    </insert>
+
+    <!--
+    Enregistrer une table de motifs des amendes  !== 벌금근거 테이블 등록 ==!
+    -->
+    <insert id="insertColFineBss" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /* ColFineMgmt_insertColFineBss */
+        INSERT INTO TB_COLI_FINE_BSS
+        SELECT
+            #{ntfcNo}  AS NTFC_NO         /** N° d'avis !== 고지번호 ==! */
+             , A.VLTN_CD                    /** Code d'infraction !== 위반코드 ==! */
+             , A.SORT_ORDR                  /** Ordre d'alignement !== 정렬순서 ==! */
+             , A.FINE_TAX_CD                /** Code de taxe concernant les amendes !== 벌금세금코드 ==! */
+             , A.LWLM_AMT                   /** Montant plancher !== 하한금액 ==! */
+             , A.UPLM_AMT                   /** Montant plafonne !== 상한금액 ==! */
+             , A.FINE_AMT                   /** Montant d'amende !== 벌금금액 ==! */
+             , A.BSOP_TP_CD                 /** Code de catégorie de service !== 업무구분코드 ==! */
+             , A.DEL_YN                     /** Suppression ON !== 삭제여부 ==! */
+             , #{frstRegstId} AS FRST_REGST_ID             /** ID du premier enregistrant  !== 최초등록자ID ==! */
+             , SYSTIMESTAMP AS FRST_RGSR_DTTM              /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+             , #{lastChprId} AS LAST_CHPR_ID               /** ID du modificateur final !== 최종변경자ID ==! */
+             , SYSTIMESTAMP AS LAST_CHG_DTTM               /** Date et heure de modification finale !== 최종변경일시 ==! */
+        FROM  TB_COLI_FINE_BSS_RQST A
+        WHERE  A.DEL_YN = 'N'                              /** Suppression ON !== 삭제여부 ==! */
+          AND  A.FINE_LVY_RQST_NO = #{fineLvyRqstNo}       /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+    </insert>
+
+    <!--
+    Demande d'amende d'approbation (Enregistrement de l'ID de l'approbation) !== 벌금요청 결재요청(결재ID등록) ==!
+    -->
+    <update id="updateColFineMgmtAprvRqst" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        /* ColFineMgmt_updateColFineMgmtAprvRqst */
+        UPDATE  TB_COLI_FINE_RQST SET
+            APRV_ID = #{aprvId}                         /** ID d'approbation  !== 결재ID ==! */
+                                    , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                                    , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+          AND  FINE_LVY_RQST_NO = #{fineLvyRqstNo}         /** N° de demande d'imposition d'amende !== 벌금부과신청번호 ==! */
+    </update>
+
+    <!--
+    !==벌금 고지 생성==! 공통으로 변경
+    -->
+   <!-- <insert id="insertColNtfc" parameterType="alpass.ipt.col.com.vo.ColNtfcVo">
+        /* ColFineMgmt_insertColNtfc */
+       - INSERT INTO TB_COLI_NTFC
+        (
+            NTFC_NO                      /** N° d'avis !== 고지번호 ==! */
+        , CSTM_CD                      /** Code du bureau !== 세관코드 ==! */
+        , NTFC_PT_CD                   /** Code de type d'avis !== 고지유형코드 ==! */
+        , NTFC_DT                      /** Date de notification !== 고지일자 ==! */
+        , PAY_TMLM_DT                  /** Délai de paiement !== 납부기한일자 ==! */
+        , DLPY_INST_AMT                /** Montant Des Intérêts De Retard !== 체납이자금액 ==! */
+        , ODLPY_INST_AMT               /** Montant Des Intérêts De Retard Non-Ajusté !== 원체납이자금액 ==! */
+        , FINE_AMT                     /** Montant d'amende !== 벌금금액 ==! */
+        , OTHS_PCFE_AMT                /** Montant des autres frais exigibles !== 기타수수료금액 ==! */
+        , TAMT                         /** Montant total !== 총금액 ==! */
+        , DRWB_AMT                     /** Montant remboursé !== 환급금액 ==! */
+        , TXPR_IDFY_NO_TP_CD           /** Code de catérogie de NIU !== 납세자식별번호구분코드 ==! */
+        , TXPR_IDFY_NO                 /** NIU !== 납세자식별번호 ==! */
+        , TXPR_NM                      /** Nom du responsable financier !== 납세자명 ==! */
+        , REFF_NO_PT_CD                /** Code de type de numéro de référence !== 참조번호유형코드 ==! */
+        , REFF_NO                      /** N° de référence !== 참조번호 ==! */
+        , REFF_NO_DT                   /** Date du titre de perception !== 결제 요청서 일자 ==! */
+        , DCER_CD                      /** Code du déclarant !== 신고인코드 ==! */
+        , RCVE_YN                      /** Encaissé (ON) !== 수납여부 ==! */
+        , PAY_TMLM_XTNS_YN             /** Échéance prorogée (ON) !== 납부기한연장여부 ==! */
+        , DLPY_YN                      /** Paiement retardé (ON) !== 체납여부 ==! */
+        , DLPY_INST_ADJU_YN            /** Intérêts de retard ajustés (O/N) !== 체납이자조정여부 ==! */
+        , NTFC_DIVD_YN                 /** Avis échelonné (ON) !== 고지분할여부 ==! */
+        , RECP_PBLS_YN                 /** Quittance délivrée (ON) !== 영수증발행여부 ==! */
+        , CNCL_YN                      /** Annulé (ON) !== 취소여부 ==! */
+        , NTFC_CNCL_RSN_CD             /** Code de motif d’annulation d’avis !== 고지취소사유코드 ==! */
+        , ONTFC_NO                     /** N° de l'avis original !== 원고지번호 ==! */
+        , DFPM_PAY_YN                  /** Recours au crédit d'enlèvement (ON) !== 후불납부여부 ==! */
+        , NTFC_PRCS_STTS_CD            /** Code de statut de traitement d'avis !== 고지처리상태코드 ==! */
+        , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+        , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+        , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+        , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+        , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        , DEPT_CD
+        )
+        VALUES
+            (
+                #{ntfcNo}                    /** N° d'avis !== 고지번호 ==! */
+            , #{cstmCd}                    /** Code du bureau !== 세관코드 ==! */
+            , #{ntfcPtCd}                            /** Code de type d'avis !== 고지유형코드(벌금고지(A)) ==! */
+            , TO_CHAR(SYSDATE, 'YYYYMMDD')                    /** Date de notification !== 고지일자 ==! */
+            , TO_CHAR(TO_DATE(#{payTmlmDt}, 'DD/MM/YYYY'), 'YYYYMMDD')  /** Delai de paiement !== 납부기한일자 ==! */
+            , 0                            /** Montant Des Intérêts De Retard !== 체납이자금액 ==! */
+            , 0                            /** Montant Des Intérêts De Retard Non-Ajusté !== 원체납이자금액 ==! */
+            , #{fineAmt}                   /** Montant d'amende !== 벌금금액 ==! */
+            , 0                            /** Montant des autres frais exigibles !== 기타수수료금액 ==! */
+            , #{tamt}                      /** Montant total !== 총금액 ==! */
+            , 0                            /** Montant remboursé !== 환급금액 ==! */
+            , #{txprIdfyNoTpCd}            /** Code de catérogie de NIU !== 납세자식별번호구분코드 ==! */
+            , #{txprIdfyNo}                /** NIU !== 납세자식별번호 ==! */
+            , #{txprNm}                    /** Nom du responsable financier !== 납세자명 ==! */
+            , #{reffNoPtCd}                /** Code de type de numéro de référence !== 참조번호유형코드 ==! */
+            , #{reffNo}                    /** N° de référence !== 참조번호 ==! */
+        <if test="reffNoDt != null and reffNoDt != ''">
+            , TO_CHAR(TO_DATE(#{reffNoDt}, 'DD/MM/YYYY'), 'YYYYMMDD')       /** Date du titre de perception !== 결제 요청서 일자 ==! */
+        </if>
+        <if test="reffNoDt == null or reffNoDt == ''">
+            , TO_CHAR(SYSDATE,'YYYYMMDD')       /** Date du titre de perception !== 결제 요청서 일자 ==! */
+        </if>
+            , NULL                         /** Code du déclarant !== 신고인코드 ==! */
+            , 'N'                          /** Encaissé (ON) !== 수납여부 ==! */
+            , 'N'                          /** Échéance prorogée (ON) !== 납부기한연장여부 ==! */
+            , 'N'                          /** Paiement retardé (ON) !== 체납여부 ==! */
+            , 'N'                          /** Intérêts de retard ajustés (O/N) !== 체납이자조정여부 ==! */
+            , 'N'                          /** Avis échelonné (ON) !== 고지분할여부 ==! */
+            , 'N'                          /** Quittance délivrée (ON) !== 영수증발행여부 ==! */
+            , 'N'                          /** Annulé (ON) !== 취소여부 ==! */
+            , NULL                         /** Code de motif d’annulation d’avis !== 고지취소사유코드 ==! */
+            , NULL                         /** N° de l'avis original !== 원고지번호 ==! */
+            , 'N'                          /** Recours au crédit d'enlèvement (ON) !== 후불납부여부 ==! */
+            , #{ntfcPrcsSttsCd}                        /** Code de statut de traitement d'avis !== 고지처리상태코드 ==! */
+            , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+            , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+            , #{deptCd}
+            )
+
+    </insert>-->
+
+    <!--
+    Vérifier les privilèges (bureau) lors de la modification et de la suppression de la demande d'amende !== 벌금요청 수정, 삭제시 권한(세관) 확인 ==!
+    -->
+    <select id="selectAuthVrfc" parameterType="java.util.Map" resultType="string">
+        /* ColFineMgmt_selectAuthVrfc */
+        SELECT ORGN_CD
+        FROM (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = (SELECT ORGN_MGMT_CD FROM TB_POTI_EMP WHERE PBSR_NO  = #{sessPbsrNo})) A
+           , TB_COLI_FINE_RQST B
+<!--    WHERE A.ORGN_CD = B.CSTM_CD -->
+        WHERE A.ORGN_CD = B.DEPT_CD
+          AND B.FINE_LVY_RQST_NO = #{fineLvyRqstNo}
+          AND ROWNUM = 1
+    </select>
+
+    <!--
+    Dans le cas où l'identifiant du redevable n'est pas enregistré comme l'opérateur sur le portail externe, vérifiez-le afin d'éviter de cocher 'oui' pour l'objet de la notification des amendes prévues.
+    !== 납세의무자식별자가 외부포털에 업체등록이 되어 있지 않은 경우  벌금예정통보대상여부 '예'를 할 수 없도록 체크함. ==!
+    -->
+    <select id="selectTin" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo" resultType="alpass.ipt.col.fine.vo.ColFineMgmtVo">
+        SELECT NIF AS TXPR_IDFY_NO
+        FROM TB_COM_CO
+        WHERE NIF    = #{txprIdfyNo}
+          AND DEL_YN = 'N'
+    </select>
+
+    <!--
+    Consulter les informations sur le service avec le n° matricule !==직원번호로 부서정보 조회==!
+    -->
+    <select id="selectCstmColtOrgn" parameterType="java.util.Map" resultType="hashMap">
+        SELECT
+                ORGN_CD
+                ,ORGN_NM
+        FROM   TB_POTI_ORGN
+        WHERE  ORGN_MGMT_CD =
+        (
+            SELECT ORGN_MGMT_CD
+            FROM    TB_POTI_EMP
+            WHERE   PBSR_NO = #{pbsrNo}
+        )
+    </select>
+
+    <!--
+    Vérification des clés redondantes(Amende) !==중복키 검사(벌금)==!
+    -->
+    <select id="checkDuplicateFineReffNo" parameterType="alpass.ipt.col.fine.vo.ColFineMgmtVo" resultType="int">
+        SELECT COUNT(*)
+        FROM TB_COLI_FINE_RQST A, ( SELECT *
+                                    FROM TB_COLI_FINE BB, TB_COLI_NTFC CC
+                                    WHERE BB.NTFC_NO = CC.NTFC_NO) B
+        WHERE A.REFF_NO = #{reffNo}
+          AND A.DEL_YN = 'N'
+          AND (B.CNCL_YN = 'N' OR B.CNCL_YN IS NULL)
+          AND (B.NTFC_PRCS_STTS_CD != 'H06' OR B.NTFC_PRCS_STTS_CD IS NULL)
+          AND A.FINE_LVY_RQST_NO = B.FINE_LVY_RQST_NO(+)
+        <if test="fineLvyRqstNo != null and fineLvyRqstNo != ''">
+          AND A.FINE_LVY_RQST_NO != #{fineLvyRqstNo}
+        </if>
+    </select>
+
+
+</mapper>

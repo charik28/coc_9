@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.menu.mapper.PotPmMenuSysScrnMapper">
+
+    <!--
+       Consulter la liste des écrans de système !==시스템화면 목록를 조회한다==!
+    -->
+    <select id="selectSysScrnList"
+            parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysScrnVo"
+            resultType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysScrnVo">
+        /** selectSysScrnList */
+        <include refid="pagination.header"/>
+        SELECT
+        *
+        FROM
+        (
+        SELECT
+        A.SCRN_ID
+        , A.DOC_SCRN_ID
+        , A.SCRN_NM
+        , (SELECT B.LBL_NM FROM TB_COM_LBL_LANG B WHERE B.DEL_YN = 'N' AND B.LBL_ID = A.SCRN_NM AND B.LANG_CD = #{langCd} AND ROWNUM = 1) AS SCRN_ORG_NM
+        , A.SCRN_ID AS ORG_SCRN_ID
+        , A.APP_CLSF_CD
+        , A.BSOP_CLSF_CD
+        , A.SCRN_DESC
+        , A.ACES_URL
+        , A.ACES_PRMT_NM
+        , A.SCRN_GD_CD
+        , A.USE_YN
+        , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS frstRgsrDttm
+        , A.FRST_REGST_ID
+        , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY') AS lastChgDttm
+        , A.LAST_CHPR_ID
+        <if test="searRoleId != null and searRoleId != ''">
+            , (SELECT COUNT(1) FROM TB_COM_ROLE_SCRN_REL WHERE DEL_YN = 'N' AND SCRN_ID = A.SCRN_ID AND ROLE_ID = #{searRoleId}) AS CNT
+        </if>
+        <if test="searRoleId == null or searRoleId == ''">
+            , 0 AS CNT
+        </if>
+        FROM  TB_COM_SYS_SCRN A
+        WHERE  A.DEL_YN = 'N'
+        <if test="searScrnNm != null and searScrnNm != ''">
+            AND  A.SCRN_NM IN ( SELECT B.LBL_ID
+            FROM TB_COM_LBL_LANG B
+            WHERE B.DEL_YN = 'N'
+            AND UPPER(B.LBL_NM) LIKE '%'||UPPER(#{searScrnNm})||'%'
+            )
+        </if>
+        ) WHERE 1 = 1
+        <if test="searScrnGdCd != null and searScrnGdCd != ''">
+            AND   SCRN_GD_CD = #{searScrnGdCd}
+        </if>
+        <if test="searScrnDesc != null and searScrnDesc != ''">
+            AND   UPPER(SCRN_DESC) LIKE '%'||UPPER(#{searScrnDesc})||'%'
+        </if>
+        <if test="searAppClsfCd != null and searAppClsfCd != ''">
+            AND   APP_CLSF_CD = #{searAppClsfCd}
+        </if>
+        <if test="searBsopClsfCd != null and searBsopClsfCd != ''">
+            AND   BSOP_CLSF_CD = #{searBsopClsfCd}
+        </if>
+        <if test="searScrnId != null and searScrnId != ''">
+            AND   UPPER(SCRN_ID) LIKE '%'||UPPER(#{searScrnId})||'%'
+        </if>
+        ORDER BY SCRN_ID
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+       Consulter la liste (détail) des écrans de système !==시스템화면 목록(상세)를 조회한다==!
+    -->
+    <select id="selectSysScrnDetailList"
+            parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysScrnVo"
+            resultType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysScrnLangVo">
+        /** selectSysScrnDetailList */
+        SELECT
+        B.LBL_ID AS KEY1
+        , A.CD_VDVAL AS LANG_CD
+        , B.LBL_NM AS LANG_CN
+        FROM TB_COM_COMN_CD_D A,
+        TB_COM_LBL_LANG B
+        WHERE A.COMN_CD = 'COM_0057'
+        AND B.DEL_YN(+) = 'N'
+        AND B.LBL_ID(+) = #{scrnNm}
+        AND A.CD_VDVAL  = B.LANG_CD(+)
+        ORDER BY TO_NUMBER(A.SORT_ORDR) ASC
+    </select>
+
+    <!--
+       Consulter la liste des écrans de système enregistrant des rôles  !==역할이 등록된 시스템화면 목록을 조회한다==!
+    -->
+    <select id="selectRegSysScrnList"
+            parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysScrnVo"
+            resultType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysScrnVo">
+        /** selectRegSysScrnList */
+        SELECT
+        *
+        FROM
+        (
+        SELECT
+        SCRN_ID
+        , DOC_SCRN_ID
+        , SCRN_ID AS ORG_SCRN_ID
+        , APP_CLSF_CD
+        , BSOP_CLSF_CD
+        , (SELECT LBL_NM FROM TB_COM_LBL_LANG WHERE DEL_YN = 'N' AND LBL_ID = A.SCRN_NM AND LANG_CD = #{langCd} ) AS SCRN_NM
+        , SCRN_DESC
+        , ACES_URL
+        , ACES_PRMT_NM
+        , SCRN_GD_CD
+        , USE_YN
+        , TO_CHAR(FRST_RGSR_DTTM, 'DD/MM/YYYY') AS frstRgsrDttm
+        , FRST_REGST_ID
+        , TO_CHAR(LAST_CHG_DTTM, 'DD/MM/YYYY') AS lastChgDttm
+        , LAST_CHPR_ID
+        <if test="searRoleId != null and searRoleId != ''">
+          , (SELECT COUNT(1) FROM TB_COM_ROLE_SCRN_REL WHERE DEL_YN = 'N' AND SCRN_ID = A.SCRN_ID AND ROLE_ID = #{searRoleId}) AS CNT
+        </if>
+        <if test="searRoleId == null or searRoleId == ''">
+          , 0 AS CNT
+        </if>
+        FROM  TB_COM_SYS_SCRN A
+        WHERE 1 = 1
+        AND   DEL_YN = 'N'
+        ) A
+        WHERE A.CNT > 0
+    </select>
+
+    <!--
+       Enregistrer un écran de système !==시스템화면을 등록한다==!
+    -->
+    <insert id="insertSysScrn" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysScrnVo">
+        /** insertSysScrn */
+        with upsert as
+        (
+            UPDATE TB_COM_SYS_SCRN SET
+                    LAST_CHPR_ID = #{lastChprId}
+                    , LAST_CHG_DTTM = SYSTIMESTAMP
+                    , DEL_YN = 'N'
+                    , APP_CLSF_CD = #{appClsfCd}
+                    , BSOP_CLSF_CD = #{bsopClsfCd}
+                    , SCRN_DESC = #{scrnDesc}
+                    , ACES_URL = #{acesUrl}
+                    , ACES_PRMT_NM = #{acesPrmtNm}
+                    , SCRN_GD_CD = #{scrnGdCd}
+                    , USE_YN = #{useYn}
+                    , SCRN_NM = #{scrnNm}
+            WHERE SCRN_ID = #{scrnId} AND DEL_YN = 'Y'
+            returning *
+        )
+        INSERT INTO TB_COM_SYS_SCRN
+        (
+                SCRN_ID
+                , DOC_SCRN_ID
+                , APP_CLSF_CD
+                , BSOP_CLSF_CD
+                , SCRN_DESC
+                , ACES_URL
+                , ACES_PRMT_NM
+                , SCRN_GD_CD
+                , SCRN_NM
+                , USE_YN
+                , DEL_YN
+                , FRST_REGST_ID
+                , FRST_RGSR_DTTM
+                , LAST_CHPR_ID
+                , LAST_CHG_DTTM
+        )
+        SELECT
+                #{scrnId}
+                , #{docScrnId}
+                , #{appClsfCd}
+                , #{bsopClsfCd}
+                , #{scrnDesc}
+                , #{acesUrl}
+                , #{acesPrmtNm}
+                , #{scrnGdCd}
+                , #{scrnNm}
+                , #{useYn}
+                , 'N'
+                , #{frstRegstId}
+                , SYSTIMESTAMP
+                , #{lastChprId}
+                , SYSTIMESTAMP
+        WHERE NOT exists(select * from upsert)
+    </insert>
+
+    <!--
+       Modifier un écran de système !==시스템화면을 수정한다==!
+    -->
+    <update id="updateSysScrn" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysScrnVo">
+        /** updateSysScrn */
+        UPDATE TB_COM_SYS_SCRN
+        SET
+        LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        , DEL_YN = 'N'
+        , APP_CLSF_CD = #{appClsfCd}
+        , BSOP_CLSF_CD = #{bsopClsfCd}
+        , SCRN_DESC = #{scrnDesc}
+        , ACES_URL = #{acesUrl}
+        , ACES_PRMT_NM = #{acesPrmtNm}
+        , SCRN_GD_CD = #{scrnGdCd}
+        , USE_YN = #{useYn}
+        , SCRN_NM = #{scrnNm}
+        , DOC_SCRN_ID = #{docScrnId}
+        WHERE SCRN_ID = #{orgScrnId}
+        AND   DEL_YN = 'N'
+    </update>
+
+    <!--
+       Supprimer la relation d'écran de rôle !==역할화면관계 삭제한다==!
+    -->
+    <delete id="deleteRoleScrnRelScrnBass" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysScrnVo">
+        /** deleteRoleScrnRelScrnBass */
+        DELETE FROM TB_COM_ROLE_SCRN_REL
+        WHERE  SCRN_ID = #{orgScrnId}
+        AND    DEL_YN = 'N'
+    </delete>
+
+    <!--
+       Supprimer la relation d'écran de menu !==메뉴화면관계을 삭제한다==!
+    -->
+    <delete id="deleteMenuScrnRelScrnBass" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysScrnVo">
+        /** deleteMenuScrnRelScrnBass */
+        DELETE FROM TB_COM_MENU_SCRN_REL
+        WHERE  SCRN_ID = #{orgScrnId}
+        AND    DEL_YN = 'N'
+    </delete>
+
+    <!--
+       Supprimer l'écran de système !==시스템화면을 삭제한다==!
+    -->
+    <update id="deleteSysScrn" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysScrnVo">
+        /** deleteSysScrn */
+        UPDATE TB_COM_SYS_SCRN
+        SET
+        LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        , DEL_YN = 'Y'
+        WHERE SCRN_ID = #{orgScrnId}
+        AND   DEL_YN = 'N'
+    </update>
+
+    <!--
+       Vérifier s'il s'agit d'un écran déjà lié à une fonction d'approbation par écran !==이미 등록된 화면별결재직무연결 화면인지 조회한다==!
+    -->
+    <select id="selectScrnFoncRelDup"
+      parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtAprlScrnFoncVo"
+      resultType="int">
+      /** selectScrnFoncRelDup */
+      SELECT COUNT(SCRN_ID)
+      FROM TB_POTI_APRL_SCRN_FONC_REL
+      WHERE SCRN_ID = #{scrnId}
+    </select>
+
+    <!--
+       Enregistrer la connexion des fonctions d'approbation par écran !==화면별결재직무연결 등록한다==!
+    -->
+    <insert id="insertScrnFoncRel" parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtAprlScrnFoncVo">
+      /** insertScrnFoncRel */
+      INSERT INTO TB_POTI_APRL_SCRN_FONC_REL (
+            SCRN_ID
+          , FONC_CD
+          , APRV_SRNO
+          , ORGN_CD
+          , ESNT_YN
+          , SCRN_REFF_NO
+          , DEL_YN
+          , FRST_REGST_ID
+          , FRST_RGSR_DTTM
+          , LAST_CHPR_ID
+          , LAST_CHG_DTTM
+      ) VALUES (
+           #{scrnId}
+          , #{foncCd}
+          , #{aprvSrno}
+          , #{orgnCd}
+          , #{esntYn}
+          , #{scrnReffNo}
+          , 'N'
+          , #{frstRegstId}
+          , SYSTIMESTAMP
+          , #{lastChprId}
+          , SYSTIMESTAMP
+      )
+    </insert>
+
+    <!--
+       Supprimer la connexion des fonctions d'approbation par écran !==화면별결재직무연결 삭제한다==!
+    -->
+    <delete id="deleteScrnFoncRel" parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtAprlScrnFoncVo">
+      /** deleteScrnFoncRel */
+      DELETE FROM TB_POTI_APRL_SCRN_FONC_REL
+      WHERE SCRN_ID = #{scrnId}
+    </delete>
+
+    <!--
+       Consulter la liste de la connexion des fonctions d'approbation par écran !==화면별결재직무연결 목록를 조회한다==!
+    -->
+    <select id="selectScrnList"
+      parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtAprlScrnFoncVo"
+      resultType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtAprlScrnFoncVo">
+      /** selectScrnList */
+      <include refid="pagination.header"/>
+      SELECT A.SCRN_ID
+           , A.SCRN_REFF_NO
+           , B.BSOP_CLSF_CD
+           , C.LBL_NM SCRN_NM
+        FROM TB_POTI_APRL_SCRN_FONC_REL A,
+             TB_COM_SYS_SCRN B,
+             TB_COM_LBL_LANG C
+        WHERE A.DEL_YN = 'N'
+          AND A.SCRN_ID = B.SCRN_ID
+          AND B.SCRN_NM = C.LBL_ID(+)
+          AND C.LANG_CD(+) = #{langCd}
+        <if test="scrnId != null and scrnId != ''">
+          AND A.SCRN_ID LIKE '%'||UPPER(#{scrnId})||'%'
+        </if>
+        <if test="scrnNm != null and scrnNm != ''">
+          AND UPPER(C.LBL_NM) LIKE '%'||UPPER(#{scrnNm})||'%'
+        </if>
+        <if test="bsopClsfCd != null and bsopClsfCd != ''">
+          AND B.BSOP_CLSF_CD = #{bsopClsfCd}
+        </if>
+        GROUP BY A.SCRN_ID, A.SCRN_REFF_NO, B.BSOP_CLSF_CD, C.LBL_NM
+        ORDER BY B.BSOP_CLSF_CD, A.SCRN_ID
+      <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+       Consulter la fonction d'un niveau d'approbation de la connexion des fonctions d'approbation par écran !==화면별결재직무연결 결재선직무를 조회한다==!
+    -->
+    <select id="selectAprlDtlList"
+      parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtAprlScrnFoncVo"
+      resultType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtAprlScrnFoncVo">
+      /** selectAprlDtlList */
+      SELECT SCRN_ID
+           , FONC_CD
+           , (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE LANG_CD = #{langCd} AND FONC_CD = A.FONC_CD) FONC_CD_NM
+           , APRV_SRNO
+           , ORGN_CD
+           , ESNT_YN
+           , SCRN_REFF_NO
+      FROM TB_POTI_APRL_SCRN_FONC_REL A
+      WHERE SCRN_ID = #{scrnId}
+      ORDER BY APRV_SRNO
+    </select>
+
+    <!--
+       Consulter le N° de doublons de référence de l'écran !==화면참조번호 중복을 조회한다==!
+    -->
+    <select id="selectScrnReffNoDup"
+      parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtAprlScrnFoncVo"
+      resultType="int">
+      /** selectScrnReffNoDup */
+      SELECT COUNT(*)
+      FROM TB_POTI_APRL_SCRN_FONC_REL
+      WHERE SCRN_REFF_NO = #{scrnReffNo}
+    </select>
+
+</mapper>

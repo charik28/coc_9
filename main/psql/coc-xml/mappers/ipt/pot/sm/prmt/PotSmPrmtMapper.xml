@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.sm.prmt.mapper.PotSmPrmtMapper">
+
+	<!--
+		 Consulter la liste des paramètres !== 파라미터 목록 조회 ==!
+	 -->
+	<select id="selectPrmtList" parameterType="alpass.ipt.pot.sm.prmt.vo.PotSmPrmtVo" resultType="alpass.ipt.pot.sm.prmt.vo.PotSmPrmtVo">
+		/* selectPrmtList */
+		<include refid="pagination.header"/>
+		SELECT
+		       PRMT_ID
+		     , PRMT_ID AS ORG_PRMT_ID
+		     , TO_CHAR(TO_DATE(APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS APLY_STRT_DT
+		     , APLY_STRT_DT AS ORG_APLY_STRT_DT
+		     , TO_CHAR(TO_DATE(APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS APLY_END_DT
+		     , PRMT_VAL_CN
+		     , PRMT_DESC
+		     , DEL_YN
+             , TO_CHAR(FRST_RGSR_DTTM, 'DD/MM/YYYY') AS frstRgsrDttm
+             , FRST_REGST_ID
+             , TO_CHAR(LAST_CHG_DTTM, 'DD/MM/YYYY') AS lastChgDttm
+             , LAST_CHPR_ID
+		     , BSOP_CLSF_CD
+		     , PRMT_NM
+		FROM  TB_COM_PRMT
+		WHERE DEL_YN = 'N'
+		<if test="searPrmtId != null and searPrmtId != ''">
+		AND   UPPER(PRMT_ID) LIKE '%'||UPPER(#{searPrmtId})||'%'
+		</if>
+		<if test="searPrmtValCn != null and searPrmtValCn != ''">
+		AND   UPPER(PRMT_VAL_CN) LIKE '%'||UPPER(#{searPrmtValCn})||'%'
+		</if>
+		<if test="searPrmtDesc != null and searPrmtDesc != ''">
+		AND   UPPER(PRMT_DESC) LIKE '%'||UPPER(#{searPrmtDesc})||'%'
+		</if>
+		<if test="searBsopClsfCd != null and searBsopClsfCd != ''">
+		AND BSOP_CLSF_CD = #{searBsopClsfCd}
+		</if>
+		<if test="searPrmtNm != null and searPrmtNm != ''">
+		AND   UPPER(PRMT_NM) LIKE '%'||UPPER(#{searPrmtNm})||'%'
+		</if>
+		ORDER BY PRMT_ID
+		<include refid="pagination.footer"/>
+	</select>
+
+	<!--
+		 Vérifier l'enregistrement du paramètre !== 파라미터 동록 확인 ==!
+	 -->
+	<select id="selectPrmtRgsrCnt" parameterType="alpass.ipt.pot.sm.prmt.vo.PotSmPrmtVo" resultType="java.lang.Integer">
+		/* selectPrmtRgsrCnt */
+		SELECT
+		       COUNT(1) AS CNT
+		FROM TB_COM_PRMT
+		WHERE DEL_YN = 'N'
+		AND   PRMT_ID = #{prmtId}
+		AND   TO_CHAR(TO_DATE(APLY_STRT_DT, 'YYYYMMDD'), 'YYYYMMDD') = TO_CHAR(TO_DATE(REPLACE(#{aplyStrtDt},'/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+		<if test="orgAplyStrtDt != null and orgAplyStrtDt != ''">
+		AND   TO_CHAR(TO_DATE(APLY_STRT_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ <> ]]> TO_CHAR(TO_DATE(#{orgAplyStrtDt}, 'YYYYMMDD'), 'YYYYMMDD')
+		</if>
+	</select>
+
+	<!--
+		 Vérifier la date du paramètre !== 파라미터 날짜 확인 ==!
+	 -->
+	<select id="selectPrmtDtCnt" parameterType="alpass.ipt.pot.sm.prmt.vo.PotSmPrmtVo" resultType="java.lang.Integer">
+		/* selectPrmtDtCnt */
+		SELECT
+		       COUNT(1) AS CNT
+		FROM TB_COM_PRMT
+		WHERE DEL_YN = 'N'
+		AND   PRMT_ID = #{prmtId}
+		AND
+		(
+			(
+			    TO_CHAR(TO_DATE(APLY_STRT_DT, 'YYYYMMDD'), 'YYYYMMDD')
+			    BETWEEN TO_CHAR(TO_DATE(REPLACE(#{aplyStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+			    AND TO_CHAR(TO_DATE(REPLACE(#{aplyEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+			    OR
+			    TO_CHAR(TO_DATE(APLY_END_DT, 'YYYYMMDD'), 'YYYYMMDD')
+			    BETWEEN TO_CHAR(TO_DATE(REPLACE(#{aplyStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+			    AND TO_CHAR(TO_DATE(REPLACE(#{aplyEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+			)
+			OR
+			(
+			    TO_CHAR(TO_DATE(REPLACE(#{aplyStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+			    BETWEEN  TO_CHAR(TO_DATE(APLY_STRT_DT, 'YYYYMMDD'), 'YYYYMMDD')
+			    AND TO_CHAR(TO_DATE(APLY_END_DT, 'YYYYMMDD'), 'YYYYMMDD')
+			    OR
+			    TO_CHAR(TO_DATE(REPLACE(#{aplyEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+			    BETWEEN  TO_CHAR(TO_DATE(APLY_STRT_DT, 'YYYYMMDD'), 'YYYYMMDD')
+			    AND TO_CHAR(TO_DATE(APLY_END_DT, 'YYYYMMDD'), 'YYYYMMDD')
+			)
+		)
+		<if test="orgAplyStrtDt != null and orgAplyStrtDt != ''">
+		AND   TO_CHAR(TO_DATE(APLY_STRT_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ <> ]]> TO_CHAR(TO_DATE(#{orgAplyStrtDt}, 'YYYYMMDD'), 'YYYYMMDD')
+		</if>
+	</select>
+
+	<!--
+		 Vérifier l'enregistrement du paramètre !== 파라미터 등록 ==!
+	 -->
+	<insert id="insertPrmt" parameterType="alpass.ipt.pot.sm.prmt.vo.PotSmPrmtVo">
+		/* insertPrmt */
+		with upsert as
+		(
+			UPDATE TB_COM_PRMT SET
+					LAST_CHPR_ID = #{lastChprId}
+					, LAST_CHG_DTTM = SYSTIMESTAMP
+					, DEL_YN = 'N'
+					, APLY_END_DT = TO_CHAR(TO_DATE(REPLACE(#{aplyEndDt},'/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+					, PRMT_VAL_CN = #{prmtValCn}
+					, PRMT_DESC = #{prmtDesc}
+					, BSOP_CLSF_CD = #{bsopClsfCd}
+					, PRMT_NM = #{prmtNm}
+			WHERE PRMT_ID = #{prmtId}
+				AND TO_CHAR(TO_DATE(APLY_STRT_DT, 'YYYYMMDD'), 'YYYYMMDD') = TO_CHAR(TO_DATE(REPLACE(#{aplyStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+			returning *
+		)
+		INSERT INTO TB_COM_PRMT
+		(
+				PRMT_ID
+				, APLY_STRT_DT
+				, APLY_END_DT
+				, PRMT_VAL_CN
+				, PRMT_DESC
+				, DEL_YN
+				, BSOP_CLSF_CD
+				, PRMT_NM
+				, FRST_REGST_ID
+				, FRST_RGSR_DTTM
+				, LAST_CHPR_ID
+				, LAST_CHG_DTTM
+		)
+		SELECT
+				#{prmtId}
+				, TO_CHAR(TO_DATE(REPLACE(#{aplyStrtDt},'/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+				, TO_CHAR(TO_DATE(REPLACE(#{aplyEndDt},'/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+				, #{prmtValCn}
+				, #{prmtDesc}
+				, 'N'
+				, #{bsopClsfCd}
+				, #{prmtNm}
+				, #{frstRegstId}
+				, SYSTIMESTAMP
+				, #{lastChprId}
+				, SYSTIMESTAMP
+		WHERE NOT exists(select * from upsert)
+	</insert>
+
+	<!--
+		 Modifier un paramètre !== 파라미터 수정 ==!
+	 -->
+	<update id="updatePrmt" parameterType="alpass.ipt.pot.sm.prmt.vo.PotSmPrmtVo">
+		/* updatePrmt */
+		UPDATE TB_COM_PRMT
+		SET
+		     LAST_CHPR_ID = #{lastChprId}
+		   , LAST_CHG_DTTM = SYSTIMESTAMP
+		   , PRMT_ID = #{prmtId}
+		   , APLY_STRT_DT = TO_CHAR(TO_DATE(REPLACE(#{aplyStrtDt},'/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+		   , APLY_END_DT = TO_CHAR(TO_DATE(REPLACE(#{aplyEndDt},'/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+		   , PRMT_VAL_CN = #{prmtValCn}
+		   , PRMT_DESC = #{prmtDesc}
+	       , BSOP_CLSF_CD = #{bsopClsfCd}
+	       , PRMT_NM = #{prmtNm}
+		WHERE PRMT_ID = #{orgPrmtId}
+		AND   TO_CHAR(TO_DATE(APLY_STRT_DT, 'YYYYMMDD'), 'YYYYMMDD') = TO_CHAR(TO_DATE(#{orgAplyStrtDt}, 'YYYYMMDD'), 'YYYYMMDD')
+		AND   DEL_YN = 'N'
+	</update>
+
+	<!--
+	 Supprimer un paramètre !== 파라미터 삭제 ==!
+	-->
+	<update id="deletePrmt" parameterType="alpass.ipt.pot.sm.prmt.vo.PotSmPrmtVo">
+		/* deletePrmt */
+		UPDATE TB_COM_PRMT
+		SET
+		     LAST_CHPR_ID = #{lastChprId}
+		   , LAST_CHG_DTTM = SYSTIMESTAMP
+		   , DEL_YN = 'Y'
+		WHERE PRMT_ID = #{orgPrmtId}
+	    AND   TO_CHAR(TO_DATE(APLY_STRT_DT, 'YYYYMMDD'), 'YYYYMMDD') = TO_CHAR(TO_DATE(#{orgAplyStrtDt}, 'YYYYMMDD'), 'YYYYMMDD')
+	</update>
+
+</mapper>

@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.car.com.mapper.CarCagPrcsBrkdMapper">
+    <!--
+    voit les informations sur 'Cargo processing history'. !==화물 처리 내역 정보를 조회한다.==!
+    (Roh Sideuk) 
+    --> 
+    <select id="selectCarCagPrcsBrkd"
+            parameterType="alpass.ipt.car.com.vo.CarCagPrcsBrkdVo"
+            resultType="alpass.ipt.car.com.vo.CarCagPrcsBrkdVo">
+        /* CarCagPrcsBrkdMapper.selectCarCagPrcsBrkd */
+        SELECT
+            CAG_RQST_TP_CD
+            , CAG_RQST_NO
+            , RQST_DGCNT
+            , JRSD_ORGN_CD
+            , AUDT_EMP_ID
+            , INSC_EMP_ID
+            , CVY_EMP_ID
+            , PRCS_STTS_CD
+        FROM (
+            SELECT *
+            FROM ALPASSINT.TB_CARI_CAG_PRCS_BRKD
+            WHERE 1=1
+              AND CAG_RQST_TP_CD = #{cagRqstTpCd}
+              AND CAG_RQST_NO = #{cagRqstNo}
+              <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(prcsSttsCd)">
+              AND PRCS_STTS_CD=#{prcsSttsCd}
+              </if>
+              <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(audtEmpId)">
+              AND AUDT_EMP_ID=#{audtEmpId}
+              </if>
+            <choose>
+                <when test="rqstDgcnt == null">    
+                    ORDER BY TO_NUMBER(RQST_DGCNT) DESC
+                </when>
+                <otherwise>
+                    AND RQST_DGCNT = #{rqstDgcnt}
+                </otherwise>                
+            </choose>
+        )
+        WHERE  ROWNUM = 1
+    </select>
+    
+    <insert id="insertCarCagPrcsBrkd"
+            parameterType="alpass.ipt.car.com.vo.CarCagPrcsBrkdVo">
+        /* CarCagPrcsBrkdMapper.insertCarCagPrcsBrkd */
+        INSERT INTO TB_CARI_CAG_PRCS_BRKD ( CAG_RQST_NO                                 , /** N° De Demande De Cargaison !== 화물신청번호 ==! */
+                                            CAG_RQST_TP_CD                              , /** Code de classement du suivi du fret !== 화물추적구분코드 ==! */
+                                            RQST_DGCNT                                  , /** N° ordre de la demande !== 신청차수 ==! */
+                                            JRSD_ORGN_CD                                , /** Code D'Unité Compétente !== 관할조직코드 ==! */
+                                            TRNP_TP_CD                                  , /** Code de type de transfert !== 운송구분코드 ==! */
+                                            IBOBZ_CD                                    , /** Code de zone sous douane !== 보세구역코드 ==! */
+                                            PRCS_STTS_CD                                , /** Code De Statut De Traitement !== 처리상태코드 ==! */
+                                            PRCS_DTTM                                   , /** Date Et Heure De Traitement !== 처리일시 ==! */
+                                            HNOT_EMP_ID                                 , /** ID du chargé de cotation !== 배부직원ID ==! */
+                                            AUDT_EMP_ID                                 , /** ID de l'insepcteur !== 심사직원ID ==! */
+                                            INSC_EMP_ID                                 , /** ID de l'vérificateur !== 검사직원ID ==! */
+                                            CVY_EMP_ID                                  , /** ID De L'Agent D'Escorte !== 호송직원ID ==! */
+                                            DEL_YN                                      , /** Suppression On !== 삭제여부 ==! */
+                                            FRST_REGST_ID                               , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                                            FRST_RGSR_DTTM                              , /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                                            LAST_CHPR_ID                                , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                                            LAST_CHG_DTTM                               ) /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+                                   VALUES ( #{cagRqstNo}                                , /** N° De Demande De Cargaison !== 화물신청번호 ==! */
+                                            #{cagRqstTpCd}                              , /** Code de classement du suivi du fret !== 화물추적구분코드 ==! */
+                                            #{rqstDgcnt}                                , /** N° ordre de la demande !== 신청차수 ==! */
+                                            #{jrsdOrgnCd}                               , /** Code D'Unité Compétente !== 관할조직코드 ==! */
+                                            #{trnpTpCd}                                 , /** Code de type de transfert !== 운송구분코드 ==! */
+                                            #{ibobzCd}                                  , /** Code de zone sous douane !== 보세구역코드 ==! */
+                                            #{prcsSttsCd}                               , /** Code De Statut De Traitement !== 처리상태코드 ==! */
+                                            TO_TIMESTAMP(#{prcsDttm},'DDMMYYYYHH24MISS'), /** Date Et Heure De Traitement !== 처리일시 ==! */
+                                            #{hnotEmpId}                                , /** ID du chargé de cotation !== 배부직원ID ==! */
+                                            #{audtEmpId}                                , /** ID de l'insepcteur !== 심사직원ID ==! */
+                                            #{inscEmpId}                                , /** ID de l'vérificateur !== 검사직원ID ==! */
+                                            #{cvyEmpId}                                 , /** ID De L'Agent D'Escorte !== 호송직원ID ==! */
+                                            'N'                                         , /** Suppression On !== 삭제여부 ==! */
+                                            #{frstRegstId}                              , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                                            SYSTIMESTAMP                                , /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                                            #{lastChprId}                               , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                                            SYSTIMESTAMP                                ) /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+                              ON CONFLICT ( CAG_RQST_NO,CAG_RQST_TP_CD,RQST_DGCNT )
+                              DO UPDATE
+                                    SET  LAST_CHPR_ID  = #{lastChprId}
+                                        ,LAST_CHG_DTTM = SYSTIMESTAMP
+                                        <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(jrsdOrgnCd)">
+                                        ,JRSD_ORGN_CD  = #{jrsdOrgnCd}                                /** Code D'Unité Compétente !== 관할조직코드 ==! */
+                                        </if>
+                                        <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(trnpTpCd)">
+                                        ,TRNP_TP_CD    = #{trnpTpCd}                                  /** Code de type de transfert !== 운송구분코드 ==! */
+                                        </if>
+                                        <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(ibobzCd)">
+                                        ,IBOBZ_CD      = #{ibobzCd}                                   /** Code de zone sous douane !== 보세구역코드 ==! */
+                                        </if>
+                                        <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(prcsSttsCd)">
+                                        ,PRCS_STTS_CD  = #{prcsSttsCd}                                /** Code De Statut De Traitement !== 처리상태코드 ==! */
+                                        </if>
+                                        <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(prcsDttm)">
+                                        ,PRCS_DTTM     = TO_TIMESTAMP(#{prcsDttm},'DDMMYYYYHH24MISS') /** Date Et Heure De Traitement !== 처리일시 ==! */
+                                        </if>
+                                        <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(hnotEmpId)">
+                                        ,HNOT_EMP_ID   = #{hnotEmpId}                                 /** ID du chargé de cotation !== 배부직원ID ==! */
+                                        </if>
+                                        <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(audtEmpId)">
+                                        ,AUDT_EMP_ID   = #{audtEmpId}                                 /** ID de l'insepcteur !== 심사직원ID ==! */
+                                        </if>
+                                        <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(inscEmpId)">
+                                        ,INSC_EMP_ID   = #{inscEmpId}                                 /** ID de l'vérificateur !== 검사직원ID ==! */
+                                        </if>
+                                        <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(cvyEmpId)">
+                                        ,CVY_EMP_ID   = #{cvyEmpId}                                   /** ID De L'Agent D'Escorte !== 호송직원ID ==! */
+                                        </if>
+                                        ,DEL_YN        = 'N'                                          /** Suppression On !== 삭제여부 ==! */
+    </insert>
+
+    <update id="updateCarCagPrcsBrkd"
+            parameterType="alpass.ipt.car.com.vo.CarCagPrcsBrkdVo">
+        /* CarCagPrcsBrkdMapper.updateCarCagPrcsBrkd */
+        UPDATE TB_CARI_CAG_PRCS_BRKD
+           SET LAST_CHPR_ID  = #{lastChprId}
+             , LAST_CHG_DTTM = SYSTIMESTAMP
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(jrsdOrgnCd)">
+             , JRSD_ORGN_CD  = #{jrsdOrgnCd}                                /** Code D'Unité Compétente !== 관할조직코드 ==! */
+             </if>
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(trnpTpCd)">
+             , TRNP_TP_CD    = #{trnpTpCd}                                  /** Code de type de transfert !== 운송구분코드 ==! */
+             </if>
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(ibobzCd)">
+             , IBOBZ_CD      = #{ibobzCd}                                   /** Code de zone sous douane !== 보세구역코드 ==! */
+             </if>
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(prcsSttsCd)">
+             , PRCS_STTS_CD  = #{prcsSttsCd}                                /** Code De Statut De Traitement !== 처리상태코드 ==! */
+             </if>
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(prcsDttm)">
+             , PRCS_DTTM     = TO_TIMESTAMP(#{prcsDttm},'DDMMYYYYHH24MISS') /** Date Et Heure De Traitement !== 처리일시 ==! */
+             </if>
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(hnotEmpId)">
+             , HNOT_EMP_ID   = #{hnotEmpId}                                 /** ID du chargé de cotation !== 배부직원ID ==! */
+             </if>
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(audtEmpId)">
+             , AUDT_EMP_ID   = #{audtEmpId}                                 /** ID de l'insepcteur !== 심사직원ID ==! */
+             </if>
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(inscEmpId)">
+             , INSC_EMP_ID   = #{inscEmpId}                                 /** ID de l'vérificateur !== 검사직원ID ==! */
+             </if>
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(cvyEmpId)">
+             , CVY_EMP_ID   = #{cvyEmpId}                                   /** ID De L'Agent D'Escorte !== 호송직원ID ==! */
+             </if>
+             , DEL_YN          = 'N'                                        /** Suppression On !== 삭제여부 ==! */
+         WHERE CAG_RQST_NO     = #{cagRqstNo}
+           AND CAG_RQST_TP_CD  = #{cagRqstTpCd}
+           AND RQST_DGCNT      = #{rqstDgcnt}
+
+</update>
+    
+    <select id="selectCariAudtEmpIdCnt"
+            parameterType="alpass.ipt.car.ldun.vo.CarCagLdunRqstVo"
+            resultType="int">
+           /* CarCagPrcsBrkdMapper.selectCariLdunAudtEmpIdCnt */
+           SELECT COUNT(*)
+             FROM TB_CARI_CAG_PRCS_BRKD A
+            WHERE A.del_yn = 'N'
+              AND A.cag_rqst_tp_cd = #{cagRqstTpCd}
+              AND A.cag_rqst_no    = #{cagRqstNo}
+              AND A.audt_emp_id    = #{audtEmpId}
+    </select>
+
+    <sql id="insertBlPrcs">
+        INSERT INTO TB_CARI_CGTR_BL_PRCS
+               ( prcs_srno                     /** N° de sequence de traitement !== 처리일련번호 ==! */
+               , cag_mgmt_no                   /** N° Demande De La Création De Crn !== 화물관리번호 ==! */
+               , cag_rqst_tp_cd                /** Code de classement du suivi du fret !== 화물추적구분코드 ==! */
+               , prcs_stts_cd                  /** Code De Statut De Traitement !== 처리상태코드 ==! */
+               , prcs_dttm                     /** Date Et Heure De Traitement !== 처리일시 ==! */
+               , rqst_no                       /** N° De Demande !== 신청번호 ==! */
+               , rqst_rfer_no                  /** Numéro De Référence De Demande !== 신청참고번호 ==! */
+               , ibobz_cd                      /** Code de zone sous douane !== 보세구역코드 ==! */
+               , arlc_ibobz_cd                 /** Code De Zone Sous Douane De Destination !== 도착지보세구역코드 ==! */
+               , prcs_pckg_gcnt                /** Nombre De Colis Traité !== 처리포장개수 ==! */
+               , prcs_ttwg                     /** Poids Brut De Traité !== 처리총중량 ==! */
+               , brng_rlse_tp_cd               /** Code De Catégorie D'Entrée Et De Sortie !== 반입반출구분코드 ==! */
+               , brng_rlse_dt                  /** Date D'Entrée Et De Sortie !== 반입반출일자 ==! */
+               , oths_cn                       /** Contenus des Autres !== 기타내용 ==! */
+               , xtrn_ofr_yn                   /** Offre Externe On !== 외부제공여부 ==! */
+               , del_yn                        /** Suppression On !== 삭제여부 ==! */
+               , frst_regst_id                 /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+               , frst_rgsr_dttm                /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+               , last_chpr_id                  /** Id Du Modificateur Final !== 최종변경자ID ==! */
+               , last_chg_dttm                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </sql>
+    <!--
+    Sauvegarder les informations sur 'Historique du traitement de B/L'. !==화물추적 BL처리정보(적하목록)를 등록한다===!
+    -->
+    <insert id="insertCgtrBlPrcsRgsr"
+            parameterType="alpass.ipt.car.com.vo.CarCgtrBlPrcsVo">
+        /* CarCagPrcsBrkdMapper.insertCgtrBlPrcsRgsr*/
+          <include refid="insertBlPrcs"/>
+     SELECT ( SELECT NVL(MAX(PRCS_SRNO + 1), 1)
+               FROM TB_CARI_CGTR_BL_PRCS
+            ) AS prcs_srno                     /** N° de sequence de traitement !== 처리일련번호 ==! */
+            <if test="tpCd == 'cagMgmtNo' or tpCd == null or tpCd == ''">
+            , A.CAG_MGMT_NO     as cag_mgmt_no                   /** N° Demande De La Création De Crn !== 화물관리번호 ==! */
+            </if>
+            <if test="tpCd == 'bfCagMgmtNo'">
+            , A.BF_CAG_MGMT_NO  as cag_mgmt_no                   /** N° Demande De La Création De Crn !== 화물관리번호 ==! */
+            </if>
+            , #{cagRqstTpCd}    as cag_rqst_tp_cd                /** Code de classement du suivi du fret !== 화물추적구분코드 ==! */
+            , #{prcsSttsCd}     as prcs_stts_cd                  /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , TO_DATE(#{prcsDttm},'DDMMYYYYHH24MISS') as  prcs_dttm                     /** Date Et Heure De Traitement !== 처리일시 ==! */
+            , B.MRN             as rqst_no                       /** N° De Demande !== 신청번호 ==! */
+            , NULL              as rqst_rfer_no                  /** Numéro De Référence De Demande !== 신청참고번호 ==! */
+            , a.ibobz_cd        as ibobz_cd                      /** Code de zone sous douane !== 보세구역코드 ==! */
+            , NULL              as arlc_ibobz_cd                 /** Code De Zone Sous Douane De Destination !== 도착지보세구역코드 ==! */
+            , A.PCKG_GCNT       as prcs_pckg_gcnt                /** Nombre De Colis Traité !== 처리포장개수 ==! */
+            , DECODE(A.CAG_CHRC_CD, '9', A.LIR_VOL, A.TTWG) as prcs_ttwg                     /** Poids Brut De Traité !== 처리총중량 ==! */
+            , NULL              as brng_rlse_tp_cd               /** Code De Catégorie D'Entrée Et De Sortie !== 반입반출구분코드 ==! */
+            , NULL              as brng_rlse_dt                  /** Date D'Entrée Et De Sortie !== 반입반출일자 ==! */
+            , ''                as oths_cn                       /** Contenus des Autres !== 기타내용 ==! */
+            , 'Y'               as xtrn_ofr_yn                   /** Offre Externe On !== 외부제공여부 ==! */
+            , A.del_yn                        /** Suppression On !== 삭제여부 ==! */
+            , A.frst_regst_id                 /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , A.frst_rgsr_dttm                /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , A.last_chpr_id                  /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , A.last_chg_dttm                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+         FROM ALPASSINT.TB_CARI_CAG_DCSH_BL A
+        INNER JOIN ALPASSINT.TB_CARI_CAG_DCSH B
+           ON A.MRN = B.MRN
+        WHERE 1=1
+          AND A.MRN = #{mrn}
+          <!-- AND A.BL_PT_CD = 'M' -->
+          <if test="tpCd == 'bfCagMgmtNo'">
+          AND nvl(A.BF_CAG_MGMT_NO,'') != ''
+          </if>
+          <if test="cagMgmtNo != null and cagMgmtNo != ''">
+          AND A.CAG_MGMT_NO = #{cagMgmtNo}                    /** N° Demande De La Création De Crn !== 화물관리번호 ==! */
+          </if>
+    </insert>
+
+    <!--
+    Sauvegarder les informations sur 'Historique du traitement de B/L-SAD EX'. !==화물추적 BL처리정보(적하목록-SAD EX)를 등록한다===!
+    -->
+    <insert id="insertCgtrBlPrcsRgsrSadEx"
+            parameterType="alpass.ipt.car.com.vo.CarCgtrBlPrcsVo">
+        /* CarCagPrcsBrkdMapper.insertCgtrBlPrcsRgsrSadEx*/
+         <include refid="insertBlPrcs"/>
+          SELECT ( SELECT NVL(MAX(PRCS_SRNO + 1), 1)
+                    FROM TB_CARI_CGTR_BL_PRCS
+                 ) AS prcs_srno                     /** N° de sequence de traitement !== 처리일련번호 ==! */
+                , E.CAG_MGMT_NO     as cag_mgmt_no                   /** N° Demande De La Création De Crn !== 화물관리번호 ==! */
+            , #{cagRqstTpCd}    as cag_rqst_tp_cd                /** Code de classement du suivi du fret !== 화물추적구분코드 ==! */
+            , #{prcsSttsCd}     as prcs_stts_cd                  /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , TO_DATE(#{prcsDttm},'DDMMYYYYHH24MISS') as  prcs_dttm                     /** Date Et Heure De Traitement !== 처리일시 ==! */
+            , M.MRN             as rqst_no                       /** N° De Demande !== 신청번호 ==! */
+            , NULL              as rqst_rfer_no                  /** Numéro De Référence De Demande !== 신청참고번호 ==! */
+            , B.ibobz_cd        as ibobz_cd                      /** Code de zone sous douane !== 보세구역코드 ==! */
+            , NULL              as arlc_ibobz_cd                 /** Code De Zone Sous Douane De Destination !== 도착지보세구역코드 ==! */
+            , E.PCKG_GCNT       as prcs_pckg_gcnt                /** Nombre De Colis Traité !== 처리포장개수 ==! */
+            , E.TTWG            as prcs_ttwg                     /** Poids Brut De Traité !== 처리총중량 ==! */
+            , NULL              as brng_rlse_tp_cd               /** Code De Catégorie D'Entrée Et De Sortie !== 반입반출구분코드 ==! */
+            , NULL              as brng_rlse_dt                  /** Date D'Entrée Et De Sortie !== 반입반출일자 ==! */
+            , ''                as oths_cn                       /** Contenus des Autres !== 기타내용 ==! */
+            , 'Y'               as xtrn_ofr_yn                   /** Offre Externe On !== 외부제공여부 ==! */
+            , M.del_yn                        /** Suppression On !== 삭제여부 ==! */
+            , M.frst_regst_id                 /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , M.frst_rgsr_dttm                /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , M.last_chpr_id                  /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , M.last_chg_dttm                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+         FROM ALPASSINT.TB_CARI_CAG_DCSH M
+        INNER JOIN ( SELECT TT1.MRN
+                          , TT2.CAG_MGMT_NO
+                          , SUM(TT1.TTWG) AS TTWG
+                          , SUM(TT1.PCKG_GCNT) AS PCKG_GCNT
+                       FROM TB_CARI_CAG_DCSH_BL_EXFM TT1
+                      INNER JOIN TB_CLRI_DED_COMN TT2
+                         ON TT1.EXP_FFMN_NO = TT2.DTL_DCSH_NO
+                      WHERE 1=1
+                        AND TT1.DEL_YN = 'N'
+                        AND TT2.DEL_YN = 'N'
+                        AND TT2.ACPT_YN = 'Y'
+                        AND TT2.DCLR_PT_CD IN ('REX')
+                        AND TT2.PRCS_STTS_CD NOT IN ('G01','G03','G04')
+                        AND TT2.CAG_MGMT_NO IS NOT NULL
+                      --AND TT1.MRN = mrn}
+                        AND TT1.EXP_FFMN_TP_CD = 'EX'
+                      GROUP BY TT1.MRN, TT2.CAG_MGMT_NO
+              ) E
+           ON M.MRN = E.MRN
+        INNER JOIN ALPASSINT.TB_CARI_CAG_DCSH_BL B
+           ON M.MRN = B.MRN
+          AND E.CAG_MGMT_NO = B.CAG_MGMT_NO
+        WHERE 1=1
+          AND M.MRN = #{mrn}
+    </insert>
+
+
+</mapper>

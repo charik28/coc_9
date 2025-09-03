@@ -1,0 +1,1135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.psc.blgg.rgsr.mapper.PscInscDcshMapper">
+
+    <!--
+    @TODO:번역필요 !== GeneratorComments 목록 조회 ==!
+    -->
+    <select id="selectPscInscDcsh"  
+      parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo" resultType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo">
+      /* selectPscInscDcsh */
+      <include refid="pagination.header" ></include>
+      SELECT
+      A.BLGG_MGMT_NO               /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+      , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+      , A.DEPT_CD                      /** Code de service !== 부서코드 ==! */
+      , A.PSPR_NO                    /** N° De Passeport !== 여권번호 ==! */
+      , A.NAT_CD                     /** Code De Nationalité !== 국적코드 ==! */
+      , A.PSNR_FMNM                  /** Prénom Du Voyageur !== 여행자성 ==! */
+      , A.PSNR_GVNM_NM               /** Prénom du voyageur !== 여행자이름명 ==! */
+      , A.GNDR_CD                    /** Code De Sexe !== 성별코드 ==! */
+      , A.BRDY                       /** Date De Naissance !== 생년월일 ==! */
+      , A.TLPH_NO                    /** N° De Téléphone !== 전화번호 ==! */
+      , A.EML                        /** Email !== 이메일 ==! */
+      , A.JOB_NM                     /** Profession !== 직업명 ==! */
+      , A.DZA_ADDR                   /** Adresse en Algérie !== 알제리주소 ==! */
+      , A.OVRS_RSDN_ADDR             /** Adresse de résidence à l'étranger !== 해외거주주소 ==! */
+      , A.ARVL_DT                    /** Date D'Arrivée !== 도착일자 ==! */
+      , A.ETPR_HH                    /** Date/Heure De L'Entrée !== 입항시 ==! */
+      , A.PSNR_BRLC_CD               /** Lieu de départ du voyageur !== 여행자탑승지코드 ==! */
+      , A.PSNR_ARLC_CD               /** Lieu de destination du voyageur !== 여행자도착지코드 ==! */
+      , A.FLGH_FLNM                  /** N° De Vol !== 항공편명 ==! */
+      , A.ARLN_CD                    /** Code De Compagnie Aerienne !== 항공사코드 ==! */
+      , A.SHCO_NM                    /** Nom Du Consignataire !== 선사명 ==! */
+      , A.SHCO_CD                    /** Code Du Consignataire !== 선사코드 ==! */
+      , A.ISPR_ID                    /** Id Du Contrôleur !== 검사자ID ==! */
+      , A.INSC_RSN_CD                /** Code De Motif Du Contrôle !== 검사사유코드 ==! */
+      , A.INSC_BRKD_CD               /** Code De Résultat Du Contrôle !== 검사내역코드 ==! */
+      , A.INSC_DT                    /** Date de vérification !== 검사일자 ==! */
+      , A.BLGG_PRCS_RSLT_CD          /** Code de résultat de traitement des effets personnels !== 휴대품처리결과코드 ==! */
+      , A.RMRK                       /** Remarque !== 비고 ==! */
+      , A.BGGE_TGCNT                 /** Nbr Total De Colis !== 수하물총개수 ==! */
+      , A.BGGE_TTWG                  /** Poids Total Des Colis !== 수하물총중량 ==! */
+      , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+      , A.APRV_PRCS_STTS_CD          /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+      , A.RGSR_DT
+      , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+      , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+      , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+      , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+      , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+      , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+      , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+      , A.BNDL_TX_TAMT               /** Montant total de taxation forfaitaire !==  ==! */
+      , A.CSCL_RGSR_DT               /** @TODO : 번역필요 !==  ==! */
+      , A.XRAY_NO                    /** numéro de scannage !== XRAY번호 ==! */
+      , A.XRAY_INSC_RSN              /** motif de scannage !== XRAY검사사유 ==! */
+      , A.BIRT_REGN_NM                 /** Lieu De Naissance !== 출생지역명 ==! */
+      , A.ENCY_DEPR_TP_CD                 /** Code d'entrée et de sortie !== 입국출국구분코드 ==! */
+      , A.TPD_MGMT_NO                /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+      , A.PSNR_TP_CD                      /** Couloir de voyageurs !== 여행자통로 ==! */
+      , A.ESTM_YN                      /** Présumé O/N !== 추정여부 ==! */
+      , A.PSPR_VALD_DT
+      , A.PSPR_NO_ISS_DT                      /** Date de délivrance du passeport !== 여권발급일자 ==! */
+      , A.PSPR_NO_ISS_ITT                     /** Lieu de délivrance du passeport !== 여권발급기관 ==! */
+      , A.PSNR_PT_CD                      /** Code de type de voyageur !== 여행자유형코드 ==! */
+      , A.LND_SEA_TP_CD                     /** Code de voie terrestre/maritime !== 육상해상구분코드 ==! */
+      , A.BLGG_DTRM_NO                      /** Numéro de décision des effets personnels !== 휴대품결정번호	 ==! */
+      , ( SELECT ORG.ORGN_NM  FROM ALPASSINT.TB_POTI_ORGN ORG WHERE ORG.ORGN_MGMT_CD =
+      (SELECT FN_GET_UPR_ORGN_CD(ORGN_MGMT_CD,'DIR') FROM ALPASSINT.TB_POTI_ORGN WHERE ORGN_CD = A.CSTM_CD )
+      ) AS DRD_CD                    /** Code de direction régionale des douanes !== 지역본부세관코드 ==! */
+      , A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+      , ALPASSINT.FN_GET_ORGN_NM(A.CSTM_CD) AS CSTM_CD_NM               /**  !== 세관명 ==! */
+      , ALPASSINT.FN_GET_ORGN_NM(A.DEPT_CD) AS DEPT_NM
+      , FN_GET_CNTY_NM(A.NAT_CD ,  'FR') AS NAT_NM
+      , A.ACKW_TAMT                     /** Valeur reconnue totale !== 총인정금액 ==! */
+      , A.BLGG_PSSN_YN                     /** Pocession des effets personnels !== 휴대품소지여부 ==! */
+      , A.BGGE_TAMT                     /** Valeur Totale déclarée !== 총신고금액 ==! */
+      , A.VALD_DT                     /** Date de la validité !== 유효일자 ==! */
+      , (SELECT REGN_NM FROM TB_COM_REGN_CD_LANG WHERE REGN_CD = A.PSNR_BRLC_CD AND LANG_CD = 'FR') AS PSNR_BRLC_NM
+      , (SELECT REGN_NM FROM TB_COM_REGN_CD_LANG WHERE REGN_CD = A.PSNR_ARLC_CD AND LANG_CD = 'FR') AS PSNR_ARLC_NM
+      , A.DPST_SHED_CD                     /** Code de dépôt !== 예치장치장코드 ==! */
+      , A.NTNAL_IDFY_NO                    /** Nin !== 자국민식별번호 ==! */
+      FROM   ALPASSINT.TB_PSCI_PSNR_BLGG_IPRT A
+      WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+      AND  A.BLGG_MGMT_NO = #{blggMgmtNo}              /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+      <include refid="pagination.footer" ></include>
+    </select>
+
+  <!--
+  @TODO:번역필요 !== GeneratorComments 목록 조회 ==!
+  -->
+  <select id="selectPscInscAudtDcsh"
+    parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo" resultType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo">
+    /* selectPscInscAudtDcsh */
+    <include refid="pagination.header" ></include>
+    SELECT
+    A.BLGG_MGMT_NO               /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+    , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+    , A.DEPT_CD                      /** Code de service !== 부서코드 ==! */
+    , A.PSPR_NO                    /** N° De Passeport !== 여권번호 ==! */
+    , A.NAT_CD                     /** Code De Nationalité !== 국적코드 ==! */
+    , A.PSNR_FMNM                  /** Prénom Du Voyageur !== 여행자성 ==! */
+    , A.PSNR_GVNM_NM               /** Prénom du voyageur !== 여행자이름명 ==! */
+    , A.GNDR_CD                    /** Code De Sexe !== 성별코드 ==! */
+    , TO_CHAR(TO_DATE(A.BRDY, 'YYYYMMDD'), 'DD/MM/YYYY') AS BRDY /** Date De Naissance !== 생년월일 ==! */
+    , A.TLPH_NO                    /** N° De Téléphone !== 전화번호 ==! */
+    , A.EML                        /** Email !== 이메일 ==! */
+    , A.JOB_NM                     /** Profession !== 직업명 ==! */
+    , A.DZA_ADDR                   /** Adresse en Algérie !== 알제리주소 ==! */
+    , A.OVRS_RSDN_ADDR             /** Adresse de résidence à l'étranger !== 해외거주주소 ==! */
+    , TO_CHAR(TO_DATE(A.ARVL_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS ARVL_DT /** Date D'Arrivée !== 도착일자 ==! */
+    , A.ETPR_HH                    /** Date/Heure De L'Entrée !== 입항시 ==! */
+    , A.PSNR_BRLC_CD               /** Lieu de départ du voyageur !== 여행자탑승지코드 ==! */
+    , A.PSNR_ARLC_CD               /** Lieu de destination du voyageur !== 여행자도착지코드 ==! */
+    , A.FLGH_FLNM                  /** N° De Vol !== 항공편명 ==! */
+    , A.ARLN_CD                    /** Code De Compagnie Aerienne !== 항공사코드 ==! */
+    , A.SHCO_NM                    /** Nom Du Consignataire !== 선사명 ==! */
+    , A.SHCO_CD                    /** Code Du Consignataire !== 선사코드 ==! */
+    , A.ISPR_ID                    /** Id Du Contrôleur !== 검사자ID ==! */
+    , A.INSC_RSN_CD                /** Code De Motif Du Contrôle !== 검사사유코드 ==! */
+    , A.INSC_BRKD_CD               /** Code De Résultat Du Contrôle !== 검사내역코드 ==! */
+    , A.INSC_DT                    /** Date de vérification !== 검사일자 ==! */
+    , A.BLGG_PRCS_RSLT_CD          /** Code de résultat de traitement des effets personnels !== 휴대품처리결과코드 ==! */
+    , A.RMRK                       /** Remarque !== 비고 ==! */
+    , A.BGGE_TGCNT                 /** Nbr Total De Colis !== 수하물총개수 ==! */
+    , A.BGGE_TTWG                  /** Poids Total Des Colis !== 수하물총중량 ==! */
+    , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+    , A.APRV_PRCS_STTS_CD          /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+    , TO_CHAR(TO_DATE(A.RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RGSR_DT /** Date D'Enregistrement !== 등록일자 ==! */
+    , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+    , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+    , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+    , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+    , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+    , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+    , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    , A.BNDL_TX_TAMT               /** Montant total de taxation forfaitaire !==  ==! */
+    , A.CSCL_RGSR_DT               /** @TODO : 번역필요 !==  ==! */
+    , A.XRAY_NO                    /** numéro de scannage !== XRAY번호 ==! */
+    , A.XRAY_INSC_RSN              /** motif de scannage !== XRAY검사사유 ==! */
+    , A.BIRT_REGN_NM                 /** Lieu De Naissance !== 출생지역명 ==! */
+    , A.ENCY_DEPR_TP_CD                 /** Code d'entrée et de sortie !== 입국출국구분코드 ==! */
+    , A.BLGG_RQST_STTS_CD            /** Code de statut de demande des effets personnels !== 휴대품신청상태코드 ==! */
+    , A.TPD_MGMT_NO                /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+    , A.PSNR_TP_CD                      /** Couloir de voyageurs !== 여행자통로 ==! */
+    , A.ESTM_YN                      /** Présumé O/N !== 추정여부 ==! */
+    , TO_CHAR(TO_DATE(A.PSPR_VALD_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PSPR_VALD_DT
+    , TO_CHAR(TO_DATE(A.PSPR_NO_ISS_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PSPR_NO_ISS_DT /** Date de délivrance du passeport !== 여권발급일자 ==! */
+    , A.PSPR_NO_ISS_ITT                     /** Lieu de délivrance du passeport !== 여권발급기관 ==! */
+    , A.PSNR_PT_CD                      /** Code de type de voyageur !== 여행자유형코드 ==! */
+    , A.LND_SEA_TP_CD                     /** Code de voie terrestre/maritime !== 육상해상구분코드 ==! */
+    , A.BLGG_DTRM_NO                      /** Numéro de décision des effets personnels !== 휴대품결정번호	 ==! */
+    , A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+    , TO_CHAR(TO_DATE(A.VALD_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS VALD_DT    /** Date de la validité !== 유효일자 ==! */
+    , A.ACKW_TAMT                     /** Valeur reconnue totale !== 총인정금액 ==! */
+    , A.BLGG_PSSN_YN                     /** Pocession des effets personnels !== 휴대품소지여부 ==! */
+    , A.BGGE_TAMT                     /** Valeur Totale déclarée !== 총신고금액 ==! */
+    , A.DPST_SHED_CD                     /** Code de dépôt !== 예치장치장코드 ==! */
+    , A.NTNAL_IDFY_NO                    /** Nin !== 자국민식별번호 ==! */
+    FROM   ALPASSINT.TB_PSCI_PSNR_BLGG_IPRT A
+    WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+    AND  A.BLGG_MGMT_NO = #{blggMgmtNo}              /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+    <include refid="pagination.footer" ></include>
+  </select>
+
+  <!--
+   @TODO:번역필요 !== GeneratorComments 목록 조회 ==!
+   -->
+  <select id="selectPscInscBscs"
+    parameterType="alpass.ipt.psc.blgg.audt.vo.PscBlggSearchVo" resultType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo">
+    /* selectPscInscBscs */
+    <include refid="pagination.header" ></include>
+    SELECT
+    A.BLGG_MGMT_NO               /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+    , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+    , A.DEPT_CD                      /** Code de service !== 부서코드 ==! */
+    , A.PSPR_NO                    /** N° De Passeport !== 여권번호 ==! */
+    , A.NAT_CD                     /** Code De Nationalité !== 국적코드 ==! */
+    , A.PSNR_FMNM                  /** Prénom Du Voyageur !== 여행자성 ==! */
+    , A.PSNR_GVNM_NM               /** Prénom du voyageur !== 여행자이름명 ==! */
+    , A.GNDR_CD                    /** Code De Sexe !== 성별코드 ==! */
+    , TO_CHAR(TO_DATE(A.BRDY, 'YYYYMMDD'), 'DD/MM/YYYY') AS BRDY /** Date De Naissance !== 생년월일 ==! */
+    , A.TLPH_NO                    /** N° De Téléphone !== 전화번호 ==! */
+    , A.EML                        /** Email !== 이메일 ==! */
+    , A.JOB_NM                     /** Profession !== 직업명 ==! */
+    , A.DZA_ADDR                   /** Adresse en Algérie !== 알제리주소 ==! */
+    , A.OVRS_RSDN_ADDR             /** Adresse de résidence à l'étranger !== 해외거주주소 ==! */
+    , TO_CHAR(TO_DATE(A.ARVL_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS ARVL_DT /** Date D'Arrivée !== 도착일자 ==! */
+    , A.ETPR_HH                    /** Date/Heure De L'Entrée !== 입항시 ==! */
+    , A.PSNR_BRLC_CD               /** Lieu de départ du voyageur !== 여행자탑승지코드 ==! */
+    , A.PSNR_ARLC_CD               /** Lieu de destination du voyageur !== 여행자도착지코드 ==! */
+    , A.FLGH_FLNM                  /** N° De Vol !== 항공편명 ==! */
+    , A.ARLN_CD                    /** Code De Compagnie Aerienne !== 항공사코드 ==! */
+    , A.SHCO_NM                    /** Nom Du Consignataire !== 선사명 ==! */
+    , A.SHCO_CD                    /** Code Du Consignataire !== 선사코드 ==! */
+    , A.ISPR_ID                    /** Id Du Contrôleur !== 검사자ID ==! */
+    , A.INSC_RSN_CD                /** Code De Motif Du Contrôle !== 검사사유코드 ==! */
+    , A.INSC_BRKD_CD               /** Code De Résultat Du Contrôle !== 검사내역코드 ==! */
+    , A.INSC_DT                    /** Date de vérification !== 검사일자 ==! */
+    , A.BLGG_PRCS_RSLT_CD          /** Code de résultat de traitement des effets personnels !== 휴대품처리결과코드 ==! */
+    , A.RMRK                       /** Remarque !== 비고 ==! */
+    , A.BGGE_TGCNT                 /** Nbr Total De Colis !== 수하물총개수 ==! */
+    , A.BGGE_TTWG                  /** Poids Total Des Colis !== 수하물총중량 ==! */
+    , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+    , A.APRV_PRCS_STTS_CD          /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+    , TO_CHAR(TO_DATE(A.RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RGSR_DT /** Date D'Enregistrement !== 등록일자 ==! */
+    , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+    , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+    , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+    , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+    , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+    , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+    , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    , A.BNDL_TX_TAMT               /** Montant total de taxation forfaitaire !== 일괄과세총금액 ==! */
+    , A.CSCL_RGSR_DT               /** @TODO : 번역필요 !==  ==! */
+    , A.XRAY_NO                    /** numéro de scannage !== XRAY번호 ==! */
+    , A.XRAY_INSC_RSN              /** motif de scannage !== XRAY검사사유 ==! */
+    , A.BIRT_REGN_NM                 /** Lieu De Naissance !== 출생지역명 ==! */
+    , A.ENCY_DEPR_TP_CD                 /** Code d'entrée et de sortie !== 입국출국구분코드 ==! */
+    , A.BLGG_RQST_STTS_CD            /** Code de statut de demande des effets personnels !== 휴대품신청상태코드 ==! */
+    , A.TPD_MGMT_NO                /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+    , A.PSNR_TP_CD                      /** Couloir de voyageurs !== 여행자통로 ==! */
+    , A.ESTM_YN                      /** Présumé O/N !== 추정여부 ==! */
+    , TO_CHAR(TO_DATE(A.PSPR_VALD_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PSPR_VALD_DT
+    , TO_CHAR(TO_DATE(A.PSPR_NO_ISS_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PSPR_NO_ISS_DT /** Date de délivrance du passeport !== 여권발급일자 ==! */
+    , A.PSPR_NO_ISS_ITT                     /** Lieu de délivrance du passeport !== 여권발급기관 ==! */
+    , A.PSNR_PT_CD                      /** Code de type de voyageur !== 여행자유형코드 ==! */
+    , A.LND_SEA_TP_CD                     /** Code de voie terrestre/maritime !== 육상해상구분코드 ==! */
+    , A.BLGG_DTRM_NO                      /** Numéro de décision des effets personnels !== 휴대품결정번호	 ==! */
+    , A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+    , TO_CHAR(TO_DATE(A.VALD_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS VALD_DT    /** Date de la validité !== 유효일자 ==! */
+    , A.ACKW_TAMT                     /** Valeur reconnue totale !== 총인정금액 ==! */
+    , A.BLGG_PSSN_YN                     /** Pocession des effets personnels !== 휴대품소지여부 ==! */
+    , A.BGGE_TAMT                     /** Valeur Totale déclarée !== 총신고금액 ==! */
+    , A.DPST_SHED_CD                     /** Code de dépôt !== 예치장치장코드 ==! */
+    , A.NTNAL_IDFY_NO                    /** Nin !== 자국민식별번호 ==! */
+    FROM   ALPASSINT.TB_PSCI_PSNR_BLGG_IPRT A
+    WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+    AND  A.BLGG_MGMT_NO = #{blggMgmtNo}              /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+    <include refid="pagination.footer" ></include>
+  </select>
+
+  <!--
+@TODO:번역필요 !== GeneratorComments 목록 조회 ==!
+-->
+  <select id="selectPscDpstDcshBscs"
+    parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo" resultType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo">
+    /* selectPscDpstDcshBscs */
+    <include refid="pagination.header" ></include>
+    SELECT
+    A.DPST_TEMP_NO               /** Numéro provisoire de mise en dépôt !== 예치임시번호 ==! */
+    , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+    , A.DEPT_CD                      /** Code de service !== 부서코드 ==! */
+    , A.BLGG_MGMT_NO               /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+    , A.DPST_MGMT_NO               /** Numéro De Série De Transit/Correspondance !== 예치관리번호 ==! */
+    , A.BLGG_RQST_STTS_CD          /** Code de statut de demande des effets personnels !== 휴대품신청상태코드 ==! */
+    , A.BLGG_TP_CD                 /** Code de type des effets personnels !== 휴대품구분코드 ==! */
+    , A.PSNR_FMNM                  /** Prénom Du Voyageur !== 여행자성 ==! */
+    , A.PSNR_GVNM_NM               /** Prénom du voyageur !== 여행자이름명 ==! */
+    , A.PSPR_NO                    /** N° De Passeport !== 여권번호 ==! */
+    , A.BRDY
+<!--    , TO_CHAR(TO_DATE(A.BRDY, 'YYYYMMDD'), 'DD/MM/YYYY') AS BRDY /** Date De Naissance !== 생년월일 ==! */-->
+    , A.NAT_CD                     /** Code De Nationalité !== 국적코드 ==! */
+    , A.DZA_ADDR                   /** Adresse en Algérie !== 알제리주소 ==! */
+    , A.OVRS_RSDN_ADDR             /** Adresse de résidence à l'étranger !== 해외거주주소 ==! */
+    , A.EML                        /** Email !== 이메일 ==! */
+    , A.TLPH_NO                    /** N° De Téléphone !== 전화번호 ==! */
+    , A.JOB_NM                     /** Profession !== 직업명 ==! */
+    , A.ARVL_DT                    /** Date D'Arrivée !== 도착일자 ==! */
+    , A.PSNR_BRLC_CD               /** Lieu de départ du voyageur !== 여행자탑승지코드 ==! */
+    , A.PSNR_ARLC_CD               /** Lieu de destination du voyageur !== 여행자도착지코드 ==! */
+    , TO_CHAR(TO_DATE(A.STGE_PRID_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS STGE_PRID_DT /** Date d'échéance !== 장치기간일자 ==! */
+    , A.BGGE_TGCNT                 /** Nbr Total De Colis !== 수하물총개수 ==! */
+    , A.BGGE_TAMT                  /** Valeur totale de bagages !== 수하물총금액 ==! */
+    , A.AMT_CURR_CD                /** Code de montant et des devises !== 금액통화코드 ==! */
+    , A.DPST_RSN_CN                /** Motif de mise en dépôt !== 예치사유내용 ==! */
+    , A.BIRT_REGN_NM               /** Lieu De Naissance !== 출생지역명 ==! */
+    , TO_CHAR(TO_DATE(A.RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RGSR_DT /** Date D'Enregistrement !== 등록일자 ==! */
+    , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+    , A.DPST_SFKP_EVDC_NO          /** Numéro de bulletin de dépôt !== 예치보관증서번호 ==! */
+    , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+    , A.RLSE_RQST_DT               /** Date de demande de sortie !== 반출신청일자 ==! */
+    , A.STGE_PRID_XTNS_REQST_DT       /** Date d'échéance sollicitée !== 장치기간연장요청일자 ==! */
+    , A.RLSE_YN                    /** Enlevé On !== 반출여부 ==! */
+    , A.CSCL_DT                    /** Date de dédouanement !== 통관일자 ==! */
+    , A.BNDL_TX_TAMT               /** Montant total de taxation forfaitaire !== 일괄과세총금액 ==! */
+    , A.RMRK                       /** Remarque !== 비고 ==! */
+    , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+    , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+    , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+    , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+    , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    , A.DPST_SHED_NM
+    , A.GNDR_CD
+    , A.ENCY_DEPR_TP_CD                 /** Code d'entrée et de sortie !== 입국출국구분코드 ==! */
+    , A.FLGH_FLNM                  /** N° De Vol !== 항공편명 ==! */
+    , A.ARLN_CD                    /** Code De Compagnie Aerienne !== 항공사코드 ==! */
+    , A.SHCO_NM                    /** Nom Du Consignataire !== 선사명 ==! */
+    , A.SHCO_CD                    /** Code Du Consignataire !== 선사코드 ==! */
+    , A.PSNR_TP_CD                      /** Couloir de voyageurs !== 여행자통로 ==! */
+    , A.ESTM_YN                      /** Présumé O/N !== 추정여부 ==! */
+    , TO_CHAR(TO_DATE(A.PSPR_VALD_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PSPR_VALD_DT
+    , TO_CHAR(TO_DATE(A.PSPR_NO_ISS_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PSPR_NO_ISS_DT /** Date de délivrance du passeport !== 여권발급일자 ==! */
+    , A.PSPR_NO_ISS_ITT                     /** Lieu de délivrance du passeport !== 여권발급기관 ==! */
+    , A.PSNR_PT_CD                      /** Code de type de voyageur !== 여행자유형코드 ==! */
+    , A.LND_SEA_TP_CD                     /** Code de voie terrestre/maritime !== 육상해상구분코드 ==! */
+    FROM   ALPASSINT.TB_PSCI_PSNR_BLGG_DPST A
+    WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+    AND  A.DPST_TEMP_NO = #{dpstTempNo}              /** Numéro provisoire de mise en dépôt !== 예치임시번호 ==! */
+    <include refid="pagination.footer" ></include>
+  </select>
+
+
+    <!--
+    @TODO:번역필요 !== GeneratorComments 등록 ==!
+    (Generated)
+    -->
+    <insert id="insertPscInscDcsh" parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo">
+        /* insertPscInscDcsh */
+          INSERT INTO ALPASSINT.TB_PSCI_PSNR_BLGG_IPRT
+          (
+          BLGG_MGMT_NO                 /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+          , CSTM_CD                      /** Code Du Bureau !== 세관코드 ==! */
+          , DEPT_CD                      /** Code de service !== 부서코드 ==! */
+          , PSPR_NO                      /** N° De Passeport !== 여권번호 ==! */
+          , NAT_CD                       /** Code De Nationalité !== 국적코드 ==! */
+          , PSNR_FMNM                    /** Prénom Du Voyageur !== 여행자성 ==! */
+          , PSNR_GVNM_NM                 /** Prénom du voyageur !== 여행자이름명 ==! */
+          , GNDR_CD                      /** Code De Sexe !== 성별코드 ==! */
+          , BRDY                         /** Date De Naissance !== 생년월일 ==! */
+          , TLPH_NO                      /** N° De Téléphone !== 전화번호 ==! */
+          , EML                          /** Email !== 이메일 ==! */
+          , JOB_NM                       /** Profession !== 직업명 ==! */
+          , DZA_ADDR                     /** Adresse en Algérie !== 알제리주소 ==! */
+          , OVRS_RSDN_ADDR               /** Adresse de résidence à l'étranger !== 해외거주주소 ==! */
+          , ARVL_DT                      /** Date D'Arrivée !== 도착일자 ==! */
+          , ETPR_HH                      /** Date/Heure De L'Entrée !== 입항시 ==! */
+          , PSNR_BRLC_CD                 /** Lieu de départ du voyageur !== 여행자탑승지코드 ==! */
+          , PSNR_ARLC_CD                 /** Lieu de destination du voyageur !== 여행자도착지코드 ==! */
+          , FLGH_FLNM                    /** N° De Vol !== 항공편명 ==! */
+          , ARLN_CD                      /** Code De Compagnie Aerienne !== 항공사코드 ==! */
+          , SHCO_NM                      /** Nom Du Consignataire !== 선사명 ==! */
+          , SHCO_CD                      /** Code Du Consignataire !== 선사코드 ==! */
+          , ISPR_ID                      /** Id Du Contrôleur !== 검사자ID ==! */
+          , INSC_RSN_CD                  /** Code De Motif Du Contrôle !== 검사사유코드 ==! */
+          , INSC_BRKD_CD                 /** Code De Résultat Du Contrôle !== 검사내역코드 ==! */
+          , INSC_DT                      /** Date de vérification !== 검사일자 ==! */
+          , BLGG_PRCS_RSLT_CD            /** Code de résultat de traitement des effets personnels !== 휴대품처리결과코드 ==! */
+          , RMRK                         /** Remarque !== 비고 ==! */
+          , BGGE_TGCNT                   /** Nbr Total De Colis !== 수하물총개수 ==! */
+          , BGGE_TTWG                    /** Poids Total Des Colis !== 수하물총중량 ==! */
+          , APRV_ID                      /** Id D'Approbation  !== 결재ID ==! */
+          , APRV_PRCS_STTS_CD            /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+          , RGSR_DT                      /** Date D'Enregistrement !== 등록일자 ==! */
+          , REGST_ID                     /** Id De La Personne Enregistrant !== 등록자ID ==! */
+          , ATCH_FILE_ID                 /** Id Du Fichier Joint !== 첨부파일ID ==! */
+          , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+          , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+          , BNDL_TX_TAMT                 /** Montant total de taxation forfaitaire !==  ==! */
+          , CSCL_RGSR_DT                 /** @TODO : 번역필요 !==  ==! */
+          , XRAY_NO                      /** numéro de scannage !== XRAY번호 ==! */
+          , XRAY_INSC_RSN                /** motif de scannage !== XRAY검사사유 ==! */
+          , BIRT_REGN_NM                 /** Lieu De Naissance !== 출생지역명 ==! */
+          , ENCY_DEPR_TP_CD                 /** Code d'entrée et de sortie !== 입국출국구분코드 ==! */
+          , BLGG_RQST_STTS_CD            /** Code de statut de demande des effets personnels !== 휴대품신청상태코드 ==! */
+          , DPST_TEMP_NO                 /** Numéro provisoire de mise en dépôt !== 예치임시번호 ==! */
+          , TPD_MGMT_NO                  /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+          , PSNR_TP_CD                      /** Couloir de voyageurs !== 여행자통로 ==! */
+          , ESTM_YN                      /** Présumé O/N !== 추정여부 ==! */
+          , PSPR_VALD_DT
+          , PSPR_NO_ISS_DT                      /** Date de délivrance du passeport !== 여권발급일자 ==! */
+          , PSPR_NO_ISS_ITT                      /** Lieu de délivrance du passeport !== 여권발급기관 ==! */
+          , PSNR_PT_CD                      /** Code de type de voyageur !== 여행자유형코드 ==! */
+          , LND_SEA_TP_CD                     /** Code de voie terrestre/maritime !== 육상해상구분코드 ==! */
+          , TPD_TEMP_NO                      /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+          , VALD_DT                      /** Date de la validité !== 유효일자 ==! */
+          , ACKW_TAMT                      /** Valeur reconnue totale !== 총인정금액 ==! */
+          , BGGE_TAMT                      /** Valeur Totale déclarée !== 총신고금액 ==! */
+          , BLGG_PSSN_YN                      /** Pocession des effets personnels !== 휴대품소지여부 ==! */
+          , DPST_SHED_CD                      /** Code de dépôt !== 예치장치장코드 ==! */
+          , NTNAL_IDFY_NO                    /** Nin !== 자국민식별번호 ==! */
+          )
+          VALUES
+          (
+          #{blggMgmtNo}                /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+          , #{cstmCd}                    /** Code Du Bureau !== 세관코드 ==! */
+          , #{deptCd}                    /** Code de service !== 부서코드 ==! */
+          , #{psprNo}                    /** N° De Passeport !== 여권번호 ==! */
+          , #{natCd}                     /** Code De Nationalité !== 국적코드 ==! */
+          , #{psnrFmnm}                  /** Prénom Du Voyageur !== 여행자성 ==! */
+          , #{psnrGvnmNm}                /** Prénom du voyageur !== 여행자이름명 ==! */
+          , #{gndrCd}                    /** Code De Sexe !== 성별코드 ==! */
+          , #{brdy}                      /** Date De Naissance !== 생년월일 ==! */
+          , #{tlphNo}                    /** N° De Téléphone !== 전화번호 ==! */
+          , #{eml}                       /** Email !== 이메일 ==! */
+          , #{jobNm}                     /** Profession !== 직업명 ==! */
+          , #{dzaAddr}                   /** Adresse en Algérie !== 알제리주소 ==! */
+          , #{ovrsRsdnAddr}              /** Adresse de résidence à l'étranger !== 해외거주주소 ==! */
+          , #{arvlDt}                    /** Date D'Arrivée !== 도착일자 ==! */
+          , #{etprHh}                    /** Date/Heure De L'Entrée !== 입항시 ==! */
+          , #{psnrBrlcCd}                /** Lieu de départ du voyageur !== 여행자탑승지코드 ==! */
+          , #{psnrArlcCd}                /** Lieu de destination du voyageur !== 여행자도착지코드 ==! */
+          , #{flghFlnm}                  /** N° De Vol !== 항공편명 ==! */
+          , #{arlnCd}                    /** Code De Compagnie Aerienne !== 항공사코드 ==! */
+          , #{shcoNm}                    /** Nom Du Consignataire !== 선사명 ==! */
+          , #{shcoCd}                    /** Code Du Consignataire !== 선사코드 ==! */
+          , #{isprId}                    /** Id Du Contrôleur !== 검사자ID ==! */
+          , #{inscRsnCd}                 /** Code De Motif Du Contrôle !== 검사사유코드 ==! */
+          , #{inscBrkdCd}                /** Code De Résultat Du Contrôle !== 검사내역코드 ==! */
+          , #{inscDt}                    /** Date de vérification !== 검사일자 ==! */
+          , #{blggPrcsRsltCd}            /** Code de résultat de traitement des effets personnels !== 휴대품처리결과코드 ==! */
+          , #{rmrk}                      /** Remarque !== 비고 ==! */
+          , #{bggeTgcnt}                 /** Nbr Total De Colis !== 수하물총개수 ==! */
+          , #{bggeTtwg}                  /** Poids Total Des Colis !== 수하물총중량 ==! */
+          , #{aprvId}                    /** Id D'Approbation  !== 결재ID ==! */
+          , #{aprvPrcsSttsCd}            /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+          , #{rgsrDt}                    /** Date D'Enregistrement !== 등록일자 ==! */
+          , #{regstId}                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+          , #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+          , 'N'                          /** Suppression On !== 삭제여부 ==! */
+          , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , CURRENT_TIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , CURRENT_TIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+          , #{bndlTxTamt}                /** Montant total de taxation forfaitaire !==  ==! */
+          , #{csclRgsrDt}                /** @TODO : 번역필요 !==  ==! */
+          , #{xrayNo}                    /** numéro de scannage !== XRAY번호 ==! */
+          , #{xrayInscRsn}               /** motif de scannage !== XRAY검사사유 ==! */
+          , #{birtRegnNm}                /** Lieu De Naissance !== 출생지역명 ==! */
+          , #{encyDeprTpCd}                /** Lieu De Naissance !== 출생지역명 ==! */
+          , #{blggRqstSttsCd}            /** Code de statut de demande des effets personnels !== 휴대품신청상태코드 ==! */
+          , #{dpstTempNo}            /** Numéro provisoire de mise en dépôt !== 예치임시번호 ==! */
+          , #{tpdMgmtNo}                 /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+          , #{psnrTpCd}                    /** Couloir de voyageurs !== 여행자통로 ==! */
+          , #{estmYn}                      /** Présumé O/N !== 추정여부 ==! */
+          , #{psprValdDt}
+          , #{psprNoIssDt}                    /** Date de délivrance du passeport !== 여권발급일자 ==! */
+          , #{psprNoIssItt}                    /** Lieu de délivrance du passeport !== 여권발급기관 ==! */
+          , #{psnrPtCd}                      /** Code de type de voyageur !== 여행자유형코드 ==! */
+          , #{lndSeaTpCd}                     /** Code de voie terrestre/maritime !== 육상해상구분코드 ==! */
+          , #{tpdTempNo}                      /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+          , #{valdDt}                      /** Date de la validité !== 유효일자 ==! */
+          , #{ackwTamt}                      /** Valeur reconnue totale !== 총인정금액 ==! */
+          , #{bggeTamt}                      /** Valeur Totale déclarée !== 총신고금액 ==! */
+          , #{blggPssnYn}                      /** Pocession des effets personnels !== 휴대품소지여부 ==! */
+          , #{dpstShedCd}                      /** Code de dépôt !== 예치장치장코드 ==! */
+          , #{ntnalIdfyNo}                     /** Nin !== 자국민식별번호 ==! */
+          )
+    </insert>
+
+  <!--
+  @TODO:번역필요 !== GeneratorComments 수정 ==!
+  (Generated)
+  -->
+  <update id="updatePscDpstBscs" parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscDpstDcshVo">
+    /* updatePscDpstBscs */
+    UPDATE  ALPASSINT.TB_PSCI_PSNR_BLGG_DPST SET
+    LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+    , LAST_CHG_DTTM = CURRENT_TIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    <if test='blggMgmtNo != null and blggMgmtNo != ""'>
+      , BLGG_MGMT_NO = #{blggMgmtNo}                /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+    </if>
+    <if test='dpstMgmtNo != null and dpstMgmtNo != ""'>
+      , DPST_MGMT_NO = #{dpstMgmtNo}                /** Numéro De Série De Transit/Correspondance !== 예치관리번호 ==! */
+    </if>
+    <if test='blggRqstSttsCd != null and blggRqstSttsCd != ""'>
+      , BLGG_RQST_STTS_CD = #{blggRqstSttsCd}          /** Code de statut de demande des effets personnels !==  ==! */
+    </if>
+    <if test='psnrFmnm != null and psnrFmnm != ""'>
+      , PSNR_FMNM = #{psnrFmnm}                     /** Prénom Du Voyageur !== 여행자성 ==! */
+    </if>
+    <if test='psnrGvnmNm != null and psnrGvnmNm != ""'>
+      , PSNR_GVNM_NM = #{psnrGvnmNm}                /** Prénom du voyageur !== 여행자이름명 ==! */
+    </if>
+    <if test='gndrCd != null and gndrCd != ""'>
+      , GNDR_CD = #{gndrCd}                         /** Code De Sexe !== 성별코드 ==! */
+    </if>
+    <if test='psprNo != null and psprNo != ""'>
+      , PSPR_NO = #{psprNo}                         /** N° De Passeport !== 여권번호 ==! */
+    </if>
+    <if test='brdy != null and brdy != ""'>
+      , BRDY = #{brdy}                              /** Date De Naissance !== 생년월일 ==! */
+    </if>
+    <if test='natCd != null and natCd != ""'>
+      , NAT_CD = #{natCd}                           /** Code De Nationalité !== 국적코드 ==! */
+    </if>
+    <if test='dzaAddr != null and dzaAddr != ""'>
+      , DZA_ADDR = #{dzaAddr}                       /** Adresse en Algérie !== 알제리주소 ==! */
+    </if>
+    <if test='ovrsRsdnAddr != null and ovrsRsdnAddr != ""'>
+      , OVRS_RSDN_ADDR = #{ovrsRsdnAddr}            /** Adresse de résidence à l'étranger !== 해외거주주소 ==! */
+    </if>
+    <if test='eml != null and eml != ""'>
+      , EML = #{eml}                                /** Email !== 이메일 ==! */
+    </if>
+    <if test='tlphNo != null and tlphNo != ""'>
+      , TLPH_NO = #{tlphNo}                         /** N° De Téléphone !== 전화번호 ==! */
+    </if>
+    <if test='jobNm != null and jobNm != ""'>
+      , JOB_NM = #{jobNm}                           /** Profession !== 직업명 ==! */
+    </if>
+    <if test='arvlDt != null and arvlDt != ""'>
+      , ARVL_DT = #{arvlDt}                         /** Date D'Arrivée !== 도착일자 ==! */
+    </if>
+    <if test='psnrBrlcCd != null and psnrBrlcCd != ""'>
+      , PSNR_BRLC_CD = #{psnrBrlcCd}                /** Lieu de départ du voyageur !== 여행자탑승지코드 ==! */
+    </if>
+    <if test='psnrArlcCd != null and psnrArlcCd != ""'>
+      , PSNR_ARLC_CD = #{psnrArlcCd}                /** Lieu de destination du voyageur !== 여행자도착지코드 ==! */
+    </if>
+    <if test='stgePridDt != null and stgePridDt != ""'>
+      , STGE_PRID_DT = #{stgePridDt}                /** Date d'échéance !== 장치기간일자 ==! */
+    </if>
+    <if test='bggeTgcnt != null and bggeTgcnt != ""'>
+      , BGGE_TGCNT = #{bggeTgcnt}                   /** Nbr Total De Colis !== 수하물총개수 ==! */
+    </if>
+    <if test='bggeTamt != null and bggeTamt != ""'>
+      , BGGE_TAMT = #{bggeTamt}                     /** Valeur totale de bagages !== 수하물총금액 ==! */
+    </if>
+    <if test='amtCurrCd != null and amtCurrCd != ""'>
+      , AMT_CURR_CD = #{amtCurrCd}                  /** Code de montant et des devises !== 금액통화코드 ==! */
+    </if>
+    <if test='dpstRsnCn != null and dpstRsnCn != ""'>
+      , DPST_RSN_CN = #{dpstRsnCn}                  /** Motif de mise en dépôt !== 예치사유내용 ==! */
+    </if>
+    <if test='birtRegnNm != null and birtRegnNm != ""'>
+      , BIRT_REGN_NM = #{birtRegnNm}                /** Lieu De Naissance !== 출생지역명 ==! */
+    </if>
+    <if test='rgsrDt != null and rgsrDt != ""'>
+      , RGSR_DT = #{rgsrDt}                         /** Date D'Enregistrement !== 등록일자 ==! */
+    </if>
+    <if test='atchFileId != null and atchFileId != ""'>
+      , ATCH_FILE_ID = #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+    </if>
+    <if test='dpstSfkpEvdcNo != null and dpstSfkpEvdcNo != ""'>
+      , DPST_SFKP_EVDC_NO = #{dpstSfkpEvdcNo}       /** Numéro de bulletin de dépôt !== 예치보관증서번호 ==! */
+    </if>
+    <if test='regstId != null and regstId != ""'>
+      , REGST_ID = #{regstId}                       /** Id De La Personne Enregistrant !== 등록자ID ==! */
+    </if>
+    <if test='stgePridXtnsReqstDt != null and stgePridXtnsReqstDt != ""'>
+      , STGE_PRID_XTNS_REQST_DT = #{stgePridXtnsReqstDt}  /** Date d'échéance sollicitée !== 장치기간연장요청일자 ==! */
+    </if>
+    <if test='rlseYn != null and rlseYn != ""'>
+      , RLSE_YN = #{rlseYn}                         /** Enlevé On !== 반출여부 ==! */
+    </if>
+    <if test='csclDt != null and csclDt != ""'>
+      , CSCL_DT = #{csclDt}                         /** Date de dédouanement !== 통관일자 ==! */
+    </if>
+    <if test='bndlTxTamt != null and bndlTxTamt != ""'>
+      , BNDL_TX_TAMT = #{bndlTxTamt}                /** Montant total de taxation forfaitaire !== 일괄과세총금액 ==! */
+    </if>
+    <if test='rmrk != null and rmrk != ""'>
+      , RMRK = #{rmrk}                              /** Remarque !== 비고 ==! */
+    </if>
+    <if test='encyDeprTpCd != null and encyDeprTpCd != ""'>
+      , ENCY_DEPR_TP_CD = #{encyDeprTpCd}                         /** Code d'entrée et de sortie !== 입국출국구분코드 ==! */
+    </if>
+    <if test='flghFlnm != null and flghFlnm != ""'>
+      , FLGH_FLNM = #{flghFlnm}                     /** N° De Vol !== 항공편명 ==! */
+    </if>
+    <if test='arlnCd != null and arlnCd != ""'>
+      , ARLN_CD = #{arlnCd}                         /** Code De Compagnie Aerienne !== 항공사코드 ==! */
+    </if>
+    <if test='shcoNm != null and shcoNm != ""'>
+      , SHCO_NM = #{shcoNm}                         /** Nom Du Consignataire !== 선사명 ==! */
+    </if>
+    <if test='shcoCd != null and shcoCd != ""'>
+      , SHCO_CD = #{shcoCd}                         /** Code Du Consignataire !== 선사코드 ==! */
+    </if>
+    <if test='psnrTpCd != null and psnrTpCd != ""'>
+      , PSNR_TP_CD = #{psnrTpCd}                         /** Couloir de voyageurs !== 여행자통로 ==! */
+    </if>
+    <if test='estmYn != null and estmYn != ""'>
+      , ESTM_YN = #{estmYn}                         /** Présumé O/N !== 추정여부 ==! */
+    </if>
+    <if test='psprValdDt != null and psprValdDt != ""'>
+      , PSPR_VALD_DT = #{psprValdDt}
+    </if>
+    <if test='psprNoIssDt != null and psprNoIssDt != ""'>
+      , PSPR_NO_ISS_DT = #{psprNoIssDt}                         /** Date de délivrance du passeport !== 여권발급일자 ==! */
+    </if>
+    <if test='psprNoIssItt != null and psprNoIssItt != ""'>
+      , PSPR_NO_ISS_ITT = #{psprNoIssItt}                         /** Lieu de délivrance du passeport !== 여권발급기관 ==! */
+    </if>
+    <if test='psnrPtCd != null and psnrPtCd != ""'>
+      , PSNR_PT_CD = #{psnrPtCd}                         /** Code de type de voyageur !== 여행자유형코드 ==! */
+    </if>
+    <if test='lndSeaTpCd != null and lndSeaTpCd != ""'>
+      , LND_SEA_TP_CD = #{lndSeaTpCd}                         /** Code de voie terrestre/maritime !== 육상해상구분코드 ==! */
+    </if>
+    <if test='valdDt != null and valdDt != ""'>
+      , VALD_DT = #{valdDt}                         /** Date de la validité !== 유효일자 ==! */
+    </if>
+    <if test='ackwTamt != null and ackwTamt != ""'>
+      , ACKW_TAMT = #{ackwTamt}                         /** Valeur reconnue totale !== 총인정금액 ==! */
+    </if>
+    <if test='bggeTamt != null and bggeTamt != ""'>
+      , BGGE_TAMT = #{bggeTamt}                         /** Valeur Totale déclarée !== 총신고금액 ==! */
+    </if>
+    <if test='blggPssnYn != null and blggPssnYn != ""'>
+      , BLGG_PSSN_YN = #{blggPssnYn}                         /** Pocession des effets personnels !== 휴대품소지여부 ==! */
+    </if>
+    WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+    AND  DPST_TEMP_NO = #{dpstTempNo}              /** Numéro provisoire de mise en dépôt !== 예치임시번호 ==! */
+  </update>
+
+
+    <!--
+    @TODO:번역필요 !== GeneratorComments 수정 ==!
+    (Generated)
+    -->
+    <update id="updatePscInscDcsh" parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo">
+        /* updatePscInscDcsh */
+        UPDATE  ALPASSINT.TB_PSCI_PSNR_BLGG_IPRT SET
+          LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM = CURRENT_TIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+          <if test='psprNo != null and psprNo != ""'>
+          , PSPR_NO = #{psprNo}                         /** N° De Passeport !== 여권번호 ==! */
+          </if>
+          <if test='natCd != null and natCd != ""'>
+          , NAT_CD = #{natCd}                           /** Code De Nationalité !== 국적코드 ==! */
+          </if>
+          <if test='psnrFmnm != null and psnrFmnm != ""'>
+          , PSNR_FMNM = #{psnrFmnm}                     /** Prénom Du Voyageur !== 여행자성 ==! */
+          </if>
+          <if test='psnrGvnmNm != null and psnrGvnmNm != ""'>
+          , PSNR_GVNM_NM = #{psnrGvnmNm}                /** Prénom du voyageur !== 여행자이름명 ==! */
+          </if>
+          <if test='gndrCd != null and gndrCd != ""'>
+          , GNDR_CD = #{gndrCd}                         /** Code De Sexe !== 성별코드 ==! */
+          </if>
+          <if test='brdy != null and brdy != ""'>
+          , BRDY = #{brdy}                              /** Date De Naissance !== 생년월일 ==! */
+          </if>
+          <if test='tlphNo != null and tlphNo != ""'>
+          , TLPH_NO = #{tlphNo}                         /** N° De Téléphone !== 전화번호 ==! */
+          </if>
+          <if test='eml != null and eml != ""'>
+          , EML = #{eml}                                /** Email !== 이메일 ==! */
+          </if>
+          <if test='jobNm != null and jobNm != ""'>
+          , JOB_NM = #{jobNm}                           /** Profession !== 직업명 ==! */
+          </if>
+          <if test='dzaAddr != null and dzaAddr != ""'>
+          , DZA_ADDR = #{dzaAddr}                       /** Adresse en Algérie !== 알제리주소 ==! */
+          </if>
+          <if test='ovrsRsdnAddr != null and ovrsRsdnAddr != ""'>
+          , OVRS_RSDN_ADDR = #{ovrsRsdnAddr}            /** Adresse de résidence à l'étranger !== 해외거주주소 ==! */
+          </if>
+          <if test='arvlDt != null and arvlDt != ""'>
+          , ARVL_DT = #{arvlDt}                         /** Date D'Arrivée !== 도착일자 ==! */
+          </if>
+          <if test='etprHh != null and etprHh != ""'>
+          , ETPR_HH = #{etprHh}                         /** Date/Heure De L'Entrée !== 입항시 ==! */
+          </if>
+          <if test='psnrBrlcCd != null and psnrBrlcCd != ""'>
+          , PSNR_BRLC_CD = #{psnrBrlcCd}                /** Lieu de départ du voyageur !== 여행자탑승지코드 ==! */
+          </if>
+          <if test='psnrArlcCd != null and psnrArlcCd != ""'>
+          , PSNR_ARLC_CD = #{psnrArlcCd}                /** Lieu de destination du voyageur !== 여행자도착지코드 ==! */
+          </if>
+          <if test='flghFlnm != null and flghFlnm != ""'>
+          , FLGH_FLNM = #{flghFlnm}                     /** N° De Vol !== 항공편명 ==! */
+          </if>
+          <if test='arlnCd != null and arlnCd != ""'>
+          , ARLN_CD = #{arlnCd}                         /** Code De Compagnie Aerienne !== 항공사코드 ==! */
+          </if>
+          <if test='shcoNm != null and shcoNm != ""'>
+          , SHCO_NM = #{shcoNm}                         /** Nom Du Consignataire !== 선사명 ==! */
+          </if>
+          <if test='shcoCd != null and shcoCd != ""'>
+          , SHCO_CD = #{shcoCd}                         /** Code Du Consignataire !== 선사코드 ==! */
+          </if>
+          <if test='isprId != null and isprId != ""'>
+          , ISPR_ID = #{isprId}                         /** Id Du Contrôleur !== 검사자ID ==! */
+          </if>
+          <if test='inscRsnCd != null and inscRsnCd != ""'>
+          , INSC_RSN_CD = #{inscRsnCd}                  /** Code De Motif Du Contrôle !== 검사사유코드 ==! */
+          </if>
+          <if test='inscBrkdCd != null and inscBrkdCd != ""'>
+          , INSC_BRKD_CD = #{inscBrkdCd}                /** Code De Résultat Du Contrôle !== 검사내역코드 ==! */
+          </if>
+          <if test='inscDt != null and inscDt != ""'>
+          , INSC_DT = #{inscDt}                         /** Date de vérification !== 검사일자 ==! */
+          </if>
+          <if test='blggPrcsRsltCd != null and blggPrcsRsltCd != ""'>
+          , BLGG_PRCS_RSLT_CD = #{blggPrcsRsltCd}       /** Code de résultat de traitement des effets personnels !== 휴대품처리결과코드 ==! */
+          </if>
+          <if test='rmrk != null and rmrk != ""'>
+          , RMRK = #{rmrk}                              /** Remarque !== 비고 ==! */
+          </if>
+          <if test='bggeTgcnt != null and bggeTgcnt != ""'>
+          , BGGE_TGCNT = #{bggeTgcnt}                   /** Nbr Total De Colis !== 수하물총개수 ==! */
+          </if>
+          <if test='bggeTtwg != null and bggeTtwg != ""'>
+          , BGGE_TTWG = #{bggeTtwg}                     /** Poids Total Des Colis !== 수하물총중량 ==! */
+          </if>
+          <if test='aprvId != null and aprvId != ""'>
+          , APRV_ID = #{aprvId}                         /** Id D'Approbation  !== 결재ID ==! */
+          </if>
+          <if test='aprvPrcsSttsCd != null and aprvPrcsSttsCd != ""'>
+          , APRV_PRCS_STTS_CD = #{aprvPrcsSttsCd}       /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+          </if>
+          <if test='rgsrDt != null and rgsrDt != ""'>
+          , RGSR_DT = #{rgsrDt}                         /** Date D'Enregistrement !== 등록일자 ==! */
+          </if>
+          <if test='regstId != null and regstId != ""'>
+          , REGST_ID = #{regstId}                       /** Id De La Personne Enregistrant !== 등록자ID ==! */
+          </if>
+          <if test='atchFileId != null and atchFileId != ""'>
+          , ATCH_FILE_ID = #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+          </if>
+          <if test='bndlTxTamt != null and bndlTxTamt != ""'>
+          , BNDL_TX_TAMT = #{bndlTxTamt}                /** Montant total de taxation forfaitaire !==  ==! */
+          </if>
+          <if test='csclRgsrDt != null and csclRgsrDt != ""'>
+          , CSCL_RGSR_DT = #{csclRgsrDt}                /** @TODO : 번역필요 !==  ==! */
+          </if>
+          <if test='xrayNo != null and xrayNo != ""'>
+          , XRAY_NO = #{xrayNo}                         /** numéro de scannage !== XRAY번호 ==! */
+          </if>
+          <if test='xrayInscRsn != null and xrayInscRsn != ""'>
+          , XRAY_INSC_RSN = #{xrayInscRsn}              /** motif de scannage !== XRAY검사사유 ==! */
+          </if>
+          <if test='birtRegnNm != null and birtRegnNm != ""'>
+          , BIRT_REGN_NM = #{birtRegnNm}                /** Lieu De Naissance !== 출생지역명 ==! */
+          </if>
+          <if test='encyDeprTpCd != null and encyDeprTpCd != ""'>
+          , ENCY_DEPR_TP_CD = #{encyDeprTpCd}                /** Code d'entrée et de sortie !== 입국출국구분코드 ==! */
+          </if>
+          <if test='blggRqstSttsCd != null and blggRqstSttsCd != ""'>
+          , BLGG_RQST_STTS_CD = #{blggRqstSttsCd}       /** Code de statut de demande des effets personnels !== 휴대품신청상태코드 ==! */
+          </if>
+          <if test='tpdMgmtNo != null and tpdMgmtNo != ""'>
+            , TPD_MGMT_NO = #{tpdMgmtNo}                  /** @TODO : 번역필요 !== TPD관리번호 ==! */
+          </if>
+          <if test='psnrTpCd != null and psnrTpCd != ""'>
+            , PSNR_TP_CD = #{psnrTpCd}                         /** Couloir de voyageurs !== 여행자통로 ==! */
+          </if>
+          <if test='estmYn != null and estmYn != ""'>
+            , ESTM_YN = #{estmYn}                         /** Présumé O/N !== 추정여부 ==! */
+          </if>
+          <if test='psprValdDt != null and psprValdDt != ""'>
+            , PSPR_VALD_DT = #{psprValdDt}
+          </if>
+          <if test='psprNoIssDt != null and psprNoIssDt != ""'>
+            , PSPR_NO_ISS_DT = #{psprNoIssDt}                         /** Date de délivrance du passeport !== 여권발급일자 ==! */
+          </if>
+          <if test='psprNoIssItt != null and psprNoIssItt != ""'>
+            , PSPR_NO_ISS_ITT = #{psprNoIssItt}                         /** Lieu de délivrance du passeport !== 여권발급기관 ==! */
+          </if>
+          <if test='psnrPtCd != null and psnrPtCd != ""'>
+            , PSNR_PT_CD = #{psnrPtCd}                         /** Code de type de voyageur !== 여행자유형코드 ==! */
+          </if>
+          <if test='lndSeaTpCd != null and lndSeaTpCd != ""'>
+            , LND_SEA_TP_CD = #{lndSeaTpCd}                         /** Code de voie terrestre/maritime !== 육상해상구분코드 ==! */
+          </if>
+          <if test='tpdTempNo != null and tpdTempNo != ""'>
+            , TPD_TEMP_NO = #{tpdTempNo}                         /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+          </if>
+          <if test='valdDt != null and valdDt != ""'>
+            , VALD_DT = #{valdDt}                         /** Date de la validité !== 유효일자 ==! */
+          </if>
+          <if test='ackwTamt != null and ackwTamt != ""'>
+            , ACKW_TAMT = #{ackwTamt}                         /** Valeur reconnue totale !== 총인정금액 ==! */
+          </if>
+          <if test='bggeTamt != null and bggeTamt != ""'>
+            , BGGE_TAMT = #{bggeTamt}                         /** Valeur Totale déclarée !== 총신고금액 ==! */
+          </if>
+          <if test='blggPssnYn != null and blggPssnYn != ""'>
+            , BLGG_PSSN_YN = #{blggPssnYn}                         /** Pocession des effets personnels !== 휴대품소지여부 ==! */
+          </if>
+          <if test='dpstShedCd != null and dpstShedCd != ""'>
+            , DPST_SHED_CD = #{dpstShedCd}                         /** Code de dépôt !== 예치장치장코드 ==! */
+          </if>
+          <if test='ntnalIdfyNo != null and ntnalIdfyNo != ""'>
+            , NTNAL_IDFY_NO = #{ntnalIdfyNo}                         /** Nin !== 자국민식별번호 ==! */
+          </if>
+        WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+        AND  BLGG_MGMT_NO = #{blggMgmtNo}                /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+    </update>
+
+  <!--
+  @TODO:번역필요 !== GeneratorComments 수정 ==!
+  (Generated)
+  -->
+  <update id="updatePscInscAudtDcsh" parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo">
+    /* updatePscInscAudtDcsh */
+    UPDATE  ALPASSINT.TB_PSCI_PSNR_BLGG_IPRT SET
+    LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+    ,  LAST_CHG_DTTM = CURRENT_TIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+    <if test='blggDtrmNo != null and blggDtrmNo != ""'>
+      , BLGG_DTRM_NO = #{blggDtrmNo}                   /** Numéro de décision des effets personnels !== 휴대품결정번호	 ==! */
+    </if>
+    <if test='bggeTgcnt != null and bggeTgcnt != ""'>
+      , BGGE_TGCNT = #{bggeTgcnt}                   /** Nbr Total De Colis !== 수하물총개수 ==! */
+    </if>
+    <if test='bndlTxTamt != null and bndlTxTamt != ""'>
+      , BNDL_TX_TAMT = #{bndlTxTamt}                /** Montant total de taxation forfaitaire !== 일괄과세총금액 ==! */
+    </if>
+    <if test='blggRqstSttsCd != null and blggRqstSttsCd != ""'>
+    , BLGG_RQST_STTS_CD = #{blggRqstSttsCd}       /** Code de statut de demande des effets personnels !== 휴대품신청상태코드 ==! */
+    </if>
+    <if test='valdDt != null and valdDt != ""'>
+      , VALD_DT = #{valdDt}       /** Valable jusqu'au !== 유효일자 ==! */
+    </if>
+    WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+    AND  BLGG_MGMT_NO = #{blggMgmtNo}                /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+  </update>
+
+
+    <!--
+    @TODO:번역필요 !== GeneratorComments 삭제 ==!
+    (Generated)
+    -->
+    <update id="deletePscInscDcsh" parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo">
+        /* deletePscInscDcsh */
+        UPDATE  ALPASSINT.TB_PSCI_PSNR_BLGG_IPRT
+        SET DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+             ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+             ,  LAST_CHG_DTTM = CURRENT_TIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+         WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+        AND  BLGG_MGMT_NO = #{blggMgmtNo}                /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+    </update>
+    
+  <!--
+  @TODO:번역필요 !== 외환신고서관리 수정 ==!
+  -->
+  <update id="updatePscInscDcshMgmt" parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo">
+    /* updatePscInscDcshMgmt */
+    UPDATE  ALPASSINT.TB_PSCI_PSNR_BLGG_IPRT SET
+      LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+    , LAST_CHG_DTTM = CURRENT_TIMESTAMP           /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    <if test='bndlTxTamt != null and bndlTxTamt != ""'>
+    , BNDL_TX_TAMT = #{bndlTxTamt}            /** Montant total de taxation forfaitaire !==  ==! */
+    </if>
+    WHERE  DEL_YN = 'N'                                	/** Suppression ON !== 삭제여부 ==! */
+    AND  BLGG_MGMT_NO = #{blggMgmtNo}                /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+  </update>
+
+  <select id="selectBfTpdPsnrBscsBfInfo"
+    parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo" resultType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo">
+    /* selectBfTpdPsnrBscsBfInfo */
+    SELECT * FROM (
+      SELECT PSNR_FMNM
+      , PSNR_GVNM_NM
+      , BRDY
+      , BIRT_REGN_NM
+      , PSPR_NO
+      , PSPR_VALD_DT
+      , ESTM_YN
+      , JOB_NM
+      , PSNR_PT_CD
+      , DZA_ADDR
+      , OVRS_RSDN_ADDR
+      , PSPR_NO_ISS_DT
+      , PSPR_NO_ISS_ITT
+      , NAT_CD
+      , BLGG_PSSN_YN
+      , PSNR_TP_CD
+      , LND_SEA_TP_CD
+      , ENCY_DEPR_TP_CD
+      , TLPH_NO
+      , EML
+      , PSNR_BRLC_CD
+      , PSNR_ARLC_CD
+      , DPST_SHED_CD
+      , NTNAL_IDFY_NO
+      , (SELECT A.TPD_MGMT_NO
+      FROM TB_PSCI_TPD_BSCS A, TB_PSCI_TPD_PSNR_BSCS B
+      WHERE A.TPD_TEMP_NO = B.TPD_TEMP_NO
+      AND   ((A.TPD_RQST_STTS_CD = 'A3' AND A.TPD_RQST_REGM_CD = 'EXP') OR (A.TPD_RQST_STTS_CD = 'A4' AND A.TPD_RQST_REGM_CD = 'IMP'))
+      AND	B.DRVR_PSPR_NO = #{psprNo} LIMIT 1)
+      , (SELECT A.TPD_TEMP_NO
+      FROM TB_PSCI_TPD_BSCS A, TB_PSCI_TPD_PSNR_BSCS B
+      WHERE A.TPD_TEMP_NO = B.TPD_TEMP_NO
+      AND   ((A.TPD_RQST_STTS_CD = 'A3' AND A.TPD_RQST_REGM_CD = 'EXP') OR (A.TPD_RQST_STTS_CD = 'A4' AND A.TPD_RQST_REGM_CD = 'IMP'))
+      AND	B.DRVR_PSPR_NO = #{psprNo} LIMIT 1)
+    , 1 AS GUBUN
+      , FRST_RGSR_DTTM
+      FROM TB_PSCI_PSNR_BLGG_IPRT
+      WHERE PSPR_NO = #{psprNo}
+      UNION ALL
+      SELECT  DRVR_GVNM_NM AS PSNR_FMNM
+      , B.DRVR_FMNM AS PSNR_GVNM_NM
+      , B.DRVR_BRDY AS BRDY
+      , B.DRVR_BIRT_REGN_NM AS BIRT_REGN_NM
+      , B.DRVR_PSPR_NO AS PSPR_NO
+      , B.DRVR_PSPR_VALD_DT AS PSPR_VALD_DT
+      , DECODE(B.DRVR_ESTM_YN,'Y','Y','N') AS ESTM_YN
+      , B.DRVR_JOB_NM AS JOB_NM
+      , B.DRVR_PT_CD AS PSNR_PT_CD
+      , B.DRVR_ADDR AS DZA_ADDR
+      , B.DRVR_OVRS_ADDR AS OVRS_RSDN_ADDR
+      , B.DRVR_PSPR_NO_ISS_DT AS PSPR_NO_ISS_DT
+      , B.DRVR_PSPR_NO_ISS_ITT AS PSPR_NO_ISS_ITT
+      , B.DRVR_NAT_CD AS NAT_CD
+      , '' AS BLGG_PSSN_YN
+      , '' AS PSNR_TP_CD
+      , '' AS LND_SEA_TP_CD
+      , '' AS ENCY_DEPR_TP_CD
+      , '' AS TLPH_NO
+      , '' AS EML
+      , '' AS PSNR_BRLC_CD
+      , '' AS PSNR_ARLC_CD
+      , '' AS DPST_SHED_CD
+      , B.NTNAL_IDFY_NO
+      , A.TPD_MGMT_NO
+      , A.TPD_TEMP_NO
+      , 2 AS GUBUN
+      , B.FRST_RGSR_DTTM
+      FROM TB_PSCI_TPD_BSCS A, TB_PSCI_TPD_PSNR_BSCS B
+      WHERE A.TPD_TEMP_NO = B.TPD_TEMP_NO
+      AND   ((A.TPD_RQST_STTS_CD = 'A3' AND A.TPD_RQST_REGM_CD = 'EXP') OR (A.TPD_RQST_STTS_CD = 'A4' AND A.TPD_RQST_REGM_CD = 'IMP'))
+      AND	B.DRVR_PSPR_NO = #{psprNo}
+      UNION ALL
+      SELECT PSNR_FMNM
+      , PSNR_GVNM_NM
+      , BRDY
+      , BIRT_REGN_NM
+      , PSPR_NO
+      , '' AS PSPR_VALD_DT
+      , DECODE(ESTM_YN,'Y','Y','N') AS ESTM_YN
+      , JOB_NM
+      , PSNR_PT_CD
+      , DZA_ADDR
+      , OVRS_RSDN_ADDR
+      , PSPR_NO_ISS_DT
+      , PSPR_NO_ISS_ITT
+      , NAT_CD
+      , '' AS BLGG_PSSN_YN
+      , '' AS PSNR_TP_CD
+      , '' AS LND_SEA_TP_CD
+      , '' AS ENCY_DEPR_TP_CD
+      , '' AS TLPH_NO
+      , '' AS EML
+      , '' AS PSNR_BRLC_CD
+      , '' AS PSNR_ARLC_CD
+      , '' AS DPST_SHED_CD
+      , NTNAL_IDFY_NO
+      , '' AS TPD_MGMT_NO
+      , '' AS TPD_TEMP_NO
+      , 3 AS GUBUN
+      , FRST_RGSR_DTTM
+      FROM TB_PSCI_FRXCG_DCSH_MGMT
+      WHERE PSPR_NO = #{psprNo}
+    )
+    ORDER BY GUBUN , FRST_RGSR_DTTM DESC
+    LIMIT 1
+
+  </select>
+
+
+
+  <!--
+   @TODO:번역필요 !== GeneratorComments 목록 조회 ==!
+   -->
+  <select id="selectBfInfoDcsh"
+    parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo" resultType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo">
+    /* selectBfInfoDcsh */
+    <include refid="pagination.header" ></include>
+    SELECT
+    A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+    , A.DEPT_CD                      /** Code de service !== 부서코드 ==! */
+    , A.PSPR_NO                    /** N° De Passeport !== 여권번호 ==! */
+    , A.NAT_CD                     /** Code De Nationalité !== 국적코드 ==! */
+    , A.PSNR_FMNM                  /** Prénom Du Voyageur !== 여행자성 ==! */
+    , A.PSNR_GVNM_NM               /** Prénom du voyageur !== 여행자이름명 ==! */
+    , A.GNDR_CD                    /** Code De Sexe !== 성별코드 ==! */
+    , A.BRDY                       /** Date De Naissance !== 생년월일 ==! */
+    , A.TLPH_NO                    /** N° De Téléphone !== 전화번호 ==! */
+    , A.EML                        /** Email !== 이메일 ==! */
+    , A.JOB_NM                     /** Profession !== 직업명 ==! */
+    , A.DZA_ADDR                   /** Adresse en Algérie !== 알제리주소 ==! */
+    , A.OVRS_RSDN_ADDR             /** Adresse de résidence à l'étranger !== 해외거주주소 ==! */
+    , A.ARVL_DT                    /** Date D'Arrivée !== 도착일자 ==! */
+    , A.ETPR_HH                    /** Date/Heure De L'Entrée !== 입항시 ==! */
+    , A.PSNR_BRLC_CD               /** Lieu de départ du voyageur !== 여행자탑승지코드 ==! */
+    , A.PSNR_ARLC_CD               /** Lieu de destination du voyageur !== 여행자도착지코드 ==! */
+    , A.FLGH_FLNM                  /** N° De Vol !== 항공편명 ==! */
+    , A.ARLN_CD                    /** Code De Compagnie Aerienne !== 항공사코드 ==! */
+    , A.SHCO_NM                    /** Nom Du Consignataire !== 선사명 ==! */
+    , A.SHCO_CD                    /** Code Du Consignataire !== 선사코드 ==! */
+    , A.ISPR_ID                    /** Id Du Contrôleur !== 검사자ID ==! */
+    , A.INSC_RSN_CD                /** Code De Motif Du Contrôle !== 검사사유코드 ==! */
+    , A.INSC_BRKD_CD               /** Code De Résultat Du Contrôle !== 검사내역코드 ==! */
+    , A.INSC_DT                    /** Date de vérification !== 검사일자 ==! */
+    , A.BLGG_PRCS_RSLT_CD          /** Code de résultat de traitement des effets personnels !== 휴대품처리결과코드 ==! */
+    , A.RMRK                       /** Remarque !== 비고 ==! */
+    , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+    , A.APRV_PRCS_STTS_CD          /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+    , TO_CHAR(TO_DATE(A.RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RGSR_DT /** Date D'Enregistrement !== 등록일자 ==! */
+    , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+    , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+    , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+    , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+    , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+    , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+    , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    , A.CSCL_RGSR_DT               /** @TODO : 번역필요 !==  ==! */
+    , A.XRAY_NO                    /** numéro de scannage !== XRAY번호 ==! */
+    , A.XRAY_INSC_RSN              /** motif de scannage !== XRAY검사사유 ==! */
+    , A.BIRT_REGN_NM                 /** Lieu De Naissance !== 출생지역명 ==! */
+    , A.ENCY_DEPR_TP_CD                 /** Code d'entrée et de sortie !== 입국출국구분코드 ==! */
+    , A.TPD_MGMT_NO                /** @TODO : 번역필요 !== TPD관리번호 ==! */
+    , A.PSNR_TP_CD                      /** Couloir de voyageurs !== 여행자통로 ==! */
+    , A.ESTM_YN                      /** Présumé O/N !== 추정여부 ==! */
+    , A.PSPR_VALD_DT
+    , A.PSPR_NO_ISS_DT                      /** Date de délivrance du passeport !== 여권발급일자 ==! */
+    , A.PSPR_NO_ISS_ITT                     /** Lieu de délivrance du passeport !== 여권발급기관 ==! */
+    , A.PSNR_PT_CD                      /** Code de type de voyageur !== 여행자유형코드 ==! */
+    , A.LND_SEA_TP_CD                     /** Code de voie terrestre/maritime !== 육상해상구분코드 ==! */
+    , A.BLGG_DTRM_NO                      /** Numéro de décision des effets personnels !== 휴대품결정번호	 ==! */
+    , A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+    , TO_CHAR(TO_DATE(A.VALD_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS VALD_DT    /** Date de la validité !== 유효일자 ==! */
+    , A.BLGG_PSSN_YN                     /** Pocession des effets personnels !== 휴대품소지여부 ==! */
+    , A.DPST_SHED_CD                     /** Code de dépôt !== 예치장치장코드 ==! */
+    , A.NTNAL_IDFY_NO                    /** Nin !== 자국민식별번호 ==! */
+    FROM   ALPASSINT.TB_PSCI_PSNR_BLGG_IPRT A
+    WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+    AND  A.PSPR_NO = #{psprNo}              /** N° De Passeport !== 여권번호 ==! */
+    ORDER BY A.RGSR_DT DESC
+    LIMIT 1
+    <include refid="pagination.footer" ></include>
+  </select>
+
+
+  <!--
+  @TODO:번역필요 !== 휴대품 TPD 수정 ==!
+  -->
+  <update id="updatePscInscTpdDcshMgmt" parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo">
+    /* updatePscInscTpdDcshMgmt */
+    UPDATE  ALPASSINT.TB_PSCI_PSNR_BLGG_IPRT SET
+    LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+    , LAST_CHG_DTTM = CURRENT_TIMESTAMP           /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    <if test='tpdTempNo != null and tpdTempNo != ""'>
+      , TPD_TEMP_NO = #{tpdTempNo}                         /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+    </if>
+    <if test='tpdMgmtNo != null and tpdMgmtNo != ""'>
+      , TPD_MGMT_NO = #{tpdMgmtNo}                  /** @TODO : 번역필요 !== TPD관리번호 ==! */
+    </if>
+    WHERE  DEL_YN = 'N'                                	/** Suppression ON !== 삭제여부 ==! */
+    AND  BLGG_MGMT_NO = #{blggMgmtNo}                /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+  </update>
+
+
+  <select id="selectPscInscDcshCufr"  
+    parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo" resultType="alpass.ipt.psc.blgg.rgsr.vo.PscInscDcshVo">
+    /* selectPscInscDcshCufr */
+    SELECT
+    A.BLGG_MGMT_NO               /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+    , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+    , A.DEPT_CD                      /** Code de service !== 부서코드 ==! */
+    , A.PSPR_NO                    /** N° De Passeport !== 여권번호 ==! */
+    , A.NAT_CD                     /** Code De Nationalité !== 국적코드 ==! */
+    , A.PSNR_FMNM                  /** Prénom Du Voyageur !== 여행자성 ==! */
+    , A.PSNR_GVNM_NM               /** Prénom du voyageur !== 여행자이름명 ==! */
+    , A.GNDR_CD                    /** Code De Sexe !== 성별코드 ==! */
+    , A.BRDY                       /** Date De Naissance !== 생년월일 ==! */
+    , A.TLPH_NO                    /** N° De Téléphone !== 전화번호 ==! */
+    , A.EML                        /** Email !== 이메일 ==! */
+    , A.JOB_NM                     /** Profession !== 직업명 ==! */
+    , A.DZA_ADDR                   /** Adresse en Algérie !== 알제리주소 ==! */
+    , A.OVRS_RSDN_ADDR             /** Adresse de résidence à l'étranger !== 해외거주주소 ==! */
+    , A.ARVL_DT                    /** Date D'Arrivée !== 도착일자 ==! */
+    , A.ETPR_HH                    /** Date/Heure De L'Entrée !== 입항시 ==! */
+    , A.PSNR_BRLC_CD               /** Lieu de départ du voyageur !== 여행자탑승지코드 ==! */
+    , A.PSNR_ARLC_CD               /** Lieu de destination du voyageur !== 여행자도착지코드 ==! */
+    , A.FLGH_FLNM                  /** N° De Vol !== 항공편명 ==! */
+    , A.ARLN_CD                    /** Code De Compagnie Aerienne !== 항공사코드 ==! */
+    , A.SHCO_NM                    /** Nom Du Consignataire !== 선사명 ==! */
+    , A.SHCO_CD                    /** Code Du Consignataire !== 선사코드 ==! */
+    , A.ISPR_ID                    /** Id Du Contrôleur !== 검사자ID ==! */
+    , A.INSC_RSN_CD                /** Code De Motif Du Contrôle !== 검사사유코드 ==! */
+    , A.INSC_BRKD_CD               /** Code De Résultat Du Contrôle !== 검사내역코드 ==! */
+    , A.INSC_DT                    /** Date de vérification !== 검사일자 ==! */
+    , A.BLGG_PRCS_RSLT_CD          /** Code de résultat de traitement des effets personnels !== 휴대품처리결과코드 ==! */
+    , A.RMRK                       /** Remarque !== 비고 ==! */
+    , A.BGGE_TGCNT                 /** Nbr Total De Colis !== 수하물총개수 ==! */
+    , A.BGGE_TTWG                  /** Poids Total Des Colis !== 수하물총중량 ==! */
+    , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+    , A.APRV_PRCS_STTS_CD          /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+    , A.RGSR_DT
+    , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+    , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+    , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+    , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+    , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+    , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+    , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    , A.BNDL_TX_TAMT               /** Montant total de taxation forfaitaire !==  ==! */
+    , A.CSCL_RGSR_DT               /** @TODO : 번역필요 !==  ==! */
+    , A.XRAY_NO                    /** numéro de scannage !== XRAY번호 ==! */
+    , A.XRAY_INSC_RSN              /** motif de scannage !== XRAY검사사유 ==! */
+    , A.BIRT_REGN_NM                 /** Lieu De Naissance !== 출생지역명 ==! */
+    , A.ENCY_DEPR_TP_CD                 /** Code d'entrée et de sortie !== 입국출국구분코드 ==! */
+    , A.TPD_MGMT_NO                /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+    , A.PSNR_TP_CD                      /** Couloir de voyageurs !== 여행자통로 ==! */
+    , A.ESTM_YN                      /** Présumé O/N !== 추정여부 ==! */
+    , A.PSPR_VALD_DT
+    , A.PSPR_NO_ISS_DT                      /** Date de délivrance du passeport !== 여권발급일자 ==! */
+    , A.PSPR_NO_ISS_ITT                     /** Lieu de délivrance du passeport !== 여권발급기관 ==! */
+    , A.PSNR_PT_CD                      /** Code de type de voyageur !== 여행자유형코드 ==! */
+    , A.LND_SEA_TP_CD                     /** Code de voie terrestre/maritime !== 육상해상구분코드 ==! */
+    , A.BLGG_DTRM_NO                      /** Numéro de décision des effets personnels !== 휴대품결정번호   ==! */
+    , ( SELECT ORG.ORGN_NM  FROM ALPASSINT.TB_POTI_ORGN ORG WHERE ORG.ORGN_MGMT_CD =
+    (SELECT FN_GET_UPR_ORGN_CD(ORGN_MGMT_CD,'DIR') FROM ALPASSINT.TB_POTI_ORGN WHERE ORGN_CD = A.CSTM_CD )
+    ) AS DRD_CD                    /** Code de direction régionale des douanes !== 지역본부세관코드 ==! */
+    , A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+    , ALPASSINT.FN_GET_ORGN_NM(A.CSTM_CD) AS CSTM_CD_NM               /**  !== 세관명 ==! */
+    , ALPASSINT.FN_GET_ORGN_NM(A.DEPT_CD) AS DEPT_NM
+    , FN_GET_CNTY_NM(A.NAT_CD ,  'FR') AS NAT_NM
+    , TO_CHAR(TO_DATE(A.VALD_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS VALD_DT    /** Date de la validité !== 유효일자 ==! */
+    , A.ACKW_TAMT                     /** Valeur reconnue totale !== 총인정금액 ==! */
+    , A.BLGG_PSSN_YN                     /** Pocession des effets personnels !== 휴대품소지여부 ==! */
+    , A.BGGE_TAMT                     /** Valeur Totale déclarée !== 총신고금액 ==! */
+    , A.VALD_DT                     /** Date de la validité !== 유효일자 ==! */
+    , (SELECT REGN_NM FROM TB_COM_REGN_CD_LANG WHERE REGN_CD = A.PSNR_BRLC_CD AND LANG_CD = 'FR') AS PSNR_BRLC_NM
+    , (SELECT REGN_NM FROM TB_COM_REGN_CD_LANG WHERE REGN_CD = A.PSNR_ARLC_CD AND LANG_CD = 'FR') AS PSNR_ARLC_NM
+    , A.BLGG_RQST_STTS_CD
+    , (SELECT COUNT(*) FROM ALPASSINT.TB_PSCI_PSNR_BLGG_INSC_PDLS B WHERE B.BLGG_MGMT_NO = A.BLGG_MGMT_NO AND B.BLGG_END_TP_CD = '05' ) AS RNUM
+    , A.DPST_SHED_CD                     /** Code de dépôt !== 예치장치장코드 ==! */
+    , A.NTNAL_IDFY_NO                    /** Nin !== 자국민식별번호 ==! */
+    FROM   ALPASSINT.TB_PSCI_PSNR_BLGG_IPRT A
+    WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+    AND  A.BLGG_DTRM_NO = #{blggDtrmNo}              /** Numéro de décision des effets personnels !== 휴대품결정번호  ==! */
+  </select>
+
+
+
+</mapper>

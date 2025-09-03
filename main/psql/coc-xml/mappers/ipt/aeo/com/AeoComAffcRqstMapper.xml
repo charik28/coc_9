@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+Mapper : [OEA commun] Demande ultérieure !==[AEO 공통] 사후신청 Mapper==!
+(wonjun.cha)
+-->
+<mapper namespace="alpass.ipt.aeo.com.mapper.AeoComAffcRqstMapper">
+
+    <!--
+    [Demande ultérieure] Enregistrer !== [사후신청] 등록 ==!
+    -->
+	<insert id="insertAeoComAffcRqst"
+		parameterType="alpass.ipt.aeo.com.vo.AeoiAffcRqstVo">
+		/* insertAeoComAffcRqst */
+		INSERT INTO TB_AEOI_AFFC_RQST      /** AEOI_DEMANDE ULTÉRIEURE !== AEOI_사후신청 ==! */
+		(
+			  AEO_AFFC_MGMT_RQST_NO        /** Numéro de demande de gestion ultérieure d'OEA !== AEO사후관리신청번호 ==! */
+            , AEO_ATHR_NO                  /** Numéro d'OEA !== AEO공인번호 ==! */
+            , MGMT_RQST_TP_CD              /** Code de classification de gestion ultérieure d'OEA !== 사후관리신청구분코드 ==! */
+            , AFFC_MGMT_RQST_RSN_CN        /** Motif de demande de gestion ultérieure d'OEA !== 사후관리신청사유내용 ==! */
+            , PRCS_STTS_CD                 /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , DTL_PRCS_STTS_CD             /** Code d'état détaillé du traitement !== 상세처리상태코드 ==! */
+            , RQST_DTTM                    /** Date Et Heure De La Demande !== 신청일시 ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+			, FRST_REGST_ID                /** Id Du Premier Enregistrant !== 최초등록자ID ==! */
+			, FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+			, LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+			, LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+			, ACAP_CSTM_CD                 /** Code douanier de réception !== 접수세관코드 ==! */
+		)
+		VALUES
+		(
+			  #{aeoAffcMgmtRqstNo}         /** Numéro de demande de gestion ultérieure d'OEA !== AEO사후관리신청번호 ==! */
+            , #{aeoAthrNo}                 /** Numéro d'OEA !== AEO공인번호 ==! */
+            , #{mgmtRqstTpCd}              /** Code de classification de gestion ultérieure d'OEA !== 사후관리신청구분코드 ==! */
+            , #{affcMgmtRqstRsnCn}         /** Motif de demande de gestion ultérieure d'OEA !== 사후관리신청사유내용 ==! */
+            , #{prcsSttsCd}                /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , #{dtlPrcsSttsCd}             /** Code d'état détaillé du traitement !== 상세처리상태코드 ==! */
+            , CURRENT_TIMESTAMP            /** Date Et Heure De La Demande !== 신청일시 ==! */
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+			, #{frstRegstId}               /** Id Du Premier Enregistrant !== 최초등록자ID ==! */
+			, CURRENT_TIMESTAMP            /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+			, #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+			, CURRENT_TIMESTAMP            /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+			, #{acapCstmCd}                /** Code douanier de réception !== 접수세관코드 ==! */
+		)
+	</insert>
+
+    <!--
+    [Demande ultérieure] Modifier !== [사후신청] 수정 ==!
+    -->
+	<update id="updateAeoComAffcRqst"
+		parameterType="alpass.ipt.aeo.com.vo.AeoiAffcRqstVo">
+		/* updateAeoComAffcRqst */
+		UPDATE	  TB_AEOI_AFFC_RQST                             /** AEOI_DEMANDE ULTÉRIEURE !== AEOI_사후신청 ==! */
+		   SET
+				  LAST_CHPR_ID = #{lastChprId}                  /** Id Du Modificateur Final !== 최종변경자ID ==! */
+				, LAST_CHG_DTTM = CURRENT_TIMESTAMP	            /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+	    	<if test='mgmtRqstTpCd != null and !"".equals(mgmtRqstTpCd)'>
+				, MGMT_RQST_TP_CD = #{mgmtRqstTpCd}             /** Code de classification de gestion ultérieure d'OEA !== 사후관리신청구분코드 ==! */
+            </if>
+	    	<if test='affcMgmtRqstRsnCn != null and !"".equals(affcMgmtRqstRsnCn)'>
+                , AFFC_MGMT_RQST_RSN_CN = #{affcMgmtRqstRsnCn}  /** Motif de demande de gestion ultérieure d'OEA !== 사후관리신청사유내용 ==! */
+            </if>
+	    	<if test='prcsSttsCd != null and !"".equals(prcsSttsCd)'>
+                , PRCS_STTS_CD = #{prcsSttsCd}                  /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            </if>
+	    	<if test='dtlPrcsSttsCd != null and !"".equals(dtlPrcsSttsCd)'>
+                , DTL_PRCS_STTS_CD = #{dtlPrcsSttsCd}           /** Code d'état détaillé du traitement !== 상세처리상태코드 ==! */
+            </if>
+		 WHERE
+           		  DEL_YN = 'N'                                	/** Suppression ON !== 삭제여부 ==! */
+           AND	  AEO_ATHR_NO = #{aeoAthrNo}                  	/** Numéro d'OEA !== AEO공인번호 ==! */
+           AND	  AEO_AFFC_MGMT_RQST_NO = #{aeoAffcMgmtRqstNo}  /** Numéro de demande de gestion ultérieure d'OEA !== AEO사후관리신청번호 ==! */
+	</update>
+	
+</mapper>

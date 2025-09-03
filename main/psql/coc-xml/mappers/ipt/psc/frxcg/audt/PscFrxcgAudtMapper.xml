@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.psc.frxcg.audt.mapper.PscFrxcgAudtMapper">
+
+  <!--
+  @TODO:번역필요 !==외환신고서 관련 정보 조회 ==!
+  -->
+  <select id="selectFrxcgDcshInfo"  parameterType="alpass.ipt.psc.frxcg.audt.vo.PscFrxcgDcshAudtVo" 
+    resultType="alpass.ipt.psc.frxcg.rgsr.vo.PscFrxcgDcshVo"> 
+      /* selectPscFrxcgDcshList */
+      <include refid="pagination.header" ></include>
+    
+	    SELECT FRXCG_DCSH_TEMP_NO
+			  ,FRXCG_DCSH_MGMT_NO
+			  ,CSTM_CD
+			  ,FRXCG_RGSR_TP_CD
+			  ,PSNR_PT_CD
+			  ,PSPR_NO
+			  ,TO_CHAR(TO_DATE(RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RGSR_DT
+			  ,FRXCG_EUR_TAMT			  
+			  ,FRXCG_RQST_STTS_CD
+			  ,FRXCG_EUR_TAMT
+			  ,JW_PDLS_TTWG
+			  ,DZD_TAMT
+			  ,ATCH_FILE_ID
+		FROM  ALPASSINT.TB_PSCI_FRXCG_DCSH_MGMT 
+		WHERE 1=1
+		AND DEL_YN = 'N'
+		<!-- AND FRST_REGST_ID = #{userId} -->
+      	<if test='frxcgDcshTempNo != null and frxcgDcshTempNo != ""'>
+		AND FRXCG_DCSH_TEMP_NO = #{frxcgDcshTempNo} 
+		</if> 			
+      <include refid="pagination.footer" ></include>
+  </select>
+
+  <select id="selectAudtHistList"  parameterType="alpass.ipt.psc.frxcg.audt.vo.PscFrxcgDcshAudtVo" 
+    resultType="alpass.ipt.psc.frxcg.audt.vo.PscFrxcgDcshAudtVo"> 
+      /* selectAudtHistList */
+          SELECT                
+                  A.FRXCG_DCSH_TEMP_NO         /** Numéro provisoire de déclaration des devises !== 외환신고서임시번호 ==! */
+                , A.AUDT_DGCNT                 /** ordre de jugement !== 심사차수 ==! */
+                , A.FRXCG_DCSH_MGMT_NO         /** Numéro de gestion de la déclaration de change !== 외환신고서관리번호 ==! */
+                , A.AUDT_RSLT_CD               /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+                , A.AUDT_RSLT_CN               /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+                , A.AUDT_RSLT_RGSR_DTTM        /** Date/Heure d'enregistrement du résultat de contrôle !== 심사결과등록일시 ==! */
+                , A.ADOR_ID ||' (' || (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE LANG_CD = 'FR' AND FONC_CD = EMP.FONC_CD) || ')' AS  ADOR_ID  	   /** Id De L'Inspecteur !== 심사자ID ==! */
+                , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+                , A.APRV_PRCS_STTS_CD          /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+                , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+                , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+                , (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE LANG_CD = 'FR' AND FONC_CD = EMP.FONC_CD) AS FONC_NM
+          FROM  TB_PSCI_FRXCG_DCSH_AUDT A
+                ,TB_POTI_EMP EMP
+                ,TB_POTI_FONC_CD FONC
+         WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+           AND  A.ADOR_ID = EMP.PBSR_NO
+           AND  EMP.FONC_CD(+) = FONC.FONC_CD
+           AND  A.FRXCG_DCSH_TEMP_NO = #{frxcgDcshTempNo}                /** Numéro provisoire de déclaration des devises !== 외환신고서임시번호 ==! */
+           <if test='audtDgcnt != null and audtDgcnt != "" '>
+           AND  A.AUDT_DGCNT = #{audtDgcnt}                  /** ordre de jugement !== 심사차수 ==! */
+           </if>
+           ORDER BY A.AUDT_DGCNT DESC
+  </select>
+  
+  <select id="selectAudtMaxHist"  parameterType="alpass.ipt.psc.frxcg.audt.vo.PscFrxcgDcshAudtVo" 
+    resultType="alpass.ipt.psc.frxcg.audt.vo.PscFrxcgDcshAudtVo"> 
+      /* selectAudtMaxHist */
+          SELECT
+                  A.FRXCG_DCSH_TEMP_NO         /** Numéro provisoire de déclaration des devises !== 외환신고서임시번호 ==! */
+                , A.AUDT_DGCNT                 /** ordre de jugement !== 심사차수 ==! */
+                , A.FRXCG_DCSH_MGMT_NO         /** Numéro de gestion de la déclaration de change !== 외환신고서관리번호 ==! */
+                , A.AUDT_RSLT_CD               /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+                , A.AUDT_RSLT_CN               /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+                , A.AUDT_RSLT_RGSR_DTTM        /** Date/Heure d'enregistrement du résultat de contrôle !== 심사결과등록일시 ==! */
+                , A.ADOR_ID ||' (' || (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE LANG_CD = 'FR' AND FONC_CD = EMP.FONC_CD) || ')' AS  ADOR_ID                     /** Id De L'Inspecteur !== 심사자ID ==! */
+                , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+                , A.APRV_PRCS_STTS_CD          /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+                , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+                , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+                , (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE LANG_CD = 'FR' AND FONC_CD = EMP.FONC_CD) AS FONC_NM
+          FROM  TB_PSCI_FRXCG_DCSH_AUDT A
+                ,TB_POTI_EMP EMP
+                ,TB_POTI_FONC_CD FONC
+         WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+           AND  A.ADOR_ID = EMP.PBSR_NO
+           AND  EMP.FONC_CD(+) = FONC.FONC_CD
+           AND  A.FRXCG_DCSH_TEMP_NO = #{frxcgDcshTempNo}                 /** Numéro provisoire de déclaration des devises !== 외환신고서임시번호 ==! */
+           AND  A.AUDT_DGCNT = (SELECT MAX(AUDT_DGCNT) FROM TB_PSCI_FRXCG_DCSH_AUDT WHERE FRXCG_DCSH_TEMP_NO = A.FRXCG_DCSH_TEMP_NO  )                 /** ordre de jugement !== 심사차수 ==! */
+  </select>
+  
+  <!--
+    @TODO:번역필요 !== GeneratorComments 수정 ==!
+    (Generated)
+    -->
+    <update id="updateFrxcgDcshAudt" parameterType="alpass.ipt.psc.frxcg.audt.vo.PscFrxcgDcshAudtVo">
+        /* updateFrxcgDcshAudt */
+        UPDATE  TB_PSCI_FRXCG_DCSH_AUDT SET 
+        <trim prefixOverrides="," >
+                  FRXCG_DCSH_MGMT_NO = #{frxcgDcshMgmtNo}     /** Numéro de gestion de la déclaration de change !== 외환신고서관리번호 ==! */
+                , AUDT_RSLT_CD = #{audtRsltCd}                /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+                , AUDT_RSLT_CN = #{audtRsltCn}                /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+                , AUDT_RSLT_RGSR_DTTM = #{audtRsltRgsrDttm}   /** Date/Heure d'enregistrement du résultat de contrôle !== 심사결과등록일시 ==! */
+                , ADOR_ID = #{adorId}                         /** Id De L'Inspecteur !== 심사자ID ==! */
+                , APRV_ID = #{aprvId}                         /** Id D'Approbation  !== 결재ID ==! */
+                , APRV_PRCS_STTS_CD = #{aprvPrcsSttsCd}       /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+                , LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        </trim>
+           WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+             AND  FRXCG_DCSH_TEMP_NO = #{frxcgDcshTempNo}       /** Numéro provisoire de déclaration des devises !== 외환신고서임시번호 ==! */
+             AND  AUDT_DGCNT = #{audtDgcnt}                   /** ordre de jugement !== 심사차수 ==! */
+    </update>
+    
+    
+   <!--
+   @TODO:번역필요 !== GeneratorComments 등록 ==!
+   (Generated)
+   -->
+   <insert id="insertPscFrxcgDcshAudt" parameterType="alpass.ipt.psc.frxcg.audt.vo.PscFrxcgDcshAudtVo">
+   		/* insertPscFrxcgDcshAmt */
+	<selectKey keyProperty="audtDgcnt" order="BEFORE" resultType="java.math.BigDecimal">
+	 	SELECT NVL(MAX(AUDT_DGCNT),0)+1 FROM ALPASSINT.TB_PSCI_FRXCG_DCSH_AUDT WHERE FRXCG_DCSH_TEMP_NO = #{frxcgDcshTempNo}
+	</selectKey>
+	INSERT INTO ALPASSINT.TB_PSCI_FRXCG_DCSH_AUDT
+                (
+                  FRXCG_DCSH_TEMP_NO           /** Numéro provisoire de déclaration des devises !== 외환신고서임시번호 ==! */
+                , AUDT_DGCNT                   /** ordre de jugement !== 심사차수 ==! */
+                , FRXCG_DCSH_MGMT_NO           /** Numéro de gestion de la déclaration de change !== 외환신고서관리번호 ==! */
+                , AUDT_RSLT_CD                 /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+                , AUDT_RSLT_CN                 /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+                , AUDT_RSLT_RGSR_DTTM          /** Date/Heure d'enregistrement du résultat de contrôle !== 심사결과등록일시 ==! */
+                , ADOR_ID                      /** Id De L'Inspecteur !== 심사자ID ==! */
+                , APRV_ID                      /** Id D'Approbation  !== 결재ID ==! */
+                , APRV_PRCS_STTS_CD            /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+                , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+                , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+                )
+                VALUES
+                (
+                  #{frxcgDcshTempNo}           /** Numéro provisoire de déclaration des devises !== 외환신고서임시번호 ==! */
+                , #{audtDgcnt}                 /** ordre de jugement !== 심사차수 ==! */
+                , #{frxcgDcshMgmtNo}           /** Numéro de gestion de la déclaration de change !== 외환신고서관리번호 ==! */
+                , #{audtRsltCd}                /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+                , #{audtRsltCn}                /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+                , CURRENT_TIMESTAMP            /** Date/Heure d'enregistrement du résultat de contrôle !== 심사결과등록일시 ==! */
+                , #{adorId}                    /** Id De L'Inspecteur !== 심사자ID ==! */
+                , #{aprvId}                    /** Id D'Approbation  !== 결재ID ==! */
+                , #{aprvPrcsSttsCd}            /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+                , 'N'                          /** Suppression On !== 삭제여부 ==! */
+                , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+                )
+    </insert>
+    
+    <!--
+  @TODO:번역필요 !==외환신고서 등록자 조회 ==!
+  -->
+  <select id="selectFrxcgDcshRegst"  parameterType="alpass.ipt.psc.frxcg.audt.vo.PscFrxcgDcshAudtVo" 
+    resultType="alpass.ipt.psc.frxcg.audt.vo.PscFrxcgDcshAudtVo"> 
+      /* selectFrxcgDcshRegst */    
+	    SELECT FRXCG_DCSH_TEMP_NO			  
+			  ,FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+		FROM  ALPASSINT.TB_PSCI_FRXCG_DCSH_MGMT 
+		WHERE 1=1
+		AND DEL_YN = 'N'
+		AND FRXCG_DCSH_TEMP_NO = #{frxcgDcshTempNo} 
+  </select>
+  
+  
+  <!--
+  @TODO:번역필요 !== 외환신고서 성명조회 조회 ==!
+  -->
+  <select id="selectPscFrxcgDcshNomInqt"  parameterType="alpass.ipt.psc.frxcg.audt.vo.PscFrxcgSearchVo" 
+    resultType="alpass.ipt.psc.frxcg.audt.vo.PscFrxcgSearchVo"> 
+      /* selectPscFrxcgDcshList */
+	    SELECT *
+	    FROM (
+		    SELECT FRXCG_DCSH_TEMP_NO
+				  ,FRXCG_DCSH_MGMT_NO
+				  ,CSTM_CD
+				  ,FRXCG_RGSR_TP_CD
+				  ,PSNR_PT_CD
+				  ,PSPR_NO
+				  ,TO_CHAR(TO_DATE(RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RGSR_DT
+				  ,FRXCG_EUR_TAMT			  
+				  ,FRXCG_RQST_STTS_CD
+				  ,( SELECT TO_CHAR(B.AUDT_RSLT_RGSR_DTTM, 'DD/MM/YYYY')
+				  	   FROM TB_PSCI_FRXCG_DCSH_AUDT B
+				  	  WHERE A.FRXCG_DCSH_TEMP_NO = B.FRXCG_DCSH_TEMP_NO 
+				  	    AND B.AUDT_RSLT_CD = '02'
+				  	    AND ROWNUM = 1
+				   ) AS AUDT_RSLT_RGSR_DTTM
+			FROM  ALPASSINT.TB_PSCI_FRXCG_DCSH_MGMT A
+			WHERE 1=1
+			AND DEL_YN = 'N'  	
+			AND RGSR_DT BETWEEN TO_CHAR(SYSDATE - 365, 'YYYYMMDD') AND TO_CHAR(SYSDATE, 'YYYYMMDD')				
+			AND FRXCG_RGSR_TP_CD = '02'
+			AND PSNR_PT_CD IN ('03','04')     
+			AND FRST_RGSR_DTTM <![CDATA[ < ]]>  #{frstRgsrDttm}  
+			<if test='psprNo != null and psprNo != ""'>
+			AND PSPR_NO = #{psprNo} 
+			</if>   		
+			AND FRXCG_RQST_STTS_CD = 'A4'		
+			<if test='psnrFmnm != null and psnrFmnm != ""'>
+			AND PSNR_FMNM = #{psnrFmnm} 
+			</if>  
+			<if test='psnrGvnmNm != null and psnrGvnmNm != ""'>
+			AND PSNR_GVNM_NM = #{psnrGvnmNm} 
+			</if>  
+			AND FRXCG_RQST_STTS_CD NOT IN ('A1')
+			ORDER BY FRST_RGSR_DTTM DESC
+		) A
+		WHERE ROWNUM = 1
+      
+  </select>
+  
+  
+</mapper>

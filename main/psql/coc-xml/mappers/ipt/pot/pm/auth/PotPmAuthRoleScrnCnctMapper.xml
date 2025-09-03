@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.auth.mapper.PotPmAuthRoleScrnCnctMapper">
+
+    <!--
+       Consultre la liste de connexion d'écran de rôle !==역할화면연결 목록를 조회한다==!
+    -->
+    <select id="selectUserRoleTreeList" parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtRoleScrnCnctVo" resultType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtRoleScrnCnctVo">
+        /** PotiAuthmgmt_selectUserRoleTreeList */
+        <if test="searAppClsfCd == 'IPT'">
+            (
+            SELECT (SELECT FN_GET_CD_VDVAL_NM('COM_0033', 'IPT', #{langCd}) FROM DUAL) AS NAME, 'IPT' AS C_NODE, '' AS P_NODE <if test="scrnId != null and scrnId != ''">, 0 AS REG_CNT</if> FROM DUAL
+            UNION ALL
+            SELECT
+            (SELECT FN_GET_CD_VDVAL_NM('COM_0022', BSOP_CLSF_CD, #{langCd}) FROM DUAL)  AS NAME
+            , 'IPT'||BSOP_CLSF_CD  AS C_NODE
+            , 'IPT' AS P_NODE
+            <if test="scrnId != null and scrnId != ''">
+                , 0 AS REG_CNT
+            </if>
+            FROM  TB_COM_ROLE A
+            WHERE A.USE_YN = 'Y'
+            AND   A.DEL_YN = 'N'
+            AND   A.APP_CLSF_CD = 'IPT'
+            GROUP BY APP_CLSF_CD, BSOP_CLSF_CD
+            UNION ALL
+            SELECT
+            (SELECT ROLE_NM FROM TB_COM_ROLE_LANG WHERE ROLE_ID = A.ROLE_ID AND DEL_YN = 'N' AND LANG_CD = #{langCd})  AS NAME
+            , A.ROLE_ID AS C_NODE
+            , 'IPT'||BSOP_CLSF_CD AS P_NODE
+            <if test="scrnId != null and scrnId != ''">
+                , (SELECT COUNT(1) FROM TB_COM_ROLE_SCRN_REL WHERE ROLE_ID = A.ROLE_ID AND SCRN_ID = #{scrnId}) AS REG_CNT
+            </if>
+            FROM  TB_COM_ROLE A
+            WHERE A.USE_YN = 'Y'
+            AND   A.DEL_YN = 'N'
+            AND   A.APP_CLSF_CD = 'IPT'
+            )
+        </if>
+        <if test="searAppClsfCd == 'EPT'">
+            (
+            SELECT (SELECT FN_GET_CD_VDVAL_NM('COM_0033', 'EPT', #{langCd}) FROM DUAL)  AS NAME, 'EPT' AS C_NODE, '' AS P_NODE <if test="scrnId != null and scrnId != ''">, 0 AS REG_CNT</if> FROM DUAL
+            UNION ALL
+            SELECT
+            (SELECT FN_GET_CD_VDVAL_NM('COM_0022', BSOP_CLSF_CD, #{langCd}) FROM DUAL)  AS NAME
+            , 'EPT'||BSOP_CLSF_CD AS C_NODE
+            , 'EPT' AS P_NODE
+            <if test="scrnId != null and scrnId != ''">
+                , 0 AS REG_CNT
+            </if>
+            FROM  TB_COM_ROLE A
+            WHERE A.USE_YN = 'Y'
+            AND   A.DEL_YN = 'N'
+            AND   A.APP_CLSF_CD = 'EPT'
+            GROUP BY APP_CLSF_CD, BSOP_CLSF_CD
+            UNION ALL
+            SELECT
+            (SELECT ROLE_NM FROM TB_COM_ROLE_LANG WHERE ROLE_ID = A.ROLE_ID AND DEL_YN = 'N' AND LANG_CD = #{langCd}) || ' (' || (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'POT_0015' AND LANG_CD = #{langCd} AND CD_VDVAL = A.ROLE_PT_CD ) ||')'  AS NAME
+            , A.ROLE_ID AS C_NODE
+            , 'EPT'||BSOP_CLSF_CD AS P_NODE
+            <if test="scrnId != null and scrnId != ''">
+                , (SELECT COUNT(1) FROM TB_COM_ROLE_SCRN_REL WHERE ROLE_ID = A.ROLE_ID AND SCRN_ID = #{scrnId}) AS REG_CNT
+            </if>
+            FROM  TB_COM_ROLE A
+            WHERE A.USE_YN = 'Y'
+            AND   A.DEL_YN = 'N'
+            AND   A.APP_CLSF_CD = 'EPT'
+            <if test="searRolePtCd != null and searRolePtCd != ''">
+                AND   A.ROLE_PT_CD = #{searRolePtCd}
+            </if>
+
+            <if test="searRoleBsopTpCd != null and searRoleBsopTpCd != ''">
+                AND   A.ROLE_BSOP_TP_CD = #{searRoleBsopTpCd}
+            </if>
+            )
+        </if>
+    </select>
+
+    <!--
+       Enregistrer la liste de connexion d'écran de rôle !==역할화면연결을 등록한다==!
+    -->
+    <insert id="insertRoleScrnCnct" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysScrnVo" >
+        /** insertRoleScrnCnct */
+        INSERT INTO TB_COM_ROLE_SCRN_REL
+        (
+            ROLE_ID
+        , SCRN_ID
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM
+        )
+        VALUES
+            (
+                #{roleId}
+            , #{scrnId}
+            , 'N'
+            , #{frstRegstId}
+            , SYSTIMESTAMP
+            , #{lastChprId}
+            , SYSTIMESTAMP
+            )
+    </insert>
+
+    <!--
+       Enregistrer la liste de connexion d'écran de rôle !==역할화면연결을 등록한다==!
+    -->
+    <delete id="deleteRoleScrnCnct" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysScrnVo" >
+        /** deleteRoleScrnCnct */
+        DELETE FROM TB_COM_ROLE_SCRN_REL
+        WHERE  SCRN_ID = #{scrnId}
+          AND    ROLE_ID = #{roleId}
+    </delete>
+
+</mapper>

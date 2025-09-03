@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.psc.tpd.xtns.mapper.PscTpdXtnsMapper">
+
+  <!--
+  @TODO:번역필요 !== TPD연장신청서 목록 조회 ==!
+  -->
+  <select id="selectPscTpdXtnsList"  parameterType="alpass.ipt.psc.tpd.xtns.vo.PscTpdXtnsVo" 
+    resultType="alpass.ipt.psc.tpd.xtns.vo.PscTpdXtnsVo"> 
+      /* selectPscTpdXtnsList */
+      <include refid="pagination.header" ></include>
+          SELECT
+                A.TPD_XTNS_TEMP_NO           /** Numéro temporaire de prorogation de TPD !== TPD연장임시번호 ==! */
+              , A.RQST_DGCNT AS REPN_ID                    /** Id De La Personne Demandant !== 신청차수 ==! */
+              , A.XTNS_RQST_IDD_CD           /** Code d'inspectidivisionnaire des douanes de prorogation sollicitée !== 연장신청지역분할세관코드 ==! */
+              , A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+              , A.TPD_MGMT_NO                /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              , A.TPD_RQST_STTS_CD           /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              , A.XTNS_RQST_PRID             /** Durée de prorogation sollicitée !== 연장신청기간 ==! */
+              , A.XTNS_RQST_RSN_CN           /** Motif de demande de prorogation !== 연장신청사유내용 ==! */
+              , A.XTNS_RQST_DT               /** Date de demande de prorogation !== 연장신청일자 ==! */
+              , A.OBJT_LDGG_CN               /** Contenu De La Contestation !== 이의제기내용 ==! */
+              , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+              , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+          FROM   TB_PSCI_TPD_XTNS_RQST A
+         WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+           AND  A.TPD_XTNS_TEMP_NO = #{tpdXtnsTempNo}       /** Numéro temporaire de prorogation de TPD !== TPD연장임시번호 ==! */
+           AND  A.RQST_DGCNT = #{repnId}                       /** Id De La Personne Demandant !== 신청차수 ==! */
+      <include refid="pagination.footer" ></include>
+  </select>
+
+  <select id="selectPscTpdXtns"  parameterType="alpass.ipt.psc.tpd.xtns.vo.PscTpdXtnsVo" 
+    resultType="alpass.ipt.psc.tpd.xtns.vo.PscTpdXtnsVo"> 
+      /* selectPscTpdXtns */
+          SELECT
+                A.TPD_XTNS_TEMP_NO           /** Numéro temporaire de prorogation de TPD !== TPD연장임시번호 ==! */
+              , A.RQST_DGCNT AS REPN_ID                    /** Id De La Personne Demandant !== 신청차수 ==! */
+              , A.XTNS_RQST_IDD_CD           /** Code d'inspectidivisionnaire des douanes de prorogation sollicitée !== 연장신청지역분할세관코드 ==! */
+              , A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+              , A.TPD_MGMT_NO                /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              , A.TPD_RQST_STTS_CD           /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              , A.XTNS_RQST_PRID             /** Durée de prorogation sollicitée !== 연장신청기간 ==! */
+              , A.XTNS_RQST_RSN_CN           /** Motif de demande de prorogation !== 연장신청사유내용 ==! */
+              , A.XTNS_RQST_DT               /** Date de demande de prorogation !== 연장신청일자 ==! */
+              , A.OBJT_LDGG_CN               /** Contenu De La Contestation !== 이의제기내용 ==! */
+              , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+              , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+          FROM   TB_PSCI_TPD_XTNS_RQST A
+         WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+           AND  A.TPD_XTNS_TEMP_NO = #{tpdXtnsTempNo}       /** Numéro temporaire de prorogation de TPD !== TPD연장임시번호 ==! */
+  </select>
+  
+
+  <!--
+  @TODO:번역필요 !== TPD연장신청서 등록 ==!
+  (deKim)
+  -->
+  <insert id="insertPscTpdXtns" parameterType="alpass.ipt.psc.tpd.xtns.vo.PscTpdXtnsVo">
+      /* PscTpdXtns_insertPscTpdXtns */
+      
+        <selectKey keyProperty="repnId" order="BEFORE" resultType="java.math.BigDecimal">
+          SELECT NVL(MAX(RQST_DGCNT),0)+1 FROM TB_PSCI_TPD_XTNS_RQST WHERE TPD_XTNS_TEMP_NO = #{tpdXtnsTempNo}
+        </selectKey>
+      
+        INSERT INTO TB_PSCI_TPD_XTNS_RQST
+              (
+                TPD_XTNS_TEMP_NO             /** Numéro temporaire de prorogation de TPD !== TPD연장임시번호 ==! */
+              , RQST_DGCNT                      /** Id De La Personne Demandant !== 신청차수 ==! */
+              , XTNS_RQST_IDD_CD             /** Code d'inspectidivisionnaire des douanes de prorogation sollicitée !== 연장신청지역분할세관코드 ==! */
+              , TPD_TEMP_NO                  /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+              , TPD_MGMT_NO                  /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              , TPD_RQST_STTS_CD             /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              , XTNS_RQST_PRID               /** Durée de prorogation sollicitée !== 연장신청기간 ==! */
+              , XTNS_RQST_RSN_CN             /** Motif de demande de prorogation !== 연장신청사유내용 ==! */
+              , XTNS_RQST_DT                 /** Date de demande de prorogation !== 연장신청일자 ==! */
+              , OBJT_LDGG_CN                 /** Contenu De La Contestation !== 이의제기내용 ==! */
+              , ATCH_FILE_ID                 /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+              , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+              )
+              VALUES
+              (
+                #{tpdXtnsTempNo}             /** Numéro temporaire de prorogation de TPD !== TPD연장임시번호 ==! */
+              , #{repnId}                    /** Id De La Personne Demandant !== 신청차수 ==! */
+              , #{xtnsRqstIddCd}             /** Code d'inspectidivisionnaire des douanes de prorogation sollicitée !== 연장신청지역분할세관코드 ==! */
+              , #{tpdTempNo}                 /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+              , #{tpdMgmtNo}                 /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              , #{tpdRqstSttsCd}             /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              , #{xtnsRqstPrid}              /** Durée de prorogation sollicitée !== 연장신청기간 ==! */
+              , #{xtnsRqstRsnCn}             /** Motif de demande de prorogation !== 연장신청사유내용 ==! */
+              , TO_CHAR(SYSDATE, 'YYYYMMDD') /** Date de demande de prorogation !== 연장신청일자 ==! */
+              , #{objtLdggCn}                /** Contenu De La Contestation !== 이의제기내용 ==! */
+              , #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              , 'N'                          /** Suppression On !== 삭제여부 ==! */
+              , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , CURRENT_TIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , CURRENT_TIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+              )
+  </insert>
+
+
+  <!--
+  @TODO:번역필요 !== TPD연장신청서 수정 ==!
+  (deKim)
+  -->
+  <update id="updatePscTpdXtns" parameterType="alpass.ipt.psc.tpd.xtns.vo.PscTpdXtnsVo">
+      /* PscTpdXtns_updatePscTpdXtns */
+      UPDATE  TB_PSCI_TPD_XTNS_RQST SET 
+                LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , LAST_CHG_DTTM = CURRENT_TIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+              <if test='xtnsRqstIddCd != null and xtnsRqstIddCd != ""'>
+              , XTNS_RQST_IDD_CD = #{xtnsRqstIddCd}         /** Code d'inspectidivisionnaire des douanes de prorogation sollicitée !== 연장신청지역분할세관코드 ==! */
+              </if>
+              <if test='tpdMgmtNo != null and tpdMgmtNo != ""'>
+              , TPD_MGMT_NO = #{tpdMgmtNo}                  /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              </if>
+              <if test='tpdRqstSttsCd != null and tpdRqstSttsCd != ""'>
+              , TPD_RQST_STTS_CD = #{tpdRqstSttsCd}         /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              </if>
+              <if test='xtnsRqstPrid != null and xtnsRqstPrid != ""'>
+              , XTNS_RQST_PRID = #{xtnsRqstPrid}            /** Durée de prorogation sollicitée !== 연장신청기간 ==! */
+              </if>
+              <if test='permDcnt != null and permDcnt != ""'>
+              , PERM_DCNT = #{permDcnt}
+              </if>                        
+              <if test='xtnsRqstRsnCn != null and xtnsRqstRsnCn != ""'>
+              , XTNS_RQST_RSN_CN = #{xtnsRqstRsnCn}         /** Motif de demande de prorogation !== 연장신청사유내용 ==! */
+              </if>
+         WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+           AND  TPD_XTNS_TEMP_NO = #{tpdXtnsTempNo}         /** Numéro temporaire de prorogation de TPD !== TPD연장임시번호 ==! */
+
+           
+  </update>
+
+
+  <!--
+  @TODO:번역필요 !== TPD연장신청서 삭제 ==!
+  (deKim)
+  -->
+  <update id="deletePscTpdXtns" parameterType="alpass.ipt.psc.tpd.xtns.vo.PscTpdXtnsVo">
+      /* PscTpdXtns_deletePscTpdXtns */
+      UPDATE  TB_PSCI_TPD_XTNS_RQST SET 
+              DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+           ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+           ,  LAST_CHG_DTTM = CURRENT_TIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+       WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+         AND  TPD_XTNS_TEMP_NO = #{tpdXtnsTempNo}           /** Numéro temporaire de prorogation de TPD !== TPD연장임시번호 ==! */
+         AND  RQST_DGCNT = #{repnId}                           /** Id De La Personne Demandant !== 신청차수 ==! */
+  </update>
+
+  <!--
+  @TODO:번역필요 !== TPD연장신청서 목록 조회 ==!
+  -->
+  <select id="selectTpdXtnsRqstSttsCd"  parameterType="alpass.ipt.psc.tpd.xtns.vo.PscTpdXtnsVo" 
+    resultType="alpass.ipt.psc.tpd.xtns.vo.PscTpdXtnsVo"> 
+      /* selectTpdXtnsRqstSttsCd */
+
+          SELECT
+                A.TPD_XTNS_TEMP_NO           /** Numéro temporaire de prorogation de TPD !== TPD연장임시번호 ==! */
+              , A.RQST_DGCNT AS REPN_ID                    /** Id De La Personne Demandant !== 신청차수 ==! */
+              , A.XTNS_RQST_IDD_CD           /** Code d'inspectidivisionnaire des douanes de prorogation sollicitée !== 연장신청지역분할세관코드 ==! */
+              , A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+              , A.TPD_MGMT_NO                /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              , A.TPD_RQST_STTS_CD           /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              , A.XTNS_RQST_PRID             /** Durée de prorogation sollicitée !== 연장신청기간 ==! */
+              , A.XTNS_RQST_RSN_CN           /** Motif de demande de prorogation !== 연장신청사유내용 ==! */
+              , A.XTNS_RQST_DT               /** Date de demande de prorogation !== 연장신청일자 ==! */
+              , A.OBJT_LDGG_CN               /** Contenu De La Contestation !== 이의제기내용 ==! */
+              , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+              , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+              , B.DRVR_PT_CD 
+              , C.VALD_DT
+              , C.PRID_XTNS_YN
+          FROM   TB_PSCI_TPD_XTNS_RQST A , TB_PSCI_TPD_PSNR_BSCS B , TB_PSCI_TPD_BSCS C
+         WHERE  A.DEL_YN(+) = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+           AND  C.TPD_TEMP_NO = A.TPD_TEMP_NO(+)
+           AND  C.TPD_TEMP_NO = B.TPD_TEMP_NO
+           AND  C.TPD_TEMP_NO = #{tpdTempNo}   
+           AND  ROWNUM = 1
+
+           
+  </select>
+
+ <!--
+  @TODO:번역필요 !== TPD연장신청서 출력관련 데이터 ==!
+  -->
+  <select id="selectPscTpdXtnsReport"  parameterType="alpass.ipt.psc.tpd.xtns.vo.PscTpdXtnsVo" 
+    resultType="alpass.ipt.psc.tpd.xtns.vo.PscTpdXtnsVo"> 
+      /* selectPscTpdXtnsReport */
+
+          SELECT
+                A.TPD_XTNS_TEMP_NO           /** Numéro temporaire de prorogation de TPD !== TPD연장임시번호 ==! */
+              , A.RQST_DGCNT AS REPN_ID                    /** Id De La Personne Demandant !== 신청차수 ==! */
+              , A.XTNS_RQST_IDD_CD           /** Code d'inspectidivisionnaire des douanes de prorogation sollicitée !== 연장신청지역분할세관코드 ==! */
+              , A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+              , A.TPD_MGMT_NO                /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              , A.TPD_RQST_STTS_CD           /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              , A.XTNS_RQST_PRID             /** Durée de prorogation sollicitée !== 연장신청기간 ==! */
+              , A.PERM_DCNT
+              , TO_CHAR(TO_DATE(C.VALD_DT), 'DD/MM/YYYY' ) AS VALD_DT
+              ,(SELECT TO_CHAR(B.AUDT_RSLT_RGSR_DTTM, 'DD/MM/YYYY')   FROM ALPASSINT.TB_PSCI_TPD_AUDT B where B.AUDT_RSLT_CD = '02' AND B.TPD_TP_CD ='02' AND B.TPD_TEMP_NO = A.TPD_XTNS_TEMP_NO AND ROWNUM=1 ) AS TPD_MGMT_DT
+              , TO_CHAR(TO_DATE(C.VALD_DT) - A.PERM_DCNT,'DD/MM/YYYY') AS BF_VALD_DT
+              
+        FROM   TB_PSCI_TPD_XTNS_RQST A , TB_PSCI_TPD_BSCS C
+         WHERE  1=1                               /** Suppression ON !== 삭제여부 ==! */
+           AND  A.TPD_TEMP_NO = C.TPD_TEMP_NO
+           AND  A.TPD_XTNS_TEMP_NO = #{tpdXtnsTempNo} 
+           AND  A.RQST_DGCNT = #{repnId}
+           
+           
+  </select>
+  
+</mapper>

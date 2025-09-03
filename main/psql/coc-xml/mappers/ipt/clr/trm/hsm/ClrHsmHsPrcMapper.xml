@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<!--
+HS 코드 관리
+@Author : Shin-Hyun Woo
+-->
+<mapper namespace="alpass.ipt.clr.trm.hsm.mapper.ClrHsmHsPrcMapper">
+
+    <select id="selectPrcVrblList" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrTrmPrcvrblVo" resultType="alpass.ipt.clr.trm.hsm.vo.ClrTrmPrcvrblVo">
+        /* selectPrcVrblList : HS 별 가격 변동 추이 목록 조회 (다건)*/
+        <include refid="pagination.header" />
+        SELECT DISTINCT BB.HS_CD                              /* HS 코드 */
+        , BB.HS_DESC                                      /* HS 코드 설명 */
+        , AA.AGGT_MM_DCLR_CNT                             /* 집계월 신고건수 */
+        , AA.RCNT_AGGT_PRID_SCP_CNT                       /* 최근집계기간 신고건수 */
+        , AA.DCLR_CNT_INC_RT                              /* 신고건수 증가율 */
+        , AA.AGGT_MM_INVC_NCY_AMT                         /* 집계월 송장 NCY 금액 */
+        , AA.RCNT_AGGT_PRID_INVC_NCY_AMT                  /* 최근집계 송장 NCY 금액 */
+        , AA.INVC_AMT_INC_RT                              /* 송장금액 증가율 */
+        , AA.AGGT_YY
+        , AA.AGGT_MM
+        , AA.AGGT_PRID_SCP_CD
+        FROM TB_CLRI_HS_ANAY_PRC_VRBL_S AA                    /* HS분석가격변동집계 */
+        , TB_CLRI_HS_CD BB                                 /* HS코드 */
+        WHERE AA.HS_CD = BB.HS_CD                                            /* HS 코드 */
+        AND BB.DEL_YN = 'N'                                              /* 삭제여부 */
+        <if test="aggtPridScpCd != null and aggtPridScpCd != ''">
+            AND AA.AGGT_PRID_SCP_CD = #{aggtPridScpCd}                             /* 입력받은 집계기간범위코드 */
+        </if>
+        <if test="incRt != null and incRt != '' and impInqtPt == 1">
+            AND AA.DCLR_CNT_INC_RT <![CDATA[ >= ]]> #{incRt}                           /* 입력받은 신고건수증가율 */
+        </if>
+        <if test="incRt != null and incRt != '' and impInqtPt == 2">
+            AND AA.INVC_AMT_INC_RT <![CDATA[ >= ]]> #{incRt}                           /* 입력받은 세관가격증가율 */
+        </if>
+        <if test="aggtYy != null and aggtYy != ''">
+            AND AA.AGGT_YY = #{aggtYy}                                          /* 입력받은 집계년도 */
+        </if>
+        <if test="aggtMm != null and aggtMm != ''">
+            AND AA.AGGT_MM = #{aggtMm}                                          /* 입력받은 집계월 */
+        </if>
+        <if test="hsCd != null and hsCd != ''">
+            AND AA.HS_CD LIKE REPLACE (#{hsCd}, '.', '') || '%'              /* 입력받은 HS 코드 */
+        </if>
+        ORDER BY BB.HS_CD
+        <include refid="pagination.footer" />
+    </select>
+
+    <select id="selectPrcVrblChartList" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrTrmPrcvrblVo" resultType="alpass.ipt.clr.trm.hsm.vo.ClrTrmPrcvrblVo">
+        /* selectPrcVrblChartList : HS 별 가격 변동 추이 차트 조회 */
+		<![CDATA[
+        SELECT B.AGGT_YY_MM
+             , NVL (A.DCLR_CNT, 0) AS AGGT_MM_DCLR_CNT
+             , NVL (A.INVC_NCY_AMT, 0) AS AGGT_MM_INVC_NCY_AMT
+        FROM (SELECT AGGT_YY || AGGT_MM AS AGGT_YY_MM
+                   , DCLR_CNT
+                   , INVC_NCY_AMT
+              FROM TB_CLRI_HS_ANAY_S
+              WHERE HS_CD = #{hsCd}
+                AND AGGT_YY||AGGT_MM BETWEEN  #{strtYyMm} AND #{endYyMm}
+                AND AGGT_PRID_SCP_CD =  '1'
+        ) A
+           , (SELECT TO_CHAR(ADD_MONTHS(TO_DATE(#{strtYyMm}, 'YYYYMM'), ROWNUM-1), 'YYYYMM') AS AGGT_YY_MM
+              FROM DUAL
+                  CONNECT BY LEVEL <= MONTHS_BETWEEN(TO_DATE(#{endYyMm}, 'YYYYMM'), TO_DATE(#{strtYyMm}, 'YYYYMM')) + 1
+        ) B
+        WHERE A.AGGT_YY_MM(+) = B.AGGT_YY_MM
+        ORDER BY B.AGGT_YY_MM
+        ]]>
+    </select>
+
+
+    <select id="selectPrcStatList" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmPrcStatVo" resultType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmPrcStatVo">
+        /* selectPrcStatList : HS 별 가격 목록 조회 (다건)*/
+        <include refid="pagination.header" />
+        SELECT DISTINCT AA.HS_CD
+        ,AA.HS_DESC
+        ,BB.DCLR_CNT
+        ,BB.PDLS_CNT
+        ,BB.AGGT_MM ||'/'|| BB.AGGT_YY AS AGGT_YY_MM
+        FROM TB_CLRI_HS_CD AA
+        ,TB_CLRI_HS_ANAY_S BB
+        WHERE AA.HS_CD = BB.HS_CD
+        <if test="aggtPridScpCd != null and aggtPridScpCd != ''">
+            AND BB.AGGT_PRID_SCP_CD = #{aggtPridScpCd}
+        </if>
+        <if test="aggtYy != null and aggtYy != ''">
+            AND BB.AGGT_YY = #{aggtYy}
+        </if>
+        <if test="aggtMm != null and aggtMm != ''">
+            AND BB.AGGT_MM = #{aggtMm}
+        </if>
+        <if test="hsCd != null and hsCd != ''">
+            AND AA.HS_CD LIKE REPLACE(#{hsCd}, '.', '') || '%'
+        </if>
+        <if test="sortBase != null and sortBase != ''">
+            ORDER BY ${sortBase}
+        </if>
+        <include refid="pagination.footer" />
+    </select>
+
+    <select id="selectPrcStatListDetail" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmPrcStatVo" resultType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmPrcStatVo">
+        /* selectPrcStatlistDetail : HS 별 가격 목록 조회 상세 (단건)*/
+        SELECT
+        A.HS_CD
+        ,HS_DESC
+        <foreach collection="hsCdList" item="item" index="i">
+            ,A.DESC0${i+1}
+        </foreach>
+        ,A.DCLR_CNT
+        ,A.PDLS_CNT
+        ,A.INVC_NCY_AMT
+        ,A.INVC_USD_AMT
+        ,A.QTY_UT_CD
+        ,A.CURR
+        ,TO_NUMBER(A.MIN_UT_PRC) AS MIN_UT_PRC
+        ,TO_NUMBER(A.MAX_UT_PRC) AS MAX_UT_PRC
+        ,A.AVG_UT_PRC
+        ,A.STND_DVTN_UT_PRC
+        ,A.VRBL_RT
+        ,A.MN_ORCY_CNTY_CD
+        ,A.AGGT_PRID_SCP_CD
+        ,A.AGGT_YY
+        ,A.AGGT_MM
+        ,A.RNK
+        FROM (SELECT AA.HS_CD
+        ,(SELECT HS_DESC
+        FROM TB_CLRI_HS_CD
+        WHERE HS_CD = REPLACE(#{hsCd}, '.', '')
+        AND HS_APLY_STRT_DT = (SELECT MAX(HS_APLY_STRT_DT) FROM TB_CLRI_HS_CD WHERE HS_CD = REPLACE(#{hsCd}, '.', ''))
+        ) AS HS_DESC
+        <foreach collection="hsCdList" item="item" index="i">
+            ,(SELECT HS_DESC
+            FROM TB_CLRI_HS_CD
+            WHERE HS_CD = #{item}
+            AND HS_APLY_STRT_DT = (SELECT MAX(HS_APLY_STRT_DT) FROM TB_CLRI_HS_CD WHERE HS_CD = REPLACE(#{item}, '.', ''))
+            ) AS DESC0${i+1}
+        </foreach>
+        ,AA.DCLR_CNT
+        ,AA.PDLS_CNT
+        ,AA.INVC_NCY_AMT
+        ,AA.INVC_USD_AMT
+        ,(SELECT QTY_UT_CD
+        FROM TB_CLRI_HS_CD
+        WHERE HS_CD = REPLACE(#{hsCd}, '.', '')
+        AND HS_APLY_STRT_DT = (SELECT MAX(HS_APLY_STRT_DT) FROM TB_CLRI_HS_CD WHERE HS_CD = REPLACE(#{hsCd}, '.', ''))
+        ) AS QTY_UT_CD
+        , FN_GET_PARAM('DMSC_CURR_CD') AS CURR
+        ,AA.MIN_UT_NCY_PRC AS MIN_UT_PRC
+        ,AA.MAX_UT_NCY_PRC AS MAX_UT_PRC
+        ,AA.AVG_UT_NCY_PRC AS AVG_UT_PRC
+        ,AA.STND_DVTN_UT_NCY_PRC AS STND_DVTN_UT_PRC
+        ,ROUND( (AA.STND_DVTN_UT_NCY_PRC / NULLIF(AA.AVG_UT_NCY_PRC,0)) * 100, 1 ) AS VRBL_RT
+        ,AA.MN_ORCY_CNTY_CD
+        ,AA.AGGT_PRID_SCP_CD
+        ,AA.AGGT_YY
+        ,AA.AGGT_MM
+        , 1 AS RNK
+        FROM TB_CLRI_HS_ANAY_S AA
+        UNION ALL
+        SELECT AA.HS_CD
+        ,(SELECT HS_DESC
+        FROM TB_CLRI_HS_CD
+        WHERE HS_CD = REPLACE(#{hsCd}, '.', '')
+        AND HS_APLY_STRT_DT = (SELECT MAX(HS_APLY_STRT_DT) FROM TB_CLRI_HS_CD WHERE HS_CD = REPLACE(#{hsCd}, '.', ''))
+        ) AS HS_DESC
+        <foreach collection="hsCdList" item="item" index="i">
+            ,(SELECT HS_DESC
+            FROM TB_CLRI_HS_CD
+            WHERE HS_CD = #{item}
+            AND HS_APLY_STRT_DT = (SELECT MAX(HS_APLY_STRT_DT) FROM TB_CLRI_HS_CD WHERE HS_CD = REPLACE(#{item}, '.', ''))
+            ) AS DESC0${i+1}
+        </foreach>
+        ,AA.DCLR_CNT
+        ,AA.PDLS_CNT
+        ,AA.INVC_NCY_AMT
+        ,AA.INVC_USD_AMT
+        ,(SELECT QTY_UT_CD
+        FROM TB_CLRI_HS_CD
+        WHERE HS_CD = REPLACE(#{hsCd}, '.', '')
+        AND HS_APLY_STRT_DT = (SELECT MAX(HS_APLY_STRT_DT) FROM TB_CLRI_HS_CD WHERE HS_CD = REPLACE(#{hsCd}, '.', ''))
+        ) AS QTY_UT_CD
+        , 'USD' AS CURR
+        ,AA.MIN_UT_USD_PRC AS MIN_UT_PRC
+        ,AA.MAX_UT_USD_PRC AS MAX_UT_PRC
+        ,AA.AVG_UT_USD_PRC AS AVG_UT_PRC
+        ,AA.STND_DVTN_UT_USD_PRC AS STND_DVTN_UT_PRC
+        ,ROUND( (AA.STND_DVTN_UT_USD_PRC / NULLIF(AA.AVG_UT_USD_PRC,0)) * 100, 1 ) AS VRBL_RT
+        ,AA.MN_ORCY_CNTY_CD
+        ,AA.AGGT_PRID_SCP_CD
+        ,AA.AGGT_YY
+        ,AA.AGGT_MM
+        , 2 AS RNK
+        FROM TB_CLRI_HS_ANAY_S AA) A
+        WHERE A.AGGT_PRID_SCP_CD = #{aggtPridScpCd}
+        AND A.AGGT_YY = #{aggtYy}
+        AND A.AGGT_MM = #{aggtMm}
+        AND A.HS_CD = REPLACE(#{hsCd}, '.', '')
+        ORDER BY RNK ASC
+    </select>
+
+    <select id="selectLvlInqt" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmPrcStatVo" resultType="String">
+        /* selectLvlInqt : HS 레벨 별 설명 조회*/
+        SELECT DISTINCT HS_CD
+        FROM (SELECT HS_CD
+                   ,HS_DESC
+                   ,CASE WHEN LV = 1 THEN HS_DESC END AS DESC01
+                   ,CASE WHEN LV = 2 THEN HS_DESC END AS DESC02
+                   ,CASE WHEN LV = 3 THEN HS_DESC END AS DESC03
+                   ,CASE WHEN LV = 4 THEN HS_DESC END AS DESC04
+              FROM (SELECT HS_CD
+                         ,HS_DESC
+                         ,UPR_HS_CD
+                         ,LEVEL AS LV
+                    FROM TB_CLRI_HS_CD A
+                        START WITH HS_CD = REPLACE(#{hsCd}, '.', '')
+                    CONNECT BY PRIOR UPR_HS_CD = HS_CD
+                    ORDER SIBLINGS BY HS_CD ASC))
+        ORDER BY HS_CD
+    </select>
+
+    <!-- HS별 업체가격 조회 목록 조회 -->
+    <select id="selectClrHsmPoopro" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrHsmPooproVo" resultType="alpass.ipt.clr.trm.hsm.vo.ClrHsmPooproVo">
+        /* selectClrHsmPoopro */
+        SELECT
+        A.HS_CD                      /** Code SH !== HS코드 ==! */
+        , A.BSNS_RGSR_NO AS NIF                       /** N° de RCCM !== 사업자등록번호 ==! */
+        , (SELECT B.CO_NM
+        FROM   TB_COM_CO B
+        WHERE  B.NIF = A.BSNS_RGSR_NO
+        AND    B.DEL_YN = 'N'
+        AND    B.STTS_TP_CD = '01') AS CO_NM
+        , A.DCLR_CNT                   /** Nombre de declarations !== 신고건수 ==! */
+        , A.PDLS_CNT                   /** Nombre de cas d'articles !== 품목건수 ==! */
+        , A.INVC_NCY_AMT               /** Montant NCY de facture !== 송장NCY금액 ==! */
+        , A.INVC_USD_AMT               /** Montant USD de facture !== 송장USD금액 ==! */
+        , A.MIN_UT_NCY_PRC             /** Montant NCY de l'unite minimale !== 최소단위NCY가격 ==! */
+        , A.MAX_UT_NCY_PRC             /** Montant NCY de l'unite maximale !== 최대단위NCY가격 ==! */
+        , A.AVG_UT_NCY_PRC             /** Prix unitaire NCY liquide !== 평균단위NCY가격 ==! */
+        , A.STND_DVTN_UT_NCY_PRC       /** Prix unitaire NCY de l'ecart type !== 표준편차단위NCY가격 ==! */
+        , ROUND( (A.STND_DVTN_UT_NCY_PRC / NULLIF(A.AVG_UT_NCY_PRC,0)) * 100, 1 ) AS NCY_VRBL_RT
+        , A.MIN_UT_USD_PRC             /** Montant USD de l'unite minimale !== 최소단위USD가격 ==! */
+        , A.MAX_UT_USD_PRC             /** Montant USD de l'unite maximale !== 최대단위USD가격 ==! */
+        , A.AVG_UT_USD_PRC             /** Prix unitaire USD liquide !== 평균단위USD가격 ==! */
+        , A.STND_DVTN_UT_USD_PRC       /** Prix unitaire USD de l'ecart type !== 표준편차단위USD가격 ==! */
+        , ROUND( (A.STND_DVTN_UT_USD_PRC / NULLIF(A.AVG_UT_USD_PRC,0)) * 100, 1 ) AS USD_VRBL_RT
+        , A.AGGT_MM ||'/'|| A.AGGT_YY AS AGGT_YY_MM
+        , FN_GET_PARAM('DMSC_CURR_CD') AS CURR
+        FROM   TB_CLRI_HS_ANAY_PCO_S A
+        WHERE  A.DEL_YN = 'N'                              /** Suppression ON !== 삭제여부 ==! */
+        AND  A.AGGT_PRID_SCP_CD = #{aggtPridScpCd}       /** Code du champ de periode d'addition !== 집계기간범위코드 ==! */
+        AND  A.AGGT_YY = #{aggtYy}                       /** Annee de l'addition !== 집계년도 ==! */
+        AND  A.AGGT_MM = #{aggtMm}                       /** Mois de l'addition !== 집계월 ==! */
+        AND  A.HS_CD = REPLACE(#{hsCd}, '.', '')         /** Code SH !== HS코드 ==! */
+        <if test="nif != null and nif != ''">
+            AND  A.BSNS_RGSR_NO = #{nif}                              /** N° de RCCM !== 사업자등록번호 ==! */
+        </if>
+        ORDER BY INVC_NCY_AMT DESC
+    </select>
+</mapper>

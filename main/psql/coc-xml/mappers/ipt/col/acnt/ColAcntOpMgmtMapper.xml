@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="alpass.ipt.col.acnt.mapper.ColAcntOpMgmtMapper">
+
+    <!--
+    Consulter la liste de la gestion des ordres de paiement !==지불명령서 목록을 조회한다==!
+    -->
+    <select id="selectColAcntOpMgmtList" parameterType="alpass.ipt.col.acnt.vo.ColAcntOpMgmtVo" resultType="alpass.ipt.col.acnt.vo.ColAcntOpMgmtVo">
+        /** colAcntOpMgmt_selectColAcntOpMgmtList **/
+        <include refid="pagination.header"/>
+        SELECT    A.CSTM_CD
+                , FN_GET_ORGN_NM(NVL(A.CSTM_CD, A.CSTM_CD)) AS CSTM_NM		/** Nom Du Bureau !== 세관명 ==! */
+                , A.DEPT_CD
+                , FN_GET_ORGN_NM(NVL(A.DEPT_CD, A.DEPT_CD)) AS DEPT_NM
+                , A.PYMN_ORDER_NO			                                /** N° de l’ordre de paiement !== 지불명령서번호 ==! */
+                , A.PYMN_ORDER_TP_CD 		                                /** type de l'ordre de paiement !== 지불명령서 구분 ==! */
+                , FN_GET_CD_VDVAL_NM('COL_0073', A.PYMN_ORDER_TP_CD, #{langCd}) AS PYMN_ORDER_TP_NM
+                , A.REFF_NO_PT_CD 		                                    /** Code de type de numéro de réferénce !== 참조번호유형코드 ==! */
+                , A.REFF_NO 				                                /** Code de type de numéro de réferénce !== 결재요청서번호 ==! */
+                , TO_CHAR(TO_DATE(A.REFF_NO_DT,'YYYYMMDD'),'DD/MM/YYYY') AS REFF_NO_DT              /** Date de référence !== 결재요청서일자 ==! */
+                , A.TXPR_IDFY_NO_TP_CD 	                                    /** Code de catégorie de NIF !== 납세자 식별코드 ==! */
+                , A.TXPR_IDFY_NO 		                                    /** N° D'Identification De Redevable !== 납세자 식별번호 ==! */
+                , A.TXPR_NM					                                /** Nom Du Responsable Financier !== 납세자명 ==! */
+                , TO_CHAR(TO_DATE(A.PYMN_ORDER_DT , 'YYYYMMDD'),'DD/MM/YYYY') AS PYMN_ORDER_DT		/** Date de l’ordre de paiement !== 지불명령서일자 ==! */
+                , A.RGSR_EMP_ID 				                            /** ID de Ordonnateur !== 지불명령자ID ==! */
+                , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.RGSR_EMP_ID) AS RGSR_EMP_NM		/** Nom de Ordonnateur !== 지불명령자이름 ==! */
+                , A.PYMN_AMT 		                                        /** Montant ordonné !== 지불금액 ==! */
+                , A.APRP_ACCT_CD                                            /** Code de compte d’imputation !== 충당계정코드 ==! */
+                , TO_CHAR(TO_DATE(A.DLNG_PRID_YYMM, 'YYYYMM'), 'MM/YYYY') AS DLNG_PRID_YYMM   /** Année/Mois de période de l’opération !== 거래기간년월 ==! */
+                , A.DLNG_ORIG_CD                                            /** Code de source de l’opération !== 거래출처코드 ==! */
+                , A.APRV_ID
+                , (
+                  SELECT EMP_NM
+                  FROM  TB_POTI_EMP
+                  WHERE PBSR_NO = (
+                    SELECT  APRV_EMP_PBSR_NO
+                    FROM    TB_POTI_APRV_D
+                    WHERE   APRV_ID = A.APRV_ID
+                        AND APRV_SRNO = (SELECT MAX(APRV_SRNO) FROM TB_POTI_APRV_D WHERE APRV_ID = A.APRV_ID)
+                  )
+                ) AS LAST_APPN_NM
+                , EXPN_CRPP.EXPN_PT_CD AS EXPN_PT_CD
+                , ORDER_EXPN_CRPP.EXPN_PT_CD AS ORDER_EXPN_PT_CD
+                , EXPN_CRPP.DLNG_KND_CD AS DLNG_KND_CD
+                , ORDER_EXPN_CRPP.DLNG_PT_LWPR_CD AS ORDER_DLNG_PT_LWPR_CD
+                , NVL(EXPN_CRPP.EXPN_CRPP_NO, ORDER_EXPN_CRPP.EXPN_CRPP_NO) AS EXPN_CRPP_NO
+                , (SELECT APRV_PRCS_STTS_CD FROM TB_POTI_APRV WHERE DEL_YN = 'N' AND APRV_ID = A.APRV_ID) AS APRV_PRCS_STTS_CD
+        FROM    TB_COLI_PYMN_ORDER A,
+                (SELECT * FROM TB_COLI_EXPN_CRPP WHERE DLNG_PT_CD = '001') EXPN_CRPP,
+                (SELECT * FROM TB_COLI_EXPN_CRPP WHERE DLNG_PT_CD = '002') ORDER_EXPN_CRPP
+        WHERE 1=1
+            AND A.DEL_YN = 'N'
+            AND A.PYMN_ORDER_NO = EXPN_CRPP.REFF_NO(+)
+            AND A.PYMN_ORDER_NO = ORDER_EXPN_CRPP.REFF_NO(+)
+            <if test="sctrCd != null and sctrCd != ''">
+                AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+            </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test="deptCd != null and deptCd != ''">
+                AND (
+                    (   A.DEPT_CD = #{deptCd}
+                    OR  A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                    OR  A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                                                          OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd})))
+                    )
+                    OR
+                    (   A.MAKE_DEPT_CD = #{deptCd}
+                    OR  A.MAKE_DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                    OR  A.MAKE_DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                                                               OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd})))
+                    )
+                )
+            </if>
+            <if test="pymnOrderNo != null and pymnOrderNo !=''">
+                AND A.PYMN_ORDER_NO LIKE TRIM(#{pymnOrderNo}) || '%'
+            </if>
+            <if test="pymnOrderTpCd != null and pymnOrderTpCd !=''">
+                AND A.PYMN_ORDER_TP_CD = #{pymnOrderTpCd}
+            </if>
+            <if test='txprIdfyNoTpCd != null and txprIdfyNoTpCd !="" '>
+                AND A.TXPR_IDFY_NO_TP_CD = #{txprIdfyNoTpCd}
+            </if>
+            <if test='txprIdfyNo != null and txprIdfyNo !="" '>
+                AND A.TXPR_IDFY_NO = #{txprIdfyNo}
+            </if>
+        ORDER BY A.PYMN_ORDER_DT DESC
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+    Consulter les détails de l'ordre de paiement !==지불명령서 상세 조회한다==!
+    -->
+    <select id="selectColAcntOpMgmt" parameterType="alpass.ipt.col.acnt.vo.ColAcntOpMgmtVo" resultType="alpass.ipt.col.acnt.vo.ColAcntOpMgmtVo">
+        SELECT    A.CSTM_CD
+                , FN_GET_ORGN_NM(NVL(A.CSTM_CD, A.CSTM_CD)) AS CSTM_NM		/** Nom Du Bureau !== 세관명 ==! */
+                , A.DEPT_CD
+                , FN_GET_ORGN_NM(NVL(A.DEPT_CD, A.DEPT_CD)) AS DEPT_NM
+                , A.PYMN_ORDER_NO			                                /** N° de l’ordre de paiement !== 지불명령서번호 ==! */
+                , A.PYMN_ORDER_TP_CD 		                                /** Code de type de l'ordre de paiement !== 지불명무산령서 구분 ==! */
+                , A.REFF_NO_PT_CD 		                                    /** Code de type de numéro de réferénce !== 참조번호유형코드 ==! */
+                , A.REFF_NO 				                                /** Code de type de numéro de réferénce !== 결재요청서번호 ==! */
+                , TO_CHAR(TO_DATE(A.REFF_NO_DT,'YYYYMMDD'),'DD/MM/YYYY') AS REFF_NO_DT              /** Date de référence !== 결재요청서일자 ==! */
+                , A.TXPR_IDFY_NO_TP_CD 	                                    /** Code de catégorie de NIF !== 납세자 식별코드 ==! */
+                , A.TXPR_IDFY_NO 		                                    /** N° D'Identification De Redevable !== 납세자 식별번호 ==! */
+                , A.TXPR_NM					                                /** Nom Du Responsable Financier !== 납세자명 ==! */
+                , TO_CHAR(TO_DATE(A.PYMN_ORDER_DT , 'YYYYMMDD'),'DD/MM/YYYY') AS PYMN_ORDER_DT		/** Date de l’ordre de paiement !== 지불명령서일자 ==! */
+                , A.RGSR_EMP_ID 				                            /** ID de Ordonnateur !== 지불명령자ID ==! */
+                , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.RGSR_EMP_ID) AS RGSR_EMP_NM		/** Nom de Ordonnateur !== 지불명령자이름 ==! */
+                , A.PYMN_AMT 		                                        /** Montant ordonné !== 지불금액 ==! */
+                , A.APRP_ACCT_CD                                            /** Code de compte d’imputation !== 충당계정코드 ==! */
+                , TO_CHAR(TO_DATE(A.DLNG_PRID_YYMM, 'YYYYMM'), 'MM/YYYY') AS DLNG_PRID_YYMM   /** Année/Mois de période de l’opération !== 거래기간년월 ==! */
+                , A.DLNG_ORIG_CD                                            /** Code de source de l’opération !== 거래출처코드 ==! */
+                , B.REFF_NO AS EXPN_CRPP_REFF_NO
+                , A.APRV_ID
+        FROM    TB_COLI_PYMN_ORDER A, (SELECT REFF_NO FROM TB_COLI_EXPN_CRPP WHERE REFF_NO IS NOT NULL AND REFF_NO != '' GROUP BY REFF_NO) B
+        WHERE   A.DEL_YN = 'N'
+            AND A.PYMN_ORDER_NO = B.REFF_NO(+)
+        <if test="pymnOrderNo != null and pymnOrderNo !=''">
+            AND A.PYMN_ORDER_NO LIKE TRIM(#{pymnOrderNo}) || '%'
+        </if>
+    </select>
+
+    <!--
+    Enregistrer les informations sur l'ordre de paiement !==지불명령서 정보를 등록한다 ==!
+    -->
+    <insert id="insertColAcntOpMgmt" parameterType="alpass.ipt.col.acnt.vo.ColAcntOpMgmtVo">
+        /* ColAcntOpMgmtVo_insertColAcntOpMgmt */
+        INSERT INTO TB_COLI_PYMN_ORDER(
+              PYMN_ORDER_NO
+            , CSTM_CD
+            , DEPT_CD
+            , PYMN_ORDER_TP_CD
+            , REFF_NO_PT_CD
+            , REFF_NO
+            , REFF_NO_DT
+            , TXPR_IDFY_NO_TP_CD
+            , TXPR_IDFY_NO
+            , TXPR_NM
+            , PYMN_ORDER_DT
+            , RGSR_EMP_ID
+            , PYMN_AMT
+            , APRP_ACCT_CD
+            , DLNG_PRID_YYMM
+            , DLNG_ORIG_CD
+            , DEL_YN
+            , MAKE_DEPT_CD
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+        ) VALUES (
+              #{pymnOrderNo}
+            , #{cstmCd}
+            , #{deptCd}
+            , #{pymnOrderTpCd}
+            , #{reffNoPtCd}
+            , #{reffNo}
+            , TO_CHAR(TO_DATE(#{reffNoDt},'DD/MM/YYYY'),'YYYYMMDD')
+            , #{txprIdfyNoTpCd}
+            , #{txprIdfyNo}
+            , #{txprNm}
+            , TO_CHAR(TO_DATE(#{pymnOrderDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            , #{rgsrEmpId}
+            , #{pymnAmt}
+            , #{aprpAcctCd}
+            , TO_CHAR(TO_DATE(#{dlngPridYymm}, 'MM/YYYY'), 'YYYYMM')
+            , #{dlngOrigCd}
+            , 'N'
+            , #{makeDeptCd}
+            , #{frstRegstId}
+            , SYSTIMESTAMP
+            , #{lastChprId}
+            , SYSTIMESTAMP
+        )
+    </insert>
+
+    <!--
+    Modifier les informations sur l'ordre de paiement !==지불명령서 정보를 수정한다==!
+    -->
+    <update id="updateColAcntOpMgmt" parameterType="alpass.ipt.col.acnt.vo.ColAcntOpMgmtVo">
+        /** colAcntOpMgmt_updateColAcntOpMgmt **/
+        UPDATE TB_COLI_PYMN_ORDER
+        SET   CSTM_CD = #{cstmCd}
+            , DEPT_CD = #{deptCd}
+            , PYMN_ORDER_TP_CD = #{pymnOrderTpCd}
+            , REFF_NO_PT_CD = #{reffNoPtCd}
+            , REFF_NO = #{reffNo}
+            , REFF_NO_DT = TO_CHAR(TO_DATE(#{reffNoDt},'DD/MM/YYYY'),'YYYYMMDD')
+            , PYMN_ORDER_DT= TO_CHAR(TO_DATE(#{pymnOrderDt} , 'DD/MM/YYYY'), 'YYYYMMDD')
+            , TXPR_IDFY_NO_TP_CD = #{txprIdfyNoTpCd}
+            , TXPR_IDFY_NO = #{txprIdfyNo}
+            , TXPR_NM = #{txprNm}
+            , RGSR_EMP_ID = #{rgsrEmpId}
+            , PYMN_AMT = #{pymnAmt}
+            , APRP_ACCT_CD = #{aprpAcctCd}
+            , DLNG_PRID_YYMM = TO_CHAR(TO_DATE(#{dlngPridYymm}, 'MM/YYYY'), 'YYYYMM')
+            , DLNG_ORIG_CD = #{dlngOrigCd}
+            , LAST_CHPR_ID = #{lastChprId}
+            , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE   1 = 1
+            AND PYMN_ORDER_NO = #{pymnOrderNo}
+    </update>
+
+
+    <!--
+    Supprimer les informations sur l'ordre de paiement !==지불명령서 정보를 삭제한다==!
+    -->
+    <update id="deleteColAcntOpMgmt" parameterType="alpass.ipt.col.acnt.vo.ColAcntOpMgmtVo">
+        /** colAcntOpMgmt_deleteColAcntOpMgmt **/
+        UPDATE TB_COLI_PYMN_ORDER
+        SET   DEL_YN = 'Y'
+            , LAST_CHPR_ID = #{lastChprId}
+            , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE   1 = 1
+            AND PYMN_ORDER_NO = #{pymnOrderNo}
+    </update>
+
+    <!--
+        Traitement après l'approbation !== 결재 후처리(요청시) ==!
+    -->
+    <update id="updateAcntOpMgmtAprvId" parameterType="alpass.ipt.col.acnt.vo.ColAcntOpMgmtVo">
+        /* ColAcntMgmtMapper_updateAcntOpMgmtAprvId */
+        UPDATE TB_COLI_PYMN_ORDER
+        SET APRV_ID = #{aprvId}                           /* ID d'approbation  !== 결재ID ==! */
+          , LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE PYMN_ORDER_NO = #{pymnOrderNo}
+    </update>
+
+    <!--
+    Traitement après l'approbation !== 결재 후처리(승인시) ==!
+    -->
+    <update id="updateAcntOpMgmtPymnOrderDt" parameterType="alpass.ipt.col.acnt.vo.ColAcntOpMgmtVo">
+        /* ColAcntMgmtMapper_updateAcntOpMgmtAprvId */
+        UPDATE TB_COLI_PYMN_ORDER
+        SET PYMN_ORDER_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+          , LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE PYMN_ORDER_NO = #{pymnOrderNo}
+    </update>
+
+    <!--
+    Vérification des clés redondantes !==중복키 검사==!
+    -->
+    <select id="checkDuplicateReffNo" parameterType="alpass.ipt.col.acnt.vo.ColAcntOpMgmtVo" resultType="int">
+        SELECT COUNT(*)
+        FROM TB_COLI_PYMN_ORDER
+        WHERE REFF_NO = #{reffNo}
+          AND REFF_NO_PT_CD = #{reffNoPtCd}
+          AND DEL_YN = 'N'
+        <if test="pymnOrderNo != null and pymnOrderNo != ''">
+            AND PYMN_ORDER_NO != #{pymnOrderNo}
+        </if>
+    </select>
+</mapper>

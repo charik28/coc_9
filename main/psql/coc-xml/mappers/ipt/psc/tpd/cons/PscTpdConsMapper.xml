@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.psc.tpd.cons.mapper.PscTpdConsMapper">
+
+  <!--
+  @TODO:번역필요 !== TPD차량위탁 목록 조회 ==!
+  -->
+  <select id="selectPscTpdConsList"  parameterType="alpass.ipt.psc.tpd.cons.vo.PscTpdConsVo" 
+    resultType="alpass.ipt.psc.tpd.cons.vo.PscTpdConsVo"> 
+      /* selectPscTpdConsList */
+      <include refid="pagination.header" ></include>
+          SELECT
+                A.TPD_CONS_TEMP_NO           /** Numéro temporaire de mise sur cale de TPD !== TPD위탁임시번호 ==! */
+              , A.RQST_DGCNT                 /** N° ordre de la demande !== 신청차수 ==! */
+              , A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+              , A.TPD_MGMT_NO                /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              , A.VHCL_CONS_RQST_PT_CD       /** Code de type de demande de mise sur cale !== 차량위탁신청유형코드 ==! */
+              , A.VHCL_CONS_RQST_CSTM_CD       /** Code de bureau de douane de mise sur cale sollicité !== 차량위탁신청세관코드 ==! */
+              , A.TPD_RQST_STTS_CD           /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              , A.VHCL_CONS_RLSE_DT          /** Date de sortie de véhicule !== 차량위탁반출일자 ==! */
+              , A.VHCL_CONS_RLSE_REGST_ID       /** ID d'agent enregistrant la sortie de véhicule !== 차량위탁반출등록자ID ==! */
+              , A.VHCL_CONS_RQST_PRID        /** Code de durée de la mise sur cale sollicitée !== 차량위탁신청기간 ==! */
+              , A.VHCL_CONS_RQST_RSN_CN       /** Motif de la demande de mise sur cale !== 차량위탁신청사유내용 ==! */
+              , A.VHCL_CONS_RQST_DT          /** Date de demande de mise sur cale !== 차량위탁신청일자 ==! */
+              , A.VHCL_CONS_RQST_PLC_NM       /** Lieu de demande de mise sur cale !== 차량위탁신청장소명 ==! */
+              , A.OBJT_LDGG_CN               /** Contenu De La Contestation !== 이의제기내용 ==! */
+              , A.VHCL_KEY_YN                /** Clé de voiture !== 차량열쇠여부 ==! */
+              , A.RGSR_CARD_YN               /** Carte d'immatriculation !== 등록카드여부 ==! */
+              , A.VHCL_LIPL_YN                /** @TODO : 번역필요 !== 차량번호판여부 ==! */
+              , A.SRBK_TPD_YN                /** TPD original !== 원본TPD여부 ==! */
+              , A.REQST_CONS_PLC_CD          /** Lieu de mise sur cale sollicité !== 요청위탁장소코드 ==! */
+              , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+              , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+          FROM   TB_PSCI_TPD_VHCL_CONS A
+         WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+           AND  A.TPD_CONS_TEMP_NO = #{tpdConsTempNo}       /** Numéro temporaire de mise sur cale de TPD !== TPD위탁임시번호 ==! */
+
+      <include refid="pagination.footer" ></include>
+  </select>
+
+  <select id="selectPscTpdCons"  parameterType="alpass.ipt.psc.tpd.cons.vo.PscTpdConsVo" 
+    resultType="alpass.ipt.psc.tpd.cons.vo.PscTpdConsVo"> 
+      /* selectPscTpdCons */
+          SELECT
+                A.TPD_CONS_TEMP_NO           /** Numéro temporaire de mise sur cale de TPD !== TPD위탁임시번호 ==! */
+              , A.RQST_DGCNT                 /** N° ordre de la demande !== 신청차수 ==! */
+              , A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+              , A.TPD_MGMT_NO                /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              , A.VHCL_CONS_RQST_PT_CD       /** Code de type de demande de mise sur cale !== 차량위탁신청유형코드 ==! */
+              , A.VHCL_CONS_RQST_CSTM_CD       /** Code de bureau de douane de mise sur cale sollicité !== 차량위탁신청세관코드 ==! */
+              , A.TPD_RQST_STTS_CD           /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              , A.VHCL_CONS_RLSE_DT          /** Date de sortie de véhicule !== 차량위탁반출일자 ==! */
+              , A.VHCL_CONS_RLSE_REGST_ID       /** ID d'agent enregistrant la sortie de véhicule !== 차량위탁반출등록자ID ==! */
+              , A.VHCL_CONS_RQST_PRID        /** Code de durée de la mise sur cale sollicitée !== 차량위탁신청기간 ==! */
+              , A.VHCL_CONS_RQST_RSN_CN       /** Motif de la demande de mise sur cale !== 차량위탁신청사유내용 ==! */
+              , A.VHCL_CONS_RQST_DT          /** Date de demande de mise sur cale !== 차량위탁신청일자 ==! */
+              , A.VHCL_CONS_RQST_PLC_NM       /** Lieu de demande de mise sur cale !== 차량위탁신청장소명 ==! */
+              , A.OBJT_LDGG_CN               /** Contenu De La Contestation !== 이의제기내용 ==! */
+              , A.VHCL_KEY_YN                /** Clé de voiture !== 차량열쇠여부 ==! */
+              , A.RGSR_CARD_YN               /** Carte d'immatriculation !== 등록카드여부 ==! */
+              , A.VHCL_LIPL_YN                /** @TODO : 번역필요 !== 차량번호판여부 ==! */
+              , A.SRBK_TPD_YN                /** TPD original !== 원본TPD여부 ==! */
+              , A.REQST_CONS_PLC_CD          /** Lieu de mise sur cale sollicité !== 요청위탁장소코드 ==! */
+              , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+              , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+          FROM   TB_PSCI_TPD_VHCL_CONS A
+         WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+           AND  A.TPD_CONS_TEMP_NO = #{tpdConsTempNo}       /** Numéro temporaire de mise sur cale de TPD !== TPD위탁임시번호 ==! */
+           
+  </select>
+
+ <select id="selectTpdConsReport"  parameterType="alpass.ipt.psc.tpd.cons.vo.PscTpdConsVo" 
+    resultType="alpass.ipt.psc.tpd.cons.vo.PscTpdConsVo"> 
+      /* selectTpdConsReport */
+          SELECT
+                A.TPD_CONS_TEMP_NO           /** Numéro temporaire de mise sur cale de TPD !== TPD위탁임시번호 ==! */
+              , A.RQST_DGCNT                 /** N° ordre de la demande !== 신청차수 ==! */
+              , A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+              , A.TPD_MGMT_NO                /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              , A.VHCL_CONS_RQST_PT_CD       /** Code de type de demande de mise sur cale !== 차량위탁신청유형코드 ==! */
+              , A.VHCL_CONS_RQST_CSTM_CD       /** Code de bureau de douane de mise sur cale sollicité !== 차량위탁신청세관코드 ==! */
+              , FN_GET_ORGN_NM(A.VHCL_CONS_RQST_CSTM_CD) AS VHCL_CONS_RQST_CSTM_NM               /**  !== 세관명 ==! */
+              , A.TPD_RQST_STTS_CD           /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              , A.VHCL_CONS_RLSE_DT          /** Date de sortie de véhicule !== 차량위탁반출일자 ==! */
+              , A.VHCL_CONS_RLSE_REGST_ID       /** ID d'agent enregistrant la sortie de véhicule !== 차량위탁반출등록자ID ==! */
+              , CASE 
+                   WHEN A.PERM_DCNT IS NOT NULL THEN A.PERM_DCNT        /** Code de durée de la mise sur cale sollicitée !== 차량위탁신청기간 ==! */
+                     ELSE A.VHCL_CONS_RQST_PRID 
+                END AS VHCL_CONS_RQST_PRID
+              , A.VHCL_CONS_RQST_RSN_CN       /** Motif de la demande de mise sur cale !== 차량위탁신청사유내용 ==! */
+              , A.VHCL_CONS_RQST_DT          /** Date de demande de mise sur cale !== 차량위탁신청일자 ==! */
+              , A.VHCL_CONS_RQST_PLC_NM       /** Lieu de demande de mise sur cale !== 차량위탁신청장소명 ==! */
+              , A.VHCL_KEY_YN                /** Clé de voiture !== 차량열쇠여부 ==! */
+              , A.RGSR_CARD_YN               /** Carte d'immatriculation !== 등록카드여부 ==! */
+              , A.VHCL_LIPL_YN                /** @TODO : 번역필요 !== 차량번호판여부 ==! */
+              , A.SRBK_TPD_YN                /** TPD original !== 원본TPD여부 ==! */
+              , A.REQST_CONS_PLC_CD          /** Lieu de mise sur cale sollicité !== 요청위탁장소코드 ==! */
+              , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+              , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+              ,(SELECT TO_CHAR(B.AUDT_RSLT_RGSR_DTTM, 'DD/MM/YYYY')   FROM TB_PSCI_TPD_AUDT B where B.AUDT_RSLT_CD = '02' AND B.TPD_TP_CD ='04' AND B.TPD_TEMP_NO = A.TPD_CONS_TEMP_NO ORDER BY B.FRST_RGSR_DTTM DESC LIMIT 1 ) AS APRE_DT
+              ,(SELECT AUDT_RSLT_CN FROM TB_PSCI_TPD_AUDT B WHERE B.AUDT_RSLT_CD = '02' AND B.TPD_TP_CD ='04' AND B.TPD_TEMP_NO = A.TPD_CONS_TEMP_NO ORDER BY B.FRST_RGSR_DTTM DESC LIMIT 1 ) AS OBJT_LDGG_CN
+              ,(SELECT TO_CHAR(B.AUDT_RSLT_RGSR_DTTM, 'DD/MM/YYYY')   FROM TB_PSCI_TPD_AUDT B where B.AUDT_RSLT_CD = '02' AND B.TPD_TP_CD ='01' AND B.TPD_TEMP_NO = A.TPD_TEMP_NO ORDER BY B.FRST_RGSR_DTTM DESC LIMIT 1 ) AS APRE_DT_TPD   
+          FROM  TB_PSCI_TPD_VHCL_CONS A
+         WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+           AND  A.TPD_CONS_TEMP_NO = #{tpdConsTempNo}       /** Numéro temporaire de mise sur cale de TPD !== TPD위탁임시번호 ==! */
+           
+  </select>
+  
+  <!--
+  @TODO:번역필요 !== TPD차량위탁 등록 ==!
+  (deKim)
+  -->
+  <insert id="insertPscTpdCons" parameterType="alpass.ipt.psc.tpd.cons.vo.PscTpdConsVo">
+      /* insertPscTpdCons */
+      
+        <selectKey keyProperty="rqstDgcnt" order="BEFORE" resultType="java.math.BigDecimal">
+          SELECT NVL(MAX(RQST_DGCNT),0)+1 FROM TB_PSCI_TPD_VHCL_CONS WHERE TPD_CONS_TEMP_NO = #{tpdConsTempNo}
+        </selectKey>
+        
+        INSERT INTO TB_PSCI_TPD_VHCL_CONS
+              (
+                TPD_CONS_TEMP_NO             /** Numéro temporaire de mise sur cale de TPD !== TPD위탁임시번호 ==! */
+              , RQST_DGCNT                   /** N° ordre de la demande !== 신청차수 ==! */
+              , TPD_TEMP_NO                  /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+              , TPD_MGMT_NO                  /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              , VHCL_CONS_RQST_PT_CD         /** Code de type de demande de mise sur cale !== 차량위탁신청유형코드 ==! */
+              , VHCL_CONS_RQST_CSTM_CD       /** Code de bureau de douane de mise sur cale sollicité !== 차량위탁신청세관코드 ==! */
+              , TPD_RQST_STTS_CD             /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              , VHCL_CONS_RLSE_DT            /** Date de sortie de véhicule !== 차량위탁반출일자 ==! */
+              , VHCL_CONS_RLSE_REGST_ID      /** ID d'agent enregistrant la sortie de véhicule !== 차량위탁반출등록자ID ==! */
+              , VHCL_CONS_RQST_PRID          /** Code de durée de la mise sur cale sollicitée !== 차량위탁신청기간 ==! */
+              , VHCL_CONS_RQST_RSN_CN        /** Motif de la demande de mise sur cale !== 차량위탁신청사유내용 ==! */
+              , VHCL_CONS_RQST_DT            /** Date de demande de mise sur cale !== 차량위탁신청일자 ==! */
+              , VHCL_CONS_RQST_PLC_NM        /** Lieu de demande de mise sur cale !== 차량위탁신청장소명 ==! */
+              , OBJT_LDGG_CN                 /** Contenu De La Contestation !== 이의제기내용 ==! */
+              , VHCL_KEY_YN                  /** Clé de voiture !== 차량열쇠여부 ==! */
+              , RGSR_CARD_YN                 /** Carte d'immatriculation !== 등록카드여부 ==! */
+              , VHCL_LIPL_YN                  /** @TODO : 번역필요 !== 차량번호판여부 ==! */
+              , SRBK_TPD_YN                  /** TPD original !== 원본TPD여부 ==! */
+              , REQST_CONS_PLC_CD            /** Lieu de mise sur cale sollicité !== 요청위탁장소코드 ==! */
+              , ATCH_FILE_ID                 /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+              , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+              )
+              VALUES
+              (
+                #{tpdConsTempNo}             /** Numéro temporaire de mise sur cale de TPD !== TPD위탁임시번호 ==! */
+              , #{rqstDgcnt}                 /** N° ordre de la demande !== 신청차수 ==! */
+              , #{tpdTempNo}                 /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+              , #{tpdMgmtNo}                 /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              , #{vhclConsRqstPtCd}          /** Code de type de demande de mise sur cale !== 차량위탁신청유형코드 ==! */
+              , #{vhclConsRqstCstmCd}        /** Code de bureau de douane de mise sur cale sollicité !== 차량위탁신청세관코드 ==! */
+              , #{tpdRqstSttsCd}             /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              , #{vhclConsRlseDt}            /** Date de sortie de véhicule !== 차량위탁반출일자 ==! */
+              , #{vhclConsRlseRegstId}       /** ID d'agent enregistrant la sortie de véhicule !== 차량위탁반출등록자ID ==! */
+              , #{vhclConsRqstPrid}          /** Code de durée de la mise sur cale sollicitée !== 차량위탁신청기간 ==! */
+              , #{vhclConsRqstRsnCn}         /** Motif de la demande de mise sur cale !== 차량위탁신청사유내용 ==! */
+              , #{vhclConsRqstDt}            /** Date de demande de mise sur cale !== 차량위탁신청일자 ==! */
+              , #{vhclConsRqstPlcNm}         /** Lieu de demande de mise sur cale !== 차량위탁신청장소명 ==! */
+              , #{objtLdggCn}                /** Contenu De La Contestation !== 이의제기내용 ==! */
+              , #{vhclKeyYn}                 /** Clé de voiture !== 차량열쇠여부 ==! */
+              , #{rgsrCardYn}                /** Carte d'immatriculation !== 등록카드여부 ==! */
+              , #{vhclLiplYn}                /** @TODO : 번역필요 !== 차량번호판여부 ==! */
+              , #{srbkTpdYn}                 /** TPD original !== 원본TPD여부 ==! */
+              , #{reqstConsPlcCd}            /** Lieu de mise sur cale sollicité !== 요청위탁장소코드 ==! */
+              , #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              , 'N'                          /** Suppression On !== 삭제여부 ==! */
+              , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , CURRENT_TIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , CURRENT_TIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+              )
+  </insert>
+
+
+  <!--
+  @TODO:번역필요 !== TPD차량위탁 수정 ==!
+  (deKim) 
+  -->
+  <update id="updatePscTpdCons" parameterType="alpass.ipt.psc.tpd.cons.vo.PscTpdConsVo">
+      /* updatePscTpdCons */
+      UPDATE  TB_PSCI_TPD_VHCL_CONS SET 
+      
+                LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , LAST_CHG_DTTM = CURRENT_TIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+              <if test='tpdMgmtNo != null and tpdMgmtNo != ""'>
+              , TPD_MGMT_NO = #{tpdMgmtNo}                  /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+              </if>
+              <if test='vhclConsRqstPtCd != null and vhclConsRqstPtCd != ""'>
+              , VHCL_CONS_RQST_PT_CD = #{vhclConsRqstPtCd}  /** Code de type de demande de mise sur cale !== 차량위탁신청유형코드 ==! */
+              </if>
+              <if test='vhclConsRqstCstmCd != null and vhclConsRqstCstmCd != ""'>
+              , VHCL_CONS_RQST_CSTM_CD = #{vhclConsRqstCstmCd}  /** Code de bureau de douane de mise sur cale sollicité !== 차량위탁신청세관코드 ==! */
+              </if>
+              <if test='tpdRqstSttsCd != null and tpdRqstSttsCd != ""'>
+              , TPD_RQST_STTS_CD = #{tpdRqstSttsCd}         /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+              </if>
+              <if test='vhclConsRlseDt != null and vhclConsRlseDt != ""'>
+              , VHCL_CONS_RLSE_DT = #{vhclConsRlseDt}       /** Date de sortie de véhicule !== 차량위탁반출일자 ==! */
+              </if>
+              <if test='vhclConsRlseRegstId != null and vhclConsRlseRegstId != ""'>
+              , VHCL_CONS_RLSE_REGST_ID = #{vhclConsRlseRegstId}  /** ID d'agent enregistrant la sortie de véhicule !== 차량위탁반출등록자ID ==! */
+              </if>
+              <if test='vhclConsRqstPrid != null and vhclConsRqstPrid != ""'>
+              , VHCL_CONS_RQST_PRID = #{vhclConsRqstPrid}   /** Code de durée de la mise sur cale sollicitée !== 차량위탁신청기간 ==! */
+              </if>
+              <if test='vhclConsRqstRsnCn != null and vhclConsRqstRsnCn != ""'>
+              , VHCL_CONS_RQST_RSN_CN = #{vhclConsRqstRsnCn}  /** Motif de la demande de mise sur cale !== 차량위탁신청사유내용 ==! */
+              </if>
+              <if test='vhclConsRqstDt != null and vhclConsRqstDt != ""'>
+              , VHCL_CONS_RQST_DT = #{vhclConsRqstDt}       /** Date de demande de mise sur cale !== 차량위탁신청일자 ==! */
+              </if>
+              <if test='vhclConsRqstPlcNm != null and vhclConsRqstPlcNm != ""'>
+              , VHCL_CONS_RQST_PLC_NM = #{vhclConsRqstPlcNm}  /** Lieu de demande de mise sur cale !== 차량위탁신청장소명 ==! */
+              </if>
+              <if test='objtLdggCn != null and objtLdggCn != ""'>
+              , OBJT_LDGG_CN = #{objtLdggCn}                /** Contenu De La Contestation !== 이의제기내용 ==! */
+              </if>
+              <if test='vhclKeyYn != null and vhclKeyYn != ""'>
+              , VHCL_KEY_YN = #{vhclKeyYn}                  /** Clé de voiture !== 차량열쇠여부 ==! */
+              </if>
+              <if test='rgsrCardYn != null and rgsrCardYn != ""'>
+              , RGSR_CARD_YN = #{rgsrCardYn}                /** Carte d'immatriculation !== 등록카드여부 ==! */
+              </if>
+              <if test='vhclLiplYn != null and vhclLiplYn != ""'>
+              , VHCL_LIPL_YN = #{vhclLiplYn}                 /** @TODO : 번역필요 !== 차량번호판여부 ==! */
+              </if>
+              <if test='srbkTpdYn != null and srbkTpdYn != ""'>
+              , SRBK_TPD_YN = #{srbkTpdYn}                  /** TPD original !== 원본TPD여부 ==! */
+              </if>
+              <if test='reqstConsPlcCd != null and reqstConsPlcCd != ""'>
+              , REQST_CONS_PLC_CD = #{reqstConsPlcCd}       /** Lieu de mise sur cale sollicité !== 요청위탁장소코드 ==! */
+              </if>
+              <if test='atchFileId != null and atchFileId != ""'>
+              , ATCH_FILE_ID = #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              </if>
+              <if test='permDcnt != null and permDcnt != ""'>
+              , PERM_DCNT = #{permDcnt}
+              </if>  
+         WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+           AND  TPD_CONS_TEMP_NO = #{tpdConsTempNo}         /** Numéro temporaire de mise sur cale de TPD !== TPD위탁임시번호 ==! */
+  </update>
+
+
+  <!--
+  @TODO:번역필요 !== TPD차량위탁 삭제 ==!
+  (deKim)
+  -->
+  <update id="deletePscTpdCons" parameterType="alpass.ipt.psc.tpd.cons.vo.PscTpdConsVo">
+      /* deletePscTpdCons */
+      UPDATE  TB_PSCI_TPD_VHCL_CONS SET 
+              DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+           ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+           ,  LAST_CHG_DTTM = CURRENT_TIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+       WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+         AND  TPD_CONS_TEMP_NO = #{tpdConsTempNo}           /** Numéro temporaire de mise sur cale de TPD !== TPD위탁임시번호 ==! */
+         AND  RQST_DGCNT = #{rqstDgcnt}                     /** N° ordre de la demande !== 신청차수 ==! */
+  </update>
+
+  <!--
+  @TODO:번역필요 !== TPD차량위탁 상태조회 ==!
+  -->
+  <select id="selectTpdConsRqstSttsCd"  parameterType="alpass.ipt.psc.tpd.cons.vo.PscTpdConsVo" 
+    resultType="alpass.ipt.psc.tpd.cons.vo.PscTpdConsVo"> 
+      /* selectTpdConsRqstSttsCd */
+
+        SELECT
+              A.TPD_CONS_TEMP_NO           /** Numéro temporaire de mise sur cale de TPD !== TPD위탁임시번호 ==! */
+            , A.RQST_DGCNT                 /** N° ordre de la demande !== 신청차수 ==! */
+            , A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+            , A.TPD_MGMT_NO                /** Numéro de gestion de TPD !== TPD관리번호 ==! */
+            , A.VHCL_CONS_RQST_PT_CD       /** Code de type de demande de mise sur cale !== 차량위탁신청유형코드 ==! */
+            , A.VHCL_CONS_RQST_CSTM_CD       /** Code de bureau de douane de mise sur cale sollicité !== 차량위탁신청세관코드 ==! */
+            , A.TPD_RQST_STTS_CD           /** Code de l'état de demande de TPD !== TPD신청상태코드 ==! */
+            , A.VHCL_CONS_RLSE_DT          /** Date de sortie de véhicule !== 차량위탁반출일자 ==! */
+            , A.VHCL_CONS_RLSE_REGST_ID       /** ID d'agent enregistrant la sortie de véhicule !== 차량위탁반출등록자ID ==! */
+            , A.VHCL_CONS_RQST_PRID        /** Code de durée de la mise sur cale sollicitée !== 차량위탁신청기간 ==! */
+            , A.VHCL_CONS_RQST_RSN_CN       /** Motif de la demande de mise sur cale !== 차량위탁신청사유내용 ==! */
+            , A.VHCL_CONS_RQST_DT          /** Date de demande de mise sur cale !== 차량위탁신청일자 ==! */
+            , A.VHCL_CONS_RQST_PLC_NM       /** Lieu de demande de mise sur cale !== 차량위탁신청장소명 ==! */
+            , A.OBJT_LDGG_CN               /** Contenu De La Contestation !== 이의제기내용 ==! */
+            , A.VHCL_KEY_YN                /** Clé de voiture !== 차량열쇠여부 ==! */
+            , A.RGSR_CARD_YN               /** Carte d'immatriculation !== 등록카드여부 ==! */
+            , A.VHCL_LIPL_YN                /** @TODO : 번역필요 !== 차량번호판여부 ==! */
+            , A.SRBK_TPD_YN                /** TPD original !== 원본TPD여부 ==! */
+            , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+            , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        FROM   TB_PSCI_TPD_VHCL_CONS A
+        WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+        AND  A.TPD_TEMP_NO = #{tpdTempNo}                  /** Numéro temporaire de prorogation de TPD !== TPD연장임시번호 ==! */
+        AND  A.TPD_RQST_STTS_CD IN ('A2','A3','A4','A5')
+           
+
+           
+  </select>
+  
+  <select id="cstmPscTpdCons"  parameterType="alpass.ipt.psc.tpd.cons.vo.PscTpdConsVo" 
+    resultType="alpass.ipt.psc.tpd.cons.vo.PscTpdConsVo"> 
+      /* cstmPscTpdCons */
+      
+      SELECT ORGN_CD AS VHCL_CONS_RQST_CSTM_CD  
+      FROM TB_POTI_ORGN
+      WHERE POST_CD = #{postCd}
+      AND ORGN_TP_CD = 'INS'
+
+  </select>  
+  
+</mapper>

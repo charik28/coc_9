@@ -1,0 +1,562 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.cd.mapper.PotPmCdWlyCdMapper">
+
+    <!--
+      Consulter la liste des codes de wilaya !==윌라야 목록를 조회한다==!
+    -->
+    <select id="selectWlyCdList" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo" resultType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** selectWlyCdList */
+        <include refid="pagination.header"/>
+        SELECT
+               A.WLY_CD
+             , B.WLY_NM
+             , (SELECT WLY_NM FROM TB_COM_WLY_CD_LANG WHERE DEL_YN = 'N' AND WLY_CD = A.WLY_CD AND LANG_CD = 'FR') AS WLY_NM_FR
+             , (SELECT WLY_NM FROM TB_COM_WLY_CD_LANG WHERE DEL_YN = 'N' AND WLY_CD = A.WLY_CD AND LANG_CD = 'EN') AS WLY_NM_EN
+             , (SELECT WLY_NM FROM TB_COM_WLY_CD_LANG WHERE DEL_YN = 'N' AND WLY_CD = A.WLY_CD AND LANG_CD = 'KO') AS WLY_NM_KO
+             , (SELECT WLY_NM FROM TB_COM_WLY_CD_LANG WHERE DEL_YN = 'N' AND WLY_CD = A.WLY_CD AND LANG_CD = 'AR') AS WLY_NM_AR
+        FROM  TB_COM_WLY_CD A, TB_COM_WLY_CD_LANG B
+        WHERE A.DEL_YN = 'N'
+        AND   B.DEL_YN = 'N'
+        AND   A.WLY_CD = B.WLY_CD
+        AND   B.LANG_CD = #{langCd}
+
+        <if test="searWlyCd != null and searWlyCd != ''">
+        AND A.WLY_CD = #{searWlyCd}
+        </if>
+
+        <if test="searWlyNm != null and searWlyNm != ''">
+        AND UPPER(B.WLY_NM) LIKE UPPER('%'||#{searWlyNm}||'%')
+        </if>
+
+        ORDER BY A.WLY_CD
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+      Consulter du nombre de doublons de wilaya !==윌라야 중복카운트를 조회한다==!
+    -->
+    <select id="selectWlyCdDup" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo" resultType="int">
+        /** selectWlyCdDup */
+        SELECT
+           COUNT(1)
+        FROM  TB_COM_WLY_CD A
+        WHERE A.DEL_YN = 'N'
+        AND   A.WLY_CD = #{wlyCd}
+    </select>
+
+    <!--
+      Enregistrer une wilaya !==윌라야를 등록 한다==!
+    -->
+    <insert id="insertWlyCd" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** insertWlyCd */
+        with upsert as
+        (
+            UPDATE TB_COM_WLY_CD
+            SET
+                  LAST_CHPR_ID = #{lastChprId}
+                , LAST_CHG_DTTM = SYSTIMESTAMP
+                , DEL_YN = 'N'
+            WHERE Wly_CD = #{wlyCd}
+            AND DEL_YN = 'Y'
+            returning *
+        )
+        INSERT INTO TB_COM_WLY_CD
+        (
+                WlY_CD
+              , DEL_YN
+              , FRST_REGST_ID
+              , FRST_RGSR_DTTM
+              , LAST_CHPR_ID
+              , LAST_CHG_DTTM
+        )
+        SELECT
+                #{wlyCd}
+              , 'N'
+              , #{frstRegstId}
+              , SYSTIMESTAMP
+              , #{lastChprId}
+              , SYSTIMESTAMP
+        WHERE NOT exists(select * from upsert)
+    </insert>
+
+    <!--
+      Enregistrer la langue de la wilaya !==윌라야 언어를 등록 한다==!
+    -->
+    <insert id="insertWlyCdLang" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** insertWlyCdLang */
+        with upsert as
+        (
+            UPDATE TB_COM_WLY_CD_LANG
+            SET
+                   LAST_CHPR_ID = #{lastChprId}
+                 , LAST_CHG_DTTM = SYSTIMESTAMP
+                 , DEL_YN = 'N'
+                 , WLY_NM = #{wlyNm}
+            WHERE WLY_CD = #{wlyCd}
+            AND   LANG_CD = #{langCd}
+            returning *
+        )
+        INSERT INTO TB_COM_WLY_CD_LANG
+        (
+              WlY_CD
+            , LANG_CD
+            , WLY_NM
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+        )
+        SELECT
+               #{wlyCd}
+             , #{langCd}
+             , #{wlyNm}
+             , 'N'
+             , #{frstRegstId}
+             , SYSTIMESTAMP
+             , #{lastChprId}
+             , SYSTIMESTAMP
+        WHERE NOT exists(select * from upsert)
+    </insert>
+
+    <!--
+      Supprimer une wilaya !==윌라야를 삭제 한다==!
+    -->
+    <update id="deleteWlyCd" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** deleteWlyCd */
+        UPDATE TB_COM_WLY_CD
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+        WHERE Wly_CD = #{wlyCd}
+    </update>
+
+    <!--
+      Supprimer la langue de la wilaya !==윌라야 언어를 삭제 한다==!
+    -->
+    <update id="deleteWlyCdLang" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+    /** deleteWlyCdLang */
+        UPDATE TB_COM_WLY_CD_LANG
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+        WHERE WLY_CD = #{wlyCd}
+    </update>
+
+    <!--
+      Supprimer la commune de la wilaya !==윌라야 코뭔을 삭제 한다==!
+    -->
+    <update id="deleteCommCdWly" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** deleteCommCdWly */
+        UPDATE TB_COM_COMM_CD
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+      WHERE WLY_CD = #{wlyCd}
+    </update>
+
+    <!--
+      Supprimer la langue de la commune de la wilaya !==윌라야 코뭔 언어를 삭제 한다==!
+    -->
+    <update id="deleteCommCdLangWly" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** deleteCommCdLangWly */
+        UPDATE TB_COM_COMM_CD_LANG
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+           , DEL_YN = 'Y'
+        WHERE COMM_ID IN
+        (
+            SELECT COMM_ID FROM TB_COM_COMM_CD
+            WHERE WLY_CD = #{wlyCd}
+        )
+    </update>
+
+    <!--
+      Supprimer la poste de la wilaya !==윌라야 Post를 삭제 한다==!
+    -->
+    <update id="deletePostCdWly" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** deletePostCdWly */
+        UPDATE TB_COM_POST_CD
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+        WHERE COMM_ID IN
+        (
+            SELECT COMM_ID FROM TB_COM_COMM_CD
+            WHERE WLY_CD = #{wlyCd}
+        )
+    </update>
+
+    <!--
+      Supprimer la langue de la poste de la wilaya !==윌라야 Post 언어를 삭제 한다==!
+    -->
+    <update id="deletePostCdLangWly" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** deletePostCdLangWly */
+        UPDATE TB_COM_POST_CD_LANG
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+        WHERE POST_ID IN
+        (
+            SELECT POST_ID FROM  TB_COM_POST_CD
+            WHERE COMM_ID IN
+            (
+                SELECT COMM_ID FROM TB_COM_COMM_CD
+                WHERE WLY_CD = '59'
+            )
+        )
+    </update>
+
+    <!--
+      Consulter du nombre de doublons de commune de wilaya !==윌라야 코뭔 중복카운트를 조회한다==!
+    -->
+    <select id="selectWlyCommCdDup" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo" resultType="int">
+        /** selectWlyCommCdDup */
+        SELECT
+            COUNT(1)
+        FROM  TB_COM_COMM_CD A
+        WHERE A.DEL_YN = 'N'
+          AND   A.WLY_CD = #{wlyCd}
+          AND   A.COMM_ID = #{commId}
+    </select>
+
+    <!--
+      Consulter la valeur maximale de la commune de la wilaya !==윌라야 코뭔 최대값을 조회 한다==!
+    -->
+    <select id="selectWlyMaxCommId" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo" resultType="int">
+        /** selectWlyMaxCommCd */
+        SELECT MAX(COMM_ID)+1 FROM TB_COM_COMM_CD
+    </select>
+
+    <!--
+      Consulter la liste des communes de la wilaya !==윌라야 코뭔 목록를 조회한다==!
+    -->
+    <select id="selectWlyCommCdList" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo" resultType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** selectWlyCommCdList */
+        <include refid="pagination.header"/>
+        SELECT
+              COMM_ID
+            , WLY_CD
+            , (SELECT COMM_NM FROM TB_COM_COMM_CD_LANG WHERE DEL_YN = 'N' AND COMM_ID = A.COMM_ID AND LANG_CD = 'FR') AS COMM_NM_FR
+            , (SELECT COMM_NM FROM TB_COM_COMM_CD_LANG WHERE DEL_YN = 'N' AND COMM_ID = A.COMM_ID AND LANG_CD = 'EN') AS COMM_NM_EN
+            , (SELECT COMM_NM FROM TB_COM_COMM_CD_LANG WHERE DEL_YN = 'N' AND COMM_ID = A.COMM_ID AND LANG_CD = 'KO') AS COMM_NM_KO
+            , (SELECT COMM_NM FROM TB_COM_COMM_CD_LANG WHERE DEL_YN = 'N' AND COMM_ID = A.COMM_ID AND LANG_CD = 'AR') AS COMM_NM_AR
+            , (SELECT COMM_NM FROM TB_COM_COMM_CD_LANG WHERE DEL_YN = 'N' AND COMM_ID = A.COMM_ID AND LANG_CD = #{langCd}) AS COMM_NM
+            , (SELECT DAIRA_NM FROM TB_COM_COMM_CD_LANG WHERE DEL_YN = 'N' AND COMM_ID = A.COMM_ID AND LANG_CD = 'FR') AS DAIRA_NM_FR
+            , (SELECT DAIRA_NM FROM TB_COM_COMM_CD_LANG WHERE DEL_YN = 'N' AND COMM_ID = A.COMM_ID AND LANG_CD = 'EN') AS DAIRA_NM_EN
+            , (SELECT DAIRA_NM FROM TB_COM_COMM_CD_LANG WHERE DEL_YN = 'N' AND COMM_ID = A.COMM_ID AND LANG_CD = 'KO') AS DAIRA_NM_KO
+            , (SELECT DAIRA_NM FROM TB_COM_COMM_CD_LANG WHERE DEL_YN = 'N' AND COMM_ID = A.COMM_ID AND LANG_CD = 'AR') AS DAIRA_NM_AR
+            , (SELECT DAIRA_NM FROM TB_COM_COMM_CD_LANG WHERE DEL_YN = 'N' AND COMM_ID = A.COMM_ID AND LANG_CD = #{langCd}) AS DAIRA_NM
+        FROM TB_COM_COMM_CD A
+        WHERE A.DEL_YN = 'N'
+        AND   A.WLY_CD = #{wlyCd}
+        ORDER BY COMM_ID
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+      Enregistrer la commune de la wilaya !==윌라야 코뭔을 등록 한다==!
+    -->
+    <insert id="insertWlyCommCd" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** insertWlyCommCd */
+        with upsert as
+        (
+            UPDATE TB_COM_COMM_CD
+            SET
+                LAST_CHPR_ID = #{lastChprId}
+              , LAST_CHG_DTTM = SYSTIMESTAMP
+              , DEL_YN = 'N'
+            WHERE WLY_CD = #{wlyCd}
+              AND COMM_ID = #{commId}
+                returning *
+        )
+        INSERT INTO TB_COM_COMM_CD
+        (
+              WlY_CD
+            , COMM_ID
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+        )
+        SELECT
+               #{wlyCd}
+             , #{commId}
+             , 'N'
+             , #{frstRegstId}
+             , SYSTIMESTAMP
+             , #{lastChprId}
+             , SYSTIMESTAMP
+            WHERE NOT exists(select * from upsert)
+    </insert>
+
+    <!--
+      Enregistrer la langue de la commune de la wilaya !==윌라야 코뭔 언어를 등록 한다==!
+    -->
+    <insert id="insertWlyCommCdLang" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** insertWlyCdLang */
+        with upsert as
+        (
+            UPDATE TB_COM_COMM_CD_LANG
+            SET
+                    LAST_CHPR_ID = #{lastChprId}
+                  , LAST_CHG_DTTM = SYSTIMESTAMP
+                  , DEL_YN = 'N'
+                  , COMM_NM = #{commNm}
+                  , DAIRA_NM = #{dairaNm}
+            WHERE  COMM_ID = #{commId}
+            AND    LANG_CD = #{langCd}
+            returning *
+        )
+        INSERT INTO TB_COM_COMM_CD_LANG
+        (
+              COMM_ID
+            , COMM_NM
+            , DAIRA_NM
+            , LANG_CD
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+        )
+        SELECT
+               #{commId}
+             , #{commNm}
+             , #{dairaNm}
+             , #{langCd}
+             , 'N'
+             , #{frstRegstId}
+             , SYSTIMESTAMP
+             , #{lastChprId}
+             , SYSTIMESTAMP
+            WHERE NOT exists(select * from upsert)
+    </insert>
+
+    <!--
+      Supprimer la commune de la wilaya !==윌라야 코뭔을 삭제 한다==!
+    -->
+    <update id="deleteWlyCommCd" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** deleteWlyCommCd */
+        UPDATE TB_COM_COMM_CD
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+        WHERE COMM_ID = #{commId}
+    </update>
+
+    <!--
+      Supprimer la langue de la commune de la wilaya !==윌라야 코뭔 언어를 삭제 한다==!
+    -->
+    <update id="deleteWlyCommCdLang" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** deleteWlyCommCdLang */
+        UPDATE TB_COM_COMM_CD_LANG
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+        WHERE COMM_ID = #{commId}
+    </update>
+
+    <!--
+      Supprimer la poste de la wilaya !==윌라야 Post를 삭제 한다==!
+    -->
+    <update id="deletePostCdComm" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** deletePostCdComm */
+        UPDATE TB_COM_POST_CD
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+        WHERE COMM_ID = #{commId}
+    </update>
+
+    <!--
+      Supprimer la langue de la poste de la wilaya !==윌라야 Post 언어를 삭제 한다==!
+    -->
+    <update id="deletePostCdLangComm" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** deletePostCdLangComm */
+        UPDATE  TB_COM_POST_CD_LANG
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+        WHERE POST_ID IN
+        (
+            SELECT POST_ID FROM  TB_COM_POST_CD
+            WHERE COMM_ID= #{commId}
+        )
+    </update>
+
+    <!--
+      Consulter du nombre de doublons de la poste ID de wilaya !==윌라야 Post Id 중복 카운트를 조회 한다==!
+    -->
+    <select id="selectWlyPostCdDup"
+            parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo"
+            resultType="int">
+        /** selectWlyPostCdDup */
+        SELECT
+            COUNT(1)
+        FROM  TB_COM_POST_CD A
+        WHERE A.DEL_YN = 'N'
+          AND   A.WLY_CD = #{wlyCd}
+          AND   A.POST_ID = #{postId}
+    </select>
+
+    <!--
+      Consulter la valeur maximale de la poste ID de wilaya !==윌라야 Post Id 최대값을 조회 한다==!
+    -->
+    <select id="selectWlyMaxPostId"
+            parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo"
+            resultType="int">
+        /** selectWlyMaxPostCd */
+        SELECT MAX(POST_ID)+1 FROM TB_COM_POST_CD
+    </select>
+
+    <!--
+      Consuter la liste de Post de la wilaya !==윌라야 Post 목록를 조회한다==!
+    -->
+    <select id="selectWlyPostCdList"
+            parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo"
+            resultType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** selectWlyPostCdList */
+        <include refid="pagination.header"/>
+        SELECT
+              POST_ID
+            , COMM_ID
+            , POST_CD
+            , (SELECT POST_NM FROM TB_COM_POST_CD_LANG WHERE DEL_YN = 'N' AND POST_ID = A.POST_ID AND LANG_CD = 'FR') AS POST_NM_FR
+            , (SELECT POST_NM FROM TB_COM_POST_CD_LANG WHERE DEL_YN = 'N' AND POST_ID = A.POST_ID AND LANG_CD = 'EN') AS POST_NM_EN
+            , (SELECT POST_NM FROM TB_COM_POST_CD_LANG WHERE DEL_YN = 'N' AND POST_ID = A.POST_ID AND LANG_CD = 'KO') AS POST_NM_KO
+            , (SELECT POST_NM FROM TB_COM_POST_CD_LANG WHERE DEL_YN = 'N' AND POST_ID = A.POST_ID AND LANG_CD = 'AR') AS POST_NM_AR
+
+            , (SELECT POST_ADDR FROM TB_COM_POST_CD_LANG WHERE DEL_YN = 'N' AND POST_ID = A.POST_ID AND LANG_CD = 'FR') AS POST_ADDR_NM_FR
+            , (SELECT POST_ADDR FROM TB_COM_POST_CD_LANG WHERE DEL_YN = 'N' AND POST_ID = A.POST_ID AND LANG_CD = 'EN') AS POST_ADDR_NM_EN
+            , (SELECT POST_ADDR FROM TB_COM_POST_CD_LANG WHERE DEL_YN = 'N' AND POST_ID = A.POST_ID AND LANG_CD = 'KO') AS POST_ADDR_NM_KO
+            , (SELECT POST_ADDR FROM TB_COM_POST_CD_LANG WHERE DEL_YN = 'N' AND POST_ID = A.POST_ID AND LANG_CD = 'AR') AS POST_ADDR_NM_AR
+            , (SELECT COMM_NM FROM tb_com_comm_cd_lang WHERE DEL_YN = 'N' AND COMM_ID = A.COMM_ID AND LANG_CD = #{langCd}) AS COMM_NM
+        FROM TB_COM_POST_CD A
+        WHERE A.DEL_YN = 'N'
+        AND   A.COMM_ID = #{commId}
+        ORDER BY POST_ID
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+      Enregistrer la poste de la wilaya !==윌라야 Post를 등록 한다==!
+    -->
+    <insert id="insertWlyPostCd" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** insertWlyPostCd */
+        with upsert as
+                     (
+        UPDATE TB_COM_POST_CD
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , POST_CD = #{postCd}
+          , DEL_YN = 'N'
+        WHERE POST_ID = #{postId}
+            returning *
+        )
+        INSERT INTO TB_COM_POST_CD
+        (
+              POST_ID
+            , POST_CD
+            , COMM_ID
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+        )
+        SELECT
+               #{postId}
+             , #{postCd}
+             , #{commId}
+             , 'N'
+             , #{frstRegstId}
+             , SYSTIMESTAMP
+             , #{lastChprId}
+             , SYSTIMESTAMP
+            WHERE NOT exists(select * from upsert)
+    </insert>
+
+    <!--
+      Enregistrer la langue de la poste de la wilaya !==윌라야 Post 언어를 등록 한다==!
+    -->
+    <insert id="insertWlyPostCdLang" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** insertWlyCdLang */
+        with upsert as
+                     (
+        UPDATE TB_COM_POST_CD_LANG
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'N'
+          , POST_NM = #{postNm}
+          , POST_ADDR = #{postAddrNm}
+        WHERE  POST_ID = #{postId}
+          AND    LANG_CD = #{langCd}
+            returning *
+        )
+        INSERT INTO TB_COM_POST_CD_LANG
+        (
+              POST_ID
+            , POST_NM
+            , POST_ADDR
+            , LANG_CD
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+        )
+        SELECT
+               #{postId}
+             , #{postNm}
+             , #{postAddrNm}
+             , #{langCd}
+             , 'N'
+             , #{frstRegstId}
+             , SYSTIMESTAMP
+             , #{lastChprId}
+             , SYSTIMESTAMP
+            WHERE NOT exists(select * from upsert)
+    </insert>
+
+    <!--
+      Supprimer Post de la wilaya !==윌라야 Post를 삭제 한다==!
+    -->
+    <update id="deleteWlyPostCd" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** deleteWlyPostCd */
+        UPDATE TB_COM_POST_CD
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+        WHERE POST_ID = #{postId}
+    </update>
+
+    <!--
+      Supprimer la langue de Post de la wilaya !==윌라야 Post 언어를 삭제 한다==!
+    -->
+    <update id="deleteWlyPostCdLang" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdWlyCdVo">
+        /** deleteWlyPostCdLang */
+        UPDATE TB_COM_POST_CD_LANG
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+        WHERE POST_ID = #{postId}
+    </update>
+
+</mapper>

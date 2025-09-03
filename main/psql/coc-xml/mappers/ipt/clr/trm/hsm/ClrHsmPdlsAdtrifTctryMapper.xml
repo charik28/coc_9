@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="alpass.ipt.clr.trm.hsm.mapper.ClrHsmPdlsAdtrifTctryMapper">
+    <sql id="sqlSearchQuery">
+        <if test="srno != null and srno != 0">
+            AND		A.SRNO = #{srno}
+        </if>
+        <if test="taxCd != null and taxCd != ''">
+            AND		A.TAX_CD = #{taxCd}
+        </if>
+        <if test="hsCd != null and hsCd != ''">
+            AND		A.HS_CD = #{hsCd}
+        </if>
+        <if test="trifRtTpCd != null and trifRtTpCd != ''">
+            AND		A.TRIF_RT_TP_CD = #{trifRtTpCd}
+        </if>
+        <if test="adumpTrifCntyCd != null and adumpTrifCntyCd != ''">
+            AND		A.ADUMP_TRIF_CNTY_CD = #{adumpTrifCntyCd}
+        </if>
+        <if test="basedDt != null and basedDt != ''">
+            AND		TO_CHAR(TO_DATE(#{basedDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN A.APLY_STRT_DT AND A.APLY_END_DT
+        </if>
+        <if test="prvlCd != null and prvlCd != ''">
+            AND A.PRVL_CD = #{prvlCd}
+        </if>
+    </sql>
+
+    <sql id="sqlSelectQuery">
+        SELECT
+            *
+        FROM (
+                 SELECT
+                     A.HS_CD
+                      , A.TAX_CD
+                      , D.TAX_CD_NM
+                      , D.TAX_CTGY_CD
+                      , A.TFRT_CTGY_CD
+                      , A.SRNO
+                      , D.TRIF_RT_TP_CD
+                      , NVL((SELECT LSPR_TXBS_CN FROM TB_CLRI_TAX_CLCU_BASE B WHERE B.TAX_CD = D.TAX_CD AND TO_DATE(TO_CHAR(SYSTIMESTAMP,'YYYYMMDD'),'YYYYMMDD') BETWEEN TO_DATE(APLY_STRT_DT,'YYYYMMDD') AND TO_DATE(APLY_END_DT,'YYYYMMDD') ORDER BY BASE_SRNO DESC LIMIT 1),(SELECT LSPR_TXBS_CN FROM TB_CLRI_TAX_CLCU_BASE WHERE TAX_CD = D.TAX_CD AND USE_YN = 'Y' ORDER BY BASE_SRNO DESC LIMIT 1)) LSPR_TXBS_CN
+                      , A.VLTX_RT_CN
+                      , NVL((SELECT CRLN_TXBS_CN FROM TB_CLRI_TAX_CLCU_BASE B WHERE B.TAX_CD = D.TAX_CD AND TO_DATE(TO_CHAR(SYSTIMESTAMP,'YYYYMMDD'),'YYYYMMDD') BETWEEN TO_DATE(APLY_STRT_DT,'YYYYMMDD') AND TO_DATE(APLY_END_DT,'YYYYMMDD') ORDER BY BASE_SRNO DESC LIMIT 1),(SELECT CRLN_TXBS_CN FROM TB_CLRI_TAX_CLCU_BASE WHERE TAX_CD = D.TAX_CD AND USE_YN = 'Y' ORDER BY BASE_SRNO DESC LIMIT 1)) CRLN_TXBS_CN
+                      , A.SPTX_RT_CN
+                      , A.NWPR_SCAR_CMDT_CD
+                      , A.USE_YN
+                      , A.PRVL_CD
+                      , A.RMRK_CN
+                      , C.ADUMP_TRIF_CNTY_CD
+                      , A.APLY_STRT_DT
+                      , A.APLY_END_DT
+                      , D.APLY_PROR_RNK
+                      , A.FRST_REGST_ID
+                      , A.FRST_RGSR_DTTM
+                      , A.LAST_CHPR_ID
+                      , A.LAST_CHG_DTTM
+                 FROM		TB_CLRI_PDLS_TFRT A
+                    , TB_CLRI_PDLS_ADTRIF_TCTRY C
+                    , TB_CLRI_TAX_CD D
+                 WHERE		    A.TAX_CD = C.TAX_CD
+                   AND			A.TFRT_CTGY_CD = C.TFRT_CTGY_CD
+                   AND			A.HS_CD = C.HS_CD
+                   AND			A.SRNO = C.SRNO
+                   AND			A.TAX_CD = D.TAX_CD
+                   AND			A.TFRT_CTGY_CD = 'DU'
+                   <if test="hsCd != null and hsCd != ''">
+                   AND		A.HS_CD = #{hsCd}
+                   </if>
+                   AND			C.DEL_YN = 'N'
+                   AND			A.DEL_YN = 'N'
+                   AND			D.DEL_YN = 'N'
+                   AND			D.USE_YN = 'Y'
+             ) A
+        WHERE 1 = 1
+    </sql>
+
+    <select id="selectClrPdlsAdtrifTctryList" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmPdlsTfrtVo" resultType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmPdlsTfrtVo">
+        /* selectClrPdlsAdtrifTctryList : 반덤핑관세율 목록 조회 */
+        <include refid="pagination.header"/>
+        SELECT
+        A.HS_CD
+        , A.TAX_CD
+        , A.TAX_CD_NM
+        , (
+        SELECT
+        TAX_CLCU_BASE_CN
+        FROM		TB_CLRI_TAX_CLCU_BASE
+        WHERE		TAX_CD = A.TAX_CD
+        AND			USE_YN = 'Y'
+        AND			NVL(A.APLY_STRT_DT, TO_CHAR(SYSDATE, 'YYYYMMDD')) BETWEEN APLY_STRT_DT AND APLY_END_DT
+        ) TAX_CLCU_BASE_CN
+        , A.TAX_CTGY_CD
+        , A.TFRT_CTGY_CD
+        , A.SRNO
+        , A.TRIF_RT_TP_CD
+        , A.LSPR_TXBS_CN
+        , A.VLTX_RT_CN
+        , A.CRLN_TXBS_CN
+        , A.SPTX_RT_CN
+        , A.NWPR_SCAR_CMDT_CD
+        , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COM_0016' AND LANG_CD = #{langCd} AND CD_VDVAL = A.NWPR_SCAR_CMDT_CD) SCAR_YN_NM
+        , A.USE_YN
+        , A.RMRK_CN
+        , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COM_0016' AND LANG_CD = #{langCd} AND CD_VDVAL = A.USE_YN) USE_YN_NM
+        , A.ADUMP_TRIF_CNTY_CD
+         ,A.PRVL_CD
+        , TO_CHAR(TO_DATE(A.APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APLY_STRT_DT
+        , TO_CHAR(TO_DATE(A.APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APLY_END_DT
+        , A.APLY_PROR_RNK
+        , A.FRST_REGST_ID
+        , A.FRST_RGSR_DTTM
+        , A.LAST_CHPR_ID
+        , A.LAST_CHG_DTTM
+        FROM  (
+        <include refid="sqlSelectQuery" />
+        <include refid="sqlSearchQuery" />
+        ) A
+        ORDER BY 	 A.HS_CD ASC, DECODE(A.TAX_CTGY_CD, 'G', 1, 'I', 2, 'P', 3, 'O', 4) ASC, TO_NUMBER(A.APLY_PROR_RNK) ASC, A.TAX_CD
+        <include refid="pagination.footer" />
+    </select>
+
+    <select id="selectAplyClrPdlsAdtrifTctryCnt" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmPdlsTfrtVo" resultType="Integer">
+        /** selectAplyClrPdlsAdtrifTctryCnt : 반덤핑관세율 반덤핑대상국가 적용일자 중복 데이터 카운트 조회 **/
+        SELECT
+        COUNT(*)
+        FROM		(
+        <include refid="sqlSelectQuery" />
+        ) A
+        <![CDATA[
+		WHERE		A.ADUMP_TRIF_CNTY_CD = #{adumpTrifCntyCd}
+		AND			A.TAX_CD = #{taxCd}
+		AND			A.APLY_STRT_DT <= TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		AND			A.APLY_END_DT >= TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		]]>
+        <if test="srno != null and srno != 0">
+            <![CDATA[
+		AND			A.SRNO <> #{srno}
+		]]>
+        </if>
+    </select>
+
+    <insert id="insertClrPdlsAdtrifTctry" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmPdlsTfrtVo">
+        /* insertClrPdlsAdtrifTctry : 반덤핑관세율 정보 저장 */
+        INSERT INTO TB_CLRI_PDLS_ADTRIF_TCTRY (
+                                                TAX_CD
+                                              , HS_CD
+                                              , TFRT_CTGY_CD
+                                              , SRNO
+                                              , ADUMP_TRIF_CNTY_CD
+                                              , DEL_YN
+                                              , FRST_REGST_ID
+                                              , FRST_RGSR_DTTM
+                                              , LAST_CHPR_ID
+                                              , LAST_CHG_DTTM
+        ) VALUES (
+                     #{taxCd}
+                 , #{hsCd}
+                 , #{tfrtCtgyCd}
+                 , #{srno}
+                 , #{adumpTrifCntyCd}
+                 , 'N'
+                 , #{frstRegstId}
+                 , SYSTIMESTAMP
+                 , #{lastChprId}
+                 , SYSTIMESTAMP
+                 )
+    </insert>
+
+    <update id="updateClrPdlsAdtrifTctry" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmPdlsTfrtVo">
+        /* updateClrPdlsAdtrifTctry : 반덤핑관세율 정보 수정 */
+        UPDATE  TB_CLRI_PDLS_ADTRIF_TCTRY SET
+        <trim prefixOverrides="," >
+            , LAST_CHPR_ID = #{lastChprId}
+            , LAST_CHG_DTTM = SYSTIMESTAMP
+        </trim>
+        WHERE  DEL_YN = 'N'
+        AND  TAX_CD = #{taxCd}
+        AND  HS_CD = #{hsCd}
+        AND  TFRT_CTGY_CD = #{tfrtCtgyCd}
+        AND  SRNO = #{srno}
+        AND  ADUMP_TRIF_CNTY_CD = #{adumpTrifCntyCd}
+    </update>
+
+    <delete id="deleteClriPdlsAdtrifTctry" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmPdlsTfrtVo">
+        /* deleteClriPdlsAdtrifTctry : 반덤핑관세율 정보 삭제 */
+        DELETE
+        FROM	TB_CLRI_PDLS_ADTRIF_TCTRY
+        WHERE	TAX_CD = #{taxCd}
+          AND		HS_CD = #{hsCd}
+          AND		TFRT_CTGY_CD = #{tfrtCtgyCd}
+          AND		SRNO = #{srno}
+    </delete>
+
+</mapper>

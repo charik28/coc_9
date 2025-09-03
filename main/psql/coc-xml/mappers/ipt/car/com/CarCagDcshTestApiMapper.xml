@@ -1,0 +1,1543 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.car.com.mapper.CarCagDcshTestApiMapper">
+
+    <update id="updateCarCagDcshFromBlDivd" parameterType="alpass.ipt.car.com.vo.CarCagDcshVo">
+		/** updateCarCagDcshFromBlDivd */
+		UPDATE TB_CARI_CAG_DCSH
+		SET 
+			LAST_CHPR_ID    = #{lastChprId}
+            , LAST_CHG_DTTM   = TO_TIMESTAMP(#{lastChgDttm},'DDMMYYYYHH24MISS')
+			, AL_BL_GCNT = (SELECT COUNT(CAG_MGMT_NO) FROM TB_CARI_CAG_DCSH_BL WHERE MRN = #{mrn} AND DEL_YN = 'N')
+			, LDUN_BL_GCNT = (SELECT COUNT(CAG_MGMT_NO) FROM TB_CARI_CAG_DCSH_BL WHERE MRN = #{mrn} AND DEL_YN = 'N' AND LDUN_YN = 'Y')
+		WHERE 
+			MRN = #{mrn}
+    </update>
+    
+    <update id="updateEptCarCagDcshFromBlDivd" parameterType="alpass.ipt.car.com.vo.CarCagDcshVo">
+		/** updateEptCarCagDcshFromBlDivd */
+        UPDATE ALPASSEXT.TB_CARE_CAG_DCSH
+		SET 
+			LAST_CHPR_ID    = #{lastChprId}
+            , LAST_CHG_DTTM   = TO_TIMESTAMP(#{lastChgDttm},'DDMMYYYYHH24MISS')
+			, AL_BL_GCNT = (SELECT COUNT(CAG_MGMT_NO) FROM TB_CARI_CAG_DCSH_BL WHERE MRN = #{mrn} AND DEL_YN = 'N')
+			, LDUN_BL_GCNT = (SELECT COUNT(CAG_MGMT_NO) FROM TB_CARI_CAG_DCSH_BL WHERE MRN = #{mrn} AND DEL_YN = 'N' AND LDUN_YN = 'Y')
+		WHERE 
+			MRN = #{mrn}
+    </update>
+
+    <select id="selectCarCagDcshsBl" parameterType="java.util.Map" resultType="alpass.ipt.car.com.vo.CarCagDcshBlVo">
+        /** selectCarCagDcshsBl */
+        SELECT A.MRN                 , /** Mrn !== MRN ==! */
+               A.CAG_MGMT_NO         , /** Crn !== 화물관리번호 ==! */
+               A.MSN                 , /** Msn !== MSN ==! */
+               A.HSN                 , /** Hsn !== HSN ==! */
+               A.BL_NO               , /** N° De Bl !== BL번호 ==! */
+               A.HBL_NO              , /** N° de House B/L !== HBL번호 ==! */
+               A.CAG_TP_CD           , /** Type de flux !== 화물구분코드 ==! */
+               A.BL_TP_CD            , /** Code De Catégorie De B/L !== BL구분코드 ==! */
+               A.BL_PT_CD            , /** Code De Type De Bl !== BL유형코드 ==! */
+               A.FRWR_CD             , /** Code De Groupeur !== 포워더코드 ==! */
+               A.LOAD_REGN_CD        , /** Code De Lieu De Chargement !== 적재지역코드 ==! */
+               A.LDUN_REGN_CD        , /** Code De Lieu De Déchargement !== 하역지역코드 ==! */
+               A.IBOBZ_CD            , /** Code de zone sous douane !== 보세구역코드 ==! */
+               A.STVD_CD             , /** Code De Stevedoremanutentionnaire !== 하역업자코드 ==! */
+<!--                A.TRNS_REGN_CD        , /** Code de lieu de transit international !== 트랜짓지역코드 ==! */ -->
+               A.TRNH_REGN_CD        , /** Code De Région De Transbordement !== 환적지역코드 ==! */
+               A.CAG_CHRC_CD         , /** Nature De Cargaison !== 화물특성코드 ==! */
+               A.CMDT_KND_CD         , /** Nature De Marchandise !== 물품종류코드 ==! */
+               A.CAS_NO              , /** Numero CAS !== CAS번호 ==! */
+               A.UNDG_ID              , /** Identifiant UNDG !== UNDGID ==! */
+               A.SEND_WAY            , /** Mode de livraison !== 발송방식 ==! */
+               A.PDLS_NM             , /** Nom De L'Article !== 품목명 ==! */
+               A.PCKG_GCNT           , /** Nombre De Colis !== 포장개수 ==! */
+               A.ECNTR_WGHT          , /** Tare De Conteneur(S) é Vide !== 공컨테이너중량 ==! */
+               A.TTWG                , /** Poids Brut !== 총중량 ==! */
+               A.NTWG                , /** Poids Net !== 순중량 ==! */
+               A.CBM_VOL             , /** Volume (Mtq) !== 입방미터용적 ==! */
+               A.LIR_VOL             , /** Volume (Litre) !== 리터용적 ==! */
+               A.HDCB_TP_CD          , /** Code de type d'hydrocarbure !== 탄화수소구분코드 ==! */
+               A.SHMR_CN             , /** Marque De Colis !== 화인내용 ==! */
+               A.ADD_INFO_CN         , /** Info Supplémentaire  !== 부가정보내용 ==! */
+               A.CNTR_GCNT           , /** Nombre De Conteneurs !== 컨테이너개수 ==! */
+               A.VHCL_GCNT           , /** Nombre De Véhicules !== 차량개수 ==! */
+               A.PRPM_DFPM_CACH_TP_CD, /** Ind. fret prépayé/dé !== 선불후불운임구분코드 ==! */
+               A.CMDT_AMT            , /** Valeur de marchandise !== 물품금액 ==! */
+               A.CMDT_AMT_CURR_CD    , /** Article Montant Code de devise !== 물품금액통화코드 ==! */
+               A.EXPPN_TXPR_IDFY_NO  , /** NIF de l'exportateur !== 수출자납세자식별번호 ==! */
+               A.EXPPN_NM            , /** Nom De L'Exportateur !== 수출자명 ==! */
+               A.EXPPN_ADDR_NM       , /** Adresse De L'Exportateur !== 수출자주소명 ==! */
+               A.EXPPN_TLPH_NO       , /** Téléphone De L'Exportateur !== 수출자전화번호 ==! */
+               A.EXPPN_EML           , /** Email De L'Exportateur !== 수출자이메일 ==! */
+               A.ABRD_FRWR_NM        , /** Nom De L'Expéditeur !== 국외포워더명 ==! */
+               A.ABRD_FRWR_ADDR_NM   , /** Adresse De L'Expéditeur !== 국외포워더주소명 ==! */
+               A.ABRD_FRWR_TLPH_NO   , /** Téléphone De L'Expéditeur !== 국외포워더전화번호 ==! */
+               A.ABRD_FRWR_EML       , /** Email De L'Expéditeur !== 국외포워더이메일 ==! */
+               A.CNSI_TXPR_IDFY_NO   , /** Niu Du Destinataire !== 수하인납세자식별번호 ==! */
+               A.CNSI_NM             , /** Nom de destinataire !== 수하인명 ==! */
+               A.CNSI_ADDR_NM        , /** Adresse Du Destinataire !== 수하인주소명 ==! */
+               A.CNSI_TLPH_NO        , /** N° de téléphone de destinataire !== 수하인전화번호 ==! */
+               A.CNSI_EML            , /** E-mail de destinataire !== 수하인이메일 ==! */
+               A.NTPR_NM             , /** Nom De La Partie é Notifier !== 통지처명 ==! */
+               A.NTPR_ADDR_NM        , /** Adresse De La Partie é Notifier !== 통지처주소명 ==! */
+               A.NTPR_TLPH_NO        , /** Téléphone De La Partie é Notifier !== 통지처전화번호 ==! */
+               A.NTPR_EML            , /** Email De La Partie é Notifier !== 통지처이메일 ==! */
+               A.SELC_TRGT_YN        , /** Sélectivité O/N !== 선별대상여부 ==! */
+               A.RMRK_CN             , /** Contenu De Remarque !== 비고내용 ==! */
+               A.BF_CAG_MGMT_NO      , /** Crn Précédent !== 이전화물관리번호 ==! */
+               A.BL_MDFY_TP_CD       , /** Code de catégorie de rectification de BL !== BL정정구분코드 ==! */
+               <!-- A.NTNAL_IDFY_NO       , /** Nin !== 자국민식별번호 ==! */  -->
+               <!-- A.APRE_YN_CD          , /** Autorisation O/N !== 승인여부코드 ==! */ -->
+               <!-- A.AUDT_OPIN_CN        , /** Contenu De L'Opinion é La Suite De La Vérification !== 심사의견내용 ==! */ -->
+               A.COAT_TRNP_YN        , /** Cabotage On !== 연안운송여부 ==! */
+               A.AL_HBL_GCNT         , /** Nombre Total De Sous Bl !== 전체HBL개수 ==! */
+               A.DEL_YN              , /** Suppression On !== 삭제여부 ==! */
+               A.FRST_REGST_ID       , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+               A.FRST_RGSR_DTTM      , 
+               A.LAST_CHPR_ID        , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+               A.LAST_CHG_DTTM       , 
+               A.HS_CD               , /** Code Sh !== HS코드 ==! */
+               A.PCKG_UT_CD          , /** Code De L'Unité De Colis !== 포장단위코드 ==! */
+               <!-- A.CMPN_PDLS_NM_YN     , /** Nom de marchandise hétérogène!==복합품목명여부==! */ -->
+               (SELECT CAG_RQST_TP_CD 
+                  FROM TB_CARI_CAG_DCSH 
+                 WHERE DEL_YN = 'N' 
+                   AND MRN = A.MRN) AS CAG_RQST_TP_CD,
+               A.LDUN_YN,              /** déchargement On !== 양하여부 ==! */    
+               A.CNSI_TXPR_IDFY_NO_NIN, /** NIN de déstinataire !== 수하인납세자식별번호(NIN) ==! */
+               A.EXPPN_TXPR_IDFY_NO_NIN, /** NIN d'exportateur !== 수출자납세자식별번호(NIN) ==! */
+               <!-- A.grdast_nm				 /** Assistant au sol !==조업사명==! */ -->
+               A.BL_PBLS_DT, 		   /** Date de délivrance du B/L(LTA) !== BL발행일자 ==! */
+               A.UNDG_GD_CD, 		   /** Code de classe UNDG !== UNDG등급 ==! */
+               A.CHER_YN, 			   /** affréteur d’espace/slot !== 용선여부 ==! */
+               A.CHER_GVNM_NM, 		   /** nom de l’affréteur/slotteur !== 용선이름 ==! */
+               A.CHER_ADDR_NM          /** adresse affréteur/slotteur !== 용선주소 ==! */
+          FROM TB_CARI_CAG_DCSH_BL A
+         WHERE A.MRN         = #{mrn}
+           AND A.CAG_MGMT_NO = #{cagMgmtNo}
+    </select>
+    
+    <select id="selectCarCagDcshBlNewHsn" parameterType="alpass.ipt.car.com.vo.CarCagDcshBlVo" resultType="java.lang.String">
+        /** selectCarCagDcshBlNewHsn */
+        SELECT TO_CHAR(COALESCE(TO_NUMBER(MAX(A.HSN)),0) + 1,'FM0000') AS HSN
+          FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL A,
+               ALPASSEXT.TB_CARE_CAG_DCSH    B
+         <!--       
+         WHERE A.DEL_YN                = 'N'
+           AND B.DEL_YN                = 'N'
+         -->  
+         WHERE A.CAG_DCSH_RGSR_MGMT_NO = B.CAG_DCSH_RGSR_MGMT_NO
+           AND B.MRN                   = #{mrn}
+           AND A.MSN                   = #{msn}
+    </select>
+    
+    <insert id="insertCarCagDcshBlFromBlDivd" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+		/** insertCarCagDcshBlFromBlDivd */
+        INSERT INTO TB_CARI_CAG_DCSH_BL ( 
+        	MRN
+			, CAG_MGMT_NO
+			, MSN
+			, HSN
+			, BL_NO      
+			, HBL_NO     
+			, CAG_TP_CD  
+			, BL_TP_CD   
+			, BL_PT_CD   
+			, FRWR_CD    
+			, LOAD_REGN_CD
+			, LDUN_REGN_CD
+			, IBOBZ_CD   
+			, STVD_CD    
+<!-- 			, TRNS_REGN_CD -->
+			, TRNH_REGN_CD
+			, CAG_CHRC_CD
+			, CMDT_KND_CD
+			, CAS_NO     
+			, UNDG_ID     
+			, SEND_WAY   
+			, PDLS_NM    
+			, PCKG_GCNT  
+			, ECNTR_WGHT 
+			, TTWG       
+			, NTWG       
+			, CBM_VOL    
+			, LIR_VOL    
+			, HDCB_TP_CD 
+			, SHMR_CN    
+			, ADD_INFO_CN
+			, CNTR_GCNT  
+			, VHCL_GCNT  
+			, PRPM_DFPM_CACH_TP_CD
+			, CMDT_AMT   
+			, CMDT_AMT_CURR_CD    
+			, EXPPN_TXPR_IDFY_NO  
+			, EXPPN_NM   
+			, EXPPN_ADDR_NM       
+			, EXPPN_TLPH_NO       
+			, EXPPN_EML  
+			, ABRD_FRWR_NM
+			, ABRD_FRWR_ADDR_NM   
+			, ABRD_FRWR_TLPH_NO   
+			, ABRD_FRWR_EML       
+			, CNSI_TXPR_IDFY_NO   
+			, CNSI_NM    
+			, CNSI_ADDR_NM
+			, CNSI_TLPH_NO
+			, CNSI_EML   
+			, NTPR_NM    
+			, NTPR_ADDR_NM
+			, NTPR_TLPH_NO
+			, NTPR_EML   
+			, SELC_TRGT_YN
+			, RMRK_CN    
+			, BF_CAG_MGMT_NO      
+			, BL_MDFY_TP_CD       
+			<!-- , NTNAL_IDFY_NO       
+			, APRE_YN_CD 
+			, AUDT_OPIN_CN -->
+			, COAT_TRNP_YN
+			, AL_HBL_GCNT
+			, DEL_YN     
+			, FRST_REGST_ID       
+			, FRST_RGSR_DTTM      
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM       
+			, HS_CD      
+			, PCKG_UT_CD 
+			<!-- , CMPN_PDLS_NM_YN -->   
+			, LDUN_YN
+			, CNSI_TXPR_IDFY_NO_NIN
+			, EXPPN_TXPR_IDFY_NO_NIN
+			<!-- , grdast_nm					   /** Assistant au sol !==조업사명==! */ -->
+			, BL_PBLS_DT /** Date de délivrance du B/L(LTA) !== BL발행일자 ==! */
+            , UNDG_GD_CD /** Code de classe UNDG !== UNDG등급 ==! */
+            , CHER_YN /** affréteur d’espace/slot !== 용선여부 ==! */
+            , CHER_GVNM_NM /** nom de l’affréteur/slotteur !== 용선이름 ==! */
+            , CHER_ADDR_NM /** adresse affréteur/slotteur !== 용선주소 ==! */
+		)        
+   		SELECT 
+     		B.DIVD_MRN            , /** Mrn !== MRN ==! */
+			B.DIVD_CAG_MGMT_NO    , /** Crn !== 화물관리번호 ==! */
+            B.DIVD_MSN            , /** Msn !== MSN ==! */
+            B.DIVD_HSN            , /** Hsn !== HSN ==! */
+            C.BL_NO               , /** N° De Bl !== BL번호 ==! */
+            B.BL_NO            , /** N° de House B/L !== HBL번호 ==! */
+            A.CAG_TP_CD           , /** Type de flux !== 화물구분코드 ==! */
+            '' AS BL_TP_CD            , /** Code De Catégorie De B/L !== BL구분코드 ==! */
+            'H' AS BL_PT_CD       , /** Code De Type De Bl !== BL유형코드 ==! */
+            B.FRWR_CD             , /** Code De Groupeur !== 포워더코드 ==! */
+            A.LOAD_REGN_CD        , /** Code De Lieu De Chargement !== 적재지역코드 ==! */
+            A.LDUN_REGN_CD        , /** Code De Lieu De Déchargement !== 하역지역코드 ==! */
+            A.IBOBZ_CD            , /** Code de zone sous douane !== 보세구역코드 ==! */
+            A.STVD_CD             , /** Code De Stevedoremanutentionnaire !== 하역업자코드 ==! */
+<!--             A.TRNS_REGN_CD        , /** Code de lieu de transit international !== 트랜짓지역코드 ==! */ -->
+            A.TRNH_REGN_CD        , /** Code De Région De Transbordement !== 환적지역코드 ==! */
+            (CASE WHEN     A.BL_PT_CD = 'H' 
+                       AND A.CAG_CHRC_CD IN ('1','3','6') 
+                  THEN '7'
+            ELSE A.CAG_CHRC_CD
+             END)           , /** Nature De Cargaison !== 화물특성코드 ==! */
+            A.CMDT_KND_CD         , /** Nature De Marchandise !== 물품종류코드 ==! */
+            A.CAS_NO              , /** Numero CAS !== CAS번호 ==! */
+            A.UNDG_ID              , /** Identifiant UNDG !== UNDGID ==! */
+            A.SEND_WAY            , /** Mode de livraison !== 발송방식 ==! */
+            A.PDLS_NM             , /** Nom De L'Article !== 품목명 ==! */
+            B.DIVD_PCKG_GCNT      , /** Nombre De Colis !== 포장개수 ==! */
+            (SELECT SUM(L2.ECNTR_WGHT) AS ECNTR_WGHT
+               FROM TB_CARI_BL_DIVD_CAG_CNTR L,
+                    TB_CARI_CAG_DCSH_BL_CNTR L2
+              WHERE L.DEL_YN = 'N'
+                AND L2.DEL_YN = 'N'
+                AND L.BL_DIVD_RQST_NO = B.BL_DIVD_RQST_NO
+                AND L.DIVD_CAG_SRNO   = B.DIVD_CAG_SRNO
+                AND L2.CAG_MGMT_NO    = C.CAG_MGMT_NO
+                AND L.CNTR_NO         = L2.CNTR_NO) , /** Tare De Conteneur(S) é Vide !== 공컨테이너중량 ==! */
+            (CASE WHEN A.CAG_CHRC_CD <![CDATA[<>]]> '9' <!-- 탄화수소가 아닌 경우  -->
+                  THEN B.DIVD_WGHT
+                  ELSE A.TTWG
+                  END)            , /** Poids Brut !== 총중량 ==! */
+            A.NTWG                , /** Poids Net !== 순중량 ==! */
+            A.CBM_VOL             , /** Volume (Mtq) !== 입방미터용적 ==! */
+            (CASE WHEN A.CAG_CHRC_CD = '9'
+                  THEN B.DIVD_WGHT
+                  ELSE A.LIR_VOL
+                  END)            , /** Volume (Litre) !== 리터용적 ==! */
+            A.HDCB_TP_CD          , /** Code de type d'hydrocarbure !== 탄화수소구분코드 ==! */
+            A.SHMR_CN             , /** Marque De Colis !== 화인내용 ==! */
+            A.ADD_INFO_CN         , /** Info Supplémentaire  !== 부가정보내용 ==! */
+            #{cntrGcnt}           , /** Nombre De Conteneurs !== 컨테이너개수 ==! */
+            #{vhclGcnt}           , /** Nombre De Véhicules !== 차량개수 ==! */
+            A.PRPM_DFPM_CACH_TP_CD, /** Ind. fret prépayé/dé !== 선불후불운임구분코드 ==! */
+            A.CMDT_AMT            , /** Valeur de marchandise !== 물품금액 ==! */
+            A.CMDT_AMT_CURR_CD    , /** Article Montant Code de devise !== 물품금액통화코드 ==! */
+            A.EXPPN_TXPR_IDFY_NO  , /** NIF de l'exportateur !== 수출자납세자식별번호 ==! */
+            A.EXPPN_NM            , /** Nom De L'Exportateur !== 수출자명 ==! */
+            A.EXPPN_ADDR_NM       , /** Adresse De L'Exportateur !== 수출자주소명 ==! */
+            A.EXPPN_TLPH_NO       , /** Téléphone De L'Exportateur !== 수출자전화번호 ==! */
+            A.EXPPN_EML           , /** Email De L'Exportateur !== 수출자이메일 ==! */
+            A.ABRD_FRWR_NM        , /** Nom De L'Expéditeur !== 국외포워더명 ==! */
+            A.ABRD_FRWR_ADDR_NM   , /** Adresse De L'Expéditeur !== 국외포워더주소명 ==! */
+            A.ABRD_FRWR_TLPH_NO   , /** Téléphone De L'Expéditeur !== 국외포워더전화번호 ==! */
+            A.ABRD_FRWR_EML       , /** Email De L'Expéditeur !== 국외포워더이메일 ==! */
+            A.CNSI_TXPR_IDFY_NO   , /** Niu Du Destinataire !== 수하인납세자식별번호 ==! */
+            A.CNSI_NM             , /** Nom de destinataire !== 수하인명 ==! */
+            A.CNSI_ADDR_NM        , /** Adresse Du Destinataire !== 수하인주소명 ==! */
+            A.CNSI_TLPH_NO        , /** N° de téléphone de destinataire !== 수하인전화번호 ==! */
+            A.CNSI_EML            , /** E-mail de destinataire !== 수하인이메일 ==! */
+            A.NTPR_NM             , /** Nom De La Partie é Notifier !== 통지처명 ==! */
+            A.NTPR_ADDR_NM        , /** Adresse De La Partie é Notifier !== 통지처주소명 ==! */
+            A.NTPR_TLPH_NO        , /** Téléphone De La Partie é Notifier !== 통지처전화번호 ==! */
+            A.NTPR_EML            , /** Email De La Partie é Notifier !== 통지처이메일 ==! */
+            A.SELC_TRGT_YN        , /** Sélectivité O/N !== 선별대상여부 ==! */
+            '' AS RMRK_CN         , /** Contenu De Remarque !== 비고내용 ==! */
+            C.CAG_MGMT_NO         , /** Crn Précédent !== 이전화물관리번호 ==! */
+            A.BL_MDFY_TP_CD       , /** Code de catégorie de rectification de BL !== BL정정구분코드 ==! */
+            <!-- A.NTNAL_IDFY_NO       , /** Nin !== 자국민식별번호 ==! */  
+            A.APRE_YN_CD          , /** Autorisation O/N !== 승인여부코드 ==! */
+            A.AUDT_OPIN_CN        , /** Contenu De L'Opinion é La Suite De La Vérification !== 심사의견내용 ==! */ -->
+            A.COAT_TRNP_YN        , /** Cabotage On !== 연안운송여부 ==! */
+            A.AL_HBL_GCNT         , /** Nombre Total De Sous Bl !== 전체HBL개수 ==! */
+            'N'                   , /** Suppression On !== 삭제여부 ==! */
+            B.FRST_REGST_ID 	  , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            B.FRST_RGSR_DTTM	  ,	
+            B.LAST_CHPR_ID   	  , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            B.LAST_CHG_DTTM       ,
+            A.HS_CD               , /** Code Sh !== HS코드 ==! */
+            A.PCKG_UT_CD          , /** Code De L'Unité De Colis !== 포장단위코드 ==! */
+            <!-- A.CMPN_PDLS_NM_YN     , /** Nom de marchandise hétérogène!==복합품목명여부==! */ -->
+            A.LDUN_YN 			  ,	/** déchargement On !== 양하여부 ==! */
+            A.CNSI_TXPR_IDFY_NO_NIN, /** NIN de déstinataire !== 수하인납세자식별번호(NIN) ==! */
+            A.EXPPN_TXPR_IDFY_NO_NIN, /** NIN d'exportateur !== 수출자납세자식별번호(NIN) ==! */
+            <!-- a.grdast_nm				  /** Assistant au sol !==조업사명==! */ -->
+            A.BL_PBLS_DT, 		    /** Date de délivrance du B/L(LTA) !== BL발행일자 ==! */
+            A.UNDG_GD_CD, 		    /** Code de classe UNDG !== UNDG등급 ==! */
+            A.CHER_YN, 			    /** affréteur d’espace/slot !== 용선여부 ==! */
+            A.CHER_GVNM_NM, 		/** nom de l’affréteur/slotteur !== 용선이름 ==! */
+            A.CHER_ADDR_NM          /** adresse affréteur/slotteur !== 용선주소 ==! */
+       FROM TB_CARI_CAG_DCSH_BL A,
+            TB_CARI_BL_DIVD_CAG B,
+            TB_CARI_BL_DIVD     C
+      WHERE A.DEL_YN = 'N'
+        AND B.DEL_YN = 'N'
+        AND C.DEL_YN = 'N'
+        AND B.BL_DIVD_RQST_NO = C.BL_DIVD_RQST_NO
+        AND C.CAG_MGMT_NO = A.CAG_MGMT_NO
+        AND B.DIVD_MRN    = A.MRN
+        AND B.DIVD_MSN    = A.MSN
+        AND B.BL_DIVD_RQST_NO = #{blDivdRqstNo}
+        AND B.DIVD_CAG_SRNO   = #{divdCagSrno}
+    </insert>
+    
+    <update id="updateCarCagDcshBlFromBlDivd" parameterType="alpass.ipt.car.com.vo.CarCagDcshBlVo">
+        /** updateCarCagDcshBlFromBlDivd */
+        UPDATE TB_CARI_CAG_DCSH_BL
+           SET  LAST_CHPR_ID    = #{lastChprId}
+               ,LAST_CHG_DTTM   = TO_TIMESTAMP(#{lastChgDttm},'DDMMYYYYHH24MISS')
+               <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(blTpCd)">
+               ,BL_TP_CD       = #{blTpCd}        /** Nombre de colis !== 포장개수 ==! */
+               </if>
+               <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(pckgGcnt)">
+               ,PCKG_GCNT       = #{pckgGcnt}        /** Nombre de colis !== 포장개수 ==! */
+               </if>
+               <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(ttwg)">
+               ,TTWG            = #{ttwg}                        /** !==  ==! */        
+               </if>
+               <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(lirVol)">
+               ,LIR_VOL         = #{lirVol}                /** !==  ==! */        
+               </if>
+               <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(delYn)">
+               ,DEL_YN          = #{delYn}                    /** Suppression ON !== 삭제여부 ==! */
+               </if>
+         WHERE MRN              = #{mrn}
+           AND CAG_MGMT_NO      = #{cagMgmtNo}
+    </update>
+    
+    <update id="deleteCarCagDcshBlFromBlDivd" parameterType="alpass.ipt.car.com.vo.CarCagDcshBlVo">
+		/** deleteCarCagDcshBlFromBlDivd */
+        UPDATE TB_CARI_CAG_DCSH_BL 
+		SET 
+			DEL_YN = 'Y'
+			, LAST_CHPR_ID = #{lastChprId}			/** Id Du Modificateur Final !== 최종변경자ID ==! */
+			, LAST_CHG_DTTM = TO_TIMESTAMP(#{lastChgDttm},'DDMMYYYYHH24MISS')  
+		WHERE BF_CAG_MGMT_NO = #{bfCagMgmtNo}
+    </update>
+   
+    <insert id="insertEptCarCagDcshBlFromBlDivd" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+        /** insertEptCarCagDcshBlFromBlDivd */
+        INSERT INTO ALPASSEXT.TB_CARE_CAG_DCSH_BL ( 
+        	BL_SRNO               , /** N° De Séquence De Bl !== BL일련번호 ==! */
+            CAG_DCSH_RGSR_MGMT_NO , /** Numéro de gestion de l'enregistrement de la déclaration de fret !== 화물신고서등록관리번호 ==! */
+            CAG_MGMT_NO           , /** Crn !== 화물관리번호 ==! */
+            MSN                   , /** Msn !== MSN ==! */
+            HSN                   , /** Hsn !== HSN ==! */
+            BL_NO                 , /** N° De Bl !== BL번호 ==! */
+            HBL_NO                , /** N° de House B/L !== HBL번호 ==! */
+            CAG_TP_CD             , /** Type de flux !== 화물구분코드 ==! */
+            SEND_WAY              , /** Mode de livraison !== 발송방식 ==! */
+            BL_TP_CD              , /** Code De Catégorie De B/L !== BL구분코드 ==! */
+            BL_PT_CD              , /** Code De Type De Bl !== BL유형코드 ==! */
+            FRWR_CD               , /** Code De Groupeur !== 포워더코드 ==! */
+            LOAD_REGN_CD          , /** Code De Lieu De Chargement !== 적재지역코드 ==! */
+            LDUN_REGN_CD          , /** Code De Lieu De Déchargement !== 하역지역코드 ==! */
+            IBOBZ_CD              , /** Code de zone sous douane !== 보세구역코드 ==! */
+            STVD_CD               , /** Code De Stevedoremanutentionnaire !== 하역업자코드 ==! */
+<!--             TRNS_REGN_CD          , /** Code de lieu de transit international !== 트랜짓지역코드 ==! */ -->
+            TRNH_REGN_CD          , /** Code De Région De Transbordement !== 환적지역코드 ==! */
+            CAG_CHRC_CD           , /** Nature De Cargaison !== 화물특성코드 ==! */
+            PDLS_NM               , /** Nom De L'Article !== 품목명 ==! */
+            CMDT_KND_CD           , /** Nature De Marchandise !== 물품종류코드 ==! */
+            CAS_NO                , /** Numero CAS !== CAS번호 ==! */
+            UNDG_ID                , /** Identifiant UNDG !== UNDGID ==! */
+            PCKG_GCNT             , /** Nombre De Colis !== 포장개수 ==! */
+            ECNTR_WGHT            , /** Tare De Conteneur(S) é Vide !== 공컨테이너중량 ==! */
+            TTWG                  , /** Poids Brut !== 총중량 ==! */
+            NTWG                  , /** Poids Net !== 순중량 ==! */
+            CBM_VOL               , /** Volume (Mtq) !== 입방미터용적 ==! */
+            LIR_VOL               , /** Volume (Litre) !== 리터용적 ==! */
+            HDCB_TP_CD            , /** Code de type d'hydrocarbure !== 탄화수소구분코드 ==! */
+            SHMR_CN               , /** Marque De Colis !== 화인내용 ==! */
+            ADD_INFO_CN           , /** Info Supplémentaire  !== 부가정보내용 ==! */
+            CNTR_GCNT             , /** Nombre De Conteneurs !== 컨테이너개수 ==! */
+            VHCL_GCNT             , /** Nombre De Véhicules !== 차량개수 ==! */
+            PRPM_DFPM_CACH_TP_CD  , /** Ind. fret prépayé/dé !== 선불후불운임구분코드 ==! */
+            CMDT_AMT              , /** Valeur de marchandise !== 물품금액 ==! */
+            CMDT_AMT_CURR_CD      , /** Article Montant Code de devise !== 물품금액통화코드 ==! */
+            EXPPN_TXPR_IDFY_NO    , /** NIF de l'exportateur !== 수출자납세자식별번호 ==! */
+            EXPPN_NM              , /** Nom De L'Exportateur !== 수출자명 ==! */
+            EXPPN_ADDR_NM         , /** Adresse De L'Exportateur !== 수출자주소명 ==! */
+            EXPPN_TLPH_NO         , /** Téléphone De L'Exportateur !== 수출자전화번호 ==! */
+            EXPPN_EML             , /** Email De L'Exportateur !== 수출자이메일 ==! */
+            ABRD_FRWR_NM          , /** Nom De L'Expéditeur !== 국외포워더명 ==! */
+            ABRD_FRWR_ADDR_NM     , /** Adresse De L'Expéditeur !== 국외포워더주소명 ==! */
+            ABRD_FRWR_TLPH_NO     , /** Téléphone De L'Expéditeur !== 국외포워더전화번호 ==! */
+            ABRD_FRWR_EML         , /** Email De L'Expéditeur !== 국외포워더이메일 ==! */
+            CNSI_TXPR_IDFY_NO     , /** Niu Du Destinataire !== 수하인납세자식별번호 ==! */
+            CNSI_NM               , /** Nom de destinataire !== 수하인명 ==! */
+            CNSI_ADDR_NM          , /** Adresse Du Destinataire !== 수하인주소명 ==! */
+            CNSI_TLPH_NO          , /** N° de téléphone de destinataire !== 수하인전화번호 ==! */
+            CNSI_EML              , /** E-mail de destinataire !== 수하인이메일 ==! */
+            NTPR_NM               , /** Nom De La Partie é Notifier !== 통지처명 ==! */
+            NTPR_ADDR_NM          , /** Adresse De La Partie é Notifier !== 통지처주소명 ==! */
+            NTPR_TLPH_NO          , /** Téléphone De La Partie é Notifier !== 통지처전화번호 ==! */
+            NTPR_EML              , /** Email De La Partie é Notifier !== 통지처이메일 ==! */
+            BF_CAG_MGMT_NO        , /** Crn Précédent !== 이전화물관리번호 ==! */
+            BL_MDFY_TP_CD         , /** Code de catégorie de rectification de BL !== BL정정구분코드 ==! */
+            <!-- NTNAL_IDFY_NO         , /** Nin !== 자국민식별번호 ==! */ -->
+            <!-- AUDT_OPIN_CN          , /** Contenu De L'Opinion é La Suite De La Vérification !== 심사의견내용 ==! */ -->
+            <!-- APRE_YN_CD            , /** Autorisation O/N !== 승인여부코드 ==! */ -->
+            DEL_YN                , /** Suppression On !== 삭제여부 ==! */
+            FRST_REGST_ID         , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            FRST_RGSR_DTTM        , /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            LAST_CHPR_ID          , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            LAST_CHG_DTTM         , /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+            COAT_TRNP_YN          , /** Cabotage On !== 연안운송여부 ==! */
+            AL_HBL_GCNT           , /** Nombre Total De Sous Bl !== 전체HBL개수 ==! */
+            HS_CD                 , /** Code Sh !== HS코드 ==! */
+            PCKG_UT_CD            , /** Code De L'Unité De Colis !== 포장단위코드 ==! */
+            <!-- CMPN_PDLS_NM_YN       , /** Nom de marchandise hétérogène!==복합품목명여부==! */ -->
+            LDUN_YN				  ,
+            CNSI_TXPR_IDFY_NO_NIN , /** NIN de déstinataire !== 수하인납세자식별번호(NIN) ==! */
+            EXPPN_TXPR_IDFY_NO_NIN, /** NIN d'exportateur !== 수출자납세자식별번호(NIN) ==! */
+            <!-- GRDAST_NM				 /** Assistant au sol !==조업사명==! */ -->
+            BL_PBLS_DT, 		    /** Date de délivrance du B/L(LTA) !== BL발행일자 ==! */
+            UNDG_GD_CD, 		    /** Code de classe UNDG !== UNDG등급 ==! */
+            CHER_YN, 			    /** affréteur d’espace/slot !== 용선여부 ==! */
+            CHER_GVNM_NM, 		    /** nom de l’affréteur/slotteur !== 용선이름 ==! */
+            CHER_ADDR_NM            /** adresse affréteur/slotteur !== 용선주소 ==! */
+		)
+        SELECT COALESCE((SELECT MAX(BL_SRNO) 
+                           FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL 
+                          WHERE CAG_DCSH_RGSR_MGMT_NO = (SELECT CAG_DCSH_RGSR_MGMT_NO 
+                                                       FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL 
+                                                      WHERE CAG_MGMT_NO = A.BF_CAG_MGMT_NO)), 0) + 1,
+               (SELECT K.CAG_DCSH_RGSR_MGMT_NO
+                  FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL K
+                 WHERE K.CAG_MGMT_NO = A.BF_CAG_MGMT_NO),
+               A.CAG_MGMT_NO           ,  
+               A.MSN                   ,  
+               A.HSN                   ,
+               A.BL_NO                 ,
+               A.HBL_NO                ,
+               A.CAG_TP_CD             ,
+               A.SEND_WAY              ,
+               A.BL_TP_CD              ,
+               A.BL_PT_CD              ,
+               A.FRWR_CD               ,
+               A.LOAD_REGN_CD          ,
+               A.LDUN_REGN_CD          ,
+               A.IBOBZ_CD              ,
+               A.STVD_CD               ,
+<!--                A.TRNS_REGN_CD          , -->
+               A.TRNH_REGN_CD          ,
+               A.CAG_CHRC_CD           ,
+               A.PDLS_NM               ,
+               A.CMDT_KND_CD           ,
+               A.CAS_NO                ,
+               A.UNDG_ID                ,
+               A.PCKG_GCNT             ,
+               A.ECNTR_WGHT            ,
+               A.TTWG                  ,
+               A.NTWG                  ,
+               A.CBM_VOL               ,
+               A.LIR_VOL               ,
+               A.HDCB_TP_CD            ,
+               A.SHMR_CN               ,
+               A.ADD_INFO_CN           ,
+               A.CNTR_GCNT             ,
+               A.VHCL_GCNT             ,
+               A.PRPM_DFPM_CACH_TP_CD  ,
+               A.CMDT_AMT              ,
+               A.CMDT_AMT_CURR_CD      ,
+               A.EXPPN_TXPR_IDFY_NO    ,
+               A.EXPPN_NM              ,
+               A.EXPPN_ADDR_NM         ,
+               A.EXPPN_TLPH_NO         ,
+               A.EXPPN_EML             ,
+               A.ABRD_FRWR_NM          ,
+               A.ABRD_FRWR_ADDR_NM     ,
+               A.ABRD_FRWR_TLPH_NO     ,
+               A.ABRD_FRWR_EML         ,
+               A.CNSI_TXPR_IDFY_NO     ,
+               A.CNSI_NM               ,
+               A.CNSI_ADDR_NM          ,
+               A.CNSI_TLPH_NO          ,
+               A.CNSI_EML              ,
+               A.NTPR_NM               ,
+               A.NTPR_ADDR_NM          ,
+               A.NTPR_TLPH_NO          ,
+               A.NTPR_EML              ,
+               A.BF_CAG_MGMT_NO        ,
+               A.BL_MDFY_TP_CD         ,
+               <!-- A.NTNAL_IDFY_NO         , -->
+               <!-- A.AUDT_OPIN_CN          , -->
+               <!-- A.APRE_YN_CD            , -->
+               'N'                     ,
+               A.FRST_REGST_ID         ,
+               A.FRST_RGSR_DTTM        ,
+               A.LAST_CHPR_ID          ,
+               A.LAST_CHG_DTTM         ,
+               A.COAT_TRNP_YN          ,
+               A.AL_HBL_GCNT           ,
+               A.HS_CD                 ,
+               A.PCKG_UT_CD            ,
+               <!-- A.CMPN_PDLS_NM_YN       , -->
+               A.LDUN_YN			   ,
+               A.CNSI_TXPR_IDFY_NO_NIN ,
+               A.EXPPN_TXPR_IDFY_NO_NIN,
+               <!-- a.GRDAST_NM -->
+               A.BL_PBLS_DT, 		    /** Date de délivrance du B/L(LTA) !== BL발행일자 ==! */
+               A.UNDG_GD_CD, 		    /** Code de classe UNDG !== UNDG등급 ==! */
+	           A.CHER_YN, 			    /** affréteur d’espace/slot !== 용선여부 ==! */
+               A.CHER_GVNM_NM, 			/** nom de l’affréteur/slotteur !== 용선이름 ==! */
+               A.CHER_ADDR_NM           /** adresse affréteur/slotteur !== 용선주소 ==! */
+		FROM TB_CARI_CAG_DCSH_BL A
+		WHERE 
+			A.MRN         = #{divdMrn}
+			AND A.CAG_MGMT_NO = #{divdCagMgmtNo}
+    </insert>
+    
+    <update id="updateEptCarCagDcshBlFromBlDivd" parameterType="alpass.ipt.car.com.vo.CarCagDcshBlVo">
+        /** updateEptCarCagDcshBlFromBlDivd !== 화물신고서 BL 정보를 업데이트 한다. ==!*/
+        UPDATE ALPASSEXT.TB_CARE_CAG_DCSH_BL A
+           SET  LAST_CHPR_ID    = #{lastChprId}
+               ,LAST_CHG_DTTM   = TO_TIMESTAMP(#{lastChgDttm},'DDMMYYYYHH24MISS')
+               <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(blTpCd)">
+               ,BL_TP_CD       = #{blTpCd}        /** Nombre de colis !== 포장개수 ==! */
+               </if>
+               <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(pckgGcnt)">
+               ,PCKG_GCNT       = #{pckgGcnt}        /** Nombre de colis !== 포장개수 ==! */
+               </if>
+               <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(ttwg)">
+               ,TTWG            = #{ttwg}                        /** !==  ==! */        
+               </if>
+               <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(lirVol)">
+               ,LIR_VOL         = #{lirVol}                /** !==  ==! */        
+               </if>
+               <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(delYn)">
+               ,DEL_YN          = #{delYn}                    /** Suppression ON !== 삭제여부 ==! */
+               </if>
+         <!--  
+         WHERE MRN              = #{mrn}
+           AND CAG_MGMT_NO      = #{cagMgmtNo}
+         -->      
+         WHERE CAG_MGMT_NO      = #{cagMgmtNo}
+           AND EXISTS (SELECT 1 
+                         FROM ALPASSEXT.TB_CARE_CAG_DCSH B
+                        WHERE B.DEL_YN                = 'N'
+                          AND B.CAG_DCSH_RGSR_MGMT_NO = A.CAG_DCSH_RGSR_MGMT_NO
+                          AND B.MRN                   = #{mrn})
+    </update>
+    
+    <update id="delteEptCarCagDcshBlFromBlDivd" parameterType="alpass.ipt.car.com.vo.CarCagDcshBlVo">
+		/** delteEptCarCagDcshBlFromBlDivd */
+		UPDATE ALPASSEXT.TB_CARE_CAG_DCSH_BL 
+		SET 
+			DEL_YN = 'Y'
+			, LAST_CHPR_ID = #{lastChprId}			/** Id Du Modificateur Final !== 최종변경자ID ==! */
+			, LAST_CHG_DTTM = TO_TIMESTAMP(#{lastChgDttm},'DDMMYYYYHH24MISS')  
+		WHERE BF_CAG_MGMT_NO = #{bfCagMgmtNo}
+    </update>
+    
+    <insert id="insertCarCagDcshBlCntrFromBlDivd" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+        /** insertCarCagDcshBlCntrFromBlDivd */
+        INSERT INTO TB_CARI_CAG_DCSH_BL_CNTR ( 
+			MRN
+			, CAG_MGMT_NO
+			, CNTR_SRNO  
+			, CNTR_NO    
+			, CNTR_TP_CD 
+			, PCKG_GCNT  
+			, PCKG_UT_CD 
+			, ECNTR_WGHT 
+			, TTWG       
+			, SEAL_NO1   
+			, SEAL_NO2   
+			, SEAL_NO3   
+			, SEAL_CHPN1 
+			, SEAL_CHPN2 
+			, SEAL_CHPN3 
+			, DEL_YN     
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID 
+			, LAST_CHG_DTTM 
+		)
+		SELECT 
+		   	H2.DIVD_MRN
+			, H2.DIVD_CAG_MGMT_NO
+			, ROW_NUMBER() OVER()
+			, H1.CNTR_NO 
+			, H1.CNTR_TP_CD      
+			, H4.PCKG_GCNT 
+			, H4.PCKG_UT_CD      
+			, H4.ECNTR_WGHT      
+			, H4.TTWG    
+			, H1.SEAL_NO1
+			, H1.SEAL_NO2
+			, H1.SEAL_NO3
+			, H1.SEAL_CHPN1      
+			, H1.SEAL_CHPN2      
+			, H1.SEAL_CHPN3      
+			, 'N' AS DEL_YN      
+			, H2.FRST_REGST_ID     
+			, H2.FRST_RGSR_DTTM      
+			, H2.LAST_CHPR_ID
+            , H2.LAST_CHG_DTTM  
+		FROM 
+			TB_CARI_BL_DIVD_CAG_CNTR H1,
+			TB_CARI_BL_DIVD_CAG      H2,
+		    TB_CARI_BL_DIVD          H3,
+		    TB_CARI_CAG_DCSH_BL_CNTR H4
+		WHERE 
+			H1.DEL_YN = 'N'
+	      	AND H2.DEL_YN = 'N'
+	      	AND H3.DEL_YN = 'N'
+	      	AND H4.DEL_YN = 'N'
+	      	AND H1.BL_DIVD_RQST_NO = H2.BL_DIVD_RQST_NO
+	      	AND H1.DIVD_CAG_SRNO   = H2.DIVD_CAG_SRNO
+	      	AND H1.BL_DIVD_RQST_NO = H3.BL_DIVD_RQST_NO
+	      	AND H4.CAG_MGMT_NO     = H3.CAG_MGMT_NO
+	      	AND H4.MRN             = H2.DIVD_MRN
+	      	AND H1.CNTR_NO         = H4.CNTR_NO
+	      	AND H1.BL_DIVD_RQST_NO = #{blDivdRqstNo}
+	      	AND H1.DIVD_CAG_SRNO   = #{divdCagSrno}
+    </insert>
+
+	<update id="deleteCarCagDcshBlCntrFromBlDivd" parameterType="alpass.ipt.car.com.vo.CarCagDcshBlVo">
+		/** deleteCarCagDcshBlCntrFromBlDivd */
+		UPDATE TB_CARI_CAG_DCSH_BL_CNTR
+		SET 
+			DEL_YN = 'Y'
+			, LAST_CHPR_ID = #{lastChprId}			/** Id Du Modificateur Final !== 최종변경자ID ==! */
+			, LAST_CHG_DTTM = TO_TIMESTAMP(#{lastChgDttm},'DDMMYYYYHH24MISS')  
+		WHERE CAG_MGMT_NO IN (SELECT CAG_MGMT_NO FROM TB_CARI_CAG_DCSH_BL WHERE BF_CAG_MGMT_NO = #{bfCagMgmtNo})
+    </update>
+
+	<insert id="insertEptCarCagDcshBlCntrFromBlDivd" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+        /** insertEptCarCagDcshBlCntrFromBlDivd */
+        INSERT INTO ALPASSEXT.TB_CARE_CAG_DCSH_BL_CNTR ( 
+        	CAG_DCSH_RGSR_MGMT_NO , /** Numéro de gestion de l'enregistrement de la déclaration de fret !== 화물신고서등록관리번호 ==! */
+            BL_SRNO               , /** N° De Séquence De Bl !== BL일련번호 ==! */
+            CNTR_SRNO             , /** N° De Séquence Du Conteneur !== 컨테이너일련번호 ==! */
+            CNTR_NO               , /** N° De Conteneur !== 컨테이너번호 ==! */
+            CNTR_TP_CD            , /** Code De Type De Conteneur !== 컨테이너구분코드 ==! */
+            PCKG_GCNT             , /** Nombre De Colis !== 포장개수 ==! */
+            PCKG_UT_CD            , /** Code De L'Unité De Colis !== 포장단위코드 ==! */
+            ECNTR_WGHT            , /** Tare De Conteneur(S) é Vide !== 공컨테이너중량 ==! */
+            TTWG                  , /** Poids Brut !== 총중량 ==! */
+            SEAL_NO1              , /** N° De Scellé1 !== 봉인번호1 ==! */
+            SEAL_NO2              , /** N° De Scellé2 !== 봉인번호2 ==! */
+            SEAL_NO3              , /** N° De Scellé3 !== 봉인번호3 ==! */
+            SEAL_CHPN1            , /** Responsable de scellé 1 !== 봉인담당자1 ==! */
+            SEAL_CHPN2            , /** Responsable de scellé 2 !== 봉인담당자2 ==! */
+            SEAL_CHPN3            , /** Responsable de scellé 3 !== 봉인담당자3 ==! */
+            DEL_YN                , /** Suppression On !== 삭제여부 ==! */
+            FRST_REGST_ID         , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            FRST_RGSR_DTTM        , /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            LAST_CHPR_ID          , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            LAST_CHG_DTTM         	/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		) 
+        SELECT 
+			(SELECT K.CAG_DCSH_RGSR_MGMT_NO
+                  FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL K
+                 WHERE K.CAG_MGMT_NO = A.CAG_MGMT_NO),
+            (SELECT K.BL_SRNO
+               FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL K
+              WHERE K.CAG_MGMT_NO = A.CAG_MGMT_NO),
+			A.CNTR_SRNO             ,
+            A.CNTR_NO               ,
+            A.CNTR_TP_CD            ,
+            A.PCKG_GCNT             ,
+            A.PCKG_UT_CD            ,
+            A.ECNTR_WGHT            ,
+            A.TTWG                  ,
+            A.SEAL_NO1              ,
+            A.SEAL_NO2              ,
+            A.SEAL_NO3              ,
+            A.SEAL_CHPN1            ,
+            A.SEAL_CHPN2            ,
+            A.SEAL_CHPN3            ,
+            'N'                     ,
+            A.FRST_REGST_ID         ,
+            A.FRST_RGSR_DTTM        ,
+            A.LAST_CHPR_ID          ,
+            A.LAST_CHG_DTTM
+		FROM TB_CARI_CAG_DCSH_BL_CNTR A
+		WHERE A.MRN         = #{divdMrn}
+        	AND A.CAG_MGMT_NO = #{divdCagMgmtNo}     
+    </insert>
+    
+   	<update id="deleteEptCarCagDcshBlCntrFromBlDivd" parameterType="alpass.ipt.car.com.vo.CarCagDcshBlVo">
+		/** deleteEptCarCagDcshBlCntrFromBlDivd */
+		UPDATE ALPASSEXT.TB_CARE_CAG_DCSH_BL_CNTR EC
+		SET 
+			EC.DEL_YN = 'Y'
+			, EC.LAST_CHPR_ID = #{lastChprId}			/** Id Du Modificateur Final !== 최종변경자ID ==! */
+			, EC.LAST_CHG_DTTM = TO_TIMESTAMP(#{lastChgDttm},'DDMMYYYYHH24MISS')  
+		FROM (
+			SELECT CAG_DCSH_RGSR_MGMT_NO, BL_SRNO FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL WHERE BF_CAG_MGMT_NO = #{bfCagMgmtNo}
+		) C
+		WHERE 
+			EC.CAG_DCSH_RGSR_MGMT_NO  = C.CAG_DCSH_RGSR_MGMT_NO
+			AND EC.BL_SRNO  = C.BL_SRNO
+    </update>
+    
+    <insert id="insertCarCagDcshBlVhclFromBlDivd" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+        /** insertCarCagDcshBlVhclFromBlDivd */
+		INSERT INTO TB_CARI_CAG_DCSH_BL_VHCL ( 
+	        MRN
+			, CAG_MGMT_NO
+			, VHCL_SRNO  
+			, CHSS_NO    
+			, VHCL_RGSR_NO
+			, VHCL_MNUR_CD
+			, VHCL_MDL_CD
+			, VHCL_KND_NM
+			, VHCL_MNFC_YY
+			, ENGN_CLND_GCNT
+			, VHCL_TOTL_WGHT
+			, DEL_YN     
+			, FRST_REGST_ID 
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM  
+		)
+		SELECT 
+			H2.DIVD_MRN
+			, H2.DIVD_CAG_MGMT_NO
+			, ROW_NUMBER() OVER()
+			, H1.CHSS_NO
+			, H4.VHCL_RGSR_NO  
+			, H4.VHCL_MNUR_CD 
+			, H4.VHCL_MDL_CD  
+			, H4.VHCL_KND_NM  
+			, H4.VHCL_MNFC_YY 
+			, H4.ENGN_CLND_GCNT
+			, H4.VHCL_TOTL_WGHT
+			, 'N' AS DEL_YN  
+			, H2.FRST_REGST_ID   
+			, H2.FRST_RGSR_DTTM
+			, H2.LAST_CHPR_ID
+			, H2.LAST_CHG_DTTM    
+        FROM TB_CARI_BL_DIVD_CAG_VHCL H1,
+             TB_CARI_BL_DIVD_CAG      H2,
+             TB_CARI_BL_DIVD          H3,
+             TB_CARI_CAG_DCSH_BL_VHCL H4
+       WHERE H1.DEL_YN = 'N'
+         AND H2.DEL_YN = 'N'
+         AND H3.DEL_YN = 'N'
+         AND H4.DEL_YN = 'N'
+         AND H1.BL_DIVD_RQST_NO = H2.BL_DIVD_RQST_NO
+         AND H1.DIVD_CAG_SRNO   = H2.DIVD_CAG_SRNO
+         AND H1.BL_DIVD_RQST_NO = H3.BL_DIVD_RQST_NO
+         AND H4.CAG_MGMT_NO     = H3.CAG_MGMT_NO
+         AND H4.MRN             = H2.DIVD_MRN
+         AND H1.CHSS_NO         = H4.CHSS_NO
+         AND H1.BL_DIVD_RQST_NO = #{blDivdRqstNo}
+         AND H1.DIVD_CAG_SRNO   = #{divdCagSrno}
+    </insert>
+    
+   	<update id="deleteCarCagDcshBlVhclFromBlDivd" parameterType="alpass.ipt.car.com.vo.CarCagDcshBlVo">
+		/** deleteCarCagDcshBlVhclFromBlDivd */
+		UPDATE TB_CARI_CAG_DCSH_BL_VHCL
+		SET 
+			DEL_YN = 'Y'
+			, LAST_CHPR_ID = #{lastChprId}			/** Id Du Modificateur Final !== 최종변경자ID ==! */
+			, LAST_CHG_DTTM = TO_TIMESTAMP(#{lastChgDttm},'DDMMYYYYHH24MISS')  
+		WHERE CAG_MGMT_NO IN (SELECT CAG_MGMT_NO FROM TB_CARI_CAG_DCSH_BL WHERE BF_CAG_MGMT_NO = #{bfCagMgmtNo})
+    </update>
+    
+    <insert id="insertEptCarCagDcshBlVhclFromBlDivd" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+        /** insertEptCarCagDcshBlVhclFromBlDivd : !==BL분할신청정보로 화물신고서 BL차량정보를 외부테이블에 등록처리 한다.==! */
+        INSERT INTO ALPASSEXT.TB_CARE_CAG_DCSH_BL_VHCL ( 
+        	CAG_DCSH_RGSR_MGMT_NO ,
+             BL_SRNO               ,
+             VHCL_SRNO             ,
+             CHSS_NO               ,
+             VHCL_RGSR_NO          ,
+             VHCL_MNUR_CD          ,
+             VHCL_MDL_CD           ,
+             VHCL_KND_NM           ,
+             VHCL_MNFC_YY          ,
+             ENGN_CLND_GCNT        ,
+             VHCL_TOTL_WGHT        ,
+             DEL_YN                ,
+             FRST_REGST_ID         ,
+             FRST_RGSR_DTTM        ,
+             LAST_CHPR_ID          ,
+             LAST_CHG_DTTM         )
+      	SELECT 
+      		(SELECT K.CAG_DCSH_RGSR_MGMT_NO
+                  FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL K
+                 WHERE K.CAG_MGMT_NO = A.CAG_MGMT_NO),
+            (SELECT K.BL_SRNO
+               FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL K
+              WHERE K.CAG_MGMT_NO = A.CAG_MGMT_NO), 
+            A.VHCL_SRNO             ,
+            A.CHSS_NO               ,
+            A.VHCL_RGSR_NO          ,
+            A.VHCL_MNUR_CD          ,
+            A.VHCL_MDL_CD           ,
+            A.VHCL_KND_NM           ,
+            A.VHCL_MNFC_YY          ,
+            A.ENGN_CLND_GCNT        ,
+            A.VHCL_TOTL_WGHT        ,
+            'N'                     ,
+            A.FRST_REGST_ID         ,
+            A.FRST_RGSR_DTTM        ,
+            A.LAST_CHPR_ID          ,
+            A.LAST_CHG_DTTM
+        FROM TB_CARI_CAG_DCSH_BL_VHCL A
+       WHERE A.DEL_YN = 'N'
+         AND A.MRN    = #{divdMrn}
+         AND A.CAG_MGMT_NO = #{divdCagMgmtNo}
+    </insert>
+    
+   	<update id="deleteEptCarCagDcshBlVhclFromBlDivd" parameterType="alpass.ipt.car.com.vo.CarCagDcshBlVo">
+		/** deleteEptCarCagDcshBlVhclFromBlDivd */
+		UPDATE ALPASSEXT.TB_CARE_CAG_DCSH_BL_VHCL EC
+		SET 
+			EC.DEL_YN = 'Y'
+			, LAST_CHPR_ID = #{lastChprId}			/** Id Du Modificateur Final !== 최종변경자ID ==! */
+			, LAST_CHG_DTTM = TO_TIMESTAMP(#{lastChgDttm},'DDMMYYYYHH24MISS')  
+		FROM (
+			SELECT CAG_DCSH_RGSR_MGMT_NO, BL_SRNO FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL WHERE BF_CAG_MGMT_NO = #{bfCagMgmtNo}
+		) C
+		WHERE 
+			EC.CAG_DCSH_RGSR_MGMT_NO  = C.CAG_DCSH_RGSR_MGMT_NO
+			AND EC.BL_SRNO  = C.BL_SRNO
+    </update>
+    
+    <insert id="insertCarCagDcshBlTrlrFromBlDivd" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+        /** selectinsertCarCagDcshBlTrlrFromBlDivd */
+        INSERT INTO TB_CARI_CAG_DCSH_BL_TRLR ( 
+        	MRN
+            , CAG_MGMT_NO
+            , TRLR_SRNO
+            , VHCL_RGSR_NO
+            , CHSS_NO
+            , TRLR_STSZ
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM  
+		)
+		SELECT 
+			H2.DIVD_MRN
+			, H2.DIVD_CAG_MGMT_NO
+			, ROW_NUMBER() OVER() AS VHCL_SRNO 
+			, H1.TRLR_VHCL_RGSR_NO
+			, H1.TRLR_SSIS_NO
+			, H1.TRLR_STSZ
+			, 'N'
+			, H2.FRST_REGST_ID   
+			, H2.FRST_RGSR_DTTM
+            , H2.LAST_CHPR_ID
+            , H2.LAST_CHG_DTTM
+  		FROM TB_CARI_BL_DIVD_CAG_TRLR H1,
+       		TB_CARI_BL_DIVD_CAG      H2,
+       		TB_CARI_BL_DIVD          H3,
+       		TB_CARI_CAG_DCSH_BL_TRLR H4
+ 		WHERE 
+ 			H1.DEL_YN = 'N'
+		   	AND H2.DEL_YN = 'N'
+		   	AND H3.DEL_YN = 'N'
+		   	AND H4.DEL_YN = 'N'
+		   	AND H1.BL_DIVD_RQST_NO = H2.BL_DIVD_RQST_NO
+		   	AND H1.DIVD_CAG_SRNO   = H2.DIVD_CAG_SRNO
+		   	AND H1.BL_DIVD_RQST_NO = H3.BL_DIVD_RQST_NO
+		   	AND H4.CAG_MGMT_NO     = H3.CAG_MGMT_NO
+		   	AND H4.MRN             = H2.DIVD_MRN
+		   	AND H1.TRLR_SSIS_NO         = H4.CHSS_NO
+            AND H1.BL_DIVD_RQST_NO = #{blDivdRqstNo}
+            AND H1.DIVD_CAG_SRNO   = #{divdCagSrno}
+    </insert>
+    
+    <update id="deleteCarCagDcshBlTrlrFromBlDivd" parameterType="alpass.ipt.car.com.vo.CarCagDcshBlVo">
+		/** deleteCarCagDcshBlTrlrFromBlDivd */
+		UPDATE TB_CARI_CAG_DCSH_BL_TRLR
+		SET 
+			DEL_YN = 'Y'
+			, LAST_CHPR_ID = #{lastChprId}			/** Id Du Modificateur Final !== 최종변경자ID ==! */
+			, LAST_CHG_DTTM = TO_TIMESTAMP(#{lastChgDttm},'DDMMYYYYHH24MISS')  
+		WHERE CAG_MGMT_NO IN (SELECT CAG_MGMT_NO FROM TB_CARI_CAG_DCSH_BL WHERE BF_CAG_MGMT_NO = #{bfCagMgmtNo})
+    </update>
+    
+    <insert id="insertEptCarCagDcshBlTrlrFromBlDivd"  parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+        /** insertEptCarCagDcshBlTrlrFromBlDivd */
+        INSERT INTO ALPASSEXT.TB_CARE_CAG_DCSH_BL_TRLR ( 
+        	BL_SRNO               ,
+            CAG_DCSH_RGSR_MGMT_NO ,
+            TRLR_SRNO             ,
+            VHCL_RGSR_NO          ,
+            CHSS_NO               ,
+            TRLR_STSZ             ,
+            DEL_YN                ,
+            FRST_REGST_ID         ,
+            FRST_RGSR_DTTM        ,
+            LAST_CHPR_ID          ,
+            LAST_CHG_DTTM         )
+	    SELECT  
+            (SELECT K.BL_SRNO
+               FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL K
+              WHERE K.CAG_MGMT_NO = A.CAG_MGMT_NO), 
+            (SELECT K.CAG_DCSH_RGSR_MGMT_NO
+                  FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL K
+                 WHERE K.CAG_MGMT_NO = A.CAG_MGMT_NO),  
+            A.TRLR_SRNO             ,
+            A.VHCL_RGSR_NO          ,
+            A.CHSS_NO               ,
+            A.TRLR_STSZ             ,
+            'N'                     ,
+            A.FRST_REGST_ID         ,
+            A.FRST_RGSR_DTTM        ,
+            A.LAST_CHPR_ID          ,
+            A.LAST_CHG_DTTM
+		FROM TB_CARI_CAG_DCSH_BL_TRLR A
+		WHERE A.DEL_YN = 'N'
+	        AND A.MRN    = #{divdMrn}
+        	AND A.CAG_MGMT_NO = #{divdCagMgmtNo}           
+    </insert>
+    
+    <update id="deleteEptCarCagDcshBlTrlrFromBlDivd" parameterType="alpass.ipt.car.com.vo.CarCagDcshBlVo">
+		/** deleteEptCarCagDcshBlTrlrFromBlDivd */
+		UPDATE ALPASSEXT.TB_CARE_CAG_DCSH_BL_TRLR EC
+		SET 
+			EC.DEL_YN = 'Y'
+			, EC.LAST_CHPR_ID = #{lastChprId}			/** Id Du Modificateur Final !== 최종변경자ID ==! */
+			, EC.LAST_CHG_DTTM = TO_TIMESTAMP(#{lastChgDttm},'DDMMYYYYHH24MISS')  
+		FROM (
+			SELECT CAG_DCSH_RGSR_MGMT_NO, BL_SRNO FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL WHERE BF_CAG_MGMT_NO = #{bfCagMgmtNo}
+		) C
+		WHERE 
+			EC.CAG_DCSH_RGSR_MGMT_NO  = C.CAG_DCSH_RGSR_MGMT_NO
+			AND EC.BL_SRNO  = C.BL_SRNO
+    </update>
+    
+    <insert id="insertCarCagDcshMdfyBlFromBlDivd" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+		/** insertCarCagDcshMdfyBlFromBlDivd */
+        INSERT INTO TB_CARI_CAG_DCSH_MDFY_BL ( 
+        	BL_SRNO
+			, CAG_DCSH_MDFY_RQST_NO
+			, CAG_MGMT_NO
+			, MSN
+			, HSN
+			, BL_NO
+			, HBL_NO
+			, CAG_TP_CD
+			, BL_TP_CD
+			, BL_PT_CD
+			, FRWR_CD
+			, LOAD_REGN_CD
+			, LDUN_REGN_CD
+			, IBOBZ_CD
+			, STVD_CD
+<!-- 			, TRNS_REGN_CD -->
+			, TRNH_REGN_CD
+			, CAG_CHRC_CD
+			, CMDT_KND_CD
+			, PDLS_NM
+			, CAS_NO
+			, UNDG_ID
+			, HS_CD
+			, SEND_WAY
+			, PCKG_GCNT
+			, ECNTR_WGHT
+			, TTWG
+			, NTWG
+			, CBM_VOL
+			, LIR_VOL
+			, HDCB_TP_CD
+			, SHMR_CN
+			, ADD_INFO_CN
+			, CNTR_GCNT
+			, VHCL_GCNT
+			, OWCNT
+			, PRPM_DFPM_CACH_TP_CD
+			, CMDT_AMT
+			, CMDT_AMT_CURR_CD
+			, EXPPN_TXPR_IDFY_NO
+			, EXPPN_NM
+			, EXPPN_ADDR_NM
+			, EXPPN_TLPH_NO
+			, EXPPN_EML
+			, ABRD_FRWR_NM
+			, ABRD_FRWR_ADDR_NM
+			, ABRD_FRWR_TLPH_NO
+			, ABRD_FRWR_EML
+			, CNSI_TXPR_IDFY_NO
+			, CNSI_NM
+			, CNSI_ADDR_NM
+			, CNSI_TLPH_NO
+			, CNSI_EML
+			, NTPR_NM
+			, NTPR_ADDR_NM
+			, NTPR_TLPH_NO
+			, NTPR_EML
+			, BF_CAG_MGMT_NO
+			, BL_MDFY_TP_CD
+			, NTNAL_IDFY_NO
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM    
+			, CNSI_TXPR_IDFY_NO_NIN     
+            , EXPPN_TXPR_IDFY_NO_NIN   
+            <!-- , GRDAST_NM -->
+            , BL_PBLS_DT /** Date de délivrance du B/L(LTA) !== BL발행일자 ==! */
+            , UNDG_GD_CD /** Code de classe UNDG !== UNDG등급 ==! */
+            , CHER_YN /** affréteur d’espace/slot !== 용선여부 ==! */
+            , CHER_GVNM_NM /** nom de l’affréteur/slotteur !== 용선이름 ==! */
+            , CHER_ADDR_NM /** adresse affréteur/slotteur !== 용선주소 ==! */
+		)        
+   		SELECT
+			(SELECT K.BL_SRNO
+               FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL K
+              WHERE K.CAG_MGMT_NO = B.CAG_MGMT_NO)
+			, (SELECT K.CAG_DCSH_MDFY_RQST_NO
+               FROM TB_CARI_CAG_DCSH_MDFY K
+              WHERE K.MRN = B.MRN)              
+			, CAG_MGMT_NO
+			, MSN
+			, HSN
+			, BL_NO
+			, HBL_NO
+			, CAG_TP_CD
+			, BL_TP_CD
+			, BL_PT_CD
+			, FRWR_CD
+			, LOAD_REGN_CD
+			, LDUN_REGN_CD
+			, IBOBZ_CD
+			, STVD_CD
+<!-- 			, TRNS_REGN_CD -->
+			, TRNH_REGN_CD
+			, CAG_CHRC_CD
+			, CMDT_KND_CD
+			, PDLS_NM
+			, CAS_NO
+			, UNDG_ID
+			, HS_CD
+			, SEND_WAY
+			, PCKG_GCNT
+			, ECNTR_WGHT
+			, TTWG
+			, NTWG
+			, CBM_VOL
+			, LIR_VOL
+			, HDCB_TP_CD
+			, SHMR_CN
+			, ADD_INFO_CN
+			, CNTR_GCNT
+			, VHCL_GCNT
+			, ''
+			, PRPM_DFPM_CACH_TP_CD
+			, CMDT_AMT
+			, CMDT_AMT_CURR_CD
+			, EXPPN_TXPR_IDFY_NO
+			, EXPPN_NM
+			, EXPPN_ADDR_NM
+			, EXPPN_TLPH_NO
+			, EXPPN_EML
+			, ABRD_FRWR_NM
+			, ABRD_FRWR_ADDR_NM
+			, ABRD_FRWR_TLPH_NO
+			, ABRD_FRWR_EML
+			, CNSI_TXPR_IDFY_NO
+			, CNSI_NM
+			, CNSI_ADDR_NM
+			, CNSI_TLPH_NO
+			, CNSI_EML
+			, NTPR_NM
+			, NTPR_ADDR_NM
+			, NTPR_TLPH_NO
+			, NTPR_EML
+			, BF_CAG_MGMT_NO
+			, BL_MDFY_TP_CD
+			, NTNAL_IDFY_NO
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+			, CNSI_TXPR_IDFY_NO_NIN    
+            , EXPPN_TXPR_IDFY_NO_NIN   
+            <!-- , GRDAST_NM -->		
+            , BL_PBLS_DT /** Date de délivrance du B/L(LTA) !== BL발행일자 ==! */
+            , UNDG_GD_CD /** Code de classe UNDG !== UNDG등급 ==! */
+            , CHER_YN /** affréteur d’espace/slot !== 용선여부 ==! */
+            , CHER_GVNM_NM /** nom de l’affréteur/slotteur !== 용선이름 ==! */
+            , CHER_ADDR_NM /** adresse affréteur/slotteur !== 용선주소 ==! */		
+		FROM TB_CARI_CAG_DCSH_BL B
+		WHERE B.CAG_MGMT_NO = #{divdCagMgmtNo}  
+    </insert>
+    
+    <insert id="insertCarCagDcshMdfyBlCntrFromBlDivd" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+		/** insertCarCagDcshMdfyBlCntrFromBlDivd */
+        INSERT INTO TB_CARI_CAG_DCSH_MDFY_BL_CNTR ( 
+        	CAG_DCSH_MDFY_RQST_NO
+			, BL_SRNO
+			, CNTR_SRNO
+			, CNTR_NO
+			, CNTR_TP_CD
+			, PCKG_GCNT
+			, PCKG_UT_CD
+			, ECNTR_WGHT
+			, TTWG
+			, SEAL_NO1
+			, SEAL_NO2
+			, SEAL_NO3
+			, SEAL_CHPN1
+			, SEAL_CHPN2
+			, SEAL_CHPN3
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM   
+		)  
+   		SELECT
+			(SELECT K.CAG_DCSH_MDFY_RQST_NO
+               FROM TB_CARI_CAG_DCSH_MDFY K
+              WHERE K.MRN = B.MRN)
+			,(SELECT K.BL_SRNO
+               FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL K
+              WHERE K.CAG_MGMT_NO = B.CAG_MGMT_NO)
+			, CNTR_SRNO
+			, CNTR_NO
+			, CNTR_TP_CD
+			, PCKG_GCNT
+			, PCKG_UT_CD
+			, ECNTR_WGHT
+			, TTWG
+			, SEAL_NO1
+			, SEAL_NO2
+			, SEAL_NO3
+			, SEAL_CHPN1
+			, SEAL_CHPN2
+			, SEAL_CHPN3
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+		FROM TB_CARI_CAG_DCSH_BL_CNTR B
+		WHERE B.CAG_MGMT_NO = #{divdCagMgmtNo}  
+    </insert>
+    
+    <insert id="insertCarCagDcshMdfyBlVhclFromBlDivd" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+		/** insertCarCagDcshMdfyBlVhclFromBlDivd */
+        INSERT INTO TB_CARI_CAG_DCSH_MDFY_BL_VHCL ( 
+        	CAG_DCSH_MDFY_RQST_NO
+			, BL_SRNO
+			, VHCL_SRNO
+			, CHSS_NO
+			, VHCL_RGSR_NO
+			, VHCL_MNUR_CD
+			, VHCL_MDL_CD
+			, VHCL_KND_NM
+			, VHCL_MNFC_YY
+			, ENGN_CLND_GCNT
+			, VHCL_TOTL_WGHT
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+		)
+   		SELECT
+			(SELECT K.CAG_DCSH_MDFY_RQST_NO
+               FROM TB_CARI_CAG_DCSH_MDFY K
+              WHERE K.MRN = B.MRN)
+			,(SELECT K.BL_SRNO
+               FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL K
+              WHERE K.CAG_MGMT_NO = B.CAG_MGMT_NO)
+			, VHCL_SRNO
+			, CHSS_NO
+			, VHCL_RGSR_NO
+			, VHCL_MNUR_CD
+			, VHCL_MDL_CD
+			, VHCL_KND_NM
+			, VHCL_MNFC_YY
+			, ENGN_CLND_GCNT
+			, VHCL_TOTL_WGHT
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+		FROM TB_CARI_CAG_DCSH_BL_VHCL B
+		WHERE B.CAG_MGMT_NO = #{divdCagMgmtNo}  
+    </insert>
+    
+    <insert id="insertCarCagDcshMdfyBlTrlrFromBlDivd" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+		/** insertCarCagDcshMdfyBlTrlrFromBlDivd */
+        INSERT INTO TB_CARI_CAG_DCSH_MDFY_BL_TRLR ( 
+        	MRN
+			, CAG_DCSH_MDFY_RQST_NO
+			, BL_SRNO
+			, TRLR_SRNO
+			, VHCL_RGSR_NO
+			, CHSS_NO
+			, TRLR_STSZ
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+		)
+   		SELECT
+			B.MRN
+			,(SELECT K.CAG_DCSH_MDFY_RQST_NO
+               FROM TB_CARI_CAG_DCSH_MDFY K
+              WHERE K.MRN = B.MRN)
+			,(SELECT K.BL_SRNO
+               FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL K
+              WHERE K.CAG_MGMT_NO = B.CAG_MGMT_NO)
+			, TRLR_SRNO
+			, VHCL_RGSR_NO
+			, CHSS_NO
+			, TRLR_STSZ
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+		FROM TB_CARI_CAG_DCSH_BL_TRLR B
+		WHERE B.CAG_MGMT_NO = #{divdCagMgmtNo}  
+    </insert>
+    
+    <insert id="insertEptCarCagDcshMdfyBlFromBlDivd" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+		/** insertEptCarCagDcshMdfyBlFromBlDivd */
+        INSERT INTO ALPASSEXT.TB_CARE_CAG_DCSH_MDFY_BL ( 
+        	BL_SRNO
+			, CAG_DCSH_MDFY_RQST_MGRN
+			, CAG_MGMT_NO
+			, MSN
+			, HSN
+			, BL_NO
+			, HBL_NO
+			, CAG_TP_CD
+			, BL_TP_CD
+			, BL_PT_CD
+			, FRWR_CD
+			, LOAD_REGN_CD
+			, LDUN_REGN_CD
+			, IBOBZ_CD
+			, STVD_CD
+<!-- 			, TRNS_REGN_CD -->
+			, TRNH_REGN_CD
+			, CAG_CHRC_CD
+			, SEND_WAY
+			, PDLS_NM
+			, CMDT_KND_CD
+			, PCKG_GCNT
+			, ECNTR_WGHT
+			, TTWG
+			, NTWG
+			, CBM_VOL
+			, LIR_VOL
+			, HDCB_TP_CD
+			, CAS_NO
+			, UNDG_ID
+			, HS_CD
+			, SHMR_CN
+			, ADD_INFO_CN
+			, CNTR_GCNT
+			, VHCL_GCNT
+			, OWCNT
+			, PRPM_DFPM_CACH_TP_CD
+			, CMDT_AMT_CURR_CD
+			, CMDT_AMT
+			, EXPPN_TXPR_IDFY_NO
+			, EXPPN_NM
+			, EXPPN_ADDR_NM
+			, EXPPN_TLPH_NO
+			, EXPPN_EML
+			, ABRD_FRWR_NM
+			, ABRD_FRWR_ADDR_NM
+			, ABRD_FRWR_TLPH_NO
+			, ABRD_FRWR_EML
+			, CNSI_TXPR_IDFY_NO
+			, CNSI_NM
+			, CNSI_ADDR_NM
+			, CNSI_TLPH_NO
+			, CNSI_EML
+			, NTPR_NIF
+			, NTPR_NM
+			, NTPR_ADDR_NM
+			, NTPR_TLPH_NO
+			, NTPR_EML
+			, BF_CAG_MGMT_NO
+			, BL_MDFY_TP_CD
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+			, CNSI_TXPR_IDFY_NO_NIN
+            , EXPPN_TXPR_IDFY_NO_NIN
+            <!-- , GRDAST_NM -->		
+            , BL_PBLS_DT /** Date de délivrance du B/L(LTA) !== BL발행일자 ==! */
+            , UNDG_GD_CD /** Code de classe UNDG !== UNDG등급 ==! */
+            , CHER_YN /** affréteur d’espace/slot !== 용선여부 ==! */
+            , CHER_GVNM_NM /** nom de l’affréteur/slotteur !== 용선이름 ==! */
+            , CHER_ADDR_NM /** adresse affréteur/slotteur !== 용선주소 ==! */	
+		)
+   		SELECT
+			(SELECT K.BL_SRNO
+               FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL K
+              WHERE K.CAG_MGMT_NO = B.CAG_MGMT_NO)
+			,(SELECT K.CAG_DCLR_MDFY_RQST_MGRN
+               FROM TB_CARI_CAG_DCSH_MDFY K
+              WHERE K.MRN = B.MRN)
+			, CAG_MGMT_NO
+			, MSN
+			, HSN
+			, BL_NO
+			, HBL_NO
+			, CAG_TP_CD
+			, BL_TP_CD
+			, BL_PT_CD
+			, FRWR_CD
+			, LOAD_REGN_CD
+			, LDUN_REGN_CD
+			, IBOBZ_CD
+			, STVD_CD
+<!-- 			, TRNS_REGN_CD -->
+			, TRNH_REGN_CD
+			, CAG_CHRC_CD
+			, SEND_WAY
+			, PDLS_NM
+			, CMDT_KND_CD
+			, PCKG_GCNT
+			, ECNTR_WGHT
+			, TTWG
+			, NTWG
+			, CBM_VOL
+			, LIR_VOL
+			, HDCB_TP_CD
+			, CAS_NO
+			, UNDG_ID
+			, HS_CD
+			, SHMR_CN
+			, ADD_INFO_CN
+			, CNTR_GCNT
+			, VHCL_GCNT
+			, 0
+			, PRPM_DFPM_CACH_TP_CD
+			, CMDT_AMT_CURR_CD
+			, CMDT_AMT
+			, EXPPN_TXPR_IDFY_NO
+			, EXPPN_NM
+			, EXPPN_ADDR_NM
+			, EXPPN_TLPH_NO
+			, EXPPN_EML
+			, ABRD_FRWR_NM
+			, ABRD_FRWR_ADDR_NM
+			, ABRD_FRWR_TLPH_NO
+			, ABRD_FRWR_EML
+			, CNSI_TXPR_IDFY_NO
+			, CNSI_NM
+			, CNSI_ADDR_NM
+			, CNSI_TLPH_NO
+			, CNSI_EML
+			, ''
+			, NTPR_NM
+			, NTPR_ADDR_NM
+			, NTPR_TLPH_NO
+			, NTPR_EML
+			, BF_CAG_MGMT_NO
+			, BL_MDFY_TP_CD
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+			, CNSI_TXPR_IDFY_NO_NIN
+            , EXPPN_TXPR_IDFY_NO_NIN
+            <!-- , GRDAST_NM -->			
+            , BL_PBLS_DT /** Date de délivrance du B/L(LTA) !== BL발행일자 ==! */
+            , UNDG_GD_CD /** Code de classe UNDG !== UNDG등급 ==! */
+            , CHER_YN /** affréteur d’espace/slot !== 용선여부 ==! */
+            , CHER_GVNM_NM /** nom de l’affréteur/slotteur !== 용선이름 ==! */
+            , CHER_ADDR_NM /** adresse affréteur/slotteur !== 용선주소 ==! */
+		FROM TB_CARI_CAG_DCSH_BL B
+		WHERE B.CAG_MGMT_NO = #{divdCagMgmtNo}  
+    </insert>
+    
+    <insert id="insertEptCarCagDcshMdfyBlCntrFromBlDivd" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+		/** insertEptCarCagDcshMdfyBlCntrFromBlDivd */
+        INSERT INTO ALPASSEXT.TB_CARE_CAG_DCSH_MDFY_BL_CNTR ( 
+        	CAG_DCSH_MDFY_RQST_MGRN
+			, BL_SRNO
+			, CNTR_SRNO
+			, CNTR_NO
+			, CNTR_TP_CD
+			, PCKG_GCNT
+			, PCKG_UT_CD
+			, ECNTR_WGHT
+			, TTWG
+			, SEAL_NO1
+			, SEAL_NO2
+			, SEAL_NO3
+			, SEAL_CHPN1
+			, SEAL_CHPN2
+			, SEAL_CHPN3
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM  
+		)
+   		SELECT
+			(SELECT K.CAG_DCLR_MDFY_RQST_MGRN
+               FROM TB_CARI_CAG_DCSH_MDFY K
+              WHERE K.MRN = B.MRN)
+			,(SELECT K.BL_SRNO
+               FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL K
+              WHERE K.CAG_MGMT_NO = B.CAG_MGMT_NO)
+			, CNTR_SRNO
+			, CNTR_NO
+			, CNTR_TP_CD
+			, PCKG_GCNT
+			, PCKG_UT_CD
+			, ECNTR_WGHT
+			, TTWG
+			, SEAL_NO1
+			, SEAL_NO2
+			, SEAL_NO3
+			, SEAL_CHPN1
+			, SEAL_CHPN2
+			, SEAL_CHPN3
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+		FROM TB_CARI_CAG_DCSH_BL_CNTR B
+		WHERE B.CAG_MGMT_NO = #{divdCagMgmtNo}  
+    </insert>
+    
+    <insert id="insertEptCarCagDcshMdfyBlVhclFromBlDivd" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+		/** insertEptCarCagDcshMdfyBlVhclFromBlDivd */
+        INSERT INTO ALPASSEXT.TB_CARE_CAG_DCSH_MDFY_BL_VHCL ( 
+        	CAG_DCSH_MDFY_RQST_MGRN
+			, BL_SRNO
+			, VHCL_SRNO
+			, CHSS_NO
+			, VHCL_RGSR_NO
+			, VHCL_MNUR_CD
+			, VHCL_MDL_CD
+			, VHCL_KND_NM
+			, VHCL_MNFC_YY
+			, ENGN_CLND_GCNT
+			, VHCL_TOTL_WGHT
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+		)
+   		SELECT
+			(SELECT K.CAG_DCLR_MDFY_RQST_MGRN
+               FROM TB_CARI_CAG_DCSH_MDFY K
+              WHERE K.MRN = B.MRN)
+			,(SELECT K.BL_SRNO
+               FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL K
+              WHERE K.CAG_MGMT_NO = B.CAG_MGMT_NO)
+			, VHCL_SRNO
+			, CHSS_NO
+			, VHCL_RGSR_NO
+			, VHCL_MNUR_CD
+			, VHCL_MDL_CD
+			, VHCL_KND_NM
+			, VHCL_MNFC_YY
+			, ENGN_CLND_GCNT
+			, VHCL_TOTL_WGHT
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+		FROM TB_CARI_CAG_DCSH_BL_VHCL B
+		WHERE B.CAG_MGMT_NO = #{divdCagMgmtNo}  
+    </insert>
+    
+    <insert id="insertEptCarCagDcshMdfyBlTrlrFromBlDivd" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+		/** insertEptCarCagDcshMdfyBlTrlrFromBlDivd */
+        INSERT INTO ALPASSEXT.TB_CARE_CAG_DCSH_MDFY_BL_TRLR ( 
+        	CAG_DCSH_MDFY_RQST_MGRN
+			, BL_SRNO
+			, TRLR_SRNO
+			, VHCL_RGSR_NO
+			, CHSS_NO
+			, TRLR_STSZ
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+		)
+   		SELECT
+			(SELECT K.CAG_DCLR_MDFY_RQST_MGRN
+               FROM TB_CARI_CAG_DCSH_MDFY K
+              WHERE K.MRN = B.MRN)
+			,(SELECT K.BL_SRNO
+               FROM ALPASSEXT.TB_CARE_CAG_DCSH_BL K
+              WHERE K.CAG_MGMT_NO = B.CAG_MGMT_NO)
+			, TRLR_SRNO
+			, VHCL_RGSR_NO
+			, CHSS_NO
+			, TRLR_STSZ
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+		FROM TB_CARI_CAG_DCSH_BL_TRLR B
+		WHERE B.CAG_MGMT_NO = #{divdCagMgmtNo}  
+    </insert>
+</mapper>

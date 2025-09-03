@@ -1,0 +1,1335 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.clr.trm.afm.mapper.ClrAtdocMgmtMapper">
+
+  <!--
+  Consultation de la liste des documents joints !== 첨부문서 페이징 목록 조회 ==!
+  -->
+	<select id="selectAtdocPageList" parameterType="alpass.ipt.clr.trm.afm.vo.ClrAtdocVo" resultType="alpass.ipt.clr.trm.afm.vo.ClrAtdocVo">
+		/** selectAtdocList : 첨부문서 페이징 목록 조회 **/
+		<include refid="pagination.header" />
+		SELECT A.ATCH_DOC_CD
+         , B.ATCH_DOC_NM
+         , A.PBLS_ITT_CD
+         , A.PBLS_ITT_NM
+         , A.BFHN_SBMT_YN
+         , TO_CHAR(TO_DATE(A.APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APLY_STRT_DT
+         , TO_CHAR(TO_DATE(A.APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APLY_END_DT
+         , A.RMRK_CN
+		FROM   TB_CLRI_ATDOC A
+				 , TB_CLRI_ATDOC_LANG B
+		WHERE		A.ATCH_DOC_CD = B.ATCH_DOC_CD
+		AND			A.DEL_YN  = 'N'
+		AND			B.LANG_CD = #{langCd}
+    <if test="atchDocCd != null and atchDocCd != ''">
+    AND     A.ATCH_DOC_CD = #{atchDocCd}                          /** Code de document joint !== 첨부문서코드 ==! */
+    </if>    
+    <if test="atchDocNm != null and atchDocNm != ''">
+    AND     B.ATCH_DOC_NM = #{atchDocNm}                          /** Code de document joint !== 첨부문서코드 ==! */
+    </if>    
+		<include refid="pagination.footer" />
+	</select>
+
+  <!--
+  Consultation des documents joints !== 첨부문서 조회 ==!
+  -->
+	<select id="selectAtdoc" parameterType="alpass.ipt.clr.trm.afm.vo.ClrAtdocVo" resultType="alpass.ipt.clr.trm.afm.vo.ClrAtdocVo">
+		/** selectAtdoc : 첨부문서 목록 조회 **/
+		SELECT A.ATCH_DOC_CD
+         , B.ATCH_DOC_NM
+		FROM   TB_CLRI_ATDOC A
+				 , TB_CLRI_ATDOC_LANG B
+		WHERE	 A.ATCH_DOC_CD = B.ATCH_DOC_CD
+		AND		 A.DEL_YN  = 'N'
+		AND		 B.LANG_CD = #{langCd}
+    <if test="atchDocCd != null and atchDocCd != ''">
+    AND    A.ATCH_DOC_CD = #{atchDocCd}                          /** Code de document joint !== 첨부문서코드 ==! */
+    </if>    
+	</select>
+
+  
+  <!--
+  Consultation de la liste des documents joints !== 첨부문서 목록 조회 ==!
+  -->
+	<select id="selectAtdocList" parameterType="alpass.ipt.clr.trm.afm.vo.ClrAtdocVo" resultType="alpass.ipt.clr.trm.afm.vo.ClrAtdocVo">
+		/** selectAtdocList : 첨부문서 목록 조회 **/
+		SELECT A.ATCH_DOC_CD
+         , B.ATCH_DOC_NM
+         , A.PBLS_ITT_CD
+         , A.PBLS_ITT_NM
+         , A.BFHN_SBMT_YN
+         , TO_CHAR(TO_DATE(A.APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APLY_STRT_DT
+         , TO_CHAR(TO_DATE(A.APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APLY_END_DT
+         , A.RMRK_CN
+		FROM   TB_CLRI_ATDOC A
+				 , TB_CLRI_ATDOC_LANG B
+		WHERE		A.ATCH_DOC_CD = B.ATCH_DOC_CD
+		AND			A.DEL_YN  = 'N'
+		AND			B.LANG_CD = #{langCd}
+    <if test="atchDocCd != null and atchDocCd != ''">
+    AND     A.ATCH_DOC_CD = #{atchDocCd}                          /** Code de document joint !== 첨부문서코드 ==! */
+    </if>    
+    <if test="atchDocNm != null and atchDocNm != ''">
+    AND     B.ATCH_DOC_NM = #{atchDocNm}                          /** Code de document joint !== 첨부문서코드 ==! */
+    </if>    
+	</select>
+
+    <select id="selectAtdocLangList" parameterType="alpass.ipt.clr.trm.afm.vo.ClrAtdocVo" resultType="alpass.ipt.clr.com.vo.ComLangVo">
+		/** selectAtdocLangList */
+		SELECT B.ATCH_DOC_CD AS KEY1
+		     , A.CD_VDVAL AS LANG_CD
+		     , B.ATCH_DOC_NM AS LANG_CN
+		FROM   TB_COM_COMN_CD_D A, 
+		       TB_CLRI_ATDOC_LANG B
+		WHERE  A.COMN_CD = 'COM_0057'
+		  AND  B.DEL_YN(+) = 'N'
+      AND  B.ATCH_DOC_CD(+) = #{atchDocCd}
+      AND  A.CD_VDVAL  = B.LANG_CD(+)
+    ORDER BY TO_NUMBER(A.SORT_ORDR) ASC
+	</select>
+
+	<select id="selectPrevAtdocCnt" parameterType="alpass.ipt.clr.trm.afm.vo.ClrAtdocVo" resultType="Integer">
+		/** selectPrevAtdocCnt : 이미 등록된 첨부파일 아이디를 비교하여 카운트 반환 **/
+		SELECT
+				COUNT(*)
+		FROM 	TB_CLRI_ATDOC
+		WHERE	ATCH_DOC_CD = #{atchDocCd}
+	</select>
+
+	<insert id="insertAtdoc" parameterType="alpass.ipt.clr.trm.afm.vo.ClrAtdocVo">
+		/** insertAtdoc : 첨부문서 정보 저장 **/
+		INSERT INTO TB_CLRI_ATDOC (
+				  ATCH_DOC_CD
+				, PBLS_ITT_CD
+				, PBLS_ITT_NM
+				, BFHN_SBMT_YN
+				, APLY_STRT_DT
+				, APLY_END_DT
+        , RMRK_CN
+				, DEL_YN
+				, FRST_REGST_ID
+				, FRST_RGSR_DTTM
+				, LAST_CHPR_ID
+				, LAST_CHG_DTTM
+		) VALUES (
+				  #{atchDocCd}
+				, #{pblsIttCd}
+				, #{pblsIttNm}
+				, #{bfhnSbmtYn}
+				, TO_CHAR(TO_DATE(REPLACE(#{aplyStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+				, TO_CHAR(TO_DATE(REPLACE(#{aplyEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+				, #{rmrkCn}
+				, 'N'
+				, #{frstRegstId}
+				, SYSTIMESTAMP
+				, #{lastChprId}
+				, SYSTIMESTAMP
+		)
+	</insert>
+
+	<update id="updateAtdoc" parameterType="alpass.ipt.clr.trm.afm.vo.ClrAtdocVo">
+		/** updateAtdoc : 첨부문서 정보 저장 **/
+		UPDATE	TB_CLRI_ATDOC SET
+        <trim prefixOverrides="," >
+				  PBLS_ITT_CD = #{pblsIttCd}
+				, PBLS_ITT_NM = #{pblsIttNm}
+				, BFHN_SBMT_YN = #{bfhnSbmtYn}
+				<!-- , APLY_STRT_DT = #{aplyStrtDt} -->
+        , APLY_END_DT =  TO_CHAR(TO_DATE(REPLACE(#{aplyEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+				, RMRK_CN = #{rmrkCn}
+				, LAST_CHPR_ID = #{lastChprId}
+				, LAST_CHG_DTTM = SYSTIMESTAMP
+        </trim>
+		WHERE	DEL_YN = 'N'
+		AND		ATCH_DOC_CD = #{atchDocCd}
+	</update>
+	
+	<update id="deleteAtdoc" parameterType="alpass.ipt.clr.trm.afm.vo.ClrAtdocVo">
+		/** deleteAtdoc : 첨부문서 정보 삭제 **/
+		UPDATE	TB_CLRI_ATDOC
+		SET		DEL_YN = 'Y'
+		WHERE	ATCH_DOC_CD = #{atchDocCd}
+		AND		DEL_YN = 'N'
+	</update>
+	
+	<insert id="insertUpdateAtdocLang" parameterType="alpass.ipt.clr.com.vo.ComLangVo">
+        /** insertUpdateAtdocLang : 첨부문서명 Locale 정보 저장 **/
+        WITH UPSERT AS(
+        UPDATE TB_CLRI_ATDOC_LANG 
+        SET    DEL_YN       = 'N'
+			 , ATCH_DOC_NM = #{langCn}
+			 , LAST_CHPR_ID = #{lastChprId}
+			 , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE  ATCH_DOC_CD = #{key1} 
+        AND    LANG_CD = #{langCd}
+        RETURNING *
+        )
+        INSERT INTO TB_CLRI_ATDOC_LANG
+	    (
+			   ATCH_DOC_CD
+			 , LANG_CD
+			 , ATCH_DOC_NM
+			 , DEL_YN
+			 , FRST_REGST_ID
+			 , FRST_RGSR_DTTM
+			 , LAST_CHPR_ID
+			 , LAST_CHG_DTTM
+		)
+		SELECT
+			   #{key1}
+			 , #{langCd}
+			 , #{langCn}
+			 , 'N'
+			 , #{frstRegstId}
+			 , SYSTIMESTAMP
+			 , #{lastChprId}
+			 , SYSTIMESTAMP
+		WHERE  NOT EXISTS(SELECT * FROM UPSERT)
+    </insert>
+    
+    <update id="deleteAtdocLang" parameterType="alpass.ipt.clr.trm.afm.vo.ClrAtdocVo">
+    	/** deleteAtdocLang : 첨부문서 Locale 정보 삭제 */
+    	UPDATE	TB_CLRI_ATDOC_LANG
+    	SET		DEL_YN = 'Y'
+    	WHERE	ATCH_DOC_CD = #{atchDocCd}
+    	AND		DEL_YN = 'N'
+    </update>
+
+
+    <!--
+    Consultation de la liste de la gestion des documents joints de code SH !== HS첨부문서관리 목록 조회 ==!
+    -->
+    <select id="selectHsAtdocList" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo" resultType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo">
+        /* selectHsAtdocList */
+        <include refid="pagination.header" />
+            SELECT
+                  AA.HS_ATCH_DOC_MGMT_NO        /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+                , AA.HS_CD                      /** Code SH !== HS코드 ==! */
+                , TO_CHAR(TO_DATE(BB.APLY_STRT_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS APLY_STRT_DT
+                , TO_CHAR(TO_DATE(BB.APLY_END_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS APLY_END_DT
+                , BB.ATCH_DOC_CD
+                , DD.ATCH_DOC_NM
+                , CC.DCLR_PT_CD
+                , ZZ.PBLS_ITT_NM
+                , BB.HS_EXCP_MTR_CD
+            FROM  TB_CLRI_HS_ATDOC AA
+                , TB_CLRI_HS_ATDOC_D BB
+                , (SELECT  HS_ATCH_DOC_MGMT_NO
+                         , LISTAGG(DCLR_PT_CD, ',') WITHIN GROUP (ORDER BY DCLR_PT_CD) AS DCLR_PT_CD
+                     FROM  TB_CLRI_HS_ATDOC_DCLR_PT
+                    WHERE  DEL_YN = 'N'
+                      <!-- AND  USE_YN = 'Y' -->
+                    GROUP BY HS_ATCH_DOC_MGMT_NO) CC
+                , TB_CLRI_ATDOC_LANG DD
+                , TB_CLRI_ATDOC ZZ
+           WHERE  AA.HS_ATCH_DOC_MGMT_NO = BB.HS_ATCH_DOC_MGMT_NO       /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+             AND  AA.HS_ATCH_DOC_MGMT_NO = CC.HS_ATCH_DOC_MGMT_NO       /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+             <if test="atchDocCd != null and atchDocCd != ''">
+             AND  BB.ATCH_DOC_CD = #{atchDocCd}                          /** Code de document joint !== 첨부문서코드 ==! */
+             </if>
+             <if test="atchDocNm != null and atchDocNm != ''">
+             <![CDATA[
+              AND  DD.ATCH_DOC_NM LIKE '%' || #{atchDocNm} || '%'       /** Code de document joint !== 첨부문서코드 ==! */
+             ]]>
+             </if>
+             <if test="hsCd != null and hsCd !=''">
+             <![CDATA[
+             AND  AA.HS_CD LIKE RPAD(#{hsCd}, 10, '_')             /** Code SH du champ de départ !== HS코드 ==! */
+             ]]>
+             </if>
+             <if test="hsAplyStrtDt != null and hsAplyStrtDt != '' ">
+                <if test="hsAplyEndDt != null and hsAplyEndDt != '' ">
+                    <![CDATA[ AND  TO_CHAR(TO_DATE(#{hsAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')  <= BB.APLY_STRT_DT AND TO_CHAR(TO_DATE(#{hsAplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') >= BB.APLY_END_DT  ]]>
+                </if>
+             </if>
+             <!-- AND  BB.USE_YN = 'Y'                                       /** Utilisé ON !== 사용여부 ==! */ -->
+             AND  AA.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+             AND  BB.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+             AND  BB.ATCH_DOC_CD = DD.ATCH_DOC_CD(+)
+             AND  BB.ATCH_DOC_CD = ZZ.ATCH_DOC_CD
+             AND  DD.LANG_CD = #{langCd}
+        <include refid="pagination.footer" />
+    </select>
+    
+    
+    <!--
+    Consultation de la gestion des documents joints de code SH téléchargés sous forme de fichier excel !== HS첨부문서관리 엑셀다운로드 조회 ==!
+    -->
+    <select id="selectHsAtdocExcelList" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo" resultType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo">
+        /* selectHsAtdocExcelList */
+            SELECT
+                  ROWNUM AS RNUM
+                , AA.HS_ATCH_DOC_MGMT_NO        /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+                , AA.HS_CD                      /** Code SH !== HS코드 ==! */
+                , (SELECT HS_DESC FROM TB_CLRI_HS_CD CC WHERE HS_CD = AA.HS_CD AND TO_CHAR(CURRENT_DATE,'YYYYMMDD') BETWEEN HS_APLY_STRT_DT AND HS_APLY_END_DT AND CC.DEL_YN = 'N' ) AS HS_CD_DESC
+                , TO_CHAR(TO_DATE(BB.APLY_STRT_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS APLY_STRT_DT
+                , TO_CHAR(TO_DATE(BB.APLY_END_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS APLY_END_DT
+                , BB.ATCH_DOC_CD
+                , DD.ATCH_DOC_NM
+                , CC.DCLR_PT_CD
+                , ZZ.PBLS_ITT_NM
+                , BB.HS_EXCP_MTR_CD
+            FROM  TB_CLRI_HS_ATDOC AA
+                , TB_CLRI_HS_ATDOC_D BB
+                , (SELECT  HS_ATCH_DOC_MGMT_NO
+                         , LISTAGG(DCLR_PT_CD, ',') WITHIN GROUP (ORDER BY DCLR_PT_CD) AS DCLR_PT_CD
+                     FROM  TB_CLRI_HS_ATDOC_DCLR_PT
+                    WHERE  DEL_YN = 'N'
+                      <!-- AND  USE_YN = 'Y' -->
+                    GROUP BY HS_ATCH_DOC_MGMT_NO) CC
+                , TB_CLRI_ATDOC_LANG DD
+                , TB_CLRI_ATDOC ZZ
+           WHERE  AA.HS_ATCH_DOC_MGMT_NO = BB.HS_ATCH_DOC_MGMT_NO       /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+             AND  AA.HS_ATCH_DOC_MGMT_NO = CC.HS_ATCH_DOC_MGMT_NO       /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+             <if test="atchDocCd != null and atchDocCd != ''">
+             AND  BB.ATCH_DOC_CD = #{atchDocCd}                          /** Code de document joint !== 첨부문서코드 ==! */
+             </if>
+             <if test="atchDocNm != null and atchDocNm != ''">
+             <![CDATA[
+             AND  DD.ATCH_DOC_NM LIKE '%' || #{atchDocNm} || '%'       /** Code de document joint !== 첨부문서코드 ==! */
+             ]]>
+             </if>
+             <if test="hsCd != null and hsCd !=''">
+             <![CDATA[
+             AND  AA.HS_CD LIKE RPAD(#{hsCd}, 10, '_')                    /** Code SH !== HS코드 ==! */
+             ]]>
+             </if>
+             <!-- AND  BB.USE_YN = 'Y'                                       /** Utilisé ON !== 사용여부 ==! */ -->
+             AND  AA.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+             AND  BB.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+             AND  BB.ATCH_DOC_CD = DD.ATCH_DOC_CD(+)
+             AND  BB.ATCH_DOC_CD = ZZ.ATCH_DOC_CD
+             AND  DD.LANG_CD = #{langCd}
+    </select>
+    
+    
+    <!--
+    Consultation de la liste détaillée des documents joints de la sous position tarifaire !== HS첨부문서관리 상세목록 조회 ==!
+    -->
+    <select id="selectHsAtdocDetailList" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo" resultType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo">
+        /* selectHsAtdocDetailList */
+            SELECT
+                  ROW_NUMBER() OVER(ORDER BY BB.ATCH_DOC_CD) AS RNUM
+                , BB.DTL_SRNO
+                , AA.HS_ATCH_DOC_MGMT_NO                                 /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+                , AA.HS_CD                                               /** Code SH !== HS코드 ==! */
+                , TO_CHAR(TO_DATE(BB.APLY_STRT_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS APLY_STRT_DT
+                , TO_CHAR(TO_DATE(BB.APLY_END_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS APLY_END_DT
+                , (SELECT HS_DESC FROM TB_CLRI_HS_CD CC WHERE HS_CD = AA.HS_CD AND TO_CHAR(CURRENT_DATE,'YYYYMMDD') BETWEEN HS_APLY_STRT_DT AND HS_APLY_END_DT AND CC.DEL_YN = 'N' ) AS HS_CD_DESC
+                , BB.ATCH_DOC_CD
+                , (SELECT ATCH_DOC_NM FROM TB_CLRI_ATDOC_LANG WHERE ATCH_DOC_CD = BB.ATCH_DOC_CD and LANG_CD = #{langCd}) AS ATCH_DOC_NM
+                , BB.WKNG_PT_CD
+                , BB.USE_YN
+                , CC.DCLR_PT_CD
+                , BB.HS_EXCP_MTR_CD
+                , 'Y' FIX_YN
+                , CASE WHEN TO_CHAR(CURRENT_DATE,'YYYYMMDD') > BB.APLY_STRT_DT THEN 'Y' ELSE 'N' END MODIFY_YN
+                , CASE WHEN TO_CHAR(CURRENT_DATE,'YYYYMMDD') > BB.APLY_END_DT THEN 'Y' ELSE 'N' END MODIFY_END_DT_YN
+            FROM  TB_CLRI_HS_ATDOC AA
+                , TB_CLRI_HS_ATDOC_D BB
+                , (SELECT  HS_ATCH_DOC_MGMT_NO
+                         , LISTAGG(DCLR_PT_CD, ',') WITHIN GROUP (ORDER BY DCLR_PT_CD) AS DCLR_PT_CD
+                     FROM  TB_CLRI_HS_ATDOC_DCLR_PT
+                    WHERE  DEL_YN = 'N'
+                    GROUP BY HS_ATCH_DOC_MGMT_NO) CC
+                , TB_CLRI_ATDOC ZZ
+           WHERE  AA.HS_ATCH_DOC_MGMT_NO = BB.HS_ATCH_DOC_MGMT_NO       /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+             AND  AA.HS_ATCH_DOC_MGMT_NO = CC.HS_ATCH_DOC_MGMT_NO       /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+             AND  BB.HS_ATCH_DOC_MGMT_NO = #{hsAtchDocMgmtNo}           /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+             AND  AA.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+             AND  BB.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+             AND  BB.ATCH_DOC_CD = ZZ.ATCH_DOC_CD
+    </select>
+    
+    <!--
+    Vérification de la redondance de la sous position tarifaire pour la gestion des documents joints de la sous position tarifaire !== HS첨부문서관리 HS코드 중복 체크 ==!
+    -->
+    <select id="selectHsAtdocHsDupCheck" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo" resultType="int">
+        /* selectHsAtdocHsDupCheck */
+            SELECT
+                  COUNT(*)
+            FROM  TB_CLRI_HS_ATDOC AA
+           WHERE  HS_CD = #{hsCd}
+            <if test="updateTpCd == 1">
+            <![CDATA[
+            AND  AA.HS_ATCH_DOC_MGMT_NO <> #{hsAtchDocMgmtNo}
+            ]]>
+            </if>
+            AND  AA.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+    </select>
+
+  <!--
+    Consultation de l'information de sous position tarifaire !== HS첨부문서관리 HS코드 정보 조회 ==!
+    -->
+  <select id="selectHsAtdocHsDupInfo" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo" resultType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo">
+    /* selectHsAtdocHsDupInfo */
+    SELECT   AA.HS_ATCH_DOC_MGMT_NO
+           , AA.HS_CD
+    FROM  TB_CLRI_HS_ATDOC AA,(SELECT HS_ATCH_DOC_MGMT_NO,LISTAGG(DCLR_PT_CD, ',') WITHIN GROUP (ORDER BY DCLR_PT_CD) DCLR_PT_CDS FROM TB_CLRI_HS_ATDOC_DCLR_PT WHERE DEL_YN ='N'  GROUP BY HS_ATCH_DOC_MGMT_NO) BB
+    WHERE AA.HS_CD = #{hsCd}
+      AND AA.HS_ATCH_DOC_MGMT_NO =BB.HS_ATCH_DOC_MGMT_NO
+      AND AA.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+      <if test ="dclrPtCds != null and dclrPtCds != ''">
+          AND  BB.DCLR_PT_CDS = #{dclrPtCds}
+      </if>
+      <if test='updateTpCd.equals("1")'>
+       <![CDATA[
+         AND  A.HS_ATCH_DOC_MGMT_NO <> #{hsAtchDocMgmtNo}
+       ]]>
+      </if>
+      ORDER BY  HS_CD ASC LIMIT 1
+  </select>
+
+  <!--
+    Vérification de la redondance de la durée de validité de la sous position tarifaire pour la gestion des documents joints de la sous position tarifaire !== HS첨부문서관리 HS코드 기간 중복 체크 ==!
+    -->
+  <select id="selectHsAtdocHsDupDtCheck" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo" resultType="int">
+    /* selectHsAtdocHsDupDtCheck */
+    SELECT
+    COUNT(*)
+    FROM  TB_CLRI_HS_ATDOC AA,(SELECT HS_ATCH_DOC_MGMT_NO,LISTAGG(DCLR_PT_CD, ',') WITHIN GROUP (ORDER BY DCLR_PT_CD) DCLR_PT_CDS FROM TB_CLRI_HS_ATDOC_DCLR_PT WHERE DEL_YN ='N'  GROUP BY HS_ATCH_DOC_MGMT_NO) BB
+    WHERE  HS_CD = #{hsCd}
+    AND  AA.HS_ATCH_DOC_MGMT_NO =BB.HS_ATCH_DOC_MGMT_NO
+    AND  AA.DEL_YN = 'N'   /** Suppression ON !== 삭제여부 ==! */
+    <if test ="dclrPtCds != null and dclrPtCds != ''">
+        AND  BB.DCLR_PT_CDS = #{dclrPtCds}
+    </if>
+  </select>
+
+    <select id="selectHsAtdocHsDupDtDocMgmtNo" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo" resultType="string">
+        /* selectHsAtdocHsDupDtCheck */
+        SELECT
+         AA.HS_ATCH_DOC_MGMT_NO
+        FROM  TB_CLRI_HS_ATDOC AA,(SELECT HS_ATCH_DOC_MGMT_NO,LISTAGG(DCLR_PT_CD, ',') WITHIN GROUP (ORDER BY DCLR_PT_CD) DCLR_PT_CDS FROM TB_CLRI_HS_ATDOC_DCLR_PT WHERE DEL_YN ='N'  GROUP BY HS_ATCH_DOC_MGMT_NO) BB
+        WHERE  HS_CD = #{hsCd}
+        AND  AA.HS_ATCH_DOC_MGMT_NO =BB.HS_ATCH_DOC_MGMT_NO
+        AND  AA.DEL_YN = 'N'   /** Suppression ON !== 삭제여부 ==! */
+        <if test ="dclrPtCds != null and dclrPtCds != ''">
+            AND  BB.DCLR_PT_CDS = #{dclrPtCds}
+        </if>
+        ORDER BY AA.HS_ATCH_DOC_MGMT_NO DESC LIMIT 1
+    </select>
+
+    <select id="selectHsAtdocHsDupDtExcelCheck" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo" resultType="int">
+        /* selectHsAtdocHsDupDtCheck */
+        SELECT
+        COUNT(*)
+        FROM  TB_CLRI_HS_ATDOC AA, TB_CLRI_HS_ATDOC_D BB
+        WHERE  HS_CD = #{hsCd}
+        AND  AA.HS_ATCH_DOC_MGMT_NO =BB.HS_ATCH_DOC_MGMT_NO
+        AND  AA.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+        AND  BB.DEL_YN = 'N'
+        AND  BB.ATCH_DOC_CD = #{atchDocCd}
+        <if test ="hsExcpMtrCd != null and hsExcpMtrCd != ''">
+        AND  BB.HS_EXCP_MTR_CD = #{hsExcpMtrCd}
+        </if>
+        AND  EXISTS (
+            SELECT 1 FROM TB_CLRI_HS_ATDOC_DCLR_PT CC WHERE AA.HS_ATCH_DOC_MGMT_NO = CC.HS_ATCH_DOC_MGMT_NO
+            AND CC.DCLR_PT_CD = #{dclrPtCd}  AND CC.DEL_YN = 'N'
+        )
+        AND ( TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN   BB.APLY_STRT_DT AND  BB.APLY_END_DT
+        OR TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN   BB.APLY_STRT_DT AND  BB.APLY_END_DT )
+    </select>
+
+	<!--
+    Vérification de la redondance de la sous position tarifaire pour la gestion des documents joints de la sous position tarifaire !== HS첨부문서관리 HS코드 중복 체크 ==!
+    -->
+    <select id="selectHsAtdocMgmtNo" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo" resultType="BigDecimal">
+    	/* selectHsAtdocMgmtNo */
+        SELECT   AA.HS_ATCH_DOC_MGMT_NO
+        FROM  TB_CLRI_HS_ATDOC AA,(SELECT HS_ATCH_DOC_MGMT_NO,LISTAGG(DCLR_PT_CD, ',') WITHIN GROUP (ORDER BY DCLR_PT_CD) DCLR_PT_CDS FROM TB_CLRI_HS_ATDOC_DCLR_PT WHERE DEL_YN ='N'  GROUP BY HS_ATCH_DOC_MGMT_NO) BB
+        WHERE AA.HS_CD = #{hsCd}
+        AND AA.HS_ATCH_DOC_MGMT_NO =BB.HS_ATCH_DOC_MGMT_NO
+        AND AA.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+        <if test ="dclrPtCds != null and dclrPtCds != ''">
+            AND  BB.DCLR_PT_CDS = #{dclrPtCds}
+        </if>
+        <if test="updateTpCd == 1">
+            <![CDATA[
+         AND  A.HS_ATCH_DOC_MGMT_NO <> #{hsAtchDocMgmtNo}
+       ]]>
+        </if>
+        ORDER BY  HS_ATCH_DOC_MGMT_NO ASC LIMIT 1
+    </select>
+    
+    <!--
+    Enregistrement des documents joints pour la sous position tarifaire !== HS첨부문서관리 등록 ==!
+    -->
+    <insert id="insertHsAtdoc" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo">
+        /* insertHsAtdoc */
+          INSERT INTO TB_CLRI_HS_ATDOC
+                (
+                  HS_ATCH_DOC_MGMT_NO          /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+                , HS_CD                        /** Code SH !== HS코드 ==! */
+                , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+                , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+                )
+                VALUES
+                (
+                  #{hsAtchDocMgmtNo}           /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+                , #{hsCd}                      /** Code SH !== HS코드 ==! */
+                , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+                , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+                )
+    </insert>
+    
+    
+    <!--
+    Enregistrement des documents joints pour la sous position tarifaire !== HS첨부문서관리 등록 ==!
+    -->
+    <insert id="insertHsAtdocD" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo">
+        /* insertHsAtdocD */
+          INSERT INTO TB_CLRI_HS_ATDOC_D
+                (
+                  HS_ATCH_DOC_MGMT_NO          /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+                , DTL_SRNO
+                , ATCH_DOC_CD                  /** Code de document joint !== 첨부문서코드 ==! */
+                , WKNG_PT_CD                   /** Type d'opération !== 작업유형 ==! */
+                , HS_EXCP_MTR_CD
+                , APLY_STRT_DT
+                , APLY_END_DT
+                , USE_YN                       /** Utilisé ON !== 사용여부 ==! */
+                , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+                , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+                )
+                VALUES
+                (
+                  #{hsAtchDocMgmtNo}           /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+                , (SELECT NVL(MAX(DTL_SRNO),0) +1 FROM TB_CLRI_HS_ATDOC_D WHERE HS_ATCH_DOC_MGMT_NO = #{hsAtchDocMgmtNo} AND ATCH_DOC_CD = #{atchDocCd} )
+                , #{atchDocCd}                 /** Code de document joint !== 첨부문서코드 ==! */
+                , #{wkngPtCd}                  /** Type d'opération !== 작업유형 ==! */
+                , #{hsExcpMtrCd}
+                , TO_CHAR(TO_DATE(REPLACE(#{aplyStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD') /** Date de début d'application !== 적용시작일자 ==! */
+                , TO_CHAR(TO_DATE(REPLACE(#{aplyEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD') /** Date de fin d'application !== 적용종료일자 ==! */
+                , #{useYn}                     /** Utilisé ON !== 사용여부 ==! */
+                , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+                , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+                )
+    </insert>
+    
+    
+    <!--
+    Enregistrement du type de déclaration pour les documents joints de la sous position tarifaire !== HS첨부문서관리 신고유형 등록 ==!
+    -->
+    <insert id="insertHsAtdocDclrPt" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo">
+        /* insertHsAtdocDclrPt */
+          INSERT INTO TB_CLRI_HS_ATDOC_DCLR_PT
+                (
+                  HS_ATCH_DOC_MGMT_NO          /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+                , DCLR_PT_CD                   /** Code de type de déclaration !== 신고유형코드 ==! */
+                , USE_YN                       /** Utilisé ON !== 사용여부 ==! */
+                , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+                , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+                )
+                VALUES
+                (
+                  #{hsAtchDocMgmtNo}           /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+                , #{dclrPtCd}                  /** Code de type de déclaration !== 신고유형코드 ==! */
+                , 'Y'                     /** Utilisé ON !== 사용여부 ==! */
+                , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+                , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+                )
+    </insert>
+
+  <!--
+    Gestion des documents joints requis par sous position tarifaire merge !== HS별필요첨부문서관리 첨부문서 merge ==!
+    -->
+  <insert id="updateHsAtdocAtdocDAplyEndDt" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo">
+    /* updateHsAtdocAtdocDAplyEndDt */
+    UPDATE TB_CLRI_HS_ATDOC_D
+    SET APLY_END_DT = TO_CHAR(TO_DATE(REPLACE(#{aplyEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD') /** Date de fin d'application !== 적용종료일자 ==! */
+      , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+      , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+    WHERE HS_ATCH_DOC_MGMT_NO = #{hsAtchDocMgmtNo}    /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+  </insert>
+    <insert id="insertSelectHsAtdocAtdocD" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo">
+        INSERT INTO TB_CLRI_HS_ATDOC_D
+        (
+          HS_ATCH_DOC_MGMT_NO          /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+        , ATCH_DOC_CD                  /** Code de document joint !== 첨부문서코드 ==! */
+        , USE_YN                       /** Utilisé ON !== 사용여부 ==! */
+        , WKNG_PT_CD                   /** Type d'opération !== 작업유형 ==! */
+        , DTL_SRNO
+        , HS_EXCP_MTR_CD
+        , APLY_STRT_DT
+        , APLY_END_DT
+        , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+        , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+        , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+        , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+        , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        )
+        SELECT
+              #{befHsAtchDocMgmtNo} AS HS_ATCH_DOC_MGMT_NO          /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+             , ATCH_DOC_CD                  /** Code de document joint !== 첨부문서코드 ==! */
+             , USE_YN                       /** Utilisé ON !== 사용여부 ==! */
+             , WKNG_PT_CD                   /** Type d'opération !== 작업유형 ==! */
+             , DTL_SRNO
+             , HS_EXCP_MTR_CD
+             , TO_CHAR(TO_DATE(REPLACE(#{aplyStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD') APLY_STRT_DT /** Date de début d'application !== 적용시작일자 ==! */
+             , TO_CHAR(TO_DATE(REPLACE(#{aplyEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD') APLY_END_DT/** Date de fin d'application !== 적용종료일자 ==! */
+             , 'N' DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+             , #{frstRegstId} FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+             , SYSTIMESTAMP FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+             , #{lastChprId} LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+             , SYSTIMESTAMP LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+
+         FROM TB_CLRI_HS_ATDOC_D
+        WHERE DEL_YN ='N'
+        AND HS_ATCH_DOC_MGMT_NO =#{befHsAtchDocMgmtNo}
+
+    </insert>
+
+    <!--
+    Gestion des documents joints requis par sous position tarifaire merge !== HS별필요첨부문서관리 첨부문서 merge ==!
+    -->
+    <insert id="mergeHsAtdocAtdocD" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo">
+        /* mergeHsAtdocAtdocD */
+        WITH UPSERT AS(
+        UPDATE TB_CLRI_HS_ATDOC_D 
+        SET       USE_YN = #{useYn}                           /** Utilisé ON !== 사용여부 ==! */
+                , WKNG_PT_CD = CASE WHEN TO_CHAR(SYSDATE,'YYYYMMDD') > APLY_STRT_DT THEN  #{wkngPtCd} ELSE WKNG_PT_CD END              /** Type d'opération !== 작업유형 ==! */
+                , DEL_YN = 'N'                                      /** Suppression ON !== 삭제여부 ==! */
+                , APLY_END_DT = TO_CHAR(TO_DATE(REPLACE(#{aplyEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+                , HS_EXCP_MTR_CD = CASE WHEN TO_CHAR(SYSDATE,'YYYYMMDD') > APLY_STRT_DT THEN #{hsExcpMtrCd} ELSE HS_EXCP_MTR_CD END
+                , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE     HS_ATCH_DOC_MGMT_NO = #{hsAtchDocMgmtNo}    /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+        AND       ATCH_DOC_CD = #{atchDocCd}                  /** Code de document joint !== 첨부문서코드 ==! */
+        AND       APLY_STRT_DT = TO_CHAR(TO_DATE(REPLACE(#{aplyStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+        AND       DTL_SRNO =NVL(#{dtlSrno},(SELECT DTL_SRNO FROM TB_CLRI_HS_ATDOC_D WHERE HS_ATCH_DOC_MGMT_NO = #{hsAtchDocMgmtNo} AND ATCH_DOC_CD = #{atchDocCd} AND APLY_STRT_DT = TO_CHAR(TO_DATE(REPLACE(#{aplyStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD') AND NVL(HS_EXCP_MTR_CD,'') = NVL(#{hsExcpMtrCd},'')))
+        RETURNING *
+        )
+        INSERT INTO TB_CLRI_HS_ATDOC_D
+                (
+                  HS_ATCH_DOC_MGMT_NO          /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+                , ATCH_DOC_CD                  /** Code de document joint !== 첨부문서코드 ==! */
+                , USE_YN                       /** Utilisé ON !== 사용여부 ==! */
+                , WKNG_PT_CD                   /** Type d'opération !== 작업유형 ==! */
+                , DTL_SRNO
+                , HS_EXCP_MTR_CD
+                , APLY_STRT_DT
+                , APLY_END_DT
+                , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+                , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+                )
+        SELECT
+                  #{hsAtchDocMgmtNo}           /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+                , #{atchDocCd}                 /** Code de document joint !== 첨부문서코드 ==! */
+                , #{useYn}                     /** Utilisé ON !== 사용여부 ==! */
+                , #{wkngPtCd}                  /** Type d'opération !== 작업유형 ==! */
+                , (SELECT NVL(MAX(DTL_SRNO),0) +1 FROM TB_CLRI_HS_ATDOC_D WHERE HS_ATCH_DOC_MGMT_NO = #{hsAtchDocMgmtNo} AND ATCH_DOC_CD = #{atchDocCd} )
+                , #{hsExcpMtrCd}
+                , TO_CHAR(TO_DATE(REPLACE(#{aplyStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD') APLY_STRT_DT /** Date de début d'application !== 적용시작일자 ==! */
+                , TO_CHAR(TO_DATE(REPLACE(#{aplyEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD') APLY_END_DT/** Date de fin d'application !== 적용종료일자 ==! */
+                , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+                , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  NOT EXISTS(SELECT * FROM UPSERT)
+    </insert>
+
+    <insert id="insertSelectHsAtdocAtdocDclrPt" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo">
+        INSERT INTO TB_CLRI_HS_ATDOC_DCLR_PT(
+              HS_ATCH_DOC_MGMT_NO          /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+            , DCLR_PT_CD                   /** Code de type de déclaration !== 신고유형코드 ==! */
+            , USE_YN                       /** Utilisé ON !== 사용여부 ==! */
+            , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        )
+        SELECT
+             #{hsAtchDocMgmtNo} HS_ATCH_DOC_MGMT_NO          /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+             , DCLR_PT_CD                   /** Code de type de déclaration !== 신고유형코드 ==! */
+             , USE_YN                       /** Utilisé ON !== 사용여부 ==! */
+             , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+             , #{frstRegstId} FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+             , SYSTIMESTAMP FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+             , #{lastChprId} LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+             , SYSTIMESTAMP LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        FROM TB_CLRI_HS_ATDOC_DCLR_PT
+        WHERE HS_ATCH_DOC_MGMT_NO = #{befHsAtchDocMgmtNo}
+        AND DEL_YN ='N'
+    </insert>
+
+
+    <!--
+    Enregistrement et modification du type de déclaration pour les documents joints de la sous position tarifaire !== HS별필요첨부문서관리 첨부문서신고유형 등록 및 수정 ==!
+    -->
+    <insert id="mergeHsAtdocAtdocDclrPt" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo">
+        /* mergeHsAtdocAtdocDclrPt */
+        WITH UPSERT AS(
+        UPDATE TB_CLRI_HS_ATDOC_DCLR_PT 
+        SET       USE_YN = 'Y'                           /** Utilisé ON !== 사용여부 ==! */
+                , DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+                , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE     HS_ATCH_DOC_MGMT_NO = #{hsAtchDocMgmtNo}    /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+        AND       DCLR_PT_CD = #{dclrPtCd}                    /** Code de type de déclaration !== 신고유형코드 ==! */
+        RETURNING *
+        )
+        INSERT INTO TB_CLRI_HS_ATDOC_DCLR_PT
+                (
+                  HS_ATCH_DOC_MGMT_NO          /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+                , DCLR_PT_CD                   /** Code de type de déclaration !== 신고유형코드 ==! */
+                , USE_YN                       /** Utilisé ON !== 사용여부 ==! */
+                , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+                , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+                )
+        SELECT
+                  #{hsAtchDocMgmtNo}           /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+                , #{dclrPtCd}                  /** Code de type de déclaration !== 신고유형코드 ==! */
+                , 'Y'            /** Utilisé ON !== 사용여부 ==! */
+                , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+                , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  NOT EXISTS(SELECT * FROM UPSERT)
+    </insert>
+
+
+    <!--
+    Modification des sous positions tarifaires de début et de fin pour la gestion des documents joints pour la sous position tarifaire !== HS첨부문서관리 시작,종료 세번 수정 ==!
+    -->
+    <update id="updateHsAtdoc" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo">
+        /* updateHsAtdoc */
+        UPDATE  TB_CLRI_HS_ATDOC SET 
+        <trim prefixOverrides="," >
+                  HS_CD = #{hsCd}                             /** Code SH !== HS코드 ==! */
+                , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        </trim>
+           WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+             AND  HS_ATCH_DOC_MGMT_NO = #{hsAtchDocMgmtNo}    /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+    </update>
+    
+    
+    <!--
+    Suppression des donnnées précédentes des documents joints pour la sous position tarifaire !== HS첨부문서관리 첨부문서 이전데이터 삭제 ==!
+    -->
+    <update id="updateHsAtdocAtdocDBefore" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo">
+        /* updateHsAtdocAtdocDBefore */
+        UPDATE  TB_CLRI_HS_ATDOC_D SET 
+        <trim prefixOverrides="," >
+        		  USE_YN = 'N'                                /** Utilisé ON !== 사용여부 ==! */
+                , DEL_YN = 'Y'                                /** Suppression ON !== 삭제여부 ==! */
+                , APLY_END_DT = TO_CHAR(TO_DATE(REPLACE(#{aplyEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD') /** Date de fin d'application !== 적용종료일자 ==! */
+                , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        </trim>
+           WHERE  USE_YN = 'Y'                                /** Utilisé ON !== 사용여부 ==! */
+             AND  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+             AND  HS_ATCH_DOC_MGMT_NO = #{hsAtchDocMgmtNo}    /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+    </update>
+    
+    
+    <!--
+    Suppression des données précédentes du type de déclaration des documents joints de la sous position tarifaire !== HS첨부문서관리 첨부문서신고유형 이전데이터 삭제 ==!
+    -->
+    <update id="updateHsAtdocAtdocDclrPtBefore" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo">
+        /* updateHsAtdocAtdocDclrPtBefore */
+        UPDATE  TB_CLRI_HS_ATDOC_DCLR_PT SET 
+        <trim prefixOverrides="," >
+        		  USE_YN = 'N'                                /** Utilisé ON !== 사용여부 ==! */
+                , DEL_YN = 'Y'                                /** Suppression ON !== 삭제여부 ==! */
+                , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        </trim>
+           WHERE  USE_YN = 'Y'                                /** Utilisé ON !== 사용여부 ==! */
+             AND  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+             AND  HS_ATCH_DOC_MGMT_NO = #{hsAtchDocMgmtNo}    /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+    </update>
+    
+    
+    <!--
+    Vérification du numéro de gestion des documents joints pour la sous position tarifaire !== HS첨부문서관리 HS첨부문서관리번호 체크 ==!
+    -->
+    <select id="selectHsAtdocHsAtchDocMgmtNoCheck" resultType="BigDecimal">
+        /* selectHsAtdocHsAtchDocMgmtNoCheck */
+            SELECT
+                  <![CDATA[
+                  NVL(MAX(HS_ATCH_DOC_MGMT_NO), 0) + 1 AS HS_ATCH_DOC_MGMT_NO
+                  ]]>
+            FROM  TB_CLRI_HS_ATDOC
+    </select>
+
+
+    <!--
+    Suppression des documents joints pour la sous positions tarifaire !== HS첨부문서관리 삭제 ==!
+    -->
+    <update id="deleteHsAtdocD" parameterType="alpass.ipt.clr.trm.afm.vo.ClrHsAtdocVo">
+        /* deleteHsAtdocD */
+        UPDATE  TB_CLRI_HS_ATDOC_D SET
+                DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+             ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+             ,  LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+         WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+           AND  HS_ATCH_DOC_MGMT_NO = #{hsAtchDocMgmtNo}       /** Numéro de la gestion du document joint pour le SH !== HS첨부문서관리번호 ==! */
+    </update>
+    
+    
+    <!--
+    Consultation de la liste de la gestion des documents joints de APC !== APC첨부문서관리 목록 조회 ==!
+    -->
+    <select id="selectApcAtdocList" parameterType="alpass.ipt.clr.trm.afm.vo.ClrApcAtdocVo" resultType="alpass.ipt.clr.trm.afm.vo.ClrApcAtdocVo">
+        /* selectApcAtdocList */
+        <include refid="pagination.header" />
+            SELECT
+                  DD.APC_CD                     /** Code APC !== APC코드 ==! */
+                , (SELECT APC_NM FROM TB_CLRI_APC_CD WHERE APC_CD = DD.APC_CD AND DEL_YN = 'N') AS APC_NM    /** Description du code APC !== APC명 ==! */
+                , DD.ATCH_DOC_CD                /** Code de document joint !== 첨부문서코드 ==! */
+                , (SELECT ATCH_DOC_NM FROM TB_CLRI_ATDOC_LANG WHERE ATCH_DOC_CD = DD.ATCH_DOC_CD and LANG_CD = #{langCd}) AS ATCH_DOC_NM      /** Nom du document joint !== 첨부문서명 ==! */
+                , DD.USE_YN                     /** Utilisé ON !== 사용여부 ==! */
+                , ZZ.PBLS_ITT_NM                /** Nom d'association eméttrice !== 발행기관명 ==! */
+            FROM  TB_CLRI_APC_ATDOC DD
+                , TB_CLRI_ATDOC ZZ
+           WHERE  DD.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+             <if test="apcCd != null and apcCd != ''">
+             AND  DD.APC_CD = #{apcCd}                                  /** Code APC !== APC코드 ==! */
+             </if>
+             <if test="atchDocCd != null and atchDocCd != ''">
+             AND  DD.ATCH_DOC_CD = #{atchDocCd}                         /** Code de document joint !== 첨부문서코드 ==! */
+             </if>
+             AND  DD.ATCH_DOC_CD = ZZ.ATCH_DOC_CD
+           ORDER BY APC_CD, ATCH_DOC_CD
+        <include refid="pagination.footer" />
+    </select>
+    
+    
+    <!--
+    Consultation de la gestion des documents joints de code APC téléchargés sous forme de fichier excel !== APC첨부문서관리 엑셀다운로드 조회 ==!
+    -->
+    <select id="selectApcAtdocExcelList" parameterType="alpass.ipt.clr.trm.afm.vo.ClrApcAtdocVo" resultType="alpass.ipt.clr.trm.afm.vo.ClrApcAtdocVo">
+        /* selectApcAtdocExcelList */
+        SELECT ROWNUM AS RNUM
+             , *
+        FROM (
+	           SELECT DD.APC_CD                     /** Code APC !== APC코드 ==! */
+	                , (SELECT APC_NM FROM TB_CLRI_APC_CD WHERE APC_CD = DD.APC_CD AND DEL_YN = 'N') AS APC_NM    /** Description du code APC !== APC명 ==! */
+	                , DD.ATCH_DOC_CD                /** Code de document joint !== 첨부문서코드 ==! */
+	                , (SELECT ATCH_DOC_NM FROM TB_CLRI_ATDOC_LANG WHERE ATCH_DOC_CD = DD.ATCH_DOC_CD and LANG_CD = #{langCd}) AS ATCH_DOC_NM      /** Nom du document joint !== 첨부문서명 ==! */
+	                , DD.USE_YN                     /** Utilisé ON !== 사용여부 ==! */
+                    , ZZ.PBLS_ITT_NM                /** Nom d'association eméttrice !== 발행기관명 ==! */
+	            FROM  TB_CLRI_APC_ATDOC DD
+                    , TB_CLRI_ATDOC ZZ
+	           WHERE  DD.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+                 AND  DD.ATCH_DOC_CD = ZZ.ATCH_DOC_CD
+                <if test="apcCd != null and apcCd != ''">
+                    AND  DD.APC_CD = #{apcCd}                                  /** Code APC !== APC코드 ==! */
+                </if>
+                <if test="atchDocCd != null and atchDocCd != ''">
+                    AND  DD.ATCH_DOC_CD = #{atchDocCd}                         /** Code de document joint !== 첨부문서코드 ==! */
+                </if>
+	           ORDER BY APC_CD, ATCH_DOC_CD
+	           )
+    </select>
+    
+    
+    <!--
+    Consultation de la liste détaillée des documents joints du code APC !== APC첨부문서관리 상세목록 조회 ==!
+    -->
+    <select id="selectApcAtdocDetailList" parameterType="alpass.ipt.clr.trm.afm.vo.ClrApcAtdocVo" resultType="alpass.ipt.clr.trm.afm.vo.ClrApcAtdocVo">
+        /* selectApcAtdocDetailList */
+            SELECT
+                  ROW_NUMBER() OVER(ORDER BY AA.ATCH_DOC_CD) AS RNUM
+                , AA.APC_CD                                             /** Code APC !== APC코드 ==! */
+                , AA.ATCH_DOC_CD                                        /** Code de document joint !== 첨부문서코드 ==! */
+                , (SELECT ATCH_DOC_NM FROM TB_CLRI_ATDOC_LANG WHERE ATCH_DOC_CD = AA.ATCH_DOC_CD and LANG_CD = #{langCd}) AS ATCH_DOC_NM      /** Nom du document joint !== 첨부문서명 ==! */
+                , AA.APC_EXCP_MTR_CD                                    /** Code des extraits de APC !== APC예외사항코드 ==! */
+                , AA.USE_YN                                             /** Utilisé ON !== 사용여부 ==! */
+            FROM  TB_CLRI_APC_ATDOC AA
+           WHERE  AA.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+             AND  AA.APC_CD = #{apcCd}                                  /** Code APC !== APC코드 ==! */
+    </select>
+    
+    
+    <!--
+    Suppression des données précédentes de la gestion des documents joints du code APC !== APC첨부문서관리 이전데이터 삭제 ==!
+    -->
+    <update id="updateApcAtdocAtdocDBefore" parameterType="alpass.ipt.clr.trm.afm.vo.ClrApcAtdocVo">
+        /* updateApcAtdocAtdocDBefore */
+        UPDATE  TB_CLRI_APC_ATDOC SET 
+        <trim prefixOverrides="," >
+        		  USE_YN = 'N'                                /** Utilisé ON !== 사용여부 ==! */
+                , DEL_YN = 'Y'                                /** Suppression ON !== 삭제여부 ==! */
+                , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        </trim>
+           WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+             AND  APC_CD = #{apcCd}                           /** Code APC !== APC코드 ==! */
+    </update>
+    
+    
+    <!--
+    Vérification de la validité du code APC pour la gestion des documents joints du code APC !== APC첨부문서관리 APC 유효성 체크 ==!
+    -->
+    <select id="selectApcAtdocApcCheck" parameterType="alpass.ipt.clr.trm.afm.vo.ClrApcAtdocVo" resultType="int">
+        /* selectApcAtdocApcCheck */
+        SELECT
+              COUNT(AA.APC_CD) AS CNT
+        FROM  TB_CLRI_APC_CD AA
+       WHERE  AA.APC_CD = #{apcCd}                                  /** Code APC !== APC코드 ==! */
+    </select>
+    
+    
+    <!--
+    Vérification de la redondance des documents joints du code APC !== APC첨부문서관리 중복 체크 ==!
+    -->
+    <select id="selectApcAtdocDupCheck" parameterType="alpass.ipt.clr.trm.afm.vo.ClrApcAtdocVo" resultType="int">
+        /* selectApcAtdocDupCheck */
+        SELECT
+              COUNT(AA.APC_CD) AS CNT
+        FROM  TB_CLRI_APC_ATDOC AA
+       WHERE  AA.APC_CD = #{apcCd}                                  /** Code APC !== APC코드 ==! */
+       	<if test="atchDocCd != null and atchDocCd != ''">
+         AND  AA.ATCH_DOC_CD = #{atchDocCd}
+         </if>
+    </select>
+    
+    
+    <!--
+    Gestion des documents joints requis par code APC merge !== APC별필요첨부문서관리  merge ==!
+    -->
+    <insert id="mergeApcAtdocAtdoc" parameterType="alpass.ipt.clr.trm.afm.vo.ClrApcAtdocVo">
+        /* mergeApcAtdocAtdoc */
+        WITH UPSERT AS(
+        UPDATE TB_CLRI_APC_ATDOC 
+        SET       APC_EXCP_MTR_CD = #{apcExcpMtrCd}           /** Code des extraits de APC !== APC예외사항코드 ==! */
+                , USE_YN = #{useYn}                           /** Utilisé ON !== 사용여부 ==! */
+                , DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+                , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE     APC_CD = #{apcCd}                           /** Code APC !== APC코드 ==! */
+        AND       ATCH_DOC_CD = #{atchDocCd}                  /** Code de document joint !== 첨부문서코드 ==! */
+        RETURNING *
+        )
+        INSERT INTO TB_CLRI_APC_ATDOC
+                (
+                  APC_CD                       /** Code APC !== APC코드 ==! */
+                , ATCH_DOC_CD                  /** Code de document joint !== 첨부문서코드 ==! */
+                , APC_EXCP_MTR_CD              /** Code des extraits de APC !== APC예외사항코드 ==! */
+                , USE_YN                       /** Utilisé ON !== 사용여부 ==! */
+                , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+                , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+                )
+        SELECT
+                  #{apcCd}                     /** Code APC !== APC코드 ==! */
+                , #{atchDocCd}                 /** Code de document joint !== 첨부문서코드 ==! */
+                , #{apcExcpMtrCd}              /** Code des extraits de APC !== APC예외사항코드 ==! */
+                , #{useYn}                     /** Utilisé ON !== 사용여부 ==! */
+                , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+                , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  NOT EXISTS(SELECT * FROM UPSERT)
+    </insert>
+
+    
+    <!--
+    Consultation de la liste de la gestion des documents joints de EPC !== EPC첨부문서관리 목록 조회 ==!
+    -->
+    <select id="selectEpcAtdocList" parameterType="alpass.ipt.clr.trm.afm.vo.ClrEpcAtdocVo" resultType="alpass.ipt.clr.trm.afm.vo.ClrEpcAtdocVo">
+        /* selectEpcAtdocList */
+        <include refid="pagination.header" />
+            SELECT
+                  DD.EPC_CD                     /** Code EPC !== EPC코드 ==! */
+                , (SELECT EPC_NM FROM TB_CLRI_EPC_CD WHERE EPC_CD = DD.EPC_CD AND EPC_APLY_STRT_DT = DD.EPC_APLY_STRT_DT AND DEL_YN = 'N') AS EPC_NM    /** Description du code EPC !== EPC명 ==! */
+                , TO_CHAR(TO_DATE(DD.EPC_APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') EPC_APLY_STRT_DT
+                , (SELECT TO_CHAR(TO_DATE(EPC_APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') FROM TB_CLRI_EPC_CD WHERE EPC_CD = DD.EPC_CD AND EPC_APLY_STRT_DT = DD.EPC_APLY_STRT_DT AND DEL_YN = 'N') AS EPC_APLY_END_DT
+                , DD.ATCH_DOC_CD                /** Code de document joint !== 첨부문서코드 ==! */
+                , (SELECT ATCH_DOC_NM FROM TB_CLRI_ATDOC_LANG WHERE ATCH_DOC_CD = DD.ATCH_DOC_CD and LANG_CD = #{langCd}) AS ATCH_DOC_NM      /** Nom du document joint !== 첨부문서명 ==! */
+                , DD.USE_YN                     /** Utilisé ON !== 사용여부 ==! */
+                , ZZ.PBLS_ITT_NM                /** Nom d'association eméttrice !== 발행기관명 ==! */
+            FROM  TB_CLRI_EPC_ATDOC DD
+                , TB_CLRI_ATDOC ZZ
+           WHERE  DD.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+             <if test="epcCd != null and epcCd != ''">
+             AND  DD.EPC_CD LIKE #{epcCd} || '%'                             /** Code EPC !== EPC코드 ==! */
+             </if>
+             <if test="atchDocCd != null and atchDocCd != ''">
+             AND  DD.ATCH_DOC_CD = #{atchDocCd}                         /** Code de document joint !== 첨부문서코드 ==! */
+             </if>
+             AND  DD.ATCH_DOC_CD = ZZ.ATCH_DOC_CD
+           ORDER BY EPC_CD, ATCH_DOC_CD
+        <include refid="pagination.footer" />
+    </select>
+    
+    
+    <!--
+    Consultation de la gestion des documents joints de code EPC téléchargés sous forme de fichier excel !== EPC첨부문서관리 엑셀다운로드 조회 ==!
+    -->
+    <select id="selectEpcAtdocExcelList" parameterType="alpass.ipt.clr.trm.afm.vo.ClrEpcAtdocVo" resultType="alpass.ipt.clr.trm.afm.vo.ClrEpcAtdocVo">
+        /* selectEpcAtdocExcelList */
+            SELECT
+                  ROWNUM AS RNUM
+                , DD.EPC_CD                     /** Code EPC !== EPC코드 ==! */
+                , (SELECT EPC_NM FROM TB_CLRI_EPC_CD WHERE EPC_CD = DD.EPC_CD AND EPC_APLY_STRT_DT = DD.EPC_APLY_STRT_DT AND DEL_YN = 'N') AS EPC_NM    /** Description du code EPC !== EPC명 ==! */
+                , TO_CHAR(TO_DATE(DD.EPC_APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') EPC_APLY_STRT_DT
+                , DD.ATCH_DOC_CD                /** Code de document joint !== 첨부문서코드 ==! */
+                , (SELECT ATCH_DOC_NM FROM TB_CLRI_ATDOC_LANG WHERE ATCH_DOC_CD = DD.ATCH_DOC_CD and LANG_CD = #{langCd}) AS ATCH_DOC_NM      /** Nom du document joint !== 첨부문서명 ==! */
+                , DD.SEA_APLY_YN                /** Appliqué au domaine maritime ON !== 해상적용여부 ==! */
+                , DD.FLGH_APLY_YN               /** Appliqué au domaine aérien ON !== 항공적용여부 ==! */
+                , DD.RLRD_APLY_YN               /** Appliqué à la voie férrée ON !== 철도적용여부 ==! */
+                , DD.VHCL_APLY_YN               /** Appliqué au véhicule ON !== 차량적용여부 ==! */
+                , DD.OTHS_APLY_YN               /** Appliqué aux autres EPC ON !== 기타적용여부 ==! */
+                , DD.USE_YN                     /** Utilisé ON !== 사용여부 ==! */
+                , ZZ.PBLS_ITT_NM                /** Nom d'association eméttrice !== 발행기관명 ==! */
+            FROM  TB_CLRI_EPC_ATDOC DD
+                , TB_CLRI_ATDOC ZZ
+           WHERE  DD.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+             AND  DD.ATCH_DOC_CD = ZZ.ATCH_DOC_CD
+            <if test="epcCd != null and epcCd != ''">
+                AND  DD.EPC_CD LIKE #{epcCd} || '%'                             /** Code EPC !== EPC코드 ==! */
+            </if>
+            <if test="atchDocCd != null and atchDocCd != ''">
+                AND  DD.ATCH_DOC_CD = #{atchDocCd}                         /** Code de document joint !== 첨부문서코드 ==! */
+            </if>
+           ORDER BY EPC_CD, ATCH_DOC_CD
+    </select>
+    
+    
+    <!--
+    Consultation de la liste détaillée des documents joints du code EPC !== EPC첨부문서관리 상세목록 조회 ==!
+    -->
+    <select id="selectEpcAtdocDetailList" parameterType="alpass.ipt.clr.trm.afm.vo.ClrEpcAtdocVo" resultType="alpass.ipt.clr.trm.afm.vo.ClrEpcAtdocVo">
+        /* selectEpcAtdocDetailList */
+            SELECT
+                  ROW_NUMBER() OVER(ORDER BY AA.ATCH_DOC_CD) AS RNUM
+                , AA.EPC_CD                                             /** Code EPC !== EPC코드 ==! */
+                , TO_CHAR(TO_DATE(AA.EPC_APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') EPC_APLY_STRT_DT
+                , TO_CHAR(TO_DATE(BB.EPC_APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') EPC_APLY_END_DT
+                , AA.ATCH_DOC_CD                                        /** Code de document joint !== 첨부문서코드 ==! */
+                , (SELECT ATCH_DOC_NM FROM TB_CLRI_ATDOC_LANG WHERE ATCH_DOC_CD = AA.ATCH_DOC_CD and LANG_CD = #{langCd}) AS ATCH_DOC_NM      /** Nom du document joint !== 첨부문서명 ==! */
+                , AA.SEA_APLY_YN                                        /** Appliqué au domaine maritime ON !== 해상적용여부 ==! */
+                , AA.FLGH_APLY_YN                                       /** Appliqué au domaine aérien ON !== 항공적용여부 ==! */
+                , AA.RLRD_APLY_YN                                       /** Appliqué à la voie férrée ON !== 철도적용여부 ==! */
+                , AA.VHCL_APLY_YN                                       /** Appliqué au véhicule ON !== 차량적용여부 ==! */
+                , AA.OTHS_APLY_YN                                       /** Appliqué aux autres EPC ON !== 기타적용여부 ==! */
+                , AA.USE_YN                                             /** Utilisé ON !== 사용여부 ==! */
+            FROM  TB_CLRI_EPC_ATDOC AA, TB_CLRI_EPC_CD BB
+           WHERE  AA.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+             AND  AA.EPC_CD = #{epcCd}                                  /** Code EPC !== EPC코드 ==! */
+             AND  AA.EPC_APLY_STRT_DT = TO_CHAR(TO_DATE(#{epcAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+             AND  AA.EPC_CD = BB.EPC_CD
+             AND  AA.EPC_APLY_STRT_DT = BB.EPC_APLY_STRT_DT
+           ORDER BY ATCH_DOC_CD
+    </select>
+    
+    
+    <!--
+    Suppression des données précédentes de la gestion des documents joints du code EPC !== EPC첨부문서관리 이전데이터 삭제 ==!
+    -->
+    <update id="updateEpcAtdocAtdocDBefore" parameterType="alpass.ipt.clr.trm.afm.vo.ClrEpcAtdocVo">
+        /* updateEpcAtdocAtdocDBefore */
+        UPDATE  TB_CLRI_EPC_ATDOC SET 
+        <trim prefixOverrides="," >
+        		  USE_YN = 'N'                                /** Utilisé ON !== 사용여부 ==! */
+                , DEL_YN = 'Y'                                /** Suppression ON !== 삭제여부 ==! */
+                , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        </trim>
+           WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+             AND  EPC_CD = #{epcCd}                           /** Code EPC !== EPC코드 ==! */
+             AND  EPC_APLY_STRT_DT = TO_CHAR(TO_DATE(#{epcAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+    </update>
+    
+    
+    <!--
+    Vérification de la validité du code EPC pour la gestion des documents joints du code EPC !== EPC첨부문서관리 EPC 유효성 체크 ==!
+    -->
+    <select id="selectEpcAtdocEpcCheck" parameterType="alpass.ipt.clr.trm.afm.vo.ClrEpcAtdocVo" resultType="int">
+        /* selectEpcAtdocEpcCheck */
+        SELECT
+              COUNT(AA.EPC_CD) AS CNT
+        FROM  TB_CLRI_EPC_CD AA
+       WHERE  AA.EPC_CD = #{epcCd}                                  /** Code EPC !== EPC코드 ==! */
+         AND  AA.EPC_APLY_STRT_DT = TO_CHAR(TO_DATE(#{epcAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+    </select>
+    
+    
+    <!--
+    Vérification de la redondance des documents joints du code EPC !== EPC첨부문서관리 중복 체크 ==!
+    -->
+    <select id="selectEpcAtdocDupCheck" parameterType="alpass.ipt.clr.trm.afm.vo.ClrEpcAtdocVo" resultType="int">
+        /* selectEpcAtdocDupCheck */
+        SELECT
+              COUNT(AA.EPC_CD) AS CNT
+        FROM  TB_CLRI_EPC_ATDOC AA
+       WHERE  AA.EPC_CD = #{epcCd}                                  /** Code EPC !== EPC코드 ==! */
+        AND  AA.EPC_APLY_STRT_DT = TO_CHAR(TO_DATE(#{epcAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+         <if test="atchDocCd != null and atchDocCd != ''">
+         AND  AA.ATCH_DOC_CD = #{atchDocCd}
+         </if>
+    </select>
+    
+    
+    <!--
+    Gestion des documents joints requis par code EPC merge !== EPC별필요첨부문서관리  merge ==!
+    -->
+    <insert id="mergeEpcAtdocAtdoc" parameterType="alpass.ipt.clr.trm.afm.vo.ClrEpcAtdocVo">
+        /* mergeEpcAtdocAtdoc */
+        WITH UPSERT AS(
+        UPDATE TB_CLRI_EPC_ATDOC 
+        SET       SEA_APLY_YN = #{seaAplyYn}                  /** Appliqué au domaine maritime ON !== 해상적용여부 ==! */
+                , FLGH_APLY_YN = #{flghAplyYn}                /** Appliqué au domaine aérien ON !== 항공적용여부 ==! */
+                , RLRD_APLY_YN = #{rlrdAplyYn}                /** Appliqué à la voie férrée ON !== 철도적용여부 ==! */
+                , VHCL_APLY_YN = #{vhclAplyYn}                /** Appliqué au véhicule ON !== 차량적용여부 ==! */
+                , OTHS_APLY_YN = #{othsAplyYn}                /** Appliqué aux autres EPC ON !== 기타적용여부 ==! */
+                , USE_YN = #{useYn}                           /** Utilisé ON !== 사용여부 ==! */
+                , DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+                , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE     EPC_CD = #{epcCd}                           /** Code EPC !== EPC코드 ==! */
+        AND       ATCH_DOC_CD = #{atchDocCd}                  /** Code de document joint !== 첨부문서코드 ==! */
+        AND       EPC_APLY_STRT_DT = TO_CHAR(TO_DATE(#{epcAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        RETURNING *
+        )
+        INSERT INTO TB_CLRI_EPC_ATDOC
+                (
+                  EPC_CD                       /** Code EPC !== EPC코드 ==! */
+                , EPC_APLY_STRT_DT             /** Date de départ de l'application de l'EPC !== EPC적용시작일자 ==! */
+                , ATCH_DOC_CD                  /** Code de document joint !== 첨부문서코드 ==! */
+                , SEA_APLY_YN                  /** Appliqué au domaine maritime ON !== 해상적용여부 ==! */
+                , FLGH_APLY_YN                 /** Appliqué au domaine aérien ON !== 항공적용여부 ==! */
+                , RLRD_APLY_YN                 /** Appliqué à la voie férrée ON !== 철도적용여부 ==! */
+                , VHCL_APLY_YN                 /** Appliqué au véhicule ON !== 차량적용여부 ==! */
+                , OTHS_APLY_YN                 /** Appliqué aux autres EPC ON !== 기타적용여부 ==! */
+                , USE_YN                       /** Utilisé ON !== 사용여부 ==! */
+                , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+                , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+                )
+        SELECT
+                  #{epcCd}                     /** Code EPC !== EPC코드 ==! */
+                , TO_CHAR(TO_DATE(#{epcAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') /** Date de départ de l'application de l'EPC !== EPC적용시작일자 ==! */
+                , #{atchDocCd}                 /** Code de document joint !== 첨부문서코드 ==! */
+                , #{seaAplyYn}                 /** Appliqué au domaine maritime ON !== 해상적용여부 ==! */
+                , #{flghAplyYn}                /** Appliqué au domaine aérien ON !== 항공적용여부 ==! */
+                , #{rlrdAplyYn}                /** Appliqué à la voie férrée ON !== 철도적용여부 ==! */
+                , #{vhclAplyYn}                /** Appliqué au véhicule ON !== 차량적용여부 ==! */
+                , #{othsAplyYn}                /** Appliqué aux autres EPC ON !== 기타적용여부 ==! */
+                , #{useYn}                     /** Utilisé ON !== 사용여부 ==! */
+                , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+                , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  NOT EXISTS(SELECT * FROM UPSERT)
+    </insert>
+    
+    
+    <!--
+    Consultation de la liste de la gestion des documents joints de codes préférentiels !== 특혜코드첨부문서관리 목록 조회 ==!
+    -->
+    <select id="selectPrvlCdAtdocList" parameterType="alpass.ipt.clr.trm.afm.vo.ClrPrvlCdAtdocVo" resultType="alpass.ipt.clr.trm.afm.vo.ClrPrvlCdAtdocVo">
+        /* selectPrvlCdAtdocList */
+        <include refid="pagination.header" />
+            SELECT
+                  DD.PRVL_CD                    /** Code de préférence !== 특혜코드 ==! */
+                , (SELECT
+		                  CC.CD_VDVAL_NM AS PRVL_NM                   /** Description du code préférentiel !== 특혜코드 설명 ==! */
+		            FROM  TB_COM_COMN_CD AA,
+		                  TB_COM_COMN_CD_D BB,
+		                  TB_COM_COMN_CD_D_LANG CC
+		           WHERE  AA.COMN_CD = 'CLR_0019'                      /** Code commun !== 공통코드 ==! */
+		             AND  AA.COMN_CD = BB.COMN_CD                      /** Code commun !== 공통코드 ==! */
+		             AND  BB.COMN_CD = CC.COMN_CD                      /** Code commun !== 공통코드 ==! */
+		             AND  BB.CD_VDVAL = CC.CD_VDVAL                    /** Valeur réelle de code  !== 공통유효값 ==! */
+		             AND  CC.LANG_CD = #{langCd} 
+		             AND  CC.CD_VDVAL = DD.PRVL_CD                     /** Code de préférence !== 특혜코드 ==! */
+		             AND  AA.USE_YN = 'Y'                              /** Utilisé ON !== 사용여부 ==! */
+		             AND  AA.DEL_YN = 'N'                              /** Suppression ON !== 삭제여부 ==! */
+		             AND  BB.USE_YN = 'Y'                              /** Utilisé ON !== 사용여부 ==! */
+		             AND  BB.DEL_YN = 'N'                              /** Suppression ON !== 삭제여부 ==! */
+		             AND  CC.DEL_YN = 'N'                              /** Suppression ON !== 삭제여부 ==! */ 
+		          ) AS PRVL_NM     /** Description du code préférentiel !== 특혜코드 설명 ==! */
+                , DD.ATCH_DOC_CD                /** Code de document joint !== 첨부문서코드 ==! */
+                , (SELECT ATCH_DOC_NM FROM TB_CLRI_ATDOC_LANG WHERE ATCH_DOC_CD = DD.ATCH_DOC_CD and LANG_CD = #{langCd}) AS ATCH_DOC_NM      /** Nom du document joint !== 첨부문서명 ==! */
+                , DD.USE_YN                     /** Utilisé ON !== 사용여부 ==! */
+                , ZZ.PBLS_ITT_NM                /** Nom d'association eméttrice !== 발행기관명 ==! */
+            FROM  TB_CLRI_PRVL_CD_ATDOC DD
+                , TB_CLRI_ATDOC ZZ
+           WHERE  DD.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+             <if test="prvlCd != null and prvlCd != ''">
+             AND  DD.PRVL_CD = #{prvlCd}                                  /** Code de préférence !== 특혜코드 ==! */
+             </if>
+             <if test="atchDocCd != null and atchDocCd != ''">
+             AND  DD.ATCH_DOC_CD = #{atchDocCd}                         /** Code de document joint !== 첨부문서코드 ==! */
+             </if>
+             AND  DD.ATCH_DOC_CD = ZZ.ATCH_DOC_CD
+           ORDER BY PRVL_CD, ATCH_DOC_CD
+        <include refid="pagination.footer" />
+    </select>
+    
+    
+    <!--
+    Consultation de la gestion des documents joints de code préférentiel téléchargés sous forme de fichier excel !== 특혜코드첨부문서관리 엑셀다운로드 조회 ==!
+    -->
+    <select id="selectPrvlCdAtdocExcelList" parameterType="alpass.ipt.clr.trm.afm.vo.ClrPrvlCdAtdocVo" resultType="alpass.ipt.clr.trm.afm.vo.ClrPrvlCdAtdocVo">
+        /* selectPrvlCdAtdocExcelList */
+            SELECT
+                  ROWNUM AS RNUM
+                , DD.PRVL_CD                    /** Code de préférence !== 특혜코드 ==! */
+                , (SELECT
+		                  CC.CD_VDVAL_NM AS PRVL_NM                   /** Description du code préférentiel !== 특혜코드 설명 ==! */
+		            FROM  TB_COM_COMN_CD AA,
+		                  TB_COM_COMN_CD_D BB,
+		                  TB_COM_COMN_CD_D_LANG CC
+		           WHERE  AA.COMN_CD = 'CLR_0019'                      /** Code commun !== 공통코드 ==! */
+		             AND  AA.COMN_CD = BB.COMN_CD                      /** Code commun !== 공통코드 ==! */
+		             AND  BB.COMN_CD = CC.COMN_CD                      /** Code commun !== 공통코드 ==! */
+		             AND  BB.CD_VDVAL = CC.CD_VDVAL                    /** Valeur réelle de code  !== 공통유효값 ==! */
+		             AND  CC.LANG_CD = #{langCd} 
+		             AND  CC.CD_VDVAL = DD.PRVL_CD                     /** Code de préférence !== 특혜코드 ==! */
+		             AND  AA.USE_YN = 'Y'                              /** Utilisé ON !== 사용여부 ==! */
+		             AND  AA.DEL_YN = 'N'                              /** Suppression ON !== 삭제여부 ==! */
+		             AND  BB.USE_YN = 'Y'                              /** Utilisé ON !== 사용여부 ==! */
+		             AND  BB.DEL_YN = 'N'                              /** Suppression ON !== 삭제여부 ==! */
+		             AND  CC.DEL_YN = 'N'                              /** Suppression ON !== 삭제여부 ==! */ 
+		          ) AS PRVL_NM     /** Description du code préférentiel !== 특혜코드 설명 ==! */
+                , DD.ATCH_DOC_CD                /** Code de document joint !== 첨부문서코드 ==! */
+                , (SELECT ATCH_DOC_NM FROM TB_CLRI_ATDOC_LANG WHERE ATCH_DOC_CD = DD.ATCH_DOC_CD and LANG_CD = #{langCd}) AS ATCH_DOC_NM      /** Nom du document joint !== 첨부문서명 ==! */
+                , DD.USE_YN                     /** Utilisé ON !== 사용여부 ==! */
+                , ZZ.PBLS_ITT_NM                /** Nom d'association eméttrice !== 발행기관명 ==! */
+            FROM  TB_CLRI_PRVL_CD_ATDOC DD
+                , TB_CLRI_ATDOC ZZ
+           WHERE  DD.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+             AND  DD.ATCH_DOC_CD = ZZ.ATCH_DOC_CD
+           ORDER BY PRVL_CD, ATCH_DOC_CD
+    </select>
+    
+    
+    <!--
+    Consultation de la liste détaillée des documents joints du code préférentiel !== 특혜코드첨부문서관리 상세목록 조회 ==!
+    -->
+    <select id="selectPrvlCdAtdocDetailList" parameterType="alpass.ipt.clr.trm.afm.vo.ClrPrvlCdAtdocVo" resultType="alpass.ipt.clr.trm.afm.vo.ClrPrvlCdAtdocVo">
+        /* selectPrvlCdAtdocDetailList */
+            SELECT
+                  ROW_NUMBER() OVER(ORDER BY AA.ATCH_DOC_CD) AS RNUM
+                , AA.PRVL_CD                                            /** Code de préférence !== 특혜코드 ==! */
+                , AA.ATCH_DOC_CD                                        /** Code de document joint !== 첨부문서코드 ==! */
+                , (SELECT ATCH_DOC_NM FROM TB_CLRI_ATDOC_LANG WHERE ATCH_DOC_CD = AA.ATCH_DOC_CD and LANG_CD = #{langCd}) AS ATCH_DOC_NM      /** Nom du document joint !== 첨부문서명 ==! */
+                , AA.USE_YN                                             /** Utilisé ON !== 사용여부 ==! */
+            FROM  TB_CLRI_PRVL_CD_ATDOC AA
+           WHERE  AA.DEL_YN = 'N'                                       /** Suppression ON !== 삭제여부 ==! */
+             AND  AA.PRVL_CD = #{prvlCd}                                /** Code de préférence !== 특혜코드 ==! */
+           ORDER BY ATCH_DOC_CD
+    </select>
+    
+    
+    <!--
+    Suppression des données précédentes de la gestion des documents joints du code préférentiel !== 특혜코드첨부문서관리 이전데이터 삭제 ==!
+    -->
+    <update id="updatePrvlCdAtdocAtdocDBefore" parameterType="alpass.ipt.clr.trm.afm.vo.ClrPrvlCdAtdocVo">
+        /* updatePrvlCdAtdocAtdocDBefore */
+        UPDATE  TB_CLRI_PRVL_CD_ATDOC SET 
+        <trim prefixOverrides="," >
+        		  USE_YN = 'N'                                /** Utilisé ON !== 사용여부 ==! */
+                , DEL_YN = 'Y'                                /** Suppression ON !== 삭제여부 ==! */
+                , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        </trim>
+           WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+             AND  PRVL_CD = #{prvlCd}                         /** Code de préférence !== 특혜코드 ==! */
+    </update>
+    
+    
+    <!--
+    Vérification de la validité du code accord préférentiel pour la gestion des documents joints du code préférentiel !== 특혜코드첨부문서관리 특혜코드 유효성 체크 ==!
+    -->
+    <select id="selectPrvlCdAtdocPrvlCheck" parameterType="alpass.ipt.clr.trm.afm.vo.ClrPrvlCdAtdocVo" resultType="int">
+        /* selectPrvlCdAtdocPrvlCheck */
+        SELECT
+              COUNT(AA.CD_VDVAL) AS CNT
+        FROM  TB_COM_COMN_CD_D AA
+       WHERE  AA.COMN_CD = 'CLR_0019'  
+         AND  AA.CD_VDVAL = #{prvlCd}                                  /** Code de préférence !== 특혜코드 ==! */
+         AND  AA.USE_YN = 'Y'                                          /** Utilisé ON !== 사용여부 ==! */
+    </select>
+    
+    
+    <!--
+    Vérification de la redondance des documents joints du code préférentiel !== 특혜코드첨부문서관리 중복 체크 ==!
+    -->
+    <select id="selectPrvlCdAtdocDupCheck" parameterType="alpass.ipt.clr.trm.afm.vo.ClrPrvlCdAtdocVo" resultType="int">
+        /* selectPrvlCdAtdocDupCheck */
+        SELECT
+              COUNT(AA.PRVL_CD) AS CNT
+        FROM  TB_CLRI_PRVL_CD_ATDOC AA
+       WHERE  AA.PRVL_CD = #{prvlCd}                                  /** Code de préférence !== 특혜코드 ==! */
+    </select>
+    
+    
+    <!--
+    Gestion des documents joints requis par code préférentiel merge !== 특혜코드별필요첨부문서관리  merge ==!
+    -->
+    <insert id="mergePrvlCdAtdocAtdoc" parameterType="alpass.ipt.clr.trm.afm.vo.ClrPrvlCdAtdocVo">
+        /* mergePrvlCdAtdocAtdoc */
+        WITH UPSERT AS(
+        UPDATE TB_CLRI_PRVL_CD_ATDOC 
+        SET       USE_YN = #{useYn}                           /** Utilisé ON !== 사용여부 ==! */
+                , DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+                , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE     PRVL_CD = #{prvlCd}                         /** Code de préférence !== 특혜코드 ==! */
+        AND       ATCH_DOC_CD = #{atchDocCd}                  /** Code de document joint !== 첨부문서코드 ==! */
+        RETURNING *
+        )
+        INSERT INTO TB_CLRI_PRVL_CD_ATDOC
+                (
+                  PRVL_CD                      /** Code de préférence !== 특혜코드 ==! */
+                , ATCH_DOC_CD                  /** Code de document joint !== 첨부문서코드 ==! */
+                , USE_YN                       /** Utilisé ON !== 사용여부 ==! */
+                , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+                , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+                )
+        SELECT
+                  #{prvlCd}                    /** Code de préférence !== 특혜코드 ==! */
+                , #{atchDocCd}                 /** Code de document joint !== 첨부문서코드 ==! */
+                , #{useYn}                     /** Utilisé ON !== 사용여부 ==! */
+                , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+                , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  NOT EXISTS(SELECT * FROM UPSERT)
+    </insert>
+
+</mapper>

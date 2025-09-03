@@ -1,0 +1,1006 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="alpass.ipt.col.acnt.mapper.ColAcntMgmtMapper">
+
+    <!--
+    Consulter la liste des dépenses et des opérations d'ordre !==지출증명서 목록을 조회한다==!
+    -->
+    <select id="selectAcntMgmtList" parameterType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo" resultType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo">
+        /** ColAcntMgmtMapper_selectAcntMgmtList **/
+        <include refid="pagination.header"/>
+        SELECT    VIEW.*
+                , CASE
+                    WHEN VIEW.EXPN_CRPP_NO IS NOT NULL OR VIEW.ORDER_EXPN_CRPP_NO IS NOT NULL
+                        THEN '001'
+                    ELSE '002'
+                END AS CRPP_STTS
+        FROM (
+            SELECT 	  CSTM_CD
+                    , FN_GET_ORGN_NM(CSTM_CD) AS CSTM_NM
+                    , DEPT_CD
+                    , FN_GET_ORGN_NM(DEPT_CD) AS DEPT_NM
+                    , PYMN_ORDER_NO
+                    , PYMN_ORDER_TP_CD
+                    , RGSR_EMP_ID
+                    , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = RGSR_EMP_ID) AS RGSR_EMP_NM
+                    , TO_CHAR(TO_DATE(PYMN_ORDER_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS PYMN_ORDER_DT
+                    , TXPR_NM
+                    , DLNG_PRID_YYMM
+                    , NULL AS EXPN_CRPP_NO
+                    , NULL AS EXPN_CRPP_RGSR_DT
+                    , NULL AS DRWB_TRGT_AMT
+                    , NULL AS EXPN_PT_CD
+                    , NULL AS ORDER_EXPN_CRPP_NO
+                    , NULL AS ORDER_EXPN_CRPP_RGSR_DT
+                    , NULL AS ORDER_DRWB_TRGT_AMT
+                    , NULL AS ORDER_EXPN_PT_CD
+                    , NULL AS EXPN_CRPP_DEPT_CD
+            FROM TB_COLI_PYMN_ORDER A, TB_POTI_APRV B
+            WHERE PYMN_ORDER_NO NOT IN (SELECT PYMN_ORDER_NO FROM TB_COLI_PYMN_ORDER WHERE PYMN_ORDER_NO IN (SELECT REFF_NO FROM TB_COLI_EXPN_CRPP))
+            AND A.APRV_ID = B.APRV_ID
+            AND B.APRV_PRCS_STTS_CD = 'I04'
+            UNION ALL
+            SELECT 	  BB.CSTM_CD
+                    , FN_GET_ORGN_NM(BB.CSTM_CD) AS CSTM_NM
+                    , BB.DEPT_CD
+                    , FN_GET_ORGN_NM(BB.DEPT_CD) AS DEPT_NM
+                    , BB.PYMN_ORDER_NO
+                    , BB.PYMN_ORDER_TP_CD
+                    , BB.RGSR_EMP_ID
+                    , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = BB.RGSR_EMP_ID) AS RGSR_EMP_NM
+                    , TO_CHAR(TO_DATE(BB.PYMN_ORDER_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS PYMN_ORDER_DT
+                    , BB.TXPR_NM
+                    , BB.DLNG_PRID_YYMM
+                    , AA.EXPN_CRPP_NO
+                    , TO_CHAR(TO_DATE(AA.EXPN_CRPP_RGSR_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS EXPN_CRPP_RGSR_DT
+                    , AA.DRWB_TRGT_AMT
+                    , AA.EXPN_PT_CD
+                    , AA.ORDER_EXPN_CRPP_NO
+                    , TO_CHAR(TO_DATE(AA.ORDER_EXPN_CRPP_RGSR_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS ORDER_EXPN_CRPP_RGSR_DT
+                    , AA.ORDER_DRWB_TRGT_AMT
+                    , AA.ORDER_EXPN_PT_CD
+                    , NVL(AA.EXPN_DEPT_CD, AA.ORDER_DEPT_CD) AS EXPN_CRPP_DEPT_CD
+            FROM (
+                SELECT 	  A.EXPN_CRPP_NO
+                        , B.EXPN_CRPP_NO AS ORDER_EXPN_CRPP_NO
+                        , A.DRWB_TRGT_AMT
+                        , B.DRWB_TRGT_AMT AS ORDER_DRWB_TRGT_AMT
+                        , A.EXPN_CRPP_RGSR_DT
+                        , B.EXPN_CRPP_RGSR_DT AS ORDER_EXPN_CRPP_RGSR_DT
+                        , A.EXPN_PT_CD
+                        , B.EXPN_PT_CD AS ORDER_EXPN_PT_CD
+                        , A.DEPT_CD AS EXPN_DEPT_CD
+                        , B.DEPT_CD AS ORDER_DEPT_CD
+                        /* JOIN용 */
+                        , A.REFF_NO
+                FROM 	(	SELECT T.* FROM TB_COLI_EXPN_CRPP T WHERE T.DLNG_PT_CD = '001') A
+                    FULL OUTER JOIN
+                        (	SELECT T.* FROM TB_COLI_EXPN_CRPP T WHERE T.DLNG_PT_CD = '002') B
+                    ON A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                WHERE 1=1
+            ) AA, TB_COLI_PYMN_ORDER BB, TB_POTI_APRV CC
+            WHERE AA.REFF_NO = BB.PYMN_ORDER_NO(+)
+                AND BB.APRV_ID = CC.APRV_ID(+)
+                AND (
+                    (NVL(AA.REFF_NO, '') != '' AND CC.APRV_PRCS_STTS_CD = 'I04')        -- 지불명령서 번호가 참조로 걸려있으면 결재가 완료된 것만,
+                        OR                                                              -- 또는
+                    (NVL(AA.REFF_NO, '') = '')                                          -- 지불명령서 없이 지출또는회계만 작성된 것만
+                )
+        ) VIEW
+        WHERE 1=1
+        <if test="sctrCd != null and sctrCd != ''">
+            AND  VIEW.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+        </if>
+        <if test='cstmCd != null and cstmCd !=""'>
+            AND  VIEW.CSTM_CD = #{cstmCd}
+        </if>
+        <if test='deptCd != null and deptCd !=""'>
+            AND  (VIEW.DEPT_CD = #{deptCd} OR VIEW.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+            OR VIEW.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                                                 OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+        </if>
+        <if test="uprOrgnCd != null and uprOrgnCd != ''">
+            AND  VIEW.CSTM_CD = #{uprOrgnCd}
+        </if>
+        <if test="orgnCd != null and orgnCd != ''">
+            AND (
+                (
+                VIEW.DEPT_CD = #{orgnCd}
+                OR
+                VIEW.DEPT_CD IN (
+                    SELECT ORGN_CD
+                    FROM TB_POTI_ORGN
+                    WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                )
+                OR
+                (
+                VIEW.EXPN_CRPP_DEPT_CD = #{orgnCd}
+                OR
+                VIEW.EXPN_CRPP_DEPT_CD IN (
+                    SELECT ORGN_CD
+                    FROM TB_POTI_ORGN
+                    WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                )
+            )
+        </if>
+        <if test="pymnOrderNo != null and pymnOrderNo !=''">
+            AND VIEW.PYMN_ORDER_NO LIKE TRIM(#{pymnOrderNo}) || '%'
+        </if>
+        <if test="pymnOrderTpCd != null and pymnOrderTpCd !=''">
+            AND VIEW.PYMN_ORDER_TP_CD = #{pymnOrderTpCd}
+        </if>
+        <if test='pymnOrderDtFrom != null and pymnOrderDtFrom !="" and pymnOrderDtTo != null and pymnOrderDtTo !="" '>
+            AND TO_CHAR(TO_DATE(VIEW.PYMN_ORDER_DT, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN TO_CHAR(TO_DATE(#{pymnOrderDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{pymnOrderDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+        </if>
+        <if test="dlngPridYymm != null and dlngPridYymm !=''">
+            AND VIEW.DLNG_PRID_YYMM = TO_CHAR(TO_DATE(#{dlngPridYymm}, 'MM/YYYY'), 'YYYYMM')
+        </if>
+        <if test="dlngPtCd != null and dlngPtCd !=''">
+            <if test='dlngPtCd == "001"'>
+                AND VIEW.EXPN_CRPP_NO IS NOT NULL
+                <if test="expnPtCd != null and expnPtCd !=''">
+                    AND VIEW.EXPN_PT_CD = #{expnPtCd}
+                </if>
+            </if>
+            <if test='dlngPtCd == "002"'>
+                AND VIEW.ORDER_EXPN_CRPP_NO IS NOT NULL
+                <if test="orderExpnPtCd != null and orderExpnPtCd !=''">
+                    AND VIEW.ORDER_EXPN_PT_CD = #{orderExpnPtCd}
+                </if>
+            </if>
+        </if>
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+    Consulter les détails de gestion des dépenses et des opérations d'ordre !==지출증명서 상세정보을 조회한다==!
+    -->
+    <select id="selectAcntExpnMgmtDtl" parameterType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo" resultType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo">
+        /** ColAcntMgmtMapper_selectAcntExpnMgmtDtl **/
+        SELECT VIEW.*
+        FROM (
+            SELECT 	  BB.CSTM_CD
+                    , FN_GET_ORGN_NM(BB.CSTM_CD) AS CSTM_NM
+                    , BB.DEPT_CD
+                    , FN_GET_ORGN_NM(BB.DEPT_CD) AS DEPT_NM
+                    , BB.PYMN_ORDER_NO
+                    , BB.PYMN_ORDER_TP_CD
+                    , BB.REFF_NO_PT_CD
+                    , BB.REFF_NO
+                    , BB.TXPR_IDFY_NO_TP_CD
+                    , BB.TXPR_IDFY_NO
+                    , BB.TXPR_NM
+                    , BB.RGSR_EMP_ID
+                    , BB.PYMN_AMT
+                    , TO_CHAR(TO_DATE(BB.PYMN_ORDER_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS PYMN_ORDER_DT
+                    , TO_CHAR(TO_DATE(BB.REFF_NO_DT,'YYYYMMDD'),'DD/MM/YYYY') AS REFF_NO_DT
+                    , BB.DLNG_ORIG_CD
+                    , BB.APRP_ACCT_CD
+                    , BB.DLNG_PRID_YYMM
+                    , AA.EXPN_CRPP_NO
+                    , AA.EXPN_PT_CD
+                    , AA.EXPN_ORIG_CD
+                    , AA.EXPN_ORIG_NM
+                    , AA.EXPN_ORIG_NO
+                    , TO_CHAR(TO_DATE(AA.EXPN_ORIG_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS EXPN_ORIG_DT
+                    , AA.DLNG_PT_CD
+                    , AA.DLNG_KND_CD
+                    , AA.DLNG_KND_NM
+                    , AA.RECP_NO
+                    , TO_CHAR(TO_DATE(AA.RECP_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS RECP_DT
+                    , NVL(BB.PYMN_ORDER_TP_CD, AA.EXPN_PYMN_ORDER_TP_CD) AS EXPN_PYMN_ORDER_TP_CD
+                    , AA.DRWB_TRGT_AMT
+                    , AA.EXPN_TXPR_IDFY_NO_TP_CD
+                    , AA.EXPN_TXPR_IDFY_NO
+                    , AA.EXPN_TXPR_NM
+                    , AA.BFCY_ADDR
+                    , AA.AC_NO
+                    , AA.EXPN_RSN_CD
+                    , AA.CLTR_ID
+                    , AA.CLTR_NM
+                    , AA.CHCK_NO
+                    , TO_CHAR(TO_DATE(AA.CHCK_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS CHCK_DT
+                    , AA.ORDER_EXPN_CRPP_NO
+                    , AA.ORDER_EXPN_PT_CD
+                    , AA.ORDER_DLNG_PT_LWPR_CD
+                    , AA.ORDER_DLNG_PT_LWPR_NM
+                    , AA.ORDER_ORIG_CD
+                    , AA.ORDER_ORIG_NM
+                    , AA.ORDER_ORIG_NO
+                    , TO_CHAR(TO_DATE(AA.ORDER_ORIG_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS ORDER_ORIG_DT
+                    , AA.ORDER_DLNG_PT_CD
+                    , AA.ORDER_DLNG_KND_CD
+                    , AA.ORDER_RECP_NO
+                    , TO_CHAR(TO_DATE(AA.ORDER_RECP_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS ORDER_RECP_DT
+                    , NVL(BB.PYMN_ORDER_TP_CD, AA.ORDER_PYMN_ORDER_TP_CD) AS ORDER_PYMN_ORDER_TP_CD
+                    , AA.ORDER_DRWB_TRGT_AMT
+                    , AA.ORDER_TXPR_IDFY_NO_TP_CD
+                    , AA.ORDER_TXPR_IDFY_NO
+                    , AA.ORDER_TXPR_NM
+                    , AA.ORDER_BFCY_ADDR
+                    , AA.ORDER_AC_NO
+                    , AA.ORDER_EXPN_RSN_CD
+                    , AA.ORDER_CLTR_ID
+                    , AA.ORDER_CLTR_NM
+                    , AA.EXPN_CRPP_RGSR_DT
+                    , AA.ORDER_EXPN_CRPP_RGSR_DT
+            FROM (
+                SELECT 	  A.EXPN_CRPP_NO
+                        , B.EXPN_CRPP_NO AS ORDER_EXPN_CRPP_NO
+                        , ROUND(A.DRWB_TRGT_AMT, 2) AS DRWB_TRGT_AMT
+                        , ROUND(B.DRWB_TRGT_AMT, 2) AS ORDER_DRWB_TRGT_AMT
+                        , A.AC_NO
+                        , B.AC_NO AS ORDER_AC_NO
+                        , A.CLTR_ID
+                        , B.CLTR_ID AS ORDER_CLTR_ID
+                        , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.CLTR_ID) AS CLTR_NM
+                        , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = B.CLTR_ID) AS ORDER_CLTR_NM
+                        , A.TXPR_IDFY_NO_TP_CD AS EXPN_TXPR_IDFY_NO_TP_CD
+                        , B.TXPR_IDFY_NO_TP_CD AS ORDER_TXPR_IDFY_NO_TP_CD
+                        , A.TXPR_IDFY_NO AS EXPN_TXPR_IDFY_NO
+                        , B.TXPR_IDFY_NO AS ORDER_TXPR_IDFY_NO
+                        , A.TXPR_NM AS EXPN_TXPR_NM
+                        , B.TXPR_NM AS ORDER_TXPR_NM
+                        , A.BFCY_ADDR
+                        , B.BFCY_ADDR AS ORDER_BFCY_ADDR
+                        , TO_CHAR(TO_DATE(A.EXPN_CRPP_RGSR_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS EXPN_CRPP_RGSR_DT
+                        , TO_CHAR(TO_DATE(B.EXPN_CRPP_RGSR_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS ORDER_EXPN_CRPP_RGSR_DT
+                        , '001' AS DLNG_PT_CD
+                        , '002' AS ORDER_DLNG_PT_CD
+                        , A.DLNG_KND_CD
+                        , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COL_0070' AND LANG_CD = #{langCd} AND CD_VDVAL = A.DLNG_KND_CD) AS DLNG_KND_NM
+                        , B.DLNG_KND_CD AS ORDER_DLNG_KND_CD
+                        , A.EXPN_PT_CD
+                        , B.EXPN_PT_CD AS ORDER_EXPN_PT_CD
+                        , A.EXPN_ORIG_CD
+                        , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COL_0069' AND LANG_CD = #{langCd} AND CD_VDVAL = A.EXPN_ORIG_CD) AS EXPN_ORIG_NM
+                        , B.EXPN_ORIG_CD AS ORDER_ORIG_CD
+                        , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COL_0082' AND LANG_CD = #{langCd} AND CD_VDVAL = B.EXPN_ORIG_CD) AS ORDER_ORIG_NM
+                        , A.ORIG_NO AS EXPN_ORIG_NO
+                        , B.ORIG_NO AS ORDER_ORIG_NO
+                        , A.ORIG_DT AS EXPN_ORIG_DT
+                        , B.ORIG_DT AS ORDER_ORIG_DT
+                        , A.PYMN_ORDER_TP_CD AS EXPN_PYMN_ORDER_TP_CD
+                        , B.PYMN_ORDER_TP_CD AS ORDER_PYMN_ORDER_TP_CD
+                        , A.RECP_NO
+                        , B.RECP_NO AS ORDER_RECP_NO
+                        , A.RECP_DT
+                        , B.RECP_DT AS ORDER_RECP_DT
+                        , A.EXPN_RSN_CD
+                        , B.EXPN_RSN_CD AS ORDER_EXPN_RSN_CD
+                        , A.CHCK_NO
+                        , A.CHCK_DT
+                        , B.DLNG_PT_LWPR_CD AS ORDER_DLNG_PT_LWPR_CD
+                        , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COL_0081' AND LANG_CD = #{langCd} AND CD_VDVAL = B.DLNG_PT_LWPR_CD) AS ORDER_DLNG_PT_LWPR_NM
+                        /* JOIN용 */
+                        , A.REFF_NO
+                    FROM 	(	SELECT T.* FROM TB_COLI_EXPN_CRPP T WHERE T.DLNG_PT_CD = '001') A
+                        FULL OUTER JOIN
+                            (	SELECT T.* FROM TB_COLI_EXPN_CRPP T WHERE T.DLNG_PT_CD = '002') B
+                            ON A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                    WHERE 1=1
+                ) AA, TB_COLI_PYMN_ORDER BB
+            WHERE AA.REFF_NO = BB.PYMN_ORDER_NO(+)
+            UNION ALL
+            SELECT 	  CSTM_CD
+                    , FN_GET_ORGN_NM(CSTM_CD) AS CSTM_NM
+                    , DEPT_CD
+                    , FN_GET_ORGN_NM(DEPT_CD) AS DEPT_NM
+                    , PYMN_ORDER_NO
+                    , PYMN_ORDER_TP_CD
+                    , REFF_NO_PT_CD
+                    , REFF_NO
+                    , TXPR_IDFY_NO_TP_CD
+                    , TXPR_IDFY_NO
+                    , TXPR_NM
+                    , RGSR_EMP_ID
+                    , PYMN_AMT
+                    , TO_CHAR(TO_DATE(PYMN_ORDER_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS PYMN_ORDER_DT
+                    , TO_CHAR(TO_DATE(REFF_NO_DT,'YYYYMMDD'),'DD/MM/YYYY') AS REFF_NO_DT
+                    , DLNG_ORIG_CD
+                    , APRP_ACCT_CD
+                    , TO_CHAR(TO_DATE(DLNG_PRID_YYMM, 'YYYYMM'), 'MM/YYYY') AS DLNG_PRID_YYMM
+                    , NULL AS EXPN_CRPP_NO
+                    , NULL AS EXPN_PT_CD
+                    , NULL AS EXPN_ORIG_CD
+                    , NULL AS EXPN_ORIG_NM
+                    , NULL AS EXPN_ORIG_NM
+                    , NULL AS EXPN_ORIG_NO
+                    , NULL AS EXPN_ORIG_DT
+                    , '001' AS DLNG_PT_CD
+                    , NULL AS DLNG_KND_CD
+                    , NULL AS RECP_NO
+                    , NULL AS RECP_DT
+                    , PYMN_ORDER_TP_CD AS EXPN_PYMN_ORDER_TP_CD
+                    , NULL AS DRWB_TRGT_AMT
+                    , NULL AS EXPN_TXPR_IDFY_NO_TP_CD
+                    , NULL AS EXPN_TXPR_IDFY_NO
+                    , NULL AS EXPN_TXPR_NM
+                    , NULL AS BFCY_ADDR
+                    , NULL AS AC_NO
+                    , NULL AS EXPN_RSN_CD
+                    , NULL AS CLTR_ID
+                    , NULL AS CLTR_NM
+                    , NULL AS CHCK_NO
+                    , NULL AS CHCK_DT
+                    , NULL AS ORDER_EXPN_CRPP_NO
+                    , NULL AS ORDER_EXPN_PT_CD
+                    , NULL AS ORDER_DLNG_PT_LWPR_CD
+                    , NULL AS ORDER_DLNG_PT_LWPR_NM
+                    , NULL AS ORDER_ORIG_CD
+                    , NULL AS ORDER_ORIG_NM
+                    , NULL AS ORDER_ORIG_NO
+                    , NULL AS ORDER_ORIG_DT
+                    , '002' AS ORDER_DLNG_PT_CD
+                    , NULL AS ORDER_DLNG_KND_CD
+                    , NULL AS ORDER_RECP_NO
+                    , NULL AS ORDER_RECP_DT
+                    , PYMN_ORDER_TP_CD AS ORDER_PYMN_ORDER_TP_CD
+                    , NULL AS ORDER_DRWB_TRGT_AMT
+                    , NULL AS ORDER_TXPR_IDFY_NO_TP_CD
+                    , NULL AS ORDER_TXPR_IDFY_NO
+                    , NULL AS ORDER_TXPR_NM
+                    , NULL AS ORDER_BFCY_ADDR
+                    , NULL AS ORDER_AC_NO
+                    , NULL AS ORDER_EXPN_RSN_CD
+                    , NULL AS ORDER_CLTR_ID
+                    , NULL AS ORDER_CLTR_NM
+                    , NULL AS EXPN_CRPP_RGSR_DT
+                    , NULL AS ORDER_EXPN_CRPP_RGSR_DT
+            FROM TB_COLI_PYMN_ORDER
+            WHERE PYMN_ORDER_NO NOT IN (SELECT PYMN_ORDER_NO FROM TB_COLI_PYMN_ORDER WHERE PYMN_ORDER_NO IN (SELECT REFF_NO FROM TB_COLI_EXPN_CRPP))
+            AND PYMN_ORDER_DT IS NOT NULL
+        ) VIEW
+        WHERE 1=1
+        <choose>
+            <when test="pymnOrderNo != null and pymnOrderNo !=''">
+                AND VIEW.PYMN_ORDER_NO LIKE TRIM(#{pymnOrderNo}) || '%'
+            </when>
+            <otherwise>
+                AND (VIEW.EXPN_CRPP_NO = #{expnCrppNo} OR VIEW.ORDER_EXPN_CRPP_NO = #{expnCrppNo})
+            </otherwise>
+        </choose>
+    </select>
+
+    <!--
+        Enregistrer les dépenses et des opérations d'ordre !==지출증명서를 등록한다==!
+    -->
+    <insert id="insertColAcntExpn" parameterType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo">
+        /* ColAcntMgmtMapper_insertColAcntExpn */
+        WITH UPSERT AS (
+            UPDATE    TB_COLI_EXPN_CRPP
+                SET
+                      LAST_CHPR_ID = #{lastChprId}          /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                    , LAST_CHG_DTTM = SYSTIMESTAMP          /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+                    , EXPN_PT_CD = #{expnPtCd}
+                    , EXPN_ORIG_CD = #{expnOrigCd}
+                    , ORIG_NO = #{expnOrigNo}
+                    , ORIG_DT = TO_CHAR(TO_DATE(#{expnOrigDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                    , DLNG_KND_CD = #{dlngKndCd}
+                    , RECP_NO = #{recpNo}
+                    , RECP_DT = TO_CHAR(TO_DATE(#{recpDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                    , PYMN_ORDER_TP_CD = #{expnPymnOrderTpCd}
+                    , DRWB_TRGT_AMT = #{drwbTrgtAmt}
+                    , TXPR_IDFY_NO_TP_CD = #{expnTxprIdfyNoTpCd}
+                    , TXPR_IDFY_NO = #{expnTxprIdfyNo}
+                    , TXPR_NM = #{expnTxprNm}
+                    , BFCY_ADDR = #{bfcyAddr}
+                    , AC_NO = #{acNo}
+                    , EXPN_RSN_CD = #{expnRsnCd}
+                    , CHCK_NO = #{chckNo}
+                    , CHCK_DT = TO_CHAR(TO_DATE(#{chckDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                    , CLTR_ID = #{cltrId}
+            WHERE   EXPN_CRPP_NO = #{expnCrppNo}
+                AND DLNG_PT_CD = #{dlngPtCd}
+            RETURNING *
+        )
+        INSERT INTO TB_COLI_EXPN_CRPP(
+                  EXPN_CRPP_NO
+                , CSTM_CD
+                , DEPT_CD
+                , TXPR_IDFY_NO
+                , TXPR_NM
+                , AC_NO
+                , REFF_NO_PT_CD
+                , REFF_NO
+                , RECP_NO
+                , RECP_DT
+                , DRWB_TRGT_AMT
+                , CLTR_ID
+                , DEL_YN
+                , FRST_REGST_ID
+                , FRST_RGSR_DTTM
+                , LAST_CHPR_ID
+                , LAST_CHG_DTTM
+                , EXPN_CRPP_RGSR_DT
+                , TXPR_IDFY_NO_TP_CD
+                , DLNG_KND_CD
+                , EXPN_PT_CD
+                , EXPN_ORIG_CD
+                , PYMN_ORDER_TP_CD
+                , EXPN_RSN_CD
+                , DLNG_PT_CD
+                , BFCY_ADDR
+                , CHCK_NO
+                , CHCK_DT
+                , ORIG_NO
+                , ORIG_DT
+        )
+        SELECT    #{expnCrppNo}
+                , #{cstmCd}
+                , #{deptCd}
+                , #{expnTxprIdfyNo}
+                , #{expnTxprNm}
+                , #{acNo}
+                , #{reffNoPtCd}
+                , #{reffNo}
+                , #{recpNo}
+                , TO_CHAR(TO_DATE(#{recpDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                , #{drwbTrgtAmt}
+                , #{cltrId}
+                , 'N'
+                , #{frstRegstId}
+                , SYSTIMESTAMP
+                , #{lastChprId}
+                , SYSTIMESTAMP
+                , TO_CHAR(SYSDATE, 'YYYYMMDD')
+                , #{expnTxprIdfyNoTpCd}
+                , #{dlngKndCd}
+                , #{expnPtCd}
+                , #{expnOrigCd}
+                , #{expnPymnOrderTpCd}
+                , #{expnRsnCd}
+                , '001'
+                , #{bfcyAddr}
+                , #{chckNo}
+                , TO_CHAR(TO_DATE(#{chckDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                , #{expnOrigNo}
+                , TO_CHAR(TO_DATE(#{expnOrigDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        WHERE	NOT EXISTS (SELECT * FROM UPSERT)
+    </insert>
+
+    <!--
+    Enregistrer les dépenses et des opérations d'ordre !==지출증명서를 등록한다==!
+    -->
+    <insert id="insertOrderColAcntExpn" parameterType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo">
+        /* ColAcntMgmtMapper_insertOrderColAcntExpn */
+        WITH UPSERT AS (
+            UPDATE    TB_COLI_EXPN_CRPP
+                SET
+                      LAST_CHPR_ID = #{lastChprId}          /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                    , LAST_CHG_DTTM = SYSTIMESTAMP          /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+                    , EXPN_PT_CD = #{orderExpnPtCd}
+                    , DLNG_PT_LWPR_CD = #{orderDlngPtLwprCd}
+                    , EXPN_ORIG_CD = #{orderOrigCd}
+                    , ORIG_NO = #{orderOrigNo}
+                    , ORIG_DT = TO_CHAR(TO_DATE(#{orderOrigDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                    , DLNG_KND_CD = #{orderDlngKndCd}
+                    , RECP_NO = #{recpNo}
+                    , RECP_DT = TO_CHAR(TO_DATE(#{orderRecpDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                    , PYMN_ORDER_TP_CD = #{orderPymnOrderTpCd}
+                    , DRWB_TRGT_AMT = #{orderDrwbTrgtAmt}
+                    , TXPR_IDFY_NO_TP_CD = #{orderTxprIdfyNoTpCd}
+                    , TXPR_IDFY_NO = #{orderTxprIdfyNo}
+                    , TXPR_NM = #{orderTxprNm}
+                    , BFCY_ADDR = #{orderBfcyAddr}
+                    , AC_NO = #{orderAcNo}
+                    , EXPN_RSN_CD = #{orderExpnRsnCd}
+            WHERE   EXPN_CRPP_NO = #{orderExpnCrppNo}
+                AND DLNG_PT_CD = #{orderDlngPtCd}
+            RETURNING *
+        )
+        INSERT INTO TB_COLI_EXPN_CRPP(
+                  EXPN_CRPP_NO
+                , CSTM_CD
+                , DEPT_CD
+                , TXPR_IDFY_NO
+                , TXPR_NM
+                , AC_NO
+                , REFF_NO_PT_CD
+                , REFF_NO
+                , RECP_NO
+                , RECP_DT
+                , DRWB_TRGT_AMT
+                , CLTR_ID
+                , DEL_YN
+                , FRST_REGST_ID
+                , FRST_RGSR_DTTM
+                , LAST_CHPR_ID
+                , LAST_CHG_DTTM
+                , EXPN_CRPP_RGSR_DT
+                , TXPR_IDFY_NO_TP_CD
+                , DLNG_KND_CD
+                , EXPN_PT_CD
+                , EXPN_ORIG_CD
+                , PYMN_ORDER_TP_CD
+                , EXPN_RSN_CD
+                , DLNG_PT_CD
+                , BFCY_ADDR
+                , ORIG_NO
+                , ORIG_DT
+                , DLNG_PT_LWPR_CD
+        )
+        SELECT    #{expnCrppNo}
+                , #{cstmCd}
+                , #{deptCd}
+                , #{orderTxprIdfyNo}
+                , #{orderTxprNm}
+                , #{orderAcNo}
+                , #{reffNoPtCd}
+                , #{reffNo}
+                , #{recpNo}
+                , TO_CHAR(TO_DATE(#{orderRecpDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                , #{orderDrwbTrgtAmt}
+                , #{cltrId}
+                , 'N'
+                , #{frstRegstId}
+                , SYSTIMESTAMP
+                , #{lastChprId}
+                , SYSTIMESTAMP
+                , TO_CHAR(SYSDATE, 'YYYYMMDD')
+                , #{orderTxprIdfyNoTpCd}
+                , #{orderDlngKndCd}
+                , #{orderExpnPtCd}
+                , #{orderOrigCd}
+                , #{orderPymnOrderTpCd}
+                , #{orderExpnRsnCd}
+                , '002'
+                , #{orderBfcyAddr}
+                , #{orderOrigNo}
+                , TO_CHAR(TO_DATE(#{orderOrigDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                , #{orderDlngPtLwprCd}
+        WHERE	NOT EXISTS (SELECT * FROM UPSERT)
+    </insert>
+
+    <!--
+    Consulter la liste des comptes comptables !==회계계정목록을 조회한다==!
+    -->
+    <select id="selectColAcntExpnDtlList" parameterType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo" resultType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo">
+        /** ColAcntMgmtMapper_selectColAcntExpnDtlList **/
+        SELECT    'false' AS CHK_SEL
+             , A.EXPN_CRPP_NO
+             , A.DTL_SRNO
+             , A.EXPN_CRPP_CD
+             , NVL(A.EXPN_AMT, 0) AS EXPN_AMT
+             , NVL(A.EXPN_CAST_AMT, 0) AS EXPN_CAST_AMT
+             , A.DEL_YN
+             , A.FRST_REGST_ID
+             , A.FRST_RGSR_DTTM
+             , A.LAST_CHPR_ID
+             , A.LAST_CHG_DTTM
+             , A.EXPN_CHPN_TP_CD
+             , A.EXPN_TXRT
+             , A.EXPN_ALCT_RT
+             , A.RMRK
+             , A.DBTOR_ACCT_CD
+             , A.DBTOR_ACCT_LWPR_CD
+             , A.DBTOR_ACCT_DTL_LWPR_CD
+             , (CASE
+                    WHEN DBTOR_ACCT_DTL_LWPR_CD IS NOT NULL AND DBTOR_ACCT_DTL_LWPR_CD != ''
+                    THEN (  SELECT ACCT_DTL_LWPR_CD_NM
+                            FROM TB_COLI_CLTD_ACCT_CD
+                            WHERE ACCT_CD = A.DBTOR_ACCT_CD
+                              AND ACCT_DTL_LWPR_CD = A.DBTOR_ACCT_DTL_LWPR_CD
+                              AND ACCT_TP_CD = 'D'
+                              AND SNB_TP_CD = #{snbTpCd}
+                              AND EXPN_PT_CD = B.EXPN_PT_CD
+                              AND DLNG_PT_LWPR_CD = DECODE(A.DLNG_PT_CD, '001', B.DLNG_KND_CD, '002', B.DLNG_PT_LWPR_CD, '')
+                              AND A.DBTOR_APLY_STRT_DT BETWEEN APLY_STRT_DT AND APLY_END_DT
+                              AND DEL_YN = 'N'
+                    ) ELSE ''
+                END) AS DBTOR_ACCT_DTL_LWPR_CD_NM
+             , A.CAST_ACCT_CD
+             , A.CAST_ACCT_LWPR_CD
+             , A.CAST_ACCT_DTL_LWPR_CD
+             , (CASE
+                    WHEN CAST_ACCT_DTL_LWPR_CD IS NOT NULL AND CAST_ACCT_DTL_LWPR_CD != ''
+                    THEN (  SELECT ACCT_DTL_LWPR_CD_NM
+                            FROM TB_COLI_CLTD_ACCT_CD
+                            WHERE ACCT_CD = A.CAST_ACCT_CD
+                              AND ACCT_DTL_LWPR_CD = A.CAST_ACCT_DTL_LWPR_CD
+                              AND SNB_TP_CD = #{snbTpCd}
+                              AND ACCT_TP_CD = 'C'
+                              AND EXPN_PT_CD = B.EXPN_PT_CD
+                              AND DLNG_PT_LWPR_CD = DECODE(A.DLNG_PT_CD, '001', B.DLNG_KND_CD, '002', B.DLNG_PT_LWPR_CD, '')
+                              AND A.CAST_APLY_STRT_DT BETWEEN APLY_STRT_DT AND APLY_END_DT
+                              AND DEL_YN = 'N'
+                    ) ELSE ''
+                END) AS CAST_ACCT_DTL_LWPR_CD_NM
+             , TO_CHAR(TO_DATE(A.CAST_APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS CAST_APLY_STRT_DT
+             , TO_CHAR(TO_DATE(A.DBTOR_APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS DBTOR_APLY_STRT_DT
+        FROM    TB_COLI_EXPN_CRPP_DTL A, TB_COLI_EXPN_CRPP B
+        WHERE   A.DEL_YN = 'N'
+          AND A.EXPN_CRPP_NO  = B.EXPN_CRPP_NO AND A.DLNG_PT_CD = B.DLNG_PT_CD
+          AND A.DLNG_PT_CD = #{dlngPtCd}
+          AND A.EXPN_CRPP_NO = #{expnCrppNo}
+    </select>
+
+    <!--
+    Consulter la liste des comptes comptables !==회계계정목록을 조회한다==!
+    -->
+    <select id="selectColAcntExpnDtlListForCrpp" parameterType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo" resultType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo">
+        /** ColAcntMgmtMapper_selectColAcntExpnDtlListForCrpp **/
+        SELECT 	CASE
+                WHEN DBTOR_ACCT_CD IS NOT NULL THEN DBTOR_ACCT_DTL_LWPR_CD
+                WHEN CAST_ACCT_CD IS NOT NULL THEN CAST_ACCT_DTL_LWPR_CD
+                ELSE '/'
+                END AS ACCT_DTL_LWPR_CD
+              , CASE
+                WHEN DBTOR_ACCT_CD IS NOT NULL THEN DBTOR_ACCT_LWPR_CD
+                WHEN CAST_ACCT_CD IS NOT NULL THEN CAST_ACCT_LWPR_CD
+                ELSE ''
+                END AS ACCT_DTL_CD
+              , CASE
+                WHEN DBTOR_ACCT_CD IS NOT NULL
+                THEN (
+                    SELECT ACCT_DTL_LWPR_CD_NM
+                    FROM TB_COLI_CLTD_ACCT_CD
+                    WHERE ACCT_CD = A.DBTOR_ACCT_CD
+                      AND ACCT_DTL_CD = A.DBTOR_ACCT_LWPR_CD
+                      AND ACCT_DTL_LWPR_CD = A.DBTOR_ACCT_DTL_LWPR_CD
+                      AND ACCT_TP_CD = 'D'
+                      AND SNB_TP_CD = #{snbTpCd}
+                      AND EXPN_PT_CD = A.EXPN_PT_CD
+                      AND DLNG_PT_LWPR_CD = DECODE(A.DLNG_PT_CD, '001', A.DLNG_KND_CD, '002', A.DLNG_PT_LWPR_CD, '')
+                      AND A.DBTOR_APLY_STRT_DT BETWEEN APLY_STRT_DT AND APLY_END_DT
+                      AND DEL_YN = 'N'
+                )
+                WHEN CAST_ACCT_CD IS NOT NULL
+                THEN (
+                    SELECT ACCT_DTL_LWPR_CD_NM
+                    FROM TB_COLI_CLTD_ACCT_CD
+                    WHERE ACCT_CD = A.CAST_ACCT_CD
+                      AND ACCT_DTL_CD = A.CAST_ACCT_LWPR_CD
+                      AND ACCT_DTL_LWPR_CD = A.CAST_ACCT_DTL_LWPR_CD
+                      AND ACCT_TP_CD = 'C'
+                      AND SNB_TP_CD = #{snbTpCd}
+                      AND EXPN_PT_CD = A.EXPN_PT_CD
+                      AND DLNG_PT_LWPR_CD = DECODE(A.DLNG_PT_CD, '001', A.DLNG_KND_CD, '002', A.DLNG_PT_LWPR_CD, '')
+                      AND A.CAST_APLY_STRT_DT BETWEEN APLY_STRT_DT AND APLY_END_DT
+                      AND DEL_YN = 'N'
+                )
+                ELSE ''
+                END AS ACCT_DTL_LWPR_CD_NM
+              , CASE
+                WHEN DBTOR_ACCT_CD IS NOT NULL
+                THEN (
+                    SELECT ACCT_DTL_CD_NM
+                    FROM TB_COLI_CLTD_ACCT_CD
+                    WHERE ACCT_CD = A.DBTOR_ACCT_CD
+                      AND ACCT_DTL_CD = A.DBTOR_ACCT_LWPR_CD
+                      AND ACCT_DTL_LWPR_CD = A.DBTOR_ACCT_DTL_LWPR_CD
+                      AND ACCT_TP_CD = 'D'
+                      AND SNB_TP_CD = #{snbTpCd}
+                      AND EXPN_PT_CD = A.EXPN_PT_CD
+                      AND DLNG_PT_LWPR_CD = DECODE(A.DLNG_PT_CD, '001', A.DLNG_KND_CD, '002', A.DLNG_PT_LWPR_CD, '')
+                      AND A.DBTOR_APLY_STRT_DT BETWEEN APLY_STRT_DT AND APLY_END_DT
+                      AND DEL_YN = 'N'
+                )
+                WHEN CAST_ACCT_CD IS NOT NULL
+                THEN (
+                    SELECT ACCT_DTL_CD_NM
+                    FROM TB_COLI_CLTD_ACCT_CD
+                    WHERE ACCT_CD = A.CAST_ACCT_CD
+                      AND ACCT_DTL_CD = A.CAST_ACCT_LWPR_CD
+                      AND ACCT_DTL_LWPR_CD = A.CAST_ACCT_DTL_LWPR_CD
+                      AND ACCT_TP_CD = 'C'
+                      AND SNB_TP_CD = #{snbTpCd}
+                      AND EXPN_PT_CD = A.EXPN_PT_CD
+                      AND DLNG_PT_LWPR_CD = DECODE(A.DLNG_PT_CD, '001', A.DLNG_KND_CD, '002', A.DLNG_PT_LWPR_CD, '')
+                      AND A.CAST_APLY_STRT_DT BETWEEN APLY_STRT_DT AND APLY_END_DT
+                      AND DEL_YN = 'N'
+                )
+                ELSE ''
+                END AS ACCT_DTL_CD_NM
+              , ROUND(EXPN_AMT, 2) AS EXPN_AMT
+              , DBTOR_ACCT_CD
+              , ROUND(EXPN_CAST_AMT, 2) AS EXPN_CAST_AMT
+              , CAST_ACCT_CD
+        FROM (
+            SELECT  A.DBTOR_ACCT_DTL_LWPR_CD
+                  , A.DBTOR_ACCT_LWPR_CD
+                  , A.EXPN_AMT
+                  , A.DBTOR_ACCT_CD
+                  , NULL AS CAST_ACCT_DTL_LWPR_CD
+                  , NULL AS CAST_ACCT_LWPR_CD
+                  , NULL AS EXPN_CAST_AMT
+                  , NULL AS CAST_ACCT_CD
+                  , A.EXPN_CRPP_NO
+                  , A.DLNG_PT_CD
+                  , A.DBTOR_APLY_STRT_DT
+                  , A.CAST_APLY_STRT_DT
+                  , B.EXPN_PT_CD
+                  , B.DLNG_KND_CD
+                  , B.DLNG_PT_LWPR_CD
+            FROM TB_COLI_EXPN_CRPP_DTL A, TB_COLI_EXPN_CRPP B
+            WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+              AND A.DLNG_PT_CD = B.DLNG_PT_CD
+              AND A.DEL_YN = 'N' AND B.DEL_YN = 'N'
+              AND A.EXPN_CRPP_NO = #{expnCrppNo}
+              AND A.DLNG_PT_CD = #{dlngPtCd}
+            UNION ALL
+            SELECT  NULL AS DBTOR_ACCT_DTL_LWPR_CD
+                  , NULL AS DBTOR_ACCT_LWPR_CD
+                  , NULL AS EXPN_AMT
+                  , NULL AS DBTOR_ACCT_CD
+                  , A.CAST_ACCT_DTL_LWPR_CD
+                  , A.CAST_ACCT_LWPR_CD
+                  , A.EXPN_CAST_AMT
+                  , A.CAST_ACCT_CD
+                  , A.EXPN_CRPP_NO
+                  , A.DLNG_PT_CD
+                  , A.DBTOR_APLY_STRT_DT
+                  , A.CAST_APLY_STRT_DT
+                  , B.EXPN_PT_CD
+                  , B.DLNG_KND_CD
+                  , B.DLNG_PT_LWPR_CD
+            FROM TB_COLI_EXPN_CRPP_DTL A, TB_COLI_EXPN_CRPP B
+            WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+              AND A.DLNG_PT_CD = B.DLNG_PT_CD
+              AND A.DEL_YN = 'N' AND B.DEL_YN = 'N'
+              AND A.EXPN_CRPP_NO = #{expnCrppNo}
+              AND A.DLNG_PT_CD = #{dlngPtCd}
+        ) A
+    </select>
+
+    <!--
+    Enregistrer un compte comptable !==회계계정을 등록한다==!
+    -->
+    <insert id="insertColAcntExpnDtl" parameterType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo">
+        /* ColAcntMgmtMapper_insertColAcntExpnDtl */
+        INSERT INTO TB_COLI_EXPN_CRPP_DTL(
+                                           EXPN_CRPP_NO
+                                         , DTL_SRNO
+                                         , EXPN_CRPP_CD
+                                         , EXPN_AMT
+                                         , EXPN_CAST_AMT
+                                         , DBTOR_ACCT_CD
+                                         , CAST_ACCT_CD
+                                         , DEL_YN
+                                         , FRST_REGST_ID
+                                         , FRST_RGSR_DTTM
+                                         , LAST_CHPR_ID
+                                         , LAST_CHG_DTTM
+                                         , EXPN_CHPN_TP_CD
+                                         , EXPN_TXRT
+                                         , EXPN_ALCT_RT
+                                         , RMRK
+                                         , ACCT_DTL_CD
+                                         , CAST_ACCT_LWPR_CD
+                                         , DBTOR_ACCT_LWPR_CD
+                                         , CAST_ACCT_DTL_LWPR_CD
+                                         , DBTOR_ACCT_DTL_LWPR_CD
+                                         , DLNG_PT_CD
+                                         , CAST_APLY_STRT_DT
+                                         , DBTOR_APLY_STRT_DT
+        ) VALUES (
+                     #{expnCrppNo}
+                 , (SELECT NVL(MAX (DTL_SRNO), 0) + 1 FROM TB_COLI_EXPN_CRPP_DTL WHERE EXPN_CRPP_NO = #{expnCrppNo})
+                 , #{expnCrppCd}
+                 , #{expnAmt}
+                 , #{expnCastAmt}
+                 , #{dbtorAcctCd}
+                 , #{castAcctCd}
+                 , 'N'
+                 , #{frstRegstId}
+                 , SYSTIMESTAMP
+                 , #{lastChprId}
+                 , SYSTIMESTAMP
+                 , #{expnChpnTpCd}
+                 , #{expnTxrt}
+                 , #{expnAlctRt}
+                 , #{rmrk}
+                 , #{acctDtlCd}
+                 , #{castAcctLwprCd}
+                 , #{dbtorAcctLwprCd}
+                 , #{castAcctDtlLwprCd}
+                 , #{dbtorAcctDtlLwprCd}
+                 , #{dlngPtCd}
+                 , TO_CHAR(TO_DATE(#{castAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                 , TO_CHAR(TO_DATE(#{dbtorAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                 )
+    </insert>
+
+    <!--
+    Supprimer tous les comptes comptables !==회계계정을 전부 삭제한다==!
+    -->
+    <update id="deleteAllColAcntExpnDtl" parameterType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo">
+        /* ColAcntMgmtMapper_deleteAllColAcntExpnDtl */
+        UPDATE  TB_COLI_EXPN_CRPP_DTL
+        SET     DEL_YN = 'Y'
+        WHERE   EXPN_CRPP_NO = #{expnCrppNo}
+            AND DLNG_PT_CD = #{dlngPtCd}
+    </update>
+
+    <!--
+    supprimer les dépenses et des opérations d'ordre !==지출증명서를 삭제한다==!
+    -->
+    <update id="deleteColAcntExpn" parameterType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo">
+        /* ColAcntMgmtMapper_deleteColAcntExpn */
+        UPDATE TB_COLI_EXPN_CRPP
+        SET DEL_YN        = 'Y'
+          , LAST_CHPR_ID  = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE EXPN_CRPP_NO = #{expnCrppNo}
+    </update>
+    <update id="deleteColAcntExpnDtl" parameterType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo">
+        /* ColAcntMgmtMapper_deleteColAcntExpnDtl */
+        UPDATE TB_COLI_EXPN_CRPP_DTL
+        SET DEL_YN        = 'Y'
+          , LAST_CHPR_ID  = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE EXPN_CRPP_NO = #{expnCrppNo}
+    </update>
+
+    <!--
+    Enregistrer l'historique des détails du certificat de dépenses !==지출증명서 상세 정보 이력을 등록한다==!
+    -->
+    <insert id="insertColAcntExpnDtlHist" parameterType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo">
+        /* ColAcntMgmtMapper_insertColAcntExpnDtlHist */
+        <selectKey resultType="string" keyProperty="mdfyDgcnt" order="BEFORE">
+            SELECT NVL(MAX(MDFY_DGCNT), '0') + 1 FROM TB_COLI_EXPN_CRPP_DTL_HIST WHERE EXPN_CRPP_NO = #{expnCrppNo} AND DTL_SRNO = #{dtlSrno}
+        </selectKey>
+        INSERT INTO TB_COLI_EXPN_CRPP_DTL_HIST(
+        EXPN_CRPP_NO
+        , DTL_SRNO
+        , EXPN_CRPP_CD
+        , EXPN_AMT
+        , EXPN_CAST_AMT
+        , DBTOR_ACCT_CD
+        , CAST_ACCT_CD
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM
+        , EXPN_CHPN_TP_CD
+        , EXPN_TXRT
+        , EXPN_ALCT_RT
+        , RMRK
+        , MDFY_DGCNT
+        , CAST_ACCT_LWPR_CD
+        , DBTOR_ACCT_LWPR_CD
+        , CAST_ACCT_DTL_LWPR_CD
+        , DBTOR_ACCT_DTL_LWPR_CD
+        , DLNG_PT_CD
+        , CAST_APLY_STRT_DT
+        , DBTOR_APLY_STRT_DT
+        ) VALUES (
+        #{expnCrppNo}
+        , (SELECT NVL(MAX (DTL_SRNO), 0) + 1 FROM TB_COLI_EXPN_CRPP_DTL_HIST WHERE EXPN_CRPP_NO = #{expnCrppNo})
+        , #{expnCrppCd}
+        , #{expnAmt}
+        , #{expnCastAmt}
+        , #{dbtorAcctCd}
+        , #{castAcctCd}
+        , 'N'
+        , #{frstRegstId}
+        , SYSTIMESTAMP
+        , #{lastChprId}
+        , SYSTIMESTAMP
+        , #{expnChpnTpCd}
+        , #{expnTxrt}
+        , #{expnAlctRt}
+        , #{rmrk}
+        , #{mdfyDgcnt}
+        , #{castAcctLwprCd}
+        , #{dbtorAcctLwprCd}
+        , #{castAcctDtlLwprCd}
+        , #{dbtorAcctDtlLwprCd}
+        , #{dlngPtCd}
+        , TO_CHAR(TO_DATE(#{castAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        , TO_CHAR(TO_DATE(#{dbtorAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        )
+    </insert>
+
+
+    <!--
+    Mettre en correspondance le numéro de dépense avec la liste des encaissements !==수납리스트에 지출번호를 매핑==!
+    -->
+    <update id="updateRcveExpnCrppNo" parameterType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo">
+        /* ColAcntMgmtMapper_updateRcveExpnCrppNo */
+        UPDATE  TB_COLI_RCVE
+        SET EXPN_CRPP_NO = #{expnCrppNo}
+        WHERE RCVE_NO IN
+        <foreach collection="rcveLstInqtList" item="item" open="(" close=")" separator=",">#{item.rcveNo}</foreach>
+    </update>
+
+    <!--
+    Supprimer le numéro de dépense lié à la liste des encaissements !==수납리스트에 매핑된 지출번호를 삭제==!
+    -->
+    <update id="deleteAllRcveExpnCrppNo" parameterType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo">
+        /* ColAcntMgmtMapper_deleteAllRcveExpnCrppNo */
+        UPDATE TB_COLI_RCVE
+        SET EXPN_CRPP_NO = NULL
+        WHERE EXPN_CRPP_NO = #{expnCrppNo}
+    </update>
+
+    <!--
+    Consulter la liste des comptes avec le n° Ordre de paiement !==지불명령서 번호로 계정리스트 조회==!
+    -->
+    <select id="selectAcntMgmtListByPymnOrderNo" parameterType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo" resultType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo">
+        /* ColAcntMgmtMapper_selectAcntMgmtListByPymnOrderNo */
+        SELECT  A.EXPN_CRPP_NO
+              , A.DLNG_PT_CD
+              , A.DTL_SRNO
+              , A.EXPN_CRPP_CD
+              , A.DBTOR_ACCT_CD
+              , A.DBTOR_ACCT_LWPR_CD
+              , DBTOR_ACCT_DTL_LWPR_CD
+              , CASE
+                    WHEN A.DBTOR_ACCT_DTL_LWPR_CD = '' OR A.DBTOR_ACCT_DTL_LWPR_CD IS NULL
+                        THEN ''
+                    ELSE (  SELECT ACCT_DTL_LWPR_CD_NM
+                            FROM TB_COLI_CLTD_ACCT_CD
+                            WHERE ACCT_CD = A.DBTOR_ACCT_CD
+                              AND ACCT_DTL_LWPR_CD = A.DBTOR_ACCT_DTL_LWPR_CD
+                              AND SNB_TP_CD = #{snbTpCd}
+                              AND ACCT_TP_CD = 'D'
+                              AND EXPN_PT_CD = B.EXPN_PT_CD
+                              AND DLNG_PT_LWPR_CD = DECODE(A.DLNG_PT_CD, '001', B.DLNG_KND_CD, '002', B.DLNG_PT_LWPR_CD, '')
+                              AND A.DBTOR_APLY_STRT_DT BETWEEN APLY_STRT_DT AND APLY_END_DT
+                              AND DEL_YN = 'N'
+                    )
+                END AS DBTOR_ACCT_DTL_LWPR_CD_NM
+              , CAST_ACCT_CD
+              , CAST_ACCT_LWPR_CD
+              , A.CAST_ACCT_DTL_LWPR_CD
+              , CASE
+                    WHEN A.CAST_ACCT_DTL_LWPR_CD = '' OR A.CAST_ACCT_DTL_LWPR_CD IS NULL
+                        THEN ''
+                    ELSE (  SELECT ACCT_DTL_LWPR_CD_NM
+                            FROM TB_COLI_CLTD_ACCT_CD
+                            WHERE ACCT_CD = A.CAST_ACCT_CD
+                              AND ACCT_DTL_LWPR_CD = A.CAST_ACCT_DTL_LWPR_CD
+                              AND SNB_TP_CD = #{snbTpCd}
+                              AND ACCT_TP_CD = 'C'
+                              AND EXPN_PT_CD = B.EXPN_PT_CD
+                              AND DLNG_PT_LWPR_CD = DECODE(A.DLNG_PT_CD, '001', B.DLNG_KND_CD, '002', B.DLNG_PT_LWPR_CD, '')
+                              AND A.CAST_APLY_STRT_DT BETWEEN APLY_STRT_DT AND APLY_END_DT
+                              AND DEL_YN = 'N'
+                    )
+                END AS CAST_ACCT_DTL_LWPR_CD_NM
+              , NVL(A.EXPN_AMT, 0) AS EXPN_AMT
+              , NVL(A.EXPN_CAST_AMT, 0) AS EXPN_CAST_AMT
+              , A.EXPN_CHPN_TP_CD
+              , FN_GET_CD_VDVAL_NM('COL_0072', A.EXPN_CHPN_TP_CD, #{langCd}) AS EXPN_CHPN_TP_NM
+              , A.EXPN_TXRT
+              , A.EXPN_ALCT_RT
+              , A.ACCT_DTL_CD
+              , A.RMRK
+              , A.DEL_YN
+              , A.FRST_REGST_ID
+              , A.FRST_RGSR_DTTM
+              , A.LAST_CHPR_ID
+              , A.LAST_CHG_DTTM
+        FROM TB_COLI_EXPN_CRPP_DTL A, TB_COLI_EXPN_CRPP B
+        WHERE A.EXPN_CRPP_NO  = B.EXPN_CRPP_NO AND A.DLNG_PT_CD = B.DLNG_PT_CD
+          AND A.EXPN_CRPP_NO = (SELECT EXPN_CRPP_NO FROM TB_COLI_EXPN_CRPP WHERE REFF_NO = #{reffNo} GROUP BY EXPN_CRPP_NO)
+          AND A.DLNG_PT_CD = #{dlngPtCd}
+          AND A.DEL_YN = 'N'
+    </select>
+
+    <!--
+    Mettre à jour le type d'opération et la catégorie !==거래유형, 카테고리를 업데이트==!
+    -->
+    <update id="updateExpnPtCdAndCategory" parameterType="alpass.ipt.col.acnt.vo.ColAcntMgmtVo">
+        /* ColAcntMgmtMapper_updateExpnPtCdAndCategory */
+        UPDATE  TB_COLI_EXPN_CRPP
+            SET LAST_CHG_DTTM = SYSDATE
+              , LAST_CHPR_ID = #{lastChprId}
+            <choose>
+                <when test="dlngPtCd.equals('001')">
+                    , EXPN_PT_CD = #{expnPtCd}
+                </when>
+                <when test="dlngPtCd.equals('002')">
+                    , EXPN_PT_CD = #{orderExpnPtCd}
+                    , DLNG_PT_LWPR_CD = #{orderDlngPtLwprCd}
+                </when>
+            </choose>
+        WHERE   EXPN_CRPP_NO = #{expnCrppNo}
+            AND DLNG_PT_CD = #{dlngPtCd}
+    </update>
+
+</mapper>

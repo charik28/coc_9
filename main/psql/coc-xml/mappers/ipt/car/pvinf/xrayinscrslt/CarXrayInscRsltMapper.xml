@@ -1,0 +1,897 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper">
+
+	<!--
+	[Rechercher]  Consulter la liste des "Résultat du contrôle scanner"   !== X-RAY 검사결과 목록을 조회한다. ==!
+	(Jeong Byungyeol)
+	-->
+	<select id="selectXrayInscRsltList" resultType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayInscRsltVo">
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.selectXrayInscRsltList */
+		<include refid="pagination.header" ></include>
+		SELECT A.XRAY_INSC_NO					/**  NUMÉRO DE CONTRÔLE XRAY  !== XRAY검사번호 ==!  */
+			 , A.CAG_TP_CD							/**  TYPE DE FLUX  !== 화물구분코드 ==!  */
+			 , A.TRNP_MEAN_CD					/**  CODE DE MODE DE TRANSPORT  !== 운송방법코드 ==!  */
+			 , A.IBOBZ_CD									/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+		     , (SELECT IBOBZ_NM  /* Nom de la zone sous douane !== 보세구역명 ==! */
+			    FROM TB_CARI_IBOBZ
+			    WHERE DEL_YN = 'N'
+			    AND IBOBZ_CD = A.IBOBZ_CD) AS IBOBZ_NM
+<!-- 			 , TO_CHAR(TO_DATE(A.INSC_DT, 'DDMMYYYY'),'DD/MM/YYYY') AS INSC_DT /**  DATE DE VÉRIFICATION  !== 검사일자 ==!  */ -->
+			 , A.JRSD_ORGN_CD
+			 , A.DEL_YN								/**  SUPPRESSION ON  !== 삭제여부 ==!  */
+			 , A.FRST_REGST_ID					/**  ID DU PREMIER ENREGISTRANT   !== 최초등록자ID ==!  */
+			 , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM				/**  DATE ET HEURE DE PREMIER ENREGISTREMENT  !== 최초등록일시 ==!  */
+			 , A.LAST_CHPR_ID					/**  ID DU MODIFICATEUR FINAL  !== 최종변경자ID ==!  */
+			 , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY') AS LAST_CHG_DTTM				/**  DATE ET HEURE DE MODIFICATION FINALE  !== 최종변경일시 ==!  */
+		FROM ALPASSINT.TB_CARI_XRAY_INSC_RSLT A
+		   , ALPASSINT.TB_CARI_IBOBZ B
+		WHERE A.IBOBZ_CD = B.IBOBZ_CD
+		AND   A.DEL_YN = 'N'
+		<if test="xrayInscNo != null and xrayInscNo != ''">
+			AND A.XRAY_INSC_NO = #{xrayInscNo}			/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+		</if>
+		<if test="(searchKeywordFrom != null and searchKeywordFrom != '') and (searchKeywordTo != null and searchKeywordTo != '')">
+			AND (
+				A.FRST_RGSR_DTTM <![CDATA[ >= ]]> TO_TIMESTAMP(#{searchKeywordFrom}, 'DD/MM/YYYY')
+				AND A.FRST_RGSR_DTTM <![CDATA[ <= ]]> TO_TIMESTAMP(#{searchKeywordTo}, 'DD/MM/YYYY')+0.9999
+			)
+		</if>
+		<if test="cagTpCd != null and cagTpCd != ''">
+			AND A.CAG_TP_CD = #{cagTpCd}	/**  Type de flux  !== 화물구분코드 ==!  */
+		</if>
+		<if test="ibobzCd != null and ibobzCd != ''">
+			AND A.IBOBZ_CD = #{ibobzCd}		/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+		</if>
+		<if test="trnpMeanCd != null and trnpMeanCd != ''">
+			AND A.TRNP_MEAN_CD = #{trnpMeanCd}	/**  CODE DE MODE DE TRANSPORT  !== 운송방법코드 ==!  */
+		</if>
+
+		<if test="jrsdOrgnCd != null and jrsdOrgnCd != ''">
+			AND A.JRSD_ORGN_CD = #{jrsdOrgnCd}
+		</if>
+			AND EXISTS 	(	SELECT	1
+							FROM ALPASSINT.VW_POTI_ROLE_UNFC A1
+							WHERE A1.PBSR_NO = #{pbsrNo}
+							AND   A1.ROLE_ID = 'CAR119'
+						)
+		<if test="xrayInscNo != null and xrayInscNo != ''">
+			AND		A.XRAY_INSC_NO = #{xrayInscNo}			/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+		</if>
+		<if test="(cagMgmtNo != null and cagMgmtNo != '') or (cntrNo != null and cntrNo != '')">
+		    AND EXISTS  (   SELECT  1
+                            FROM tb_cari_xray_cntr x
+                            WHERE x.xray_insc_no = a.xray_insc_no
+                            <if test="cagMgmtNo != null and cagMgmtNo != ''">
+                            AND x.cag_mgmt_no = #{cagMgmtNo}
+                            </if>
+                            <if test="cntrNo != null and cntrNo != ''">
+                            AND x.cntr_no = #{cntrNo}
+                            </if>
+                            AND x.del_yn = 'N'
+                        )
+        </if>                          
+		ORDER BY A.FRST_RGSR_DTTM DESC
+		<include refid="pagination.footer" ></include>
+	</select>
+
+	<!--
+	[Rechercher] Consulter les détails de la "Résultat du contrôle scanner"   !== X-RAY 검사결과 상세내역을 조회한다. ==!
+	(Jeong Byungyeol)
+	-->
+	<select id="selectXrayInscRslt" parameterType="String" resultType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayInscRsltVo">
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.selectXrayInscRslt */
+			SELECT
+				  A.XRAY_INSC_NO				/**  NUMÉRO DE CONTRÔLE XRAY  !== XRAY검사번호 ==!  */
+				, A.CAG_TP_CD						/**  TYPE DE FLUX  !== 화물구분코드 ==!  */
+				, A.TRNP_MEAN_CD				/**  CODE DE MODE DE TRANSPORT  !== 운송방법코드 ==!  */
+				, A.IBOBZ_CD								/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+			    , A.JRSD_ORGN_CD
+				, A.DEL_YN							/**  SUPPRESSION ON  !== 삭제여부 ==!  */
+				, A.FRST_REGST_ID				/**  ID DU PREMIER ENREGISTRANT   !== 최초등록자ID ==!  */
+				, TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM				/**  DATE ET HEURE DE PREMIER ENREGISTREMENT  !== 최초등록일시 ==!  */
+				, A.LAST_CHPR_ID				/**  ID DU MODIFICATEUR FINAL  !== 최종변경자ID ==!  */
+				, TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY') AS LAST_CHG_DTTM				/**  DATE ET HEURE DE MODIFICATION FINALE  !== 최종변경일시 ==!  */
+			FROM
+				ALPASSINT.TB_CARI_XRAY_INSC_RSLT A
+			WHERE
+			  A.DEL_YN = 'N'
+			<if test="xrayInscNo != null and xrayInscNo != ''">
+				AND		A.XRAY_INSC_NO = #{xrayInscNo}			/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+			</if>
+			<if test="cagTpCd != null and cagTpCd != ''">
+		    	AND 	A.CAG_TP_CD = #{cagTpCd}	/**  Type de flux  !== 화물구분코드 ==!  */
+			</if>
+			<if test="ibobzCd != null and ibobzCd != ''">-->
+				AND 	A.IBOBZ_CD = #{ibobzCd}		/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+			</if>
+			<if test="trnpMeanCd != null and trnpMeanCd != ''">
+				AND 	A.TRNP_MEAN_CD = #{trnpMeanCd}	/**  CODE DE MODE DE TRANSPORT  !== 운송방법코드 ==!  */
+			</if>
+
+	</select>
+
+
+	<!--
+	[Enregistrer] @TODO 번역필요   !== X-RAY 검사결과를 등록&수정 한다.==!
+	(Jeong Byungyeol)
+	-->
+	<update id="mergeXrayInscRslt" parameterType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayInscRsltVo">
+
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.mergeXrayInscRslt */
+		WITH UPSERT AS
+		(
+			UPDATE ALPASSINT.TB_CARI_XRAY_INSC_RSLT SET
+				  CAG_TP_CD = #{cagTpCd} 						/**  Type de flux  !== 화물구분코드 ==!  */
+				, TRNP_MEAN_CD = #{trnpMeanCd} 			/**  Code de mode de transport  !== 운송방법코드 ==!  */
+				, IBOBZ_CD = #{ibobzCd} 									/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+				, DEL_YN = #{delYn} 								/**  Suppression On  !== 삭제여부 ==!  */
+				, JRSD_ORGN_CD = #{jrsdOrgnCd}
+				, LAST_CHPR_ID = #{lastChprId} 			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+				, LAST_CHG_DTTM = SYSTIMESTAMP 			/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+			WHERE
+		    XRAY_INSC_NO = #{xrayInscNo}			/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+			RETURNING *
+		)
+		INSERT INTO ALPASSINT.TB_CARI_XRAY_INSC_RSLT
+		(
+			  XRAY_INSC_NO				/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+			, CAG_TP_CD						/**  Type de flux  !== 화물구분코드 ==!  */
+			, TRNP_MEAN_CD				/**  Code de mode de transport  !== 운송방법코드 ==!  */
+			, IBOBZ_CD								/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+			, JRSD_ORGN_CD
+			, DEL_YN							/**  Suppression On  !== 삭제여부 ==!  */
+			, FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, FRST_RGSR_DTTM			/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		)
+		SELECT
+			  #{xrayInscNo}				/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+			, #{cagTpCd}					/**  Type de flux  !== 화물구분코드 ==!  */
+			, #{trnpMeanCd}				/**  Code de mode de transport  !== 운송방법코드 ==!  */
+			, #{ibobzCd}							/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+			, #{jrsdOrgnCd}
+			, #{delYn}						/**  Suppression On  !== 삭제여부 ==!  */
+			, #{frstRegstId}			/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, SYSTIMESTAMP 				/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, #{lastChprId}				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, SYSTIMESTAMP 				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		WHERE NOT EXISTS(SELECT * FROM UPSERT)
+	</update>
+
+	<!--
+	[Modifier] @TODO 번역필요 !== X-RAY 검사결과 삭제처리 한다.==!
+	(Jeong Byungyeol)
+	-->
+	<update id="deleteXrayInscRslt" parameterType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayInscRsltVo">
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.updateXrayInscRsltPrcsSttsCd */
+		UPDATE  ALPASSINT.TB_CARI_XRAY_INSC_RSLT SET
+			  DEL_YN = 'Y'
+			, LAST_CHPR_ID                = #{lastChprId} 			  /**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, LAST_CHG_DTTM               = SYSTIMESTAMP 	        /**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		WHERE
+			XRAY_INSC_NO = #{xrayInscNo}         /**  N° demande d'accord préalable d'agrément pour la zone sous douane  !== 보세구역인허가사전승인신청번호 ==!  */
+	</update>
+
+	<!--
+	[Rechercher]  @TODO 번역필요 !== X-RAY 검사결과 검사자 목록을 조회한다. ==!
+	(Jeong Byungyeol)
+	-->
+	<select id="selectXrayIsprList" parameterType="String" resultType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayIsprVo">
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.selectXrayIsprList */
+		SELECT
+			   A.XRAY_INSC_NO				/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+			 , A.INSC_EMP_ID
+			 , B.EMP_NM
+			 , A.FRST_REGST_ID				/**  ID DU PREMIER ENREGISTRANT   !== 최초등록자ID ==!  */
+			 , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM				/**  DATE ET HEURE DE PREMIER ENREGISTREMENT  !== 최초등록일시 ==!  */
+			 , A.LAST_CHPR_ID				/**  ID DU MODIFICATEUR FINAL  !== 최종변경자ID ==!  */
+			 , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY') AS LAST_CHG_DTTM				/**  DATE ET HEURE DE MODIFICATION FINALE  !== 최종변경일시 ==!  */
+			 , A.DEL_YN
+		FROM
+			ALPASSINT.TB_CARI_XRAY_ISPR A
+				LEFT OUTER JOIN	(SELECT
+								AA.PBSR_NO
+								 , AA.ORGN_MGMT_CD
+								 , BB.ORGN_CD
+								 , BB.ORGN_NM
+								 , AA.EMP_NM
+							FROM
+								TB_POTI_EMP AA
+							   ,TB_POTI_ORGN BB
+							WHERE
+								AA.ORGN_MGMT_CD = BB.ORGN_MGMT_CD
+							  AND AA.DEL_YN = 'N'
+							  AND BB.DEL_YN = 'N') B
+						   ON (A.insc_emp_id = b.pbsr_no)
+		WHERE
+	    A.DEL_YN = 'N'					/**  Suppression On  !== 삭제여부 ==!  */
+		AND
+	    A.XRAY_INSC_NO = #{xrayInscNo}
+	</select>
+
+	<!--
+	[Enregistrer] @TODO 번역필요   !== X-RAY 검사결과 검사자를 등록&수정 한다.==!
+	(Jeong Byungyeol)
+	-->
+	<update id="mergeXrayIspr" parameterType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayIsprVo">
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.mergeXrayIspr */
+		WITH UPSERT AS (
+			UPDATE ALPASSINT.TB_CARI_XRAY_ISPR SET
+				  DEL_YN				=	#{delYn}						/**  Suppression On  !== 삭제여부 ==!  */
+				, LAST_CHPR_ID	=	#{lastChprId}		/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+				, LAST_CHG_DTTM	=	SYSTIMESTAMP		/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+			WHERE XRAY_INSC_NO 		= #{xrayInscNo}											/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+			AND   INSC_EMP_ID		=	#{inscEmpId}
+			RETURNING *
+		)
+		INSERT INTO ALPASSINT.TB_CARI_XRAY_ISPR (
+			  XRAY_INSC_NO				/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+			, INSC_EMP_ID
+			, DEL_YN							/**  Suppression On  !== 삭제여부 ==!  */
+			, FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, FRST_RGSR_DTTM			/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		)
+		SELECT
+			  #{xrayInscNo}			/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+			, #{inscEmpId}
+			, #{delYn}					/**  Suppression On  !== 삭제여부 ==!  */
+			, #{frstRegstId}		/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, SYSTIMESTAMP 			/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, #{lastChprId}			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, SYSTIMESTAMP 			/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+			WHERE NOT EXISTS(SELECT * FROM UPSERT)
+	</update>
+
+
+
+	<update id="mergeXrayBl" parameterType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayCntrVo">
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.mergeXrayBl */
+		UPDATE ALPASSINT.TB_CARI_XRAY_BL SET
+			ATCH_FILE_ID 	= #{atchFileId} 		/**  Id Du Fichier Joint  !== 첨부파일ID ==!  */
+		   , DEL_YN				=	#{delYn}					/**  Suppression On  !== 삭제여부 ==!  */
+		   , LAST_CHPR_ID	=	#{lastChprId}			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		   , LAST_CHG_DTTM	=	SYSTIMESTAMP			/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		WHERE
+			XRAY_INSC_NO = #{xrayInscNo}
+		  AND XRAY_INSC_SRNO = to_number(#{xrayInscSrno})
+	</update>
+
+	<update id="mergeXrayInscRsltDe10" parameterType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayCntrDeVo">
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.mergeXrayInscRsltDe10 */
+		WITH UPSERT AS(
+		UPDATE ALPASSINT.TB_CARI_XRAY_CNTR SET
+			 ATCH_FILE_ID = #{atchFileId}
+		   , INSC_DT      = #{inscDt}
+		   , INSC_RSLT_CN = #{inscRsltCn} 			/**  Contenu Du Résultat De L'Inspection  !== 검사결과내용 ==!  */
+		   , LAST_CHPR_ID = #{lastChprId}			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		   , LAST_CHG_DTTM = SYSTIMESTAMP			/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		WHERE XRAY_INSC_NO = #{xrayInscNo}
+		AND   CNTR_NO = #{cntrNo}
+		AND   CNTR_SRNO = to_number(#{cntrSrno})
+		<if test="cagMgmtNo != null and cagMgmtNo != ''">
+			AND CAG_MGMT_NO = #{cagMgmtNo}
+		</if>
+		<if test="expCmdtBrngRqno != null and expCmdtBrngRqno != ''">
+			AND EXP_CMDT_BRNG_RQNO = #{expCmdtBrngRqno}
+		</if>
+			RETURNING *
+		)
+		INSERT INTO ALPASSINT.TB_CARI_XRAY_CNTR
+		(
+		  XRAY_INSC_NO				/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+		, CNTR_NO
+		, CAG_MGMT_NO				/**  Crn  !== 화물관리번호 ==!  */
+		, INSC_DT
+		, INSC_RSLT_CN				/**  Contenu Du Résultat De L'Inspection  !== 검사결과내용 ==!  */
+		, EXP_CMDT_BRNG_RQNO
+		, ATCH_FILE_ID				/**  Id Du Fichier Joint  !== 첨부파일ID ==!  */
+		, DEL_YN					/**  Suppression On  !== 삭제여부 ==!  */
+		, FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+		, FRST_RGSR_DTTM			/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+		, LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		, LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		, CNTR_SRNO					/**  N° de contrôle scanner  !== XRAY검사일련번호 ==!  */
+		)
+		SELECT
+			#{xrayInscNo}			/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+			 , #{cntrNo}
+			 , #{cagMgmtNo}			/**  Crn  !== 화물관리번호 ==!  */
+			 , #{inscDt}
+			 , #{inscRsltCn} 		/**  Contenu Du Résultat De L'Inspection  !== 검사결과내용 ==!  */
+			 , #{expCmdtBrngRqno}		/** N° demande de l'introduction des marchandises à exporter !== 수출물품반입신청번호 ==!*/
+			 , #{atchFileId} 		/**  Id Du Fichier Joint  !== 첨부파일ID ==!  */
+			 , 'N'
+			 , #{frstRegstId}		/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			 , SYSTIMESTAMP 		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			 , #{lastChprId}		/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			 , SYSTIMESTAMP 		/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+			 , (SELECT NVL(MAX(CNTR_SRNO), 0) + 1 FROM ALPASSINT.TB_CARI_XRAY_CNTR WHERE XRAY_INSC_NO = #{xrayInscNo})	/**  N° de contrôle scanner  !== XRAY검사일련번호 ==!  */
+			WHERE NOT EXISTS(SELECT * FROM UPSERT)
+	</update>
+
+	<update id="mergeXrayInscRsltDe20" parameterType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayCntrDeVo">
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.mergeXrayInscRsltDe20 */
+		WITH UPSERT AS(
+		UPDATE ALPASSINT.TB_CARI_XRAY_BL SET
+			  ATCH_FILE_ID = #{atchFileId}
+			, INSC_DT      = #{inscDt}
+			, INSC_RSLT_CN = #{inscRsltCn} 			/**  Contenu Du Résultat De L'Inspection  !== 검사결과내용 ==!  */
+			, LAST_CHPR_ID = #{lastChprId}				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, LAST_CHG_DTTM = SYSTIMESTAMP				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		WHERE XRAY_INSC_NO = #{xrayInscNo}
+		AND   XRAY_INSC_SRNO = to_number(#{xrayInscSrno})
+			RETURNING *
+		)
+		INSERT INTO ALPASSINT.TB_CARI_XRAY_BL
+		(
+			XRAY_INSC_NO				/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+			, CAG_MGMT_NO			/**  Crn  !== 화물관리번호 ==!  */
+			, INSC_DT
+			, INSC_RSLT_CN			/**  Contenu Du Résultat De L'Inspection  !== 검사결과내용 ==!  */
+			, ATCH_FILE_ID				/**  Id Du Fichier Joint  !== 첨부파일ID ==!  */
+			, DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			, FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, FRST_RGSR_DTTM				/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+			, XRAY_INSC_SRNO				/**  N° de contrôle scanner  !== XRAY검사일련번호 ==!  */
+			, EXP_CMDT_BRNG_RQNO		/** N° demande de l'introduction des marchandises à exporter !== 수출물품반입신청번호 ==!*/
+
+		)
+		SELECT
+			#{xrayInscNo}			/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+		     , #{cagMgmtNo}			/**  Crn  !== 화물관리번호 ==!  */
+		     , #{inscDt}
+		     , #{inscRsltCn} 		/**  Contenu Du Résultat De L'Inspection  !== 검사결과내용 ==!  */
+		     , #{atchFileId} 		/**  Id Du Fichier Joint  !== 첨부파일ID ==!  */
+			 , 'N'					/**  Suppression On  !== 삭제여부 ==!  */
+			 , #{frstRegstId}		/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			 , SYSTIMESTAMP 		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			 , #{lastChprId}		/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			 , SYSTIMESTAMP 		/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+			 , (SELECT NVL(MAX(XRAY_INSC_SRNO), 0) + 1 FROM ALPASSINT.TB_CARI_XRAY_BL WHERE XRAY_INSC_NO = #{xrayInscNo})	/**  N° de contrôle scanner  !== XRAY검사일련번호 ==!  */
+			 , #{expCmdtBrngRqno}		/** N° demande de l'introduction des marchandises à exporter !== 수출물품반입신청번호 ==!*/
+			WHERE NOT EXISTS(SELECT * FROM UPSERT)
+	</update>
+
+	<select id="selectXrayInscRsltDeList" parameterType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayCntrDeVo" resultType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayCntrDeVo">
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.selectXrayInscRsltDeList */
+		SELECT *
+		FROM (
+				 SELECT XRAY_INSC_NO	/** XRAY검사번호 */
+					  ,XRAY_INSC_SRNO	/** XRAY검사일련번호 */
+					  ,CAG_MGMT_NO	/** 화물관리번호 */
+					  ,NULL AS CNTR_NO	/** 컨테이너번호 */
+					  ,NULL AS CNTR_SRNO	/** 컨테이너일련번호 */
+					  ,TO_CHAR(TO_DATE(INSC_DT),'DD/MM/YYYY') AS INSC_DT
+					  ,DEL_YN	/** 삭제여부 */
+					  ,INSC_RSLT_CN	/** 검사결과내용 */
+					  ,ATCH_FILE_ID	/** 첨부파일ID */
+					  ,EXP_CMDT_BRNG_RQNO	/** 수출물품반입신청번호 */
+					  ,FRST_REGST_ID	/** 최초등록자ID */
+					  ,FRST_RGSR_DTTM	/** 최초등록일시 */
+					  ,LAST_CHPR_ID	/** 최종변경자ID */
+					  ,LAST_CHG_DTTM	/** 최종변경일시 */
+				 FROM ALPASSINT.TB_CARI_XRAY_BL
+				 UNION ALL
+				 SELECT XRAY_INSC_NO
+					  ,NULL AS XRAY_INSC_SRNO
+					  ,CAG_MGMT_NO
+					  ,CNTR_NO
+					  ,CNTR_SRNO
+					  ,TO_CHAR(TO_DATE(INSC_DT),'DD/MM/YYYY') AS INSC_DT
+					  ,DEL_YN
+					  ,INSC_RSLT_CN
+					  ,ATCH_FILE_ID
+					  ,EXP_CMDT_BRNG_RQNO
+					  ,FRST_REGST_ID
+					  ,FRST_RGSR_DTTM
+					  ,LAST_CHPR_ID
+					  ,LAST_CHG_DTTM
+				 FROM ALPASSINT.TB_CARI_XRAY_CNTR
+			 ) A
+		WHERE A.DEL_YN = 'N'						/**  SUPPRESSION ON  !== 삭제여부 ==!  */
+		  AND A.XRAY_INSC_NO  = #{xrayInscNo}			/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+	</select>
+
+	<!--
+	[Enregistrer] @TODO 번역필요   !== X-RAY 검사결과 BL 상세내역을 등록&수정 한다.==!
+	-->
+	<update id="mergeXrayBlDetail" parameterType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayCntrDeVo">
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.mergeXrayBlDetail */
+		UPDATE ALPASSINT.TB_CARI_XRAY_BL
+		SET DEL_YN = #{delYn}
+		  ,	LAST_CHPR_ID = #{lastChprId}
+		  ,	LAST_CHG_DTTM = SYSTIMESTAMP
+		WHERE XRAY_INSC_NO = #{xrayInscNo}
+		<if test="xrayInscSrno != null and xrayInscSrno != ''">
+		  AND XRAY_INSC_SRNO = #{xrayInscSrno}
+		</if>
+	</update>
+
+	<!--
+	[Enregistrer] @TODO 번역필요   !== X-RAY 검사결과 컨테이너 상세내역을 등록&수정 한다.==!
+	-->
+	<update id="mergeXrayCntrDetail" parameterType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayCntrDeVo">
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.mergeXrayCntrDetail */
+		UPDATE ALPASSINT.TB_CARI_XRAY_CNTR
+		SET DEL_YN = #{delYn}
+		  ,	LAST_CHPR_ID = #{lastChprId}
+		  ,	LAST_CHG_DTTM = SYSTIMESTAMP
+		WHERE XRAY_INSC_NO = #{xrayInscNo}
+		<if test="cntrNo != null and cntrNo != ''">
+		  AND CNTR_NO = #{cntrNo}
+		</if>
+		<if test="cntrSrno != null and cntrSrno != ''">
+		  AND CNTR_SRNO = #{cntrSrno}
+		</if>
+	</update>
+
+
+	<!-- ************************새로 시작*************************-->
+	<!--
+	[Rechercher]  @TODO 번역필요   !== 선박/항공 수입 화물신고서, 수출반입 목록을 조회한다. ==!
+	(Jeong Byungyeol)
+	-->
+	<select id="selectCarList" resultType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayInscRsltVo">
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.selectCarList */
+		<include refid="pagination.header" ></include>
+
+		SELECT AA.CAG_MGMT_NO
+		     , AA.EXP_CMDT_BRNG_RQNO
+		     , AA.BL_NO
+		     , AA.IBOBZ_CD
+		     , AA.IBOBZ_NM
+		     , AA.PCKG_GCNT
+		     , AA.TTWG
+		     , TO_CHAR(AA.PRCS_DTTM, 'DD/MM/YYYY') AS PRCS_DTTM
+		FROM (
+
+		<choose><when test="cagTpCd.equals('IM')">
+
+			SELECT B.CAG_MGMT_NO
+			     , '' AS EXP_CMDT_BRNG_RQNO			/** N° demande de l'introduction des marchandises à exporter !== 수출물품반입신청번호 ==!*/
+			     , CASE WHEN B.BL_PT_CD = 'M' THEN B.BL_NO ELSE B.HBL_NO END AS BL_NO
+				 , B.IBOBZ_CD															/**  Code de zone sous douane  					!== 보세구역코드 ==!  */
+			     , (SELECT IBOBZ_NM  /* Nom de la zone sous douane !== 보세구역명 ==! */
+				       FROM TB_CARI_IBOBZ
+				      WHERE DEL_YN = 'N'
+				        AND IBOBZ_CD = B.IBOBZ_CD) AS IBOBZ_NM
+				 , B.PCKG_GCNT						/**  Nombre De Colis  !== 포장개수 ==!  */
+				 , B.TTWG			        		/**  Poids Brut  !== 총중량 ==!  */
+				 , A.PRCS_DTTM /** Date D'Autorisation  !== 승인일자 ==!*/
+			FROM ALPASSINT.TB_CARI_CAG_PRCS_BRKD A
+			   , ALPASSINT.TB_CARI_CAG_DCSH_BL B
+			   , ALPASSINT.TB_CARI_CAG_DCSH C
+			WHERE A.CAG_RQST_NO  = C.CAG_DCSH_RGSR_MGMT_NO
+			AND C.MRN  = B.MRN
+			AND   ( B.BL_TP_CD = 'S' OR ( B.BL_TP_CD != 'S' AND B.BL_PT_CD ='H') )
+			AND   A.DEL_YN = 'N'
+			AND   A.PRCS_STTS_CD  = 'D08'
+		<if test="cagMgmtNo != null and cagMgmtNo != ''">
+			AND   B.CAG_MGMT_NO = #{cagMgmtNo}
+		</if>
+		<if test="trnpMeanCd.equals('30') or trnpMeanCd.equals('10')">
+			AND   EXISTS (SELECT 1 FROM ALPASSINT.TB_CARI_CAG_DCSH_BL_CNTR WHERE DEL_YN = 'N' AND CAG_MGMT_NO = B.CAG_MGMT_NO) /* 컨티이너가 존재하는 것*/
+			AND   NOT EXISTS (SELECT 1 FROM ALPASSINT.TB_CARI_XRAY_CNTR WHERE CAG_MGMT_NO = B.CAG_MGMT_NO AND DEL_YN = 'N')
+		</if>
+		<if test="trnpMeanCd.equals('20')">
+			AND   NOT EXISTS (SELECT 1 FROM ALPASSINT.TB_CARI_XRAY_BL WHERE CAG_MGMT_NO = B.CAG_MGMT_NO AND DEL_YN = 'N')
+			AND   NOT EXISTS (SELECT 1 FROM ALPASSINT.TB_CARI_CAG_DCSH_BL_CNTR WHERE DEL_YN = 'N' AND CAG_MGMT_NO = B.CAG_MGMT_NO) /* 컨티이너가 존재하지 않은 것*/
+		</if>
+		<if test="jrsdOrgnCd != null and jrsdOrgnCd != ''">
+			AND A.JRSD_ORGN_CD LIKE SUBSTR(#{jrsdOrgnCd}, 1, 5) || '%'
+		</if>
+			AND EXISTS 	(	SELECT	1
+							FROM ALPASSINT.VW_POTI_ROLE_UNFC A1
+							WHERE A1.PBSR_NO = #{pbsrNo}
+							AND   A1.ROLE_ID = 'CAR119'
+						)
+
+		</when>
+		<otherwise>
+
+			SELECT '' AS CAG_MGMT_NO
+			     , A.EXP_CMDT_BRNG_RQNO			/** N° demande de l'introduction des marchandises à exporter !== 수출물품반입신청번호 ==!*/
+			     , A.BL_NO
+				 , A.IBOBZ_CD					/**  Code de zone sous douane  					!== 보세구역코드 ==!  */
+			     , (SELECT IBOBZ_NM  			/** Nom de la zone sous douane !== 보세구역명 ==! */
+				       FROM TB_CARI_IBOBZ
+				      WHERE DEL_YN = 'N'
+				        AND IBOBZ_CD = A.IBOBZ_CD) AS IBOBZ_NM
+				 , A.PCKG_GCNT						/**  Nombre De Colis  !== 포장개수 ==!  */
+				 , A.TTWG			        		/**  Poids Brut  !== 총중량 ==!  */
+				 , A.AUDT_DTTM AS PRCS_DTTM /** Date D'Autorisation  !== 승인일자 ==!*/
+			FROM ALPASSINT.TB_CARI_EXP_CMDT_BRNG A
+			WHERE A.DEL_YN = 'N'
+			AND   A.AUDT_PT_CD  IN ('Y', 'O')
+		<if test="expCmdtBrngRqno != null and expCmdtBrngRqno != ''">
+			AND   A.EXP_CMDT_BRNG_RQNO = #{expCmdtBrngRqno}
+		</if>
+		<if test="trnpMeanCd.equals('30') or trnpMeanCd.equals('10')">
+			AND   EXISTS (SELECT 1 FROM ALPASSINT.TB_CARI_EXP_CMDT_BRNG_CNTR WHERE DEL_YN = 'N' AND EXP_CMDT_BRNG_RQNO = A.EXP_CMDT_BRNG_RQNO)
+			AND   NOT EXISTS (SELECT 1 FROM ALPASSINT.TB_CARI_XRAY_CNTR WHERE EXP_CMDT_BRNG_RQNO = A.EXP_CMDT_BRNG_RQNO AND DEL_YN = 'N')
+		</if>
+		<if test="trnpMeanCd.equals('20')">
+			AND   NOT EXISTS (SELECT 1 FROM ALPASSINT.TB_CARI_XRAY_BL WHERE EXP_CMDT_BRNG_RQNO = A.EXP_CMDT_BRNG_RQNO AND DEL_YN = 'N')
+			AND   NOT EXISTS (SELECT 1 FROM ALPASSINT.TB_CARI_EXP_CMDT_BRNG_CNTR WHERE DEL_YN = 'N' AND EXP_CMDT_BRNG_RQNO = A.EXP_CMDT_BRNG_RQNO)
+		</if>
+		<if test="jrsdOrgnCd != null and jrsdOrgnCd != ''">
+			AND A.JRSD_ORGN_CD LIKE SUBSTR(#{jrsdOrgnCd}, 1, 5) || '%'
+		</if>
+			AND EXISTS 	(	SELECT	1
+							FROM ALPASSINT.VW_POTI_ROLE_UNFC A1
+							WHERE A1.PBSR_NO = #{pbsrNo}
+							AND   A1.ROLE_ID = 'CAR119'
+						)
+		</otherwise></choose>
+
+		) AA
+		WHERE 1 = 1
+		<if test="ibobzCd != null and ibobzCd != ''">
+			AND AA.IBOBZ_CD LIKE '%'||#{ibobzCd}||'%'
+		</if>
+		<if test="(searchKeywordFrom != null and searchKeywordFrom != '') and (searchKeywordTo != null and searchKeywordTo != '')">
+			AND (
+			AA.PRCS_DTTM <![CDATA[ >= ]]> TO_TIMESTAMP(#{searchKeywordFrom}, 'DD/MM/YYYY')
+			AND AA.PRCS_DTTM <![CDATA[ <= ]]> TO_TIMESTAMP(#{searchKeywordTo}, 'DD/MM/YYYY')+0.9999
+			)
+		</if>
+		ORDER BY AA.PRCS_DTTM DESC
+		<include refid="pagination.footer" ></include>
+	</select>
+
+	<!--
+	[Rechercher]  @TODO 번역필요   !== 운송수단이 선박인 경우 컨테이너 조회 ==!
+	-->
+	<select id="selectCntrList" resultType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayInscRsltVo">
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.selectCntrList */
+		<choose><when test="cagTpCd.equals('IM')">
+
+			SELECT A.CAG_MGMT_NO		/**  Crn  !== 화물관리번호 ==!  */
+				 , A.CNTR_SRNO			/**  N° De Séquence Du Conteneur  !== 컨테이너일련번호 ==!  */
+				 , A.CNTR_NO			/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+				 , A.MRN
+			FROM ALPASSINT.TB_CARI_CAG_DCSH_BL_CNTR A
+			WHERE A.DEL_YN = 'N'
+			AND   A.CAG_MGMT_NO = #{cagMgmtNo}
+		</when>
+		<otherwise>
+
+			SELECT A.EXP_CMDT_BRNG_RQNO		/**  Crn  !== 화물관리번호 ==!  */
+				 , A.CNTR_SRNO			/**  N° De Séquence Du Conteneur  !== 컨테이너일련번호 ==!  */
+				 , A.CNTR_NO			/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+			FROM ALPASSINT.TB_CARI_EXP_CMDT_BRNG_CNTR  A
+			WHERE A.DEL_YN = 'N'
+			AND   A.EXP_CMDT_BRNG_RQNO = #{expCmdtBrngRqno}
+
+		</otherwise>
+		</choose>
+
+	</select>
+
+	<!--
+	[Rechercher]  @TODO 번역필요   !== 운송수단이 항공인 경우 BL 조회 ==!
+	-->
+	<select id="selectBlList" resultType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayInscRsltVo">
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.selectBlList */
+		<choose><when test="cagTpCd.equals('IM')">
+
+			SELECT A.CAG_MGMT_NO		/**  Crn  !== 화물관리번호 ==!  */
+			     , A.MRN
+			FROM ALPASSINT.TB_CARI_CAG_DCSH_BL A
+			WHERE A.DEL_YN = 'N'
+			AND   A.CAG_MGMT_NO = #{cagMgmtNo}
+		</when>
+		<otherwise>
+
+			SELECT A.EXP_CMDT_BRNG_RQNO		/**  Crn  !== 화물관리번호 ==!  */
+			FROM ALPASSINT.TB_CARI_EXP_CMDT_BRNG  A
+			WHERE A.DEL_YN = 'N'
+			AND   A.EXP_CMDT_BRNG_RQNO = #{expCmdtBrngRqno}
+
+		</otherwise>
+		</choose>
+	</select>
+
+	<!--
+	[Rechercher]  @TODO 번역필요 !== X-RAY 검사결과가 완료된 상세 (컨테이너,BL) 목록을 조회한다. ==!
+	-->
+	<select id="selectXrayDetailList" parameterType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayInscRsltVo" resultType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayInscRsltVo">
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.selectXrayDetailList */
+		<choose><when test="trnpMeanCd.equals('30') or trnpMeanCd.equals('10')">
+		SELECT A.XRAY_INSC_NO				/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+		     , B.INSC_DT
+		     , B.CAG_MGMT_NO				/**  Crn  !== 화물관리번호 ==!  */
+		     , B.EXP_CMDT_BRNG_RQNO			/** N° demande de l'introduction des marchandises à exporter !== 수출물품반입신청번호 ==!*/
+		     , B.INSC_RSLT_CN				/**  Contenu Du Résultat De L'Inspection  !== 검사결과내용 ==!  */
+		     , B.ATCH_FILE_ID				/**  Id Du Fichier Joint  !== 첨부파일ID ==!  */
+		     , B.CNTR_NO					/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+		FROM ALPASSINT.TB_CARI_XRAY_INSC_RSLT A
+		   , ALPASSINT.TB_CARI_XRAY_CNTR B
+		WHERE 1 = 1
+		AND   A.XRAY_INSC_NO = B.XRAY_INSC_NO
+		AND   A.DEL_YN = 'N'
+		<if test="cagMgmtNo != null and cagMgmtNo != ''">
+		AND   B.CAG_MGMT_NO = #{cagMgmtNo}
+		</if>
+		<if test="cntrNo != null and cntrNo != ''">
+		AND   B.CNTR_NO = #{cntrNo}
+		</if>
+		<if test="expCmdtBrngRqno != null and expCmdtBrngRqno != ''">
+		AND   B.EXP_CMDT_BRNG_RQNO = #{expCmdtBrngRqno}
+		</if>
+		</when><otherwise>
+		SELECT A.XRAY_INSC_NO				/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+		     , B.INSC_DT
+		     , B.CAG_MGMT_NO				/**  Crn  !== 화물관리번호 ==!  */
+		     , B.EXP_CMDT_BRNG_RQNO			/** N° demande de l'introduction des marchandises à exporter !== 수출물품반입신청번호 ==!*/
+		     , B.INSC_RSLT_CN				/**  Contenu Du Résultat De L'Inspection  !== 검사결과내용 ==!  */
+		     , B.ATCH_FILE_ID				/**  Id Du Fichier Joint  !== 첨부파일ID ==!  */
+		FROM ALPASSINT.TB_CARI_XRAY_INSC_RSLT A
+		   , ALPASSINT.TB_CARI_XRAY_BL B
+		WHERE 1 = 1
+		AND   A.XRAY_INSC_NO = B.XRAY_INSC_NO
+		AND   A.DEL_YN = 'N'
+		<if test="cagMgmtNo != null and cagMgmtNo != ''">
+		AND   B.CAG_MGMT_NO = #{cagMgmtNo}
+		</if>
+		<if test="expCmdtBrngRqno != null and expCmdtBrngRqno != ''">
+		AND   B.EXP_CMDT_BRNG_RQNO = #{expCmdtBrngRqno}
+		</if>
+		</otherwise></choose>
+	</select>
+
+	<!--  [Rechercher]  Consulter la liste des "Demande de contrôle scanner"   !== X-RAY 검사요청 목록을 조회한다. ==!
+	-->
+	<select id="selectXrayInscRqestList" resultType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayInscRsltVo">
+		/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.selectXrayInscRqestList */
+		<include refid="pagination.header" ></include>
+		SELECT A.CAG_TP_CD						/** !== 화물구분코드 ==! */
+		     , A.TRNP_MEAN_CD					/** !== 운송방법코드 ==! */
+		     , A.CAG_MGMT_NO					/** !== 화물관리번호 ==! */
+		     , A.DTL_DCSH_NO					/** !== 상세신고서번호 ==! */
+		     , B.EXP_CMDT_BRNG_RQNO
+		     , A.BL_NO
+		     , A.CNTR_NO
+		     , A.JRSD_ORGN_CD
+		     , A.IBOBZ_CD
+		     , TO_CHAR(TO_DATE(A.INSC_REQST_DT),'DD/MM/YYYY') AS INSC_REQST_DT
+		     , A.INSC_RQSTR_ID
+		     , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY') AS FRST_RGSR_DTTM
+		     , NVL( A.XRAY_INSC_NO ,(
+				SELECT A1.XRAY_INSC_NO
+				FROM ALPASSINT.TB_CARI_XRAY_INSC_RSLT A1
+				WHERE A1.CAG_TP_CD  = A.CAG_TP_CD
+				AND   A1.IBOBZ_CD = A.IBOBZ_CD
+				AND   A1.DEL_YN  = 'N'
+				AND (
+					EXISTS (
+							SELECT 1
+							FROM ALPASSINT.TB_CARI_XRAY_BL B1
+							WHERE A1.XRAY_INSC_NO  = B1.XRAY_INSC_NO
+							AND (B1.CAG_MGMT_NO  = A.CAG_MGMT_NO OR B1.EXP_CMDT_BRNG_RQNO  = B.EXP_CMDT_BRNG_RQNO  )
+							AND B1.DEL_YN = 'N'
+							)
+					OR EXISTS (
+							SELECT 1
+							FROM ALPASSINT.TB_CARI_XRAY_CNTR C1
+							WHERE A1.XRAY_INSC_NO  = C1.XRAY_INSC_NO
+							AND C1.DEL_YN = 'N'
+							AND (C1.CAG_MGMT_NO  = A.CAG_MGMT_NO OR C1.EXP_CMDT_BRNG_RQNO  = B.EXP_CMDT_BRNG_RQNO  )
+							AND C1.CNTR_NO  = A.CNTR_NO
+							)
+					)
+		     )) AS XRAY_INSC_NO
+		     , (
+				SELECT 'Y'
+				FROM ALPASSINT.TB_CARI_XRAY_INSC_RSLT A1
+				WHERE A1.CAG_TP_CD  = A.CAG_TP_CD
+				AND   A1.IBOBZ_CD = A.IBOBZ_CD
+				AND   A1.DEL_YN  = 'N'
+				AND (
+					EXISTS (
+							SELECT 1
+							FROM ALPASSINT.TB_CARI_XRAY_BL B1
+							WHERE A1.XRAY_INSC_NO  = B1.XRAY_INSC_NO
+							AND (B1.CAG_MGMT_NO  = A.CAG_MGMT_NO OR B1.EXP_CMDT_BRNG_RQNO  = B.EXP_CMDT_BRNG_RQNO  )
+							AND B1.DEL_YN = 'N'
+							AND B1.ATCH_FILE_ID IS NOT NULL
+							)
+					OR EXISTS (
+							SELECT 1
+							FROM ALPASSINT.TB_CARI_XRAY_CNTR C1
+							WHERE A1.XRAY_INSC_NO  = C1.XRAY_INSC_NO
+							AND C1.DEL_YN = 'N'
+							AND (C1.CAG_MGMT_NO  = A.CAG_MGMT_NO OR C1.EXP_CMDT_BRNG_RQNO  = B.EXP_CMDT_BRNG_RQNO  ) <!-- DTL_DCSH_NO 로 수출물품반입번호 추적필요함 -->
+							AND C1.CNTR_NO  = A.CNTR_NO
+							AND C1.ATCH_FILE_ID IS NOT NULL
+							)
+					)
+		     ) AS ATCH_FILE_ID
+		FROM  ALPASSINT.TB_CARI_XRAY_INSC_REQST A
+		   ,  ALPASSINT.TB_CARI_EXP_CMDT_BRNG B
+		WHERE 1 = 1
+		AND NVL(A.DTL_DCSH_NO,' ') = B.RELA_NO(+)
+		AND B.DEL_YN(+) = 'N'
+		AND A.DEL_YN = 'N'
+		<if test="cagTpCd != null and cagTpCd != ''">
+			AND A.CAG_TP_CD = #{cagTpCd}	/**  Type de flux  !== 화물구분코드 ==!  */
+		</if>
+		<if test="ibobzCd != null and ibobzCd != ''">-->
+			AND A.IBOBZ_CD = #{ibobzCd}		/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+		</if>
+		<if test="trnpMeanCd != null and trnpMeanCd != ''">
+			AND A.TRNP_MEAN_CD = #{trnpMeanCd}	/**  CODE DE MODE DE TRANSPORT  !== 운송방법코드 ==!  */
+		</if>
+		<if test="(inscDtFrom != null and inscDtFrom != '') and (inscDtTo != null and inscDtTo != '')">
+			AND	(
+			    TO_DATE(A.INSC_REQST_DT, 'DD/MM/YYYY') <![CDATA[ >= ]]> TO_DATE(#{searchKeywordFrom}, 'DD/MM/YYYY')
+				AND TO_DATE(A.INSC_REQST_DT, 'DD/MM/YYYY') <![CDATA[ <= ]]> TO_DATE(#{searchKeywordTo}, 'DD/MM/YYYY')+0.9999
+			)
+		</if>
+		<if test="cagMgmtNo != null and cagMgmtNo != ''">
+			AND A.CAG_MGMT_NO LIKE  #{cagMgmtNo} || '%'
+		</if>
+		<if test="expCmdtBrngRqno != null and expCmdtBrngRqno != ''">
+			AND B.EXP_CMDT_BRNG_RQNO = #{expCmdtBrngRqno}
+		</if>
+			AND EXISTS 	(	SELECT	1
+							FROM ALPASSINT.VW_POTI_ROLE_UNFC A1
+							WHERE A1.PBSR_NO = #{pbsrNo}
+							AND   A1.ROLE_ID = 'CAR119'
+						)
+		ORDER BY A.INSC_REQST_SRNO DESC
+		<include refid="pagination.footer" ></include>
+	</select>
+
+
+	<!--Enregistrer la "Demande de contrôle scanner"   !== X-RAY 검사요청을 등록한다. ==!-->
+	<insert id="insertXrayInscRqest" parameterType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayInscRsltVo">
+  	/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.insertXrayInscRqest */
+		WITH UPSERT AS(
+		UPDATE ALPASSINT.TB_CARI_XRAY_INSC_REQST
+		SET LAST_CHPR_ID = #{lastChprId}				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		  , LAST_CHG_DTTM = SYSTIMESTAMP				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		WHERE CAG_TP_CD = #{cagTpCd}
+		AND   IBOBZ_CD = #{ibobzCd}
+		AND   TRNP_MEAN_CD = #{trnpMeanCd}
+		AND   BL_NO = #{blNo}
+		<if test="cagMgmtNo != null and cagMgmtNo != ''">
+			AND CAG_MGMT_NO = #{cagMgmtNo}
+		</if>
+		<if test="dtlDcshNo != null and dtlDcshNo != ''">
+			AND DTL_DCSH_NO = (
+				 		     	SELECT A1.RELA_NO
+						     	FROM  ALPASSINT.TB_CARI_EXP_CMDT_BRNG A1
+						     	WHERE A1.DEL_YN = 'N'
+						     	AND   A1.RELA_NO = #{dtlDcshNo}
+								)
+		</if>
+		<if test="cntrNo != null and cntrNo != ''">
+			AND CNTR_NO = #{cntrNo}
+		</if>
+			RETURNING *
+		)
+		INSERT INTO ALPASSINT.TB_CARI_XRAY_INSC_REQST
+		(
+			  INSC_REQST_SRNO
+			, CAG_TP_CD
+			, TRNP_MEAN_CD
+			, CAG_MGMT_NO
+			, DTL_DCSH_NO
+			, BL_NO
+			, CNTR_NO
+			, JRSD_ORGN_CD
+			, IBOBZ_CD
+			, INSC_REQST_DT
+			, INSC_RQSTR_ID
+			, XRAY_INSC_NO
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+
+		)
+		SELECT
+	          TO_NUMBER((SELECT  TO_CHAR(NOW(), 'YY') || LPAD( NVL(MAX(SUBSTRING(INSC_REQST_SRNO,3)),'0')+1,7,'0')  FROM ALPASSINT.TB_CARI_XRAY_INSC_REQST WHERE INSC_REQST_SRNO  LIKE TO_CHAR(NOW(), 'YY')||'%'))
+	        , #{cagTpCd}
+	        , #{trnpMeanCd}
+			, #{cagMgmtNo}			/**  Crn  										!== 화물관리번호 ==!  */
+	        , #{dtlDcshNo}
+			, #{blNo}				/**  N° De Bl  									!== BL번호 ==!  */
+			, #{cntrNo}
+			, #{jrsdOrgnCd}
+			, #{ibobzCd}			/**  Code de zone sous douane  					!== 보세구역코드 ==!  */
+			, #{inscReqstDt}
+			, #{inscRqstrId}
+			, NULL
+			, 'N'					/**  Suppression On  							!== 삭제여부 ==!  */
+			, #{frstRegstId}		/**  Id Du Premier Enregistrant   				!== 최초등록자ID ==!  */
+			, SYSTIMESTAMP 			/**  Date Et Heure De Premier Enregistrement  	!== 최초등록일시 ==!  */
+			, #{lastChprId}			/**  Id Du Modificateur Final  					!== 최종변경자ID ==!  */
+			, SYSTIMESTAMP 			/**  Date Et Heure De Modification Finale  		!== 최종변경일시 ==!  */
+		WHERE NOT EXISTS(SELECT * FROM UPSERT)
+
+	</insert>
+
+	<!--Modifier la "Demande de contrôle scanner"   !== X-RAY 검사요청을 수정한다. ==!-->
+	<insert id="updateXrayInscRqest" parameterType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayInscRsltVo">
+	  	/* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.updateXrayInscRqest */
+		UPDATE ALPASSINT.TB_CARI_XRAY_INSC_REQST
+		SET LAST_CHPR_ID = #{lastChprId}
+		  , LAST_CHG_DTTM = SYSTIMESTAMP
+		<choose>
+			<when test='delYn.equals("Y")'>
+			, XRAY_INSC_NO = null
+			</when>
+			<otherwise>
+		  	, XRAY_INSC_NO = #{xrayInscNo}
+			</otherwise>
+		</choose>
+		WHERE CAG_TP_CD = #{cagTpCd}
+		AND   TRNP_MEAN_CD = #{trnpMeanCd}
+		AND   IBOBZ_CD = #{ibobzCd}
+		<if test="cagMgmtNo != null and cagMgmtNo != ''">
+			AND CAG_MGMT_NO = #{cagMgmtNo}
+		</if>
+		<if test="expCmdtBrngRqno != null and expCmdtBrngRqno != ''">
+			AND DTL_DCSH_NO = (
+				 		     	SELECT A1.RELA_NO
+						     	FROM  ALPASSINT.TB_CARI_EXP_CMDT_BRNG A1
+						     	WHERE A1.DEL_YN = 'N'
+						     	AND   A1.EXP_CMDT_BRNG_RQNO = #{expCmdtBrngRqno}
+								)
+		</if>
+		<if test="blNo != null and blNo != ''">
+			AND BL_NO = #{blNo}
+		</if>
+		<if test="cntrNo != null and cntrNo != ''">
+			AND CNTR_NO = #{cntrNo}
+		</if>
+		<if test="xrayInscNo != null and xrayInscNo != ''">
+			AND	XRAY_INSC_NO = #{xrayInscNo}			/**  Numéro de contrôle XRAY  !== XRAY검사번호 ==!  */
+		</if>
+	</insert>
+	
+	<select id="selectCagMgmtNoList" parameterType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayCntrDeVo" resultType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayCntrDeVo">
+      /* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.selectCagMgmtNoList */
+      SELECT a.mrn, b.cag_mgmt_no, c.cntr_no, a.trnp_mean_cd, b.ibobz_cd, a.jrsd_orgn_cd, b.bl_no
+	    FROM tb_care_cag_dcsh a
+	    JOIN tb_care_cag_dcsh_bl b
+  	      ON a.cag_dcsh_rgsr_mgmt_no = b.cag_dcsh_rgsr_mgmt_no
+  	     AND (b.bl_pt_cd = 'H' or b.bl_tp_cd = 'S')
+	     AND b.del_yn = 'N'
+	    JOIN tb_care_cag_dcsh_bl_cntr c
+  	      ON b.cag_dcsh_rgsr_mgmt_no = c.cag_dcsh_rgsr_mgmt_no
+	     AND b.bl_srno = c.bl_srno
+	     AND c.del_yn = 'N'
+	    JOIN alpassint.tb_cari_cag_prcs_brkd d
+  	      ON a.cag_dcsh_rgsr_mgmt_no = d.cag_rqst_no
+	     AND d.prcs_stts_cd = 'D08'
+	   WHERE 1=1
+ 	     AND a.del_yn = 'N'
+	     AND a.prcs_stts_cd = 'D08'
+	     AND c.cntr_no = #{cntrNo}
+	     AND d.prcs_dttm BETWEEN (to_date(#{inscDttm}||'000000','YYYYMMDDHH24MISS')  - INTERVAL '1 month') AND (to_date(#{inscDttm}||'235959','YYYYMMDDHH24MISS') + INTERVAL '1 month')
+    </select>
+    
+    <select id="selectExpCmdtBrngList" parameterType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayCntrDeVo" resultType="alpass.ipt.car.pvinf.xrayinscrslt.vo.CarXrayCntrDeVo">
+      /* alpass.ipt.car.pvinf.xrayinscrslt.mapper.CarXrayInscRsltMapper.selectExpCmdtBrngList */
+      SELECT A.EXP_CMDT_BRNG_RQNO, B.CNTR_NO, A.TRNP_MEAN_CD, A.IBOBZ_CD, A.JRSD_ORGN_CD, A.BL_NO
+		FROM ALPASSEXT.TB_CARE_EXP_CMDT_BRNG A
+		JOIN ALPASSEXT.TB_CARE_EXP_CMDT_BRNG_CNTR B ON A.EXP_CMDT_BRNG_RQNO = B.EXP_CMDT_BRNG_RQNO AND B.DEL_YN = 'N' 
+		JOIN ALPASSINT.TB_CARI_CAG_PRCS_BRKD C ON A.EXP_CMDT_BRNG_RQNO = C.CAG_RQST_NO AND C.PRCS_STTS_CD = 'D08'
+	   WHERE 1=1
+		 AND A.DEL_YN = 'N'
+		 AND A.PRCS_STTS_CD = 'D08'
+		 AND B.CNTR_NO = #{cntrNo}
+		 AND C.PRCS_DTTM BETWEEN (to_date(#{inscDttm}||'000000','YYYYMMDDHH24MISS')  - INTERVAL '1 month') AND (to_date(#{inscDttm}||'235959','YYYYMMDDHH24MISS') + INTERVAL '1 month')
+    </select>
+
+</mapper>

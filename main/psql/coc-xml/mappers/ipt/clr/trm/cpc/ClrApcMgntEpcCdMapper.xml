@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="alpass.ipt.clr.trm.cpc.mapper.ClrApcMgmtEpcCdMapper">
+
+    <select id="selectClrApcMgmtEpcCdList" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtEpcCdVo" resultType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtEpcCdVo">
+        /* selectClrApcMgmtEpcCdList : EPC코드관리 목록 조회*/
+        <include refid="pagination.header" />
+        SELECT
+          AA.EPC_CD                                      /** Code EPC !== EPC코드 ==! */
+        , AA.EPC_NM                                      /** Nom de l'EPC !== EPC명 ==! */
+        , AA.DCLR_PT_CD                                  /** Code de type de declaration !== 신고유형코드 ==! */
+        , AA.CAG_CMVL_YN                                 /** Contrôle manifeste (O/N) !== 화물대사여부 ==! */
+        , AA.EXFM_PRCS_YN                                /** Apurement !== 수출이행처리여부 ==! */
+        , AA.TACP_RLSE_PRCS_TP_CD                        /** Code de division entre le traitement à l'autoris. d'enlèvement et le traitement à l'enlèvement !== 수리시반출처리구분코드(CLR_0072) ==! */
+        , AA.SORT_ORDR                                   /** Ordre d'alignement !== 정렬순서 ==! */
+        , AA.RMRK_CN                            /** Remarque !== 비고 ==!*/
+        , TO_CHAR(TO_DATE(EPC_APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS EPC_APLY_STRT_DT
+        , TO_CHAR(TO_DATE(EPC_APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS EPC_APLY_END_DT
+        FROM   TB_CLRI_EPC_CD AA
+        WHERE  AA.DEL_YN = 'N'                               /** Suppression ON !== 삭제여부 ==! */
+        <if test="epcCd != null and epcCd !=''">
+            AND  AA.EPC_CD LIKE #{epcCd}||'%'                   /** Code EPC !== EPC코드 ==! */
+        </if>
+        <if test="dclrPtCd != null and dclrPtCd !=''">
+            AND  AA.DCLR_PT_CD = #{dclrPtCd}                    /** Code de type de declaration !== 신고유형코드 ==! */
+        </if>
+        <if test="cagCmvlYn != null and cagCmvlYn !=''">
+            AND AA.CAG_CMVL_YN = #{cagCmvlYn}                   /** Contrôle manifeste (O/N) !== 화물대사여부 ==! */
+        </if>
+        <if test="atchDocCd != null and atchDocCd !=''">
+            AND EXISTS (
+                SELECT 1 FROM TB_CLRI_EPC_ATDOC BB
+                  WHERE AA.EPC_CD = BB.EPC_CD
+                  AND AA.EPC_APLY_STRT_DT = BB.EPC_APLY_STRT_DT
+                  AND BB.ATCH_DOC_CD =#{atchDocCd}
+                  AND BB.DEL_YN ='N'
+            )
+        </if>
+        ORDER BY AA.SORT_ORDR, AA.EPC_CD ASC
+        <include refid="pagination.footer" />
+    </select>
+
+    <insert id="insertClrApcMgmtEpcCd" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtEpcCdVo">
+        /* insertClrApcMgmtEpcCd : EPC코드관리 등록*/
+        INSERT INTO TB_CLRI_EPC_CD
+        (
+            EPC_CD                       /** Code EPC !== EPC코드 ==! */
+        , EPC_NM                       /** Nom de l'EPC !== EPC명 ==! */
+        , EPC_APLY_STRT_DT
+        , EPC_APLY_END_DT
+        , DCLR_PT_CD                   /** Code de type de declaration !== 신고유형코드 ==! */
+        , CAG_CMVL_YN                  /** Contrôle manifeste (O/N) !== 화물대사여부 ==! */
+        , SORT_ORDR                    /** Ordre d'alignement !== 정렬순서 ==! */
+        , EXFM_PRCS_YN                 /** Apurement !== 수출이행처리여부 ==! */
+        , TACP_RLSE_PRCS_TP_CD         /** Code de division entre le traitement à l'autoris. d'enlèvement et le traitement à l'enlèvement !== 수리시반출처리구분코드(CLR_0072) ==! */
+        , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+        , RMRK_CN                      /** Remarque !== 비고 ==! */
+        , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+        , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+        , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+        , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        )
+        VALUES
+            (
+                #{epcCd}                     /** Code EPC !== EPC코드 ==! */
+            , #{epcNm}                     /** Nom de l'EPC !== EPC명 ==! */
+            , TO_CHAR(TO_DATE(#{epcAplyStrtDt} , 'DD/MM/YYYY'), 'YYYYMMDD')
+            , TO_CHAR(TO_DATE(#{epcAplyEndDt} , 'DD/MM/YYYY'), 'YYYYMMDD')
+            , #{dclrPtCd}                  /** Code de type de declaration !== 신고유형코드 ==! */
+            , #{cagCmvlYn}                 /** Contrôle manifeste (O/N) !== 화물대사여부 ==! */
+            , #{sortOrdr}                  /** Ordre d'alignement !== 정렬순서 ==! */
+            , #{exfmPrcsYn}                /** Apurement !== 수출이행처리여부 ==! */
+            , #{tacpRlsePrcsTpCd}          /** Code de division entre le traitement à l'autoris. d'enlèvement et le traitement à l'enlèvement !== 수리시반출처리구분코드(CLR_0072) ==! */
+            , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+            , #{rmrkCn}                      /** Remarque !== 비고 ==! */
+            , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+            )
+    </insert>
+
+    <update id="updateClrApcMgmtEpcCd" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtEpcCdVo">
+        /* updateClrApcMgmtEpcCd : EPC코드관리 수정 */
+        UPDATE  TB_CLRI_EPC_CD SET
+        <trim prefixOverrides="," >
+            EPC_NM = #{epcNm}                           /** Nom de l'EPC !== EPC명 ==! */
+            , DCLR_PT_CD = #{dclrPtCd}                    /** Code de type de declaration !== 신고유형코드 ==! */
+            , CAG_CMVL_YN = #{cagCmvlYn}                  /** Contrôle manifeste (O/N) !== 화물대사여부 ==! */
+            , SORT_ORDR = #{sortOrdr}                     /** Ordre d'alignement !== 정렬순서 ==! */
+            , EXFM_PRCS_YN = #{exfmPrcsYn}                /** Apurement !== 수출이행처리여부 ==! */
+            , TACP_RLSE_PRCS_TP_CD = #{tacpRlsePrcsTpCd}  /** Code de division entre le traitement à l'autoris. d'enlèvement et le traitement à l'enlèvement !== 수리시반출처리구분코드(CLR_0072) ==! */
+            , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+            , RMRK_CN = #{rmrkCn}                         /** Remarque !== 비고 ==! */
+            , EPC_APLY_END_DT = TO_CHAR(TO_DATE(#{epcAplyEndDt} , 'DD/MM/YYYY'), 'YYYYMMDD')
+        </trim>
+        WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+        AND  EPC_CD = #{epcCd}                           /** Code EPC !== EPC코드 ==! */
+        AND  EPC_APLY_STRT_DT = TO_CHAR(TO_DATE(#{epcAplyStrtDt} , 'DD/MM/YYYY'), 'YYYYMMDD')
+    </update>
+
+    <select id="selectClrApcMgmtEpcCdDuplicateCheck" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtEpcCdVo" resultType="int">
+        /* selectClrApcMgmtEpcCdDuplicateCheck : EPC코드등록 중복 확인  */
+        <![CDATA[
+        SELECT TO_CHAR(COUNT(*)) AS COUNT
+        FROM TB_CLRI_EPC_CD
+        WHERE EPC_CD = #{epcCd}
+          AND (( TO_CHAR(TO_DATE(#{epcAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN   EPC_APLY_STRT_DT AND  EPC_APLY_END_DT
+           OR TO_CHAR(TO_DATE(#{epcAplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN   EPC_APLY_STRT_DT AND  EPC_APLY_END_DT)
+           OR (TO_CHAR(TO_DATE(#{epcAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') < EPC_APLY_STRT_DT
+          AND TO_CHAR(TO_DATE(#{epcAplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') > EPC_APLY_END_DT))
+        ]]>
+    </select>
+
+</mapper>

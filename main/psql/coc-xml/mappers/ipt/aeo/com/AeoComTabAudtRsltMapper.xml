@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+Mapper : [OEA commun] L'onglet Résultat de l'audit de la demande d'agrément !== [AEO 공통] 공인신청서 의견서 탭 Mapper ==!
+(wonjun.cha)
+-->
+<mapper namespace="alpass.ipt.aeo.com.mapper.AeoComTabAudtRsltMapper">
+
+    <!--
+    [OEA commun] Consulter la liste des résultats d'audit !== [AEO 공통] 심사결과 목록 조회 ==!
+    -->
+	<select id="selectAeoComAudtRsltList"
+	    parameterType="alpass.ipt.aeo.com.vo.AeoComAudtRsltVo"
+	    resultType="alpass.ipt.aeo.com.vo.AeoComAudtRsltVo">
+		/* selectAeoComAudtRsltList */
+	    <include refid="pagination.header"/>
+		SELECT
+				  A.AUDT_RSLT_NO               /** Numéro du résultat d'audit !== 심사결과번호 ==! */
+                , A.ATHR_RQST_TP_CD            /** Code de type de demande d'agrément !== 공인신청구분코드 ==! */
+                , FN_GET_CD_VDVAL_NM('AEO_0004', A.ATHR_RQST_TP_CD, #{langCd}) AS ATHR_RQST_TP_NM                 /** Code de type de demande d'agrément !== 공인신청구분코드 ==! */
+                , A.AEO_RQST_NO                /** Numéro de demande du statut OEA !== AEO신청번호 ==! */
+                , A.AEO_ATHR_NO                /** Numéro d'OEA !== AEO공인번호 ==! */
+                , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+                , FN_GET_CD_VDVAL_NM((CASE A.ATHR_RQST_TP_CD WHEN 'ARQ' THEN 'AEO_0015' ELSE 'AEO_0016' END), A.PRCS_STTS_CD, #{langCd}) AS PRCS_STTS_NM               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+                , A.DTL_PRCS_STTS_CD           /** Code d'état détaillé du traitement !== 상세처리상태코드 ==! */
+                , FN_GET_CD_VDVAL_NM((CASE A.ATHR_RQST_TP_CD WHEN 'ARQ' THEN 'AEO_0017' ELSE 'AEO_0018' END), A.DTL_PRCS_STTS_CD, #{langCd}) AS DTL_PRCS_STTS_NM               /** Code d'état détaillé du traitement !== 상세처리상태코드 ==! */
+                , A.AUDT_RSLT_CD               /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+                , FN_GET_CD_VDVAL_NM('AEO_0011', A.AUDT_RSLT_CD, #{langCd}) AS AUDT_RSLT_NM               /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+                , A.AUDT_RSLT_CN               /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+                , A.AEO_ATHR_GD_CD             /** Code de classement d'OEA !== AEO공인등급코드 ==! */
+                , FN_GET_CD_VDVAL_NM('AEO_0005', A.AEO_ATHR_GD_CD, #{langCd}) AS AEO_ATHR_GD_NM             /** Code de classement d'OEA !== AEO공인등급코드 ==! */
+                , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , TO_CHAR(A.SBMT_DTTM, 'DD/MM/YYYY hh24:mi:ss') AS SBMT_DTTM                  /** Date Et Heure De Soumission !== 제출일시 ==! */
+				, A.DEL_YN					/** Suppression On !== 삭제여부 ==! */
+                , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+				, (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.FRST_REGST_ID) AS FRST_REGST_NM
+				, (SELECT ORG.ORGN_NM FROM TB_POTI_ORGN ORG, TB_POTI_EMP EMP WHERE ORG.ORGN_MGMT_CD = EMP.ORGN_MGMT_CD AND EMP.PBSR_NO = A.FRST_REGST_ID) AS FRST_REGST_DEPT_NM	/** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+				, TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS frstRgsrDttm			/** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+				, A.LAST_CHPR_ID				/** Id Du Modificateur Final !== 최종변경자ID ==! */
+				, (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.LAST_CHPR_ID) AS LAST_CHPR_NM
+				, TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY hh24:mi:ss') AS lastChgDttm				/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+				, A.DGD_ACRS_CN          	   /** les antécédents vis-à-vis de l’administration des douanes !== 관세청실적내용 ==! */
+				, A.TAX_ACRS_CN          	   /** les antécédents vis-à-vis de l’administration fiscale !== 세금실적내용 ==! */
+				, A.TRDE_SRVC_ACRS_CN          /** les antécédents vis-à-vis des services du commerce !== 무역서비스실적내용 ==! */
+				, A.EMPY_SUPV_SRVC_ACRS_CN     /** les antécédents vis-à-vis des services de l’inspection de travail !== 고용감독서비스실적내용 ==! */
+				, A.SCT_INSR_SRVC_ACRS_CN      /** les antécédents vis-à-vis des services de la sécurité sociale !== 사회보험서비스실적내용 ==! */
+				, A.RNAF_SAFE_OPIN_CN          /** Avis sur la solvabilité financière !== 재무안전의견내용 ==! */
+		  FROM
+		  		  TB_AEOI_AUDT_RSLT A          /** AEOI_RÉSULTAT D'AUDIT !== AEOI_심사결과 ==! */
+		 WHERE
+		 		  A.DEL_YN = 'N'									/** Suppression ON !== 삭제여부 ==! */
+	    <choose>
+	    	<when test="aeoRqstNoList.size != 0">
+           AND	  A.AEO_RQST_NO IN 									/** Numéro de demande du statut OEA !== AEO신청번호 ==! */
+	       		<foreach collection="aeoRqstNoList" item="item" index="index" separator="," open="(" close=")">
+	       			#{item}
+	       		</foreach>
+	    	</when>
+	    </choose>
+	    <if test='aeoAthrNo != null and !"".equals(aeoAthrNo)'>
+	        OR	  (A.AEO_ATHR_NO = #{aeoAthrNo} AND A.DEL_YN = 'N')
+	    </if>
+		<choose>
+			<when test='srchRoleId != null and "AEO003".equals(srchRoleId)'>
+		   AND	  (    A.SBMT_DTTM IS NULL AND EXISTS (
+													   SELECT 'X'
+													   FROM	  TB_AEOI_ADOR G    /** AEOI_AUDITEUR !== AEOI_심사자 ==! */
+													   WHERE  G.DEL_YN = 'N'
+													   AND	  G.AEO_RQST_NO = A.AEO_RQST_NO
+													   AND 	  G.ADOR_ID = A.LAST_CHPR_ID
+				                                       AND    G.CSTM_CD = #{cstmCd}
+												 	  )
+			        OR A.SBMT_DTTM IS NOT NULL
+			      )
+			</when>
+			<otherwise>
+		   AND	  (
+				       A.SBMT_DTTM IS NULL AND A.LAST_CHPR_ID = #{lastChprId} /** 로그인 ID */
+				    OR A.SBMT_DTTM IS NOT NULL
+				  )
+			</otherwise>
+		</choose>
+         ORDER BY A.LAST_CHG_DTTM DESC
+		<include refid="pagination.footer"/>
+	</select>
+
+    <!--
+    [OEA commun] Consulter le résultat d'audit !== [AEO 공통] 심사결과 조회 ==!
+    -->
+	<select id="selectAeoComAudtRslt"
+	    parameterType="alpass.ipt.aeo.com.vo.AeoComAudtRsltVo"
+	    resultType="alpass.ipt.aeo.com.vo.AeoComAudtRsltVo">
+		/* selectAeoComAudtRslt */
+		SELECT
+				  A.AUDT_RSLT_NO               /** Numéro du résultat d'audit !== 심사결과번호 ==! */
+                , A.ATHR_RQST_TP_CD            /** Code de type de demande d'agrément !== 공인신청구분코드 ==! */
+                , FN_GET_CD_VDVAL_NM('AEO_0004', A.ATHR_RQST_TP_CD, #{langCd}) AS ATHR_RQST_TP_NM                 /** Code de type de demande d'agrément !== 공인신청구분코드 ==! */
+                , A.AEO_RQST_NO                /** Numéro de demande du statut OEA !== AEO신청번호 ==! */
+                , A.AEO_ATHR_NO                /** Numéro d'OEA !== AEO공인번호 ==! */
+                , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+                , FN_GET_CD_VDVAL_NM((CASE A.ATHR_RQST_TP_CD WHEN 'ARQ' THEN 'AEO_0015' ELSE 'AEO_0016' END), A.PRCS_STTS_CD, #{langCd}) AS PRCS_STTS_NM               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+                , A.DTL_PRCS_STTS_CD           /** Code d'état détaillé du traitement !== 상세처리상태코드 ==! */
+                , FN_GET_CD_VDVAL_NM((CASE A.ATHR_RQST_TP_CD WHEN 'ARQ' THEN 'AEO_0017' ELSE 'AEO_0018' END), A.DTL_PRCS_STTS_CD, #{langCd}) AS DTL_PRCS_STTS_NM               /** Code d'état détaillé du traitement !== 상세처리상태코드 ==! */
+                , A.AUDT_RSLT_CD               /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+                , FN_GET_CD_VDVAL_NM('AEO_0011', A.AUDT_RSLT_CD, #{langCd}) AS AUDT_RSLT_CD               /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+                , A.AUDT_RSLT_CN               /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+                , A.AEO_ATHR_GD_CD             /** Code de classement d'OEA !== AEO공인등급코드 ==! */
+                , FN_GET_CD_VDVAL_NM('AEO_0005', A.AEO_ATHR_GD_CD, #{langCd}) AS AEO_ATHR_GD_CD             /** Code de classement d'OEA !== AEO공인등급코드 ==! */
+                , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , TO_CHAR(A.SBMT_DTTM, 'DD/MM/YYYY hh24:mi:ss') AS SBMT_DTTM                  /** Date Et Heure De Soumission !== 제출일시 ==! */
+				, A.DEL_YN					/** Suppression On !== 삭제여부 ==! */
+                , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+				, (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.FRST_REGST_ID) AS FRST_REGST_NM
+				, (SELECT ORG.ORGN_NM FROM TB_POTI_ORGN ORG, TB_POTI_EMP EMP WHERE ORG.ORGN_MGMT_CD = EMP.ORGN_MGMT_CD AND EMP.PBSR_NO = A.FRST_REGST_ID) AS FRST_REGST_DEPT_NM	/** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+				, TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY hh24:mi:ss') AS frstRgsrDttm			/** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+				, A.LAST_CHPR_ID				/** Id Du Modificateur Final !== 최종변경자ID ==! */
+				, (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.LAST_CHPR_ID) AS LAST_CHPR_NM
+				, TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY hh24:mi:ss') AS lastChgDttm				/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+				, B.CO_NM                      /** Nom De L'Entreprise !== 업체명 ==! */
+                , B.NIF                        /** NIF !== 납세번호 ==! */
+		        , FN_GET_CD_VDVAL_NM('POT_0075', B.LAW_QLFC_NM, #{langCd}) AS LAW_QLFC_NM                /** Statut juridique !== 법자격명 ==! */
+		        , B.LAW_QLFC_NM AS LAW_QLFC_NM_CD                /** Statut juridique !== 법자격명 ==! */
+			    , (SELECT ORGN_NM FROM  TB_POTI_ORGN WHERE ORGN_MGMT_CD = UPPER(B.PLN_AUDT_DEPT_CD)) AS PLN_AUDT_DEPT_NM                /** Service des contrôles a posteriori  !== 계획심사부서 ==! */
+<!--				, (SELECT TO_CHAR(TO_DATE(AUDT_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') || '~' || TO_CHAR(TO_DATE(AUDT_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') FROM   TB_AEOI_AUDT_PLN WHERE DEL_YN = 'N' AND AEO_ATHR_RQST_NO = A.AEO_RQST_NO) AS AUDT_PRID-->
+				, A.DGD_ACRS_CN          	   /** les antécédents vis-à-vis de l’administration des douanes !== 관세청실적내용 ==! */
+				, A.TAX_ACRS_CN          	   /** les antécédents vis-à-vis de l’administration fiscale !== 세금실적내용 ==! */
+				, A.TRDE_SRVC_ACRS_CN          /** les antécédents vis-à-vis des services du commerce !== 무역서비스실적내용 ==! */
+				, A.EMPY_SUPV_SRVC_ACRS_CN     /** les antécédents vis-à-vis des services de l’inspection de travail !== 고용감독서비스실적내용 ==! */
+				, A.SCT_INSR_SRVC_ACRS_CN      /** les antécédents vis-à-vis des services de la sécurité sociale !== 사회보험서비스실적내용 ==! */
+				, A.RNAF_SAFE_OPIN_CN          /** Avis sur la solvabilité financière !== 재무안전의견내용 ==! */
+				, (SELECT DECODE(COUNT(1), 0, 'N', 'Y')
+				   FROM   TB_AEOI_XTRN_SPLT AS XS    /** AEOI_EXPERT EXTÉRIEUR !== AEOI_외부전문관 ==! */
+				   WHERE  XS.AEO_ATHR_RQST_NO = A.AEO_RQST_NO
+				   AND    XS.DEL_YN = 'N') AS XPRT_WRIOP_YN
+		FROM
+		  		  TB_AEOI_AUDT_RSLT A    /** AEOI_RÉSULTAT D'AUDIT !== AEOI_심사결과 ==! */
+		  		, TB_AEOI_ATHR_RQST B    /** AEOI_DEMANDE D'AGRÉMENT !== AEOI_공인신청 ==! */
+		 <if test='athrRqstTpCd != null and "PSM".equals(athrRqstTpCd)'>
+		  		, TB_AEOI_AFFC_RQST C    /** AEOI_DEMANDE ULTÉRIEURE !== AEOI_사후신청 ==! */
+		 </if>
+		 WHERE
+		 		  A.DEL_YN = 'N'									/** Suppression ON !== 삭제여부 ==! */
+           AND	  B.DEL_YN = 'N'									/** Suppression ON !== 삭제여부 ==! */
+		 <if test='athrRqstTpCd != null and "ARQ".equals(athrRqstTpCd)'>
+           AND	  A.AEO_RQST_NO = B.AEO_ATHR_RQST_NO 
+		 </if>
+		 <if test='athrRqstTpCd != null and "PSM".equals(athrRqstTpCd)'>
+		   AND	  C.DEL_YN = 'N'									/** Suppression ON !== 삭제여부 ==! */
+           AND	  A.AEO_ATHR_NO = B.AEO_ATHR_NO
+           AND	  A.AEO_RQST_NO = C.AEO_AFFC_MGMT_RQST_NO
+		 </if>
+		 <if test='aeoRqstNo != null and !"".equals(aeoRqstNo)'>
+           AND	  A.AEO_RQST_NO = #{aeoRqstNo}                     	/** Numéro de demande du statut OEA !== AEO신청번호 ==! */
+         </if>
+		 <if test='audtRsltNo != null and !"".equals(audtRsltNo)'>
+           AND	  A.AUDT_RSLT_NO = #{audtRsltNo}                    /** Numéro du résultat d'audit !== 심사결과번호 ==! */
+         </if>
+		 <if test='prcsSttsCd != null and !"".equals(prcsSttsCd)'>
+           AND	  A.PRCS_STTS_CD = #{prcsSttsCd}                    /** Code De Statut De Traitement !== 처리상태코드 ==! */
+         </if>
+		 <if test='dtlPrcsSttsCd != null and !"".equals(dtlPrcsSttsCd)'>
+           AND	  A.DTL_PRCS_STTS_CD = #{dtlPrcsSttsCd}             /** Code d'état détaillé du traitement !== 상세처리상태코드 ==! */
+		</if>
+		<if test='(srchRoleId != null and "AEO003".equals(srchRoleId)) and (cnfcAdorYn != null and "Y".equals(cnfcAdorYn))'>
+		   AND    EXISTS (SELECT 'X'
+					 	  FROM   TB_AEOI_ADOR D                     /** AEOI_AUDITEUR !== AEOI_심사자 ==! */
+				 		  WHERE  D.AEO_RQST_NO = A.AEO_RQST_NO
+						  AND    D.ADOR_ID = A.FRST_REGST_ID
+						  AND    D.AEO_RQST_NO = #{aeoRqstNo}
+						  AND    D.ADOR_TP_CD = 'CAO'
+						  AND    D.CSTM_CD = #{cstmCd}
+						  AND    D.DEL_YN = 'N')
+		</if>
+	</select>
+	
+    <!--
+    [OEA commun] Enregistrer le résultat d'audit !=[AEO 공통] 심사결과 등록==!
+    -->
+	<insert id="insertAeoComAudtRslt"
+		parameterType="alpass.ipt.aeo.com.vo.AeoComAudtRsltVo">
+		/* insertAeoComAudtRslt */
+        INSERT INTO TB_AEOI_AUDT_RSLT (         /** AEOI_RÉSULTAT D'AUDIT !== AEOI_심사결과 ==! */
+				  AUDT_RSLT_NO                  /** Numéro du résultat d'audit !== 심사결과번호 ==! */
+                , ATHR_RQST_TP_CD               /** Code de type de demande d'agrément !== 공인신청구분코드 ==! */
+                , AEO_RQST_NO                   /** Numéro de demande du statut OEA !== AEO신청번호 ==! */
+                , AEO_ATHR_NO                   /** Numéro d'OEA !== AEO공인번호 ==! */
+                , PRCS_STTS_CD                  /** Code De Statut De Traitement !== 처리상태코드 ==! */
+                , DTL_PRCS_STTS_CD              /** Code d'état détaillé du traitement !== 상세처리상태코드 ==! */
+                , AUDT_RSLT_CD                  /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+                , AUDT_RSLT_CN                  /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+                , AEO_ATHR_GD_CD                /** Code de classement d'OEA !== AEO공인등급코드 ==! */
+                , ATCH_FILE_ID                  /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , DEL_YN                       	/** Suppression On !== 삭제여부 ==! */
+				, FRST_REGST_ID					/** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+				, FRST_RGSR_DTTM				/** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+				, LAST_CHPR_ID					/** Id Du Modificateur Final !== 최종변경자ID ==! */
+				, LAST_CHG_DTTM					/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+				, DGD_ACRS_CN             		/** les antécédents vis-à-vis de l’administration des douanes !== 관세청실적내용 ==! */
+				, TAX_ACRS_CN             		/** les antécédents vis-à-vis de l’administration fiscale !== 세금실적내용 ==! */
+				, TRDE_SRVC_ACRS_CN             /** les antécédents vis-à-vis des services du commerce !== 무역서비스실적내용 ==! */
+				, EMPY_SUPV_SRVC_ACRS_CN        /** les antécédents vis-à-vis des services de l’inspection de travail !== 고용감독서비스실적내용 ==! */
+				, SCT_INSR_SRVC_ACRS_CN         /** les antécédents vis-à-vis des services de la sécurité sociale !== 사회보험서비스실적내용 ==! */
+				, RNAF_SAFE_OPIN_CN             /** Avis sur la solvabilité financière !== 재무안전의견내용 ==! */
+		)
+		VALUES
+		(
+				  #{audtRsltNo}                 /** Numéro du résultat d'audit !== 심사결과번호 ==! */
+                , #{athrRqstTpCd}               /** Code de type de demande d'agrément !== 공인신청구분코드 ==! */
+                , #{aeoRqstNo}                  /** Numéro de demande du statut OEA !== AEO신청번호 ==! */
+                , #{aeoAthrNo}                  /** Numéro d'OEA !== AEO공인번호 ==! */
+                , #{prcsSttsCd}                 /** Code De Statut De Traitement !== 처리상태코드 ==! */
+                , #{dtlPrcsSttsCd}              /** Code d'état détaillé du traitement !== 상세처리상태코드 ==! */
+                , #{audtRsltCd}                 /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+                , #{audtRsltCn}                 /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+                , #{aeoAthrGdCd}                /** Code de classement d'OEA !== AEO공인등급코드 ==! */
+                , #{atchFileId}                 /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , 'N'                          	/** Suppression On !== 삭제여부 ==! */
+				, #{frstRegstId}          		/** Id Du Premier Enregistrant  !== 최초등록자ID ==! */              
+				, CURRENT_TIMESTAMP          	/** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */   
+				, #{lastChprId}          		/** Id Du Modificateur Final !== 최종변경자ID ==! */                 
+				, CURRENT_TIMESTAMP          	/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+				, #{dgdAcrsCn}             		/** les antécédents vis-à-vis de l’administration des douanes !== 관세청실적내용 ==! */
+				, #{taxAcrsCn}             		/** les antécédents vis-à-vis de l’administration fiscale !== 세금실적내용 ==! */
+				, #{trdeSrvcAcrsCn}             /** les antécédents vis-à-vis des services du commerce !== 무역서비스실적내용 ==! */
+				, #{empySupvSrvcAcrsCn}         /** les antécédents vis-à-vis des services de l’inspection de travail !== 고용감독서비스실적내용 ==! */
+				, #{sctInsrSrvcAcrsCn}          /** les antécédents vis-à-vis des services de la sécurité sociale !== 사회보험서비스실적내용 ==! */
+				, #{rnafSafeOpinCn}             /** Avis sur la solvabilité financière !== 재무안전의견내용 ==! */
+		)
+	</insert>
+
+    <!--
+    [OEA commun] Modifier le résultat d'audit !==[AEO 공통] 심사결과 수정==!
+    -->
+	<update id="updateAeoComAudtRslt"
+		parameterType="alpass.ipt.aeo.com.vo.AeoComAudtRsltVo">
+		/* updateAeoComAudtRslt */
+		UPDATE	  TB_AEOI_AUDT_RSLT                             /** AEOI_RÉSULTAT D'AUDIT !== AEOI_심사결과 ==! */
+		   SET
+				  LAST_CHPR_ID = #{lastChprId}          		/** Id Du Modificateur Final !== 최종변경자ID ==! */            
+				, LAST_CHG_DTTM = CURRENT_TIMESTAMP				/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */ 
+	    	<if test='athrRqstTpCd != null and !"".equals(athrRqstTpCd)'>
+				, ATHR_RQST_TP_CD = #{athrRqstTpCd}                  /** Code de type de demande d'agrément !== 공인신청구분코드 ==! */
+            </if>
+	    	<if test='aeoAthrNo != null and !"".equals(aeoAthrNo)'>
+                , AEO_ATHR_NO = #{aeoAthrNo}                /** Numéro d'OEA !== AEO공인번호 ==! */
+            </if>
+	    	<if test='prcsSttsCd != null and !"".equals(prcsSttsCd)'>
+                , PRCS_STTS_CD = #{prcsSttsCd}              /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            </if>
+	    	<if test='dtlPrcsSttsCd != null and !"".equals(dtlPrcsSttsCd)'>
+                , DTL_PRCS_STTS_CD = #{dtlPrcsSttsCd}       /** Code d'état détaillé du traitement !== 상세처리상태코드 ==! */
+            </if>
+	    	<if test='audtRsltCd != null and !"".equals(audtRsltCd)'>
+                , AUDT_RSLT_CD = #{audtRsltCd}                /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+            </if>
+	    	<if test='audtRsltCn != null and !"".equals(audtRsltCn)'>
+                , AUDT_RSLT_CN = #{audtRsltCn}                /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+            </if>
+	    	<if test='aeoAthrGdCd != null and !"".equals(aeoAthrGdCd)'>
+                , AEO_ATHR_GD_CD = #{aeoAthrGdCd}             /** Code de classement d'OEA !== AEO공인등급코드 ==! */
+            </if>
+	    	<if test='atchFileId != null and !"".equals(atchFileId)'>
+                , ATCH_FILE_ID = #{atchFileId}              /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            </if>
+			<if test='dgdAcrsCn != null and !"".equals(dgdAcrsCn)'>
+				, DGD_ACRS_CN = #{dgdAcrsCn}						/** les antécédents vis-à-vis de l’administration des douanes !== 관세청실적내용 ==! */
+			</if>
+			<if test='taxAcrsCn != null and !"".equals(taxAcrsCn)'>
+				, TAX_ACRS_CN = #{taxAcrsCn}						/** les antécédents vis-à-vis de l’administration fiscale !== 세금실적내용 ==! */
+			</if>
+			<if test='trdeSrvcAcrsCn != null and !"".equals(trdeSrvcAcrsCn)'>
+				, TRDE_SRVC_ACRS_CN = #{trdeSrvcAcrsCn}				/** les antécédents vis-à-vis des services du commerce !== 무역서비스실적내용 ==! */
+			</if>
+			<if test='empySupvSrvcAcrsCn != null and !"".equals(empySupvSrvcAcrsCn)'>
+				, EMPY_SUPV_SRVC_ACRS_CN = #{empySupvSrvcAcrsCn}	/** les antécédents vis-à-vis des services de l’inspection de travail !== 고용감독서비스실적내용 ==! */
+			</if>
+			<if test='sctInsrSrvcAcrsCn != null and !"".equals(sctInsrSrvcAcrsCn)'>
+				, SCT_INSR_SRVC_ACRS_CN = #{sctInsrSrvcAcrsCn}		/** les antécédents vis-à-vis des services de la sécurité sociale !== 사회보험서비스실적내용 ==! */
+			</if>
+			<if test='rnafSafeOpinCn != null and !"".equals(rnafSafeOpinCn)'>
+				, RNAF_SAFE_OPIN_CN = #{rnafSafeOpinCn}				/** Avis sur la solvabilité financière !== 재무안전의견내용 ==! */
+			</if>
+		 WHERE
+		 		  DEL_YN = 'N'									/** Suppression ON !== 삭제여부 ==! */
+           AND	  AEO_RQST_NO = #{aeoRqstNo}                    /** Numéro de demande du statut OEA !== AEO신청번호 ==! */
+           AND	  AUDT_RSLT_NO = #{audtRsltNo}                  /** Numéro du résultat d'audit !== 심사결과번호 ==! */
+	</update>
+
+    <!--
+    [OEA commun] Supprimer le résultat d'audit !==[AEO 공통] 심사결과 삭제==!
+    -->
+	<update id="deleteAeoComAudtRslt"
+		parameterType="alpass.ipt.aeo.com.vo.AeoComAudtRsltVo">
+		  /* deleteAeoComAudtRslt */
+		  UPDATE  TB_AEOI_AUDT_RSLT                             /** AEOI_RÉSULTAT D'AUDIT !== AEOI_심사결과 ==! */
+		     SET
+				  LAST_CHPR_ID = #{lastChprId}          		/** Id Du Modificateur Final !== 최종변경자ID ==! */            
+				, LAST_CHG_DTTM = CURRENT_TIMESTAMP				/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */ 
+		  		, DEL_YN = 'Y'									/** Suppression On !== 삭제여부 ==! */ 
+		   WHERE
+		 		  DEL_YN = 'N'									/** Suppression ON !== 삭제여부 ==! */
+             AND  AEO_RQST_NO = #{aeoRqstNo}                    /** Numéro de demande du statut OEA !== AEO신청번호 ==! */
+             AND  AUDT_RSLT_NO = #{audtRsltNo}                  /** Numéro du résultat d'audit !== 심사결과번호 ==! */
+	</update>
+
+    <!--
+    [OEA commun] Déposer le résultat d'audit !==[AEO 공통] 심사결과 제출==!
+    -->
+	<update id="updateAeoComAudtRsltSbmt"
+		parameterType="alpass.ipt.aeo.com.vo.AeoComAudtRsltVo">
+		/* updateAeoComAudtRsltSbmt */
+		UPDATE	  TB_AEOI_AUDT_RSLT                             /** AEOI_RÉSULTAT D'AUDIT !== AEOI_심사결과 ==! */
+		   SET
+				  LAST_CHPR_ID = #{lastChprId}          		/** Id Du Modificateur Final !== 최종변경자ID ==! */            
+				, LAST_CHG_DTTM = CURRENT_TIMESTAMP				/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */ 
+                , PRCS_STTS_CD = #{prcsSttsCd}              	/** Code De Statut De Traitement !== 처리상태코드 ==! */
+                , DTL_PRCS_STTS_CD = #{dtlPrcsSttsCd}       	/** Code d'état détaillé du traitement !== 상세처리상태코드 ==! */
+                , SBMT_DTTM = CURRENT_TIMESTAMP                 /** Date Et Heure De Soumission !== 제출일시 ==! */
+		    <if test='aeoAthrNo != null and !"".equals(aeoAthrNo)'>
+                , AEO_ATHR_NO = #{aeoAthrNo}                  	/** Numéro d'OEA !== AEO공인번호 ==! */
+		    </if>
+			<if test='audtRsltCd != null and !"".equals(audtRsltCd)'>
+				, AUDT_RSLT_CD = #{audtRsltCd}                	/** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+			</if>
+			<if test='audtRsltCn != null and !"".equals(audtRsltCn)'>
+				, AUDT_RSLT_CN = #{audtRsltCn}                	/** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+			</if>
+			<if test='aeoAthrGdCd != null and !"".equals(aeoAthrGdCd)'>
+				, AEO_ATHR_GD_CD = #{aeoAthrGdCd}             	/** Code de classement d'OEA !== AEO공인등급코드 ==! */
+			</if>
+			<if test='atchFileId != null and !"".equals(atchFileId)'>
+				, ATCH_FILE_ID = #{atchFileId}              	/** Id Du Fichier Joint !== 첨부파일ID ==! */
+			</if>
+			<if test='dgdAcrsCn != null and !"".equals(dgdAcrsCn)'>
+				, DGD_ACRS_CN = #{dgdAcrsCn}					/** les antécédents vis-à-vis de l’administration des douanes !== 관세청실적내용 ==! */
+			</if>
+			<if test='taxAcrsCn != null and !"".equals(taxAcrsCn)'>
+				, TAX_ACRS_CN = #{taxAcrsCn}					/** les antécédents vis-à-vis de l’administration fiscale !== 세금실적내용 ==! */
+			</if>
+			<if test='trdeSrvcAcrsCn != null and !"".equals(trdeSrvcAcrsCn)'>
+				, TRDE_SRVC_ACRS_CN = #{trdeSrvcAcrsCn}			/** les antécédents vis-à-vis des services du commerce !== 무역서비스실적내용 ==! */
+			</if>
+			<if test='empySupvSrvcAcrsCn != null and !"".equals(empySupvSrvcAcrsCn)'>
+				, EMPY_SUPV_SRVC_ACRS_CN = #{empySupvSrvcAcrsCn}/** les antécédents vis-à-vis des services de l’inspection de travail !== 고용감독서비스실적내용 ==! */
+			</if>
+			<if test='sctInsrSrvcAcrsCn != null and !"".equals(sctInsrSrvcAcrsCn)'>
+				, SCT_INSR_SRVC_ACRS_CN = #{sctInsrSrvcAcrsCn}	/** les antécédents vis-à-vis des services de la sécurité sociale !== 사회보험서비스실적내용 ==! */
+			</if>
+			<if test='rnafSafeOpinCn != null and !"".equals(rnafSafeOpinCn)'>
+				, RNAF_SAFE_OPIN_CN = #{rnafSafeOpinCn}			/** Avis sur la solvabilité financière !== 재무안전의견내용 ==! */
+			</if>
+		 WHERE
+           		  DEL_YN = 'N'                                	/** Suppression ON !== 삭제여부 ==! */
+           AND	  AEO_RQST_NO = #{aeoRqstNo}                    /** Numéro de demande du statut OEA !== AEO신청번호 ==! */
+           AND	  AUDT_RSLT_NO = #{audtRsltNo}                  /** Numéro du résultat d'audit !== 심사결과번호 ==! */
+	</update>
+
+    <!--
+    [OEA commun] Consulter la note des critères d'agrément !== [AEO 공통] 공인기준 점수 조회 ==!
+    -->
+	<select id="selectAeoComAthrBaseScr"
+	    parameterType="alpass.ipt.aeo.com.vo.AeoComAudtRsltVo"
+	    resultType="java.util.Map">
+		/* selectAeoComAthrBaseScr */
+		SELECT
+				  A.EV_LRCL_CD                                                         /** Code De Catégorie D'Évaluation !== 평가대분류코드 ==! */
+                , A.AEO_EV_SCR                                                         /** Points D'Évaluation !== 평가점수 ==! */
+                , NVL(A.CO_EV_SCR, 0) as CO_EV_SCR                                     /** Note D'Évaluation !== 업체평가점수 ==! */
+                , ROUND((NVL(A.CO_EV_SCR, 0)/A.AEO_EV_SCR) * 100, 0) AS CO_MSRM_SCR
+				, A.CNT AS BASE_MGNT_CNT
+				, A.EV_CNT AS BASE_EV_CNT
+				, (SELECT TAAR.EV_QRT FROM TB_AEOI_ATHR_RQST AS TAAR WHERE TAAR.AEO_ATHR_RQST_NO = #{aeoRqstNo}) AS EV_QRT			/* Trimestre d'évaluation !== 평가분기 ==! */
+				, (SELECT TAAR.CO_EV_SCR FROM TB_AEOI_ATHR_RQST AS TAAR WHERE TAAR.AEO_ATHR_RQST_NO = #{aeoRqstNo}) AS LWCS_SCR		/* Note du niveau de conformité !==법규준수점수 ==! */
+		  FROM	  (
+			           SELECT B.EV_LRCL_CD
+			                , COUNT(1) AS CNT
+			                , COUNT(1) * 3 AS AEO_EV_SCR
+			                , SUM(A.CO_EV_SCR) AS CO_EV_SCR
+							, SUM(CASE WHEN A.CO_EV_SCR != 0 THEN 1 ELSE 0 END) AS EV_CNT
+			           FROM   TB_AEOI_ATHR_BASE_EV A    /** AEOI_ÉVALUATION DES CRITÈRES D'AGRÉMENT !== AEOI_공인기준평가 ==! */
+			                , TB_AEOI_ATHR_BASE_MGMT B  /** AEOI_GESTION DES CRITÈRES D'AGRÉMENT !== AEOI_공인기준관리 ==! */
+			           WHERE  B.ATHR_BASE_MGMT_SRNO = A.ATHR_BASE_MGMT_SRNO(+)
+			           AND    B.DEL_YN = 'N'
+			           AND    A.AEO_ATHR_RQST_NO(+) = #{aeoRqstNo}
+			           GROUP BY B.EV_LRCL_CD
+			           ORDER BY B.EV_LRCL_CD ASC
+		  		  ) A
+		 WHERE
+		 		  A.EV_LRCL_CD !='A'
+	</select>
+
+	<!--
+    [OEA commun] Vérifier si le résultat de l'audit en collaboration a été déposé ou non !== [AEO 공통] 협의심사결과 제출여부 조회 ==!
+    -->
+	<select id="selectAeoComCnfcAudtSbmtYn"
+			parameterType="alpass.ipt.aeo.com.vo.AeoComAudtRsltVo"
+			resultType="alpass.ipt.aeo.com.vo.AeoComAudtRsltVo">
+		/* selectAeoComCnfcAudtSbmtYn */
+		SELECT DECODE(A.SBMT_CNT, B.CNFC_AUDT_CNT, 'Y', 'N') AS CNFC_AUDT_SBMT_YN    /** Vérifier si le rapport d'audit en collaboration a été déposé ou non !== 협의심사제출여부 ==! */
+		FROM   (SELECT COUNT(*) AS SBMT_CNT
+				FROM   TB_AEOI_AUDT_RSLT A            /** AEOI_RÉSULTAT D'AUDIT !== AEOI_심사결과 ==! */
+				WHERE  A.SBMT_DTTM IS NOT NULL
+				AND    A.AEO_RQST_NO = #{aeoRqstNo}
+				AND    A.PRCS_STTS_CD = 'D28'
+				AND    A.DTL_PRCS_STTS_CD = 'U34'
+				AND    A.DEL_YN = 'N') A
+			 , (SELECT COUNT(*) AS CNFC_AUDT_CNT
+				FROM   (SELECT DISTINCT B.CSTM_CD
+						FROM   TB_AEOI_ADOR B         /** AEOI_AUDITEUR !== AEOI_심사자 ==! */
+						WHERE  B.AEO_RQST_NO = #{aeoRqstNo}
+						AND    B.ADOR_TP_CD = 'CAO'
+						AND    B.DEL_YN = 'N')) B
+	</select>
+
+	<!--
+    [OEA commun] Consulter le nombre de résultats d'audit !== [AEO 공통] 심사결과건수 조회 ==!
+    -->
+	<select id="selectAeoComAudtRsltCnt" parameterType="alpass.ipt.aeo.com.vo.AeoComAudtRsltVo" resultType="int">
+		/* selectAeoComAudtRsltCnt */
+		SELECT  COUNT(*)
+		FROM    ( SELECT CSTM_CD, MAX(AEO_RQST_NO) AS AEO_RQST_NO FROM TB_AEOI_ADOR WHERE AEO_RQST_NO = #{aeoRqstNo} AND DEL_YN = 'N' GROUP BY CSTM_CD ) A
+			  , ( SELECT  A.AEO_RQST_NO          /** Numéro de demande du statut OEA !== AEO신청번호 ==! */
+						, A.FRST_REGST_ID        /** Id Du Premier Enregistrant !== 최초등록자ID ==! */
+						, (SELECT CSTM_MGMT_CD FROM TB_POTI_EMP WHERE PBSR_NO = A.FRST_REGST_ID) AS CSTM_MGMT_CD    /** Code Du Bureau !== 세관관리코드 ==! */
+				  FROM    TB_AEOI_AUDT_RSLT A    /** AEOI_RÉSULTAT D'AUDIT !== AEOI_심사결과 ==! */
+				  WHERE   A.AEO_RQST_NO = #{aeoRqstNo}
+				  AND     A.DEL_YN = 'N' ) B
+		WHERE   A.AEO_RQST_NO = B.AEO_RQST_NO
+		AND     A.CSTM_CD = B.CSTM_MGMT_CD
+		AND     B.CSTM_MGMT_CD = (SELECT CSTM_MGMT_CD FROM TB_POTI_EMP WHERE PBSR_NO = #{frstRegstId})
+	</select>
+
+	<!--
+    [OEA commun] Consulter le nombre d'avis d'expert !== [AEO 공통] 전문가검토의견서 제출건수 조회 ==!
+    -->
+	<select id="selectAeoXprtWriopSbmtCnt" parameterType="alpass.ipt.aeo.com.vo.AeoComAudtRsltVo" resultType="int">
+		/* selectAeoXprtWriopSbmtCnt */
+		SELECT COUNT(1)
+		FROM   TB_AEOI_WRIOP                /** AEOI_AVIS !== AEOI_의견서 ==! */
+		WHERE  AEO_RQST_NO = #{aeoRqstNo}	/** Numéro de demande du statut OEA !== AEO신청번호 ==! */
+		AND	   PRCS_STTS_CD = 'D28'     	/** Code De Statut De Traitement !== 처리상태코드 ==! */
+		AND    DTL_PRCS_STTS_CD = 'U19'  	/** Code d'état détaillé du traitement !== 상세처리상태코드 ==! */
+		AND    SBMT_DTTM IS NOT NULL        /** Date Et Heure De Soumission !== 제출일시 ==! */
+		AND    DEL_YN = 'N'                 /** Suppression On !== 삭제여부 ==! */
+	</select>
+
+	<!--
+    [OEA commun] Consultez le nombre de cas de demande de complément en cours de traitement !== [AEO 공통] 보완요구 처리중인 건수 조회 ==!
+    -->
+	<select id="selectAeoSplmPrcsCnt" parameterType="alpass.ipt.aeo.com.vo.AeoComAudtRsltVo" resultType="int">
+		/* selectAeoSplmPrcsCnt */
+		SELECT COUNT(*)
+		FROM   TB_AEOI_SPLM_QRT_DOC                        /** AEOI_DEMANDE DE COMPLÉMENTATION !== AEOI_보완요구서 ==! */
+		WHERE  AEO_ATHR_RQST_NO = #{aeoRqstNo}             /** Numéro de demande du statut OEA !== AEO공인신청번호 ==! */
+		AND    DEL_YN = 'N'                                /** Suppression On !== 삭제여부 ==! */
+		AND    ( INFM_DTTM IS NULL OR SBMT_DTTM IS NULL )  /** Date Et Heure De La Notification, Date Et Heure De Soumission !== 통보일시, 제출일시 ==! */
+	</select>
+	
+</mapper>

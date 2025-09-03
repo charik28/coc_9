@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.clr.poa.ara.mapper.ClrAraAprsRqstMapper">
+  <!--
+  Consultation de la liste de l'expertise !== 감정신청 목록 조회 ==!
+  (Beak SangYeol)
+  -->
+  <select id="selectDcshAprsRqstList" parameterType="alpass.ipt.clr.poa.ara.vo.ClrAraDcshAprsRqstVo"
+    resultType="alpass.ipt.clr.poa.ara.vo.ClrAraDcshAprsRqstVo">
+    /* selectDcshAprsRqstList */
+    <include refid="pagination.header"></include>
+    SELECT
+      A.aprs_rqst_no /** N° de demande de l'analyse/expertise !== 감정신청번호 ==! */
+      , A.dtl_dcsh_no /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+      , A.pdls_no /** N° D'Article !== 품목번호 ==! */
+      , A.rqst_tp_cd /** Code De Type De Demande !== 신청구분코드 ==! */
+      , fn_get_cd_vdval_nm('CLR_0110',A.rqst_tp_cd, #{langCd}) rqst_tp_nm
+      , A.aprs_qry_emp_id /** ID de la personne demandant l'analyse/expertise !== 감정요구직원ID ==! */
+      , TO_CHAR(TO_DATE(A.aprs_qry_dt , 'YYYYMMDD'),'DD/MM/YYYY') AS aprs_qry_dt /** Date de demandede l'analyse/expertise !== 감정요구일자 ==! */
+      , A.aprs_qry_cn /** Contenus de demande de l'analyse/expertise !== 감정요구내용 ==! */
+      , A.aprs_infm_yn /** Notification de l'analyse/expertise ON !== 감정통보여부 ==! */
+      , A.seal_no /** N° De Scellé !== 봉인번호 ==! */
+      , A.audt_itt_nm /** Nom de l'institution de contrôle !== 심사기관명 ==! */
+      , A.ador_nm /** Nom de l'inspecteur !== 심사자명 ==! */
+      , A.audt_rslt_cd /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+      , A.audt_rslt_cn /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+      , TO_CHAR(A.audt_prcs_dttm , 'DD/MM/YYYY') AS audt_prcs_dttm /** Date et heure de traitement decontrôle !== 심사처리일시 ==! */
+      , A.prcs_stts_cd /** Code De Statut De Traitement !== 처리상태코드 ==! */
+      , A.atch_file_id /** Id Du Fichier Joint !== 첨부파일ID ==! */
+      , A.del_yn /** Suppression On !== 삭제여부 ==! */
+      , A.frst_regst_id /** Id Du Premier Enregistrant !== 최초등록자ID ==! */
+      , TO_CHAR(A.frst_rgsr_dttm , 'DD/MM/YYYY') AS frst_rgsr_dttm /** Date Et Heure De PremierEnregistrement !== 최초등록일시 ==! */
+      , A.last_chpr_id /** Id Du Modificateur Final !== 최종변경자ID ==! */
+      , TO_CHAR(A.last_chg_dttm , 'DD/MM/YYYY') AS last_chg_dttm /** Date Et Heure De ModificationFinale !== 최종변경일시 ==! */
+      , B.dcer_cd /** Code Du Déclarant !== 신고인코드 ==! */
+      , B.dcer_atnd_yn /** Présence du déclarant ON !== 신고인참석여부 ==! */
+      , TO_CHAR(TO_DATE(B.samp_pick_rqst_dt , 'YYYYMMDD'),'DD/MM/YYYY') AS samp_pick_rqst_dt /** Datede demande du prélèvement de l'échantillon !== 견본채취신청일자 ==! */
+      , TO_CHAR(TO_DATE(B.samp_pick_dt , 'YYYYMMDD'),'DD/MM/YYYY') AS samp_pick_dt /** Date deprélèvement de l'échantillon !== 견본채취일자 ==! */
+      , B.samp_pick_plc_nm
+      , B.pdls_nm /** Nom De L'Article !== 품목명 ==! */
+      , TO_CHAR(samp_pick_strt_dt, 'DD/MM/YYYY HH24:MI:SS') AS samp_pick_strt_dt /** Datede début de prélèvement de l'échantillon !== 견본채취시작일자 ==! */
+      , TO_CHAR(samp_pick_end_dt, 'DD/MM/YYYY HH24:MI:SS') AS samp_pick_end_dt /** Date defin de prélèvement de l'échantillon !== 견본채취종료일자 ==! */
+      , B.qty /** Quantité !== 수량 ==! */
+      , B.wght /** Poids !== 중량 ==! */
+      , B.samp_desc_cn /** Description de l'échantillon !== 견본설명내용 ==! */
+      , B.samp_rfun_yn /** Restitution de l'échantillon ON !== 견본반환여부 ==! */
+      , TO_CHAR(TO_DATE(B.samp_rfun_dt , 'YYYYMMDD'),'DD/MM/YYYY') AS samp_rfun_dt /** Date derestitution de l'échantillon !== 견본반환일자 ==! */
+      , B.samp_rfun_prcc_yn /** Réalisation de la restitution de l'échantillon ON !== 견본반환실행여부 ==! */
+      , B.rfun_qty /** Quantitué de l'échantillon restitué !== 반환수량 ==! */
+      , B.rfun_wght /** Poids de l'échantillon restitué !== 반환중량 ==! */
+      , B.tru_yn_rslt_cn /** Contenus des résultats de suspicion de contrefaçon !== 진위여부결과내용 ==! */
+      , A.rqst_dgcnt
+    FROM TB_CLRI_DTL_DCSH_APRS_RQST A
+      left outer join TB_CLRI_SAMPPICK_RQST B
+      ON A.aprs_rqst_no = B.aprs_rqst_no AND
+      A.dtl_dcsh_no = B.dtl_dcsh_no AND
+      A.pdls_no = B.pdls_no AND
+      A.rqst_tp_cd = B.rqst_tp_cd AND B.del_yn = 'N'
+    WHERE A.del_yn = 'N' /** Suppression ON !== 삭제여부 ==! */
+    AND (SELECT C.AUDT_EMP_ID FROM TB_CLRI_DED_COMN C WHERE C.DTL_DCSH_NO = B.DTL_DCSH_NO) = #{userId}
+    <if test="dtlDcshNo != null and dtlDcshNo != ''">
+        AND A.dtl_dcsh_no = #{dtlDcshNo} /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+      </if>
+      <if test="aprsRqstNo != null and aprsRqstNo != ''">
+        AND A.aprs_rqst_no = #{aprsRqstNo} /** N° D'Article !== 품목번호 ==! */
+      </if>
+      <if test="rqstTpCd != null and rqstTpCd != ''">
+        AND A.rqst_tp_cd = #{rqstTpCd} /** Code De Type De Demande !== 신청구분코드 ==! */
+      </if>
+      <if test="aprsQryDtFrom != null and aprsQryDtFrom != ''">
+        AND A.aprs_qry_dt <![CDATA[ >= ]]> TO_CHAR(TO_DATE( #{aprsQryDtFrom}, 'DD/MM/YYYY'),
+        'YYYYMMDD')
+        AND A.aprs_qry_dt <![CDATA[ <= ]]> TO_CHAR(TO_DATE( #{aprsQryDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD')
+      </if>
+    ORDER BY A.aprs_qry_dt desc
+    <include refid="pagination.footer"></include>
+  </select>
+
+  <!--
+  Consultation du numéro de demande de l'analyse/expertise !== 감정신청번호 조회 ==!
+  (Beak SangYeol)
+  -->
+  <select id="selectAraRqstInfo" parameterType="alpass.ipt.clr.poa.ara.vo.ClrAraDcshAprsRqstVo"
+    resultType="alpass.ipt.clr.poa.ara.vo.ClrAraDcshAprsRqstVo">
+    /* selectAraRqstInfo */
+    SELECT
+      A.aprs_rqst_no /** N° de demande de l'analyse/expertise !== 감정신청번호 ==! */
+      , A.dtl_dcsh_no /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+      , A.pdls_no /** N° D'Article !== 품목번호 ==! */
+      , A.rqst_tp_cd /** Code De Type De Demande !== 신청구분코드 ==! */
+      , fn_get_cd_vdval_nm('CLR_0110',A.rqst_tp_cd, #{langCd}) rqst_tp_nm
+      , A.aprs_qry_emp_id /** ID de la personne demandant l'analyse/expertise !== 감정요구직원ID ==! */
+      , TO_CHAR(TO_DATE(A.aprs_qry_dt , 'YYYYMMDD'),'DD/MM/YYYY') AS aprs_qry_dt /** Date de demande
+      de l'analyse/expertise !== 감정요구일자 ==! */
+      , A.aprs_qry_cn /** Contenus de demande de l'analyse/expertise !== 감정요구내용 ==! */
+      , A.aprs_infm_yn /** Notification de l'analyse/expertise ON !== 감정통보여부 ==! */
+      , A.seal_no /** N° De Scellé !== 봉인번호 ==! */
+      , A.audt_itt_nm /** Nom de l'institution de contrôle !== 심사기관명 ==! */
+      , A.ador_nm /** Nom de l'inspecteur !== 심사자명 ==! */
+      , A.audt_rslt_cd /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+      , A.audt_rslt_cn /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+      , TO_CHAR(A.audt_prcs_dttm , 'DD/MM/YYYY') AS audt_prcs_dttm /** Date et heure de traitement de
+      contrôle !== 심사처리일시 ==! */
+      , A.prcs_stts_cd /** Code De Statut De Traitement !== 처리상태코드 ==! */
+      , A.atch_file_id /** Id Du Fichier Joint !== 첨부파일ID ==! */
+      , A.del_yn /** Suppression On !== 삭제여부 ==! */
+      , A.frst_regst_id /** Id Du Premier Enregistrant !== 최초등록자ID ==! */
+      , A.frst_rgsr_dttm /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+      , A.last_chpr_id /** Id Du Modificateur Final !== 최종변경자ID ==! */
+      , A.last_chg_dttm /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    FROM TB_CLRI_DTL_DCSH_APRS_RQST A
+    WHERE del_yn = 'N' /** Suppression ON !== 삭제여부 ==! */
+    AND A.aprs_rqst_no = #{aprsRqstNo} /** N° de demande de l'analyse/expertise !== 감정신청번호 ==! */
+    AND (SELECT B.AUDT_EMP_ID FROM TB_CLRI_DED_COMN B WHERE B.DTL_DCSH_NO = A.DTL_DCSH_NO) = #{userId}
+    <if test="rqstTpCd != null and rqstTpCd != ''">
+      AND A.rqst_tp_cd = #{rqstTpCd} /** Code De Type De Demande !== 신청구분코드 ==! */
+    </if>
+    LIMIT 1
+  </select>
+
+
+</mapper>

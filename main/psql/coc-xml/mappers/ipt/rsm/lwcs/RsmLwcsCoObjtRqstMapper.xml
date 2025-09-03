@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  Mapper : Gérer la demande de recours !== 법규준수도 업체이의신청 Mapper ==!
+-->
+<mapper namespace="alpass.ipt.rsm.lwcs.mapper.RsmLwcsCoObjtRqstMapper">
+
+    <!--
+    [Gestion de la demande de recours] Consulter la liste !== [업체이의신청] 목록조회 ==!
+    -->
+    <select id="selectLwcsCoObjtRqstList" 
+        parameterType="alpass.ipt.rsm.lwcs.vo.RsmLwcsCoObjtRqstInqtVo" 
+        resultType="alpass.ipt.rsm.lwcs.vo.RsmLwcsCoObjtRqstDtlVo">
+        /* selectLwcsCoObjtRqstList */
+        <include refid="pagination.header"/>
+            SELECT T.*
+            FROM
+            (
+            SELECT
+                  A.CO_OBJT_RQST_ACAP_NO       /** N° de reception de demande de contestation des utilisateurs externes !== 업체이의신청접수번호 ==! */
+                , A.EV_QRT_SRNO                /** Numéro De Série De La Période D'Évaluation !== 평가분기일련번호 ==! */
+                , A.EV_QRT                     /** Trimestre D'Évaluation  !== 평가분기 ==! */
+                , A.EV_CO_TP_CD                /** Code De Type De Contrat !== 평가업체구분코드 ==! */
+                , A.NIF                        /** NIF !== 납세번호 ==! */
+                , DECODE(A.EV_CO_TP_CD, 'A', (SELECT CO_NM FROM TB_COM_CO WHERE NIF = A.NIF), 'B', (SELECT CONM FROM TB_POTE_NIF WHERE NIF = A.NIF)) AS CO_NM          /** Entreprise !==업체명==! */
+                , (SELECT EV_GD_CD FROM TB_RSMI_CO_EV_COMN WHERE DEL_YN = 'N' AND NIF = A.NIF AND EV_QRT = A.EV_QRT) AS EV_GD_CD
+                , (SELECT NVL(CO_EV_SCR, 0) FROM TB_RSMI_CO_EV_COMN WHERE DEL_YN = 'N' AND NIF = A.NIF AND EV_QRT = A.EV_QRT) AS CO_EV_SCR
+                , TO_CHAR(TO_DATE(A.RQST_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RQST_DT  /** Date De Demande !== 신청일자 ==! */
+                , A.RQST_RSN_CN                /** Contenu De La Motif De Demande !== 신청사유내용 ==! */
+                , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , A.APLC_ID                    /** ID du demandeur !== 신청인ID ==! */
+                , A.PRCS_STTS_CD               /** Code De Statut De Traitement  !== 처리상태코드 ==! */
+                , (SELECT USER_NM FROM TB_COM_CO_USER WHERE USER_ID = A.APLC_ID AND DEL_YN = 'N') AS APLC_NM    /** Nom du demandeur !== 신청인명 ==! */
+                , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE DEL_YN = 'N' AND COMN_CD = 'RSM_0049' AND LANG_CD = #{langCd} AND CD_VDVAL = A.PRCS_STTS_CD) AS PRCS_STTS_NM
+                , ( SELECT TO_CHAR(TO_DATE(ANSW_DT, 'YYYYMMDD'), 'DD/MM/YYYY')
+                    FROM TB_RSMI_LWCS_CO_OBJT_ANSW
+                    WHERE DEL_YN = 'N'
+                    AND   CO_OBJT_RQST_ACAP_NO = A.CO_OBJT_RQST_ACAP_NO
+                    AND   ANSW_SRNO = (SELECT MAX(ANSW_SRNO) FROM TB_RSMI_LWCS_CO_OBJT_ANSW WHERE DEL_YN = 'N' AND CO_OBJT_RQST_ACAP_NO = A.CO_OBJT_RQST_ACAP_NO)
+                  ) AS ANSW_DT                 /** Date De Réponse  !== 답변일자 ==! */
+                , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+                , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+            FROM   TB_RSMI_LWCS_CO_OBJT_RQST A
+           WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+           AND   A.EV_CO_TP_CD = #{evCoTpCd}                    /** Code De Type De Contrat !== 평가업체구분코드 ==! */
+           AND   A.PRCS_STTS_CD <![CDATA[ <> ]]> 'K01'          /** Code De Statut De Traitement !== 처리상태코드 ==! */
+           <if test='(rqstDtFrom != null and !"".equals(rqstDtFrom)) and (rqstDtTo != null and !"".equals(rqstDtTo))'>
+             AND A.RQST_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{rqstDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD')         /** Date De Demande !== 신청일자 ==! */
+             AND A.RQST_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{rqstDtFrom}, 'DD/MM/YYYY'), 'YYYYMMDD')
+           </if>
+           ) T
+           WHERE 1 = 1
+           <if test="coNm != null and coNm != '' ">
+             AND T.CO_NM LIKE  '%' || #{coNm} || '%'            /** Entreprise !==업체명==! */
+           </if>
+
+           <if test="nif != null and nif != '' ">
+             AND T.NIF = #{nif}                                 /** NIF !== 납세번호 ==! */
+           </if>
+
+           ORDER BY TO_DATE(T.RQST_DT,'DD/MM/YYYY') DESC, T.CO_OBJT_RQST_ACAP_NO DESC, T.FRST_RGSR_DTTM DESC
+
+
+        <include refid="pagination.footer"/>
+        
+    </select>
+    
+    <!--
+    [Gestion de la demande de recours] Consulter les détails !== [업체이의신청] 상세조회 ==!
+    -->
+    <select id="selectLwcsCoObjtRqstDtl"
+        parameterType="alpass.ipt.rsm.lwcs.vo.RsmLwcsCoObjtRqstDtlVo" 
+        resultType="alpass.ipt.rsm.lwcs.vo.RsmLwcsCoObjtRqstDtlVo">
+        /* selectLwcsCoObjtRqstDtl */
+        SELECT
+            A.CO_OBJT_RQST_ACAP_NO       /** N° de reception de demande de contestation des utilisateurs externes !== 업체이의신청접수번호 ==! */
+          , A.EV_QRT_SRNO                /** Numéro De Série De La Période D'Évaluation !== 평가분기일련번호 ==! */
+          , A.EV_QRT                     /** Trimestre D'Évaluation  !== 평가분기 ==! */
+          , A.EV_CO_TP_CD                /** Code De Type De Contrat !== 평가업체구분코드 ==! */
+          , A.NIF                        /** NIF !== 납세번호 ==! */
+          , (SELECT CO_NM FROM TB_COM_CO WHERE NIF = A.NIF) AS CO_NM          /** Entreprise !==업체명==! */
+          , TO_CHAR(TO_DATE(A.RQST_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RQST_DT  /** Date De Demande !== 신청일자 ==! */
+          , A.RQST_RSN_CN                /** Contenu De La Motif De Demande !== 신청사유내용 ==! */
+          , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+          , A.APLC_ID                    /** ID du demandeur !== 신청인ID ==! */
+          , A.PRCS_STTS_CD               /** Code De Statut De Traitement  !== 처리상태코드 ==!  */
+          , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE DEL_YN = 'N' AND COMN_CD = 'RSM_0049' AND LANG_CD = #{langCd} AND CD_VDVAL = A.PRCS_STTS_CD) AS PRCS_STTS_NM
+          , (SELECT USER_NM FROM TB_COM_CO_USER WHERE USER_ID = A.APLC_ID AND DEL_YN = 'N') AS APLC_NM    /** Nom du demandeur !== 신청인명 ==! */
+          
+      FROM   TB_RSMI_LWCS_CO_OBJT_RQST A
+      WHERE  DEL_YN = 'N'                 /** Suppression ON !== 삭제여부 ==! */
+      AND  CO_OBJT_RQST_ACAP_NO = #{coObjtRqstAcapNo}       /** N° de reception de demande de contestation des utilisateurs externes !== 업체이의신청접수번호 ==! */
+      <if test="evQrt != null and evQrt != '' ">
+      AND  EV_QRT = #{evQrt}                                /** Trimestre D'Évaluation  !== 평가분기 ==! */
+      </if>
+      <if test="evCoTpCd != null and evCoTpCd != '' ">
+      AND  EV_CO_TP_CD = #{evCoTpCd}                        /** Code De Type De Contrat !== 평가업체구분코드 ==! */
+      </if>
+
+    </select>    
+    
+    <!--
+    [Gérer la demande de recours] Consulter la liste des réponses !== [업체이의신청] 답변 목록조회 ==!
+    -->
+    <select id="selectLwcsCoObjtRqstAnswList"
+        parameterType="alpass.ipt.rsm.lwcs.vo.RsmLwcsCoObjtRqstDtlVo" 
+        resultType="alpass.ipt.rsm.lwcs.vo.RsmLwcsCoObjtRqstAnswDtlVo">
+        /* selectLwcsCoObjtRqstAnswList */
+        
+        SELECT
+            A.CO_OBJT_RQST_ACAP_NO       /** N° de reception de demande de contestation des utilisateurs externes !== 업체이의신청접수번호 ==! */
+          , A.ANSW_SRNO                  /** N° De Série De Réponse !== 답변일련번호 ==! */
+          , A.ANSW_CSTM_CD               /** Code de douane répondeur !== 답변세관코드 ==! */
+          , A.ANSW_CSTM_CD AS ORGN_CD    /** Code d'organisation	!==조직코드==! */
+          , (SELECT M.ORGN_NM FROM TB_POTI_ORGN M WHERE M.DEL_YN = 'N' AND M.ORGN_CD = A.ANSW_CSTM_CD) AS ORGN_NM   /** Nome d'organisation !==조직명==! */
+          , A.ANSW_CN                    /** Contenu De La Réponse !== 답변내용 ==! */
+          , A.ANSW_DT                    /** Date De Réponse  !== 답변일자 ==! */
+          , A.ANPN_ID                    /** Id De La Réponse !== 답변자ID ==! */
+          , A.APRV_BSOP_TP_CD            /** Code De Catégorie De L'Opération D'Approbation !== 결재업무구분코드 ==! */
+          , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+          , (SELECT EMP_NM FROM TB_POTI_EMP WHERE DEL_YN = 'N' AND PBSR_NO = A.ANPN_ID ) AS ANPN_NM         /** Nom du répondeur !== 답변자명 ==! */
+          , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+          , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+          , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+      FROM   TB_RSMI_LWCS_CO_OBJT_ANSW A
+      WHERE  DEL_YN = 'N'                                   /** Suppression On !== 삭제여부 ==! */
+      AND  CO_OBJT_RQST_ACAP_NO = #{coObjtRqstAcapNo}       /** N° de reception de demande de contestation des utilisateurs externes !== 업체이의신청접수번호 ==! */
+      AND  A.ANSW_SRNO = (                                  /** N° De Série De Réponse !== 답변일련번호 ==! */
+        SELECT MAX(ANSW_SRNO)
+        FROM TB_RSMI_LWCS_CO_OBJT_ANSW
+        WHERE DEL_YN = 'N'
+        AND CO_OBJT_RQST_ACAP_NO = A.CO_OBJT_RQST_ACAP_NO
+      )
+    </select>
+
+    <!--
+      [Gérer la demande de recours] Modifier le statut  !== [업체이의신청] 처리상태 변경 ==!
+    -->
+    <update id="updateLwcsCoObjtPrcsStts"
+        parameterType="alpass.ipt.rsm.lwcs.vo.RsmLwcsCoObjtRqstAnswDtlVo">
+        /* updateLwcsCoObjtPrcsStts */
+        UPDATE TB_RSMI_LWCS_CO_OBJT_RQST
+        SET PRCS_STTS_CD = #{prcsSttsCd}                        /** Code De Statut De Traitement !== 처리상태코드 ==! */
+        WHERE CO_OBJT_RQST_ACAP_NO = #{coObjtRqstAcapNo}        /** N° de reception de demande de contestation des utilisateurs externes !== 업체이의신청접수번호 ==! */
+
+    </update>
+
+    
+    <!--
+    [Gestion de la demande de recours] Enregistrer !== [업체이의신청] 등록 ==!
+    -->
+    <insert id="insertLwcsCoObjtAnsw"
+        parameterType="alpass.ipt.rsm.lwcs.vo.RsmLwcsCoObjtRqstAnswDtlVo">
+        
+        <selectKey keyColumn="ANSW_SRNO" keyProperty="answSrno" resultType="java.math.BigDecimal" order="BEFORE">
+	    SELECT NVL(MAX(ANSW_SRNO), 0) +1 FROM TB_RSMI_LWCS_CO_OBJT_ANSW WHERE CO_OBJT_RQST_ACAP_NO = #{coObjtRqstAcapNo}
+	    </selectKey>
+        
+        /* insertLwcsCoObjtAnsw */
+	    INSERT INTO TB_RSMI_LWCS_CO_OBJT_ANSW (
+	           CO_OBJT_RQST_ACAP_NO         /* NUMÉRO DE RECEPTION DE DEMANDE DE CONTESTATION DES UTILISATEURS EXTERNES !== 업체이의신청접수번호 ==! */
+	         , ANSW_SRNO                    /* N° de série de réponse !== 답변일련번호 ==! */
+	         , ANSW_CSTM_CD                 /* Code de douane répondeur !== 답변세관코드 ==! */
+	         , ANSW_DT                      /* Date de réponse  !== 답변일자 ==! */
+	         , ANPN_ID                      /* ID de la réponse !== 답변자ID ==! */
+	         , ANSW_CN                      /* Contenu de la réponse !== 답변내용 ==! */
+	         , APRV_BSOP_TP_CD              /* Code de catégorie de l'opération d'approbation !== 결재업무구분코드 ==! */
+	         , APRV_ID                      /* ID d'approbation  !== 결재ID ==! */
+	         , ATCH_FILE_ID                 /* Id Du Fichier Joint !== 첨부파일ID ==! */
+	         , DEL_YN                       /* Suppression ON !== 삭제여부 ==! */
+	         , FRST_REGST_ID                /* ID du premier enregistrant  !== 최초등록자ID ==! */
+	         , FRST_RGSR_DTTM               /* Date et heure de premier enregistrement !== 최초등록일시 ==! */
+	         , LAST_CHPR_ID                 /* ID du modificateur final !== 최종변경자ID ==! */
+	         , LAST_CHG_DTTM                /* Date et heure de modification finale !== 최종변경일시 ==! */
+	    ) VALUES (
+	           #{coObjtRqstAcapNo}
+	         , #{answSrno}
+	         , #{answCstmCd}                /** Code de douane répondeur !== 답변세관코드 ==! */
+	         , TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD')
+	         , #{anpnId}
+	         , #{answCn}
+	         , #{aprvBsopTpCd}
+	         , NULL
+	         , #{atchFileId}
+	         , 'N'
+	         , #{frstRegstId}
+	         , SYSTIMESTAMP
+	         , #{lastChprId}
+	         , SYSTIMESTAMP
+	    )
+        
+    </insert>
+    
+    <!--
+    [Gestion de la demande de recours] Modifier !== [업체이의신청] 수정 ==!
+    -->
+    <update id="updateLwcsCoObjtAnsw"
+        parameterType="alpass.ipt.rsm.lwcs.vo.RsmLwcsCoObjtRqstAnswDtlVo">
+        /* updateLwcsCoObjtAnsw */
+        UPDATE  TB_RSMI_LWCS_CO_OBJT_ANSW 
+        SET    ANSW_DT = TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD')      /* Date de réponse  !== 답변일자 ==! */
+	         , ANPN_ID = #{anpnId}                              /* ID de la réponse !== 답변자ID ==! */
+	         , ANSW_CN = #{answCn}                              /* Contenu de la réponse !== 답변내용 ==! */
+             , ANSW_CSTM_CD =  #{answCstmCd}                    /* Code de douane répondeur !== 답변세관코드 ==! */
+	         , APRV_BSOP_TP_CD = #{aprvBsopTpCd}                /* Code de catégorie de l'opération d'approbation !== 결재업무구분코드 ==! */
+	         , APRV_ID = NULL                                   /* ID d'approbation  !== 결재ID ==! */
+	         , ATCH_FILE_ID = #{atchFileId}                     /* Id Du Fichier Joint !== 첨부파일ID ==! */
+	         , LAST_CHPR_ID = #{lastChprId}                     /* ID du modificateur final !== 최종변경자ID ==! */
+	         , LAST_CHG_DTTM = SYSTIMESTAMP                     /* Date et heure de modification finale !== 최종변경일시 ==! */
+	    WHERE  CO_OBJT_RQST_ACAP_NO = #{coObjtRqstAcapNo}       /* N° de reception de demande de contestation des utilisateurs externes !== 업체이의신청접수번호 ==! */
+	    AND    ANSW_SRNO = #{answSrno}                          /* N° De Série De Réponse !== 답변일련번호 ==! */
+        
+    </update>
+    
+    <!--
+    [Gestion de la demande de recours] Supprimer !== [업체이의신청] 삭제 ==!
+    -->
+    <delete id="deleteLwcsCoObjtAnsw"
+        parameterType="alpass.ipt.rsm.lwcs.vo.RsmLwcsCoObjtRqstAnswDtlVo">
+        /* deleteLwcsCoObjtAnsw */
+        DELETE FROM TB_RSMI_LWCS_CO_OBJT_ANSW
+	    WHERE  CO_OBJT_RQST_ACAP_NO = #{coObjtRqstAcapNo}       /* N° de reception de demande de contestation des utilisateurs externes !== 업체이의신청접수번호 ==! */
+
+    </delete>
+    
+    <!--
+    [Gérer la demande de recours] Consulter si la demande de recours a été enregistrée !== [업체이의신청] 등록여부 조회 ==!
+    -->
+    <select id="selectCoObjtRqstAcapNoRgsrYn"
+        parameterType="string"
+        resultType="int">
+        /* selectCoObjtRqstAcapNoRgsrYn */
+	    SELECT 1
+	    FROM TB_RSMI_LWCS_CO_OBJT_RQST A
+	    WHERE A.DEL_YN = 'N'                                    /* Suppression ON !== 삭제여부 ==! */
+        AND A.CO_OBJT_RQST_ACAP_NO = #{coObjtRqstAcapNo}        /* N° de reception de demande de contestation des utilisateurs externes !== 업체이의신청접수번호 ==! */
+    </select> 
+    
+
+</mapper>

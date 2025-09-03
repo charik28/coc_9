@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.mp.mypge.mapper.PotMpMypgeMyTodoMapper">
+
+  <!--
+    Consulter la liste de My To-do !== 나의할일 목록을 조회한다 ==!
+  -->
+  <select id="selectTodoList" resultType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeMyTodoVo">
+    /** selectTodoList */
+    <if test="navbarYn == null or navbarYn == ''">
+      <include refid="pagination.header"/>
+    </if>
+    SELECT A.TODO_ID,
+           A.TODO_STTS_CD,
+           A.BSOP_CLSF_CD,
+           A.TODO_BSOP_TP_CD,
+           A.TODO_REFF_NO,
+           A.MDFY_DGCNT,
+           A.DOC_DTL_CD,
+           TO_CHAR(A.RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS RGSR_DTTM,
+           A.CHPN_ID,
+           B.EMP_NM AS CHPN_NM,
+           A.PRMT1_CN
+    FROM TB_POTI_TODO A,
+         TB_POTI_EMP B
+    WHERE A.CHPN_ID = B.PBSR_NO
+    AND A.CHPN_ID = #{chpnId}
+    AND A.DEL_YN = 'N'
+    <if test="todoId != null and todoId != ''">
+      AND A.TODO_ID = #{todoId}
+    </if>
+    <if test="todoId == null or todoId == ''">
+      <if test="rgsrStrtDt != null and rgsrStrtDt != ''">
+        AND A.RGSR_DTTM <![CDATA[ >= ]]> TO_DATE(#{rgsrStrtDt}, 'DD/MM/YYYY')
+      </if>
+      <if test="rgsrEndDt != null and rgsrEndDt != ''">
+        AND A.RGSR_DTTM <![CDATA[ <= ]]> TO_DATE(#{rgsrEndDt}, 'DD/MM/YYYY')+0.9999
+      </if>
+      <if test="searchKeywordFrom != null and searchKeywordFrom != ''">
+        AND A.RGSR_DTTM <![CDATA[ >= ]]> TO_DATE(#{searchKeywordFrom}, 'DD/MM/YYYY')
+      </if>
+      <if test="searchKeywordTo != null and searchKeywordTo != ''">
+        AND A.RGSR_DTTM <![CDATA[ <= ]]> TO_DATE(#{searchKeywordTo}, 'DD/MM/YYYY')+0.9999
+      </if>
+      <if test="todoBsopTpCd != null and todoBsopTpCd != ''">
+        AND A.TODO_BSOP_TP_CD = #{todoBsopTpCd}
+      </if>
+      <if test="todoReffNo != null and todoReffNo != ''">
+        AND UPPER(A.TODO_REFF_NO) LIKE '%'||UPPER(#{todoReffNo})||'%'
+      </if>
+      <if test="todoSttsCd != null and todoSttsCd != ''">
+        AND A.TODO_STTS_CD = #{todoSttsCd}
+      </if>
+      <if test="bsopClsfCd != null and bsopClsfCd != ''">
+        AND A.BSOP_CLSF_CD = #{bsopClsfCd}
+      </if>
+    </if>
+    ORDER BY A.RGSR_DTTM
+    <if test="navbarYn == null or navbarYn == ''">
+      <include refid="pagination.footer"/>
+    </if>
+  </select>
+
+  <!--
+    Consulter le détail de My To-do !== 나의할일 상세를 조회한다 ==!
+  -->
+  <select id="selectTodo"
+    parameterType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeMyTodoVo"
+    resultType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeMyTodoVo">
+    /** selectTodo */
+    SELECT A.TODO_ID,
+           A.TODO_STTS_CD,
+           A.BSOP_CLSF_CD,
+           A.TODO_BSOP_TP_CD,
+           A.TODO_REFF_NO,
+           A.MDFY_DGCNT,
+           A.DOC_DTL_CD,
+           TO_CHAR(A.RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS RGSR_DTTM,
+           A.CHPN_ID,
+           B.EMP_NM AS CHPN_NM,
+           A.PRMT1_CN
+    FROM TB_POTI_TODO A,
+         TB_POTI_EMP B
+    WHERE A.CHPN_ID = B.PBSR_NO
+      AND A.CHPN_ID = #{chpnId}
+      AND A.TODO_ID = #{todoId}
+      AND A.DEL_YN = 'N'
+  </select>
+
+
+
+  <!--
+  Compte My To-do !== 나의할일 카운트 ==!
+-->
+  <select id="selectTodoCnt"
+    resultType="java.lang.Integer"
+    parameterType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeMyTodoVo">
+    /** selectTodoCnt */
+    SELECT COUNT(1)
+    FROM TB_POTI_TODO
+    WHERE CHPN_ID = #{chpnId}
+      AND DEL_YN = 'N'
+      AND TODO_STTS_CD = 'A'
+  </select>
+</mapper>

@@ -1,0 +1,1292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  Mapper : Analyse des risques !== 위험분석 Mapper ==!
+-->
+<mapper namespace="alpass.ipt.rsm.basc.mapper.RsmBascRskAnayMapper">
+
+    <sql id="selectSelcRsltAll">
+        SELECT A.DTL_DCSH_NO        /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+            , A.BASE_RGSR_NO        /** Numéro d'enregistrement !== 기준등록번호 ==! */
+            , A.SELC_DT             /** Date De Ciblage  !== 선별일자 ==! */
+            , A.TAX_AMT             /** Montant De La Taxe !== 세금금액 ==! */
+            , A.TXBS_AMT            /** Montant de base d'imposition !== 과세기준금액 ==! */
+            , B.APLY_BASE_CLSF_CD   /** Code De Classification De Critère En Vigueur !== 적용기준분류코드 ==! */
+            , B.RQST_BASE_CLSF_CD   /** Code De Classification Du Critère Renseigné !== 신청기준분류코드 ==! */
+            , B.BASE_RQST_TP_CD     /** Code De Type De Renseignement  !== 기준신청구분코드 ==! */
+            , A.SELC_RSLT_CD        /** Code De Résultat De Ciblage !== 선별결과코드 ==! */
+            , A.GRN_SELC_CNT        /** Nombre de déclaration en vert !== 녹색선별건수 ==! */
+            , A.BLU_SELC_CNT        /** Nombre de déclaration en bleu !== 파랑선별건수 ==! */
+            , A.ORE_SELC_CNT        /** Nombre De Déclaration En Orangé  !== 오렌지선별건수 ==! */
+            , A.RED_SELC_CNT        /** Nombre de déclaration en rouge !== 빨강선별건수 ==! */
+        FROM   (SELECT A.DTL_DCSH_NO
+                    , A.SELC_RSLT_CD
+                    , A.SELC_DT
+                    , A.TAX_AMT
+                    , A.TXBS_AMT
+                    , DECODE (A.SELC_RSLT_CD, 'G', 1, 0) AS GRN_SELC_CNT
+                    , DECODE (A.SELC_RSLT_CD, 'B', 1, 0) AS BLU_SELC_CNT
+                    , DECODE (A.SELC_RSLT_CD, 'O', 1, 0) AS ORE_SELC_CNT
+                    , DECODE (A.SELC_RSLT_CD, 'R', 1, 0) AS RED_SELC_CNT
+                    , ( SELECT BASE_RGSR_NO
+                        FROM   ( SELECT Z.BASE_RGSR_NO
+                                 FROM   TB_RSMI_DED_PDLS_SELC Z
+                                 WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                ORDER BY DECODE (Z.RQST_BASE_CLSF_CD, 'AO', 1
+                                                                    , 'DE', 2
+                                                                    , 'MA', 3
+                                                                    , 'SC', 4
+                                                                    , 'FT', 5
+                                                                    , 'PR', 6
+                                                                    , 'HR', 7
+                                                                    , 'RA', 8
+                                                                    , 9) ASC ,
+                                Z.APLY_PROR_RNK,
+                                DECODE (Z.SELC_RSLT_CD,
+                                        'R', 1,
+                                        'O', 2,
+                                        'B', 3,
+                                        'G', 4),
+                                Z.BASE_RGSR_DTTM DESC)
+                        WHERE ROWNUM = 1
+                  ) AS BASE_RGSR_NO
+        FROM   TB_RSMI_DED_SELC A
+        WHERE  1 = 1
+        <include refid="searchSelcDt"/>
+        ) A
+        , TB_RSMI_BASE_MGMT_COMN B
+        WHERE   A.BASE_RGSR_NO = B.BASE_RGSR_NO
+    </sql>
+
+    <sql id="selectSelcRsltNotIn">
+        SELECT A.DTL_DCSH_NO            /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+            , A.BASE_RGSR_NO            /** Numéro d'enregistrement !== 기준등록번호 ==! */
+            , A.SELC_DT                 /** Date De Ciblage  !== 선별일자 ==! */
+            , A.TAX_AMT                 /** Montant De La Taxe !== 세금금액 ==! */
+            , A.TXBS_AMT                /** Montant de base d'imposition !== 과세기준금액 ==! */
+            , B.APLY_BASE_CLSF_CD       /** Code De Classification De Critère En Vigueur !== 적용기준분류코드 ==! */
+            , B.RQST_BASE_CLSF_CD       /** Code De Classification Du Critère Renseigné !== 신청기준분류코드 ==! */
+            , B.BASE_RQST_TP_CD         /** Code De Type De Renseignement  !== 기준신청구분코드 ==! */
+            , A.SELC_RSLT_CD            /** Code De Résultat De Ciblage !== 선별결과코드 ==! */
+            , A.GRN_SELC_CNT            /** Nombre de déclaration en vert !== 녹색선별건수 ==! */
+            , A.BLU_SELC_CNT            /** Nombre de déclaration en bleu !== 파랑선별건수 ==! */
+            , A.ORE_SELC_CNT            /** Nombre De Déclaration En Orangé  !== 오렌지선별건수 ==! */
+            , A.RED_SELC_CNT            /** Nombre de déclaration en rouge !== 빨강선별건수 ==! */
+        FROM   (SELECT A.DTL_DCSH_NO
+                    , A.SELC_RSLT_CD
+                    , A.SELC_DT
+                    , A.TAX_AMT
+                    , A.TXBS_AMT
+                    , DECODE (A.SELC_RSLT_CD, 'G', 1, 0) AS GRN_SELC_CNT
+                    , DECODE (A.SELC_RSLT_CD, 'B', 1, 0) AS BLU_SELC_CNT
+                    , DECODE (A.SELC_RSLT_CD, 'O', 1, 0) AS ORE_SELC_CNT
+                    , DECODE (A.SELC_RSLT_CD, 'R', 1, 0) AS RED_SELC_CNT
+                    , ( SELECT BASE_RGSR_NO
+                        FROM   ( SELECT Z.BASE_RGSR_NO
+                                 FROM   TB_RSMI_DED_PDLS_SELC Z
+                                 WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                ORDER BY DECODE (Z.RQST_BASE_CLSF_CD, 'AO', 1
+                                                                    , 'DE', 2
+                                                                    , 'MA', 3
+                                                                    , 'SC', 4
+                                                                    , 'FT', 5
+                                                                    , 'PR', 6
+                                                                    , 'HR', 7
+                                                                    , 'RA', 8
+                                                                    , 9) ASC ,
+                                Z.APLY_PROR_RNK,
+                                DECODE (Z.SELC_RSLT_CD,
+                                        'R', 1,
+                                        'O', 2,
+                                        'B', 3,
+                                        'G', 4),
+                                Z.BASE_RGSR_DTTM DESC)
+                        WHERE ROWNUM = 1
+                  ) AS BASE_RGSR_NO
+        FROM   TB_RSMI_DED_SELC A
+        WHERE  1 = 1
+        <include refid="searchSelcDt"/>
+        ) A
+        , TB_RSMI_BASE_MGMT_COMN B
+        WHERE   A.BASE_RGSR_NO = B.BASE_RGSR_NO
+        AND	    B.RQST_BASE_CLSF_CD NOT IN ('CW', 'SW' )
+    </sql>
+
+    <sql id="selectAnayDdPerDedBody">
+        FROM   TB_RSMI_DED_SELC A
+        , (<include refid="selectSelcRsltAll"/>) B
+
+        WHERE  A.DTL_DCSH_NO = B.DTL_DCSH_NO
+        AND    A.SELC_DT BETWEEN TO_CHAR(TO_DATE(#{pridStartDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{pridEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        <if test='dtlDcshNo != null and dtlDcshNo != ""'>
+            AND    A.DTL_DCSH_NO = REPLACE(#{dtlDcshNo}, '-')           /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+        </if>
+
+        <if test='rqstBaseClsfCd != null and rqstBaseClsfCd != ""'>
+            AND    B.RQST_BASE_CLSF_CD = #{rqstBaseClsfCd}              /** Code De Classification Du Critère Renseigné !== 신청기준분류코드 ==! */
+        </if>
+
+    </sql>
+
+    <sql id="selectAnayDdPerDedNotInBody">
+        FROM   TB_RSMI_DED_SELC A
+        , (<include refid="selectSelcRsltNotIn"/>) B
+
+        WHERE  A.DTL_DCSH_NO = B.DTL_DCSH_NO
+        AND    A.SELC_DT BETWEEN TO_CHAR(TO_DATE(#{pridStartDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{pridEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        <if test='dtlDcshNo != null and dtlDcshNo != ""'>
+            AND    A.DTL_DCSH_NO = REPLACE(#{dtlDcshNo}, '-')           /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+        </if>
+
+        <if test='rqstBaseClsfCd != null and rqstBaseClsfCd != ""'>
+            AND    B.RQST_BASE_CLSF_CD = #{rqstBaseClsfCd}              /** Code De Classification Du Critère Renseigné !== 신청기준분류코드 ==! */
+        </if>
+
+    </sql>
+
+    <sql id="searchSelcDt">
+        <if test ='pridStartDt != "" and pridStartDt != null and pridEndDt != "" and pridEndDt != null'>
+            AND    A.SELC_DT BETWEEN TO_CHAR(TO_DATE(#{pridStartDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{pridEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')            /** Date De Ciblage  !== 선별일자 ==! */
+        </if>
+
+    </sql>
+
+    <sql id="selectAnayBasePerListBody">
+        WITH SELC_TABLE
+        AS (SELECT  A.DTL_DCSH_NO,          /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+                    A.BASE_RGSR_NO,         /** Numéro d'enregistrement !== 기준등록번호 ==! */
+                    A.SELC_DT,              /** Date De Ciblage  !== 선별일자 ==! */
+                    A.TAX_AMT,              /** Montant De La Taxe !== 세금금액 ==! */
+                    A.TXBS_AMT,             /** Montant de base d'imposition !== 과세기준금액 ==! */
+                    B.APLY_BASE_CLSF_CD,    /** Code De Classification De Critère En Vigueur !== 적용기준분류코드 ==! */
+                    B.RQST_BASE_CLSF_CD,    /** Code De Classification Du Critère Renseigné !== 신청기준분류코드 ==! */
+                    B.BASE_RQST_TP_CD,      /** Code De Type De Renseignement  !== 기준신청구분코드 ==! */
+                    A.SELC_RSLT_CD,         /** Code De Résultat De Ciblage !== 선별결과코드 ==! */
+                    A.GRN_SELC_CNT,         /** Nombre de déclaration en vert !== 녹색선별건수 ==! */
+                    A.BLU_SELC_CNT,         /** Nombre de déclaration en bleu !== 파랑선별건수 ==! */
+                    A.ORE_SELC_CNT,         /** Nombre De Déclaration En Orangé  !== 오렌지선별건수 ==! */
+                    A.RED_SELC_CNT,         /** Nombre de déclaration en rouge !== 빨강선별건수 ==! */
+                    A.HIST_SRNO,            /** N° de séquence de l'histoire  !== 이력일련번호 ==! */
+                    A.DCLR_PT_CD,           /** Modèle de déclaration !== 신고유형코드 ==! */
+                    A.DCLR_CSTM_CD          /** Code de bureau de déclaration !== 신고세관 ==! */
+                    FROM (SELECT
+                                A.DTL_DCSH_NO,
+                                A.SELC_RSLT_CD,
+                                A.SELC_DT,
+                                A.TAX_AMT,
+                                A.TXBS_AMT,
+                                D.HIST_SRNO,
+                                D.DCLR_PT_CD,
+                                D.DCLR_CSTM_CD,
+                                DECODE (A.SELC_RSLT_CD, 'G', 1, 0) AS GRN_SELC_CNT,
+                                DECODE (A.SELC_RSLT_CD, 'B', 1, 0) AS BLU_SELC_CNT,
+                                DECODE (A.SELC_RSLT_CD, 'O', 1, 0) AS ORE_SELC_CNT,
+                                DECODE (A.SELC_RSLT_CD, 'R', 1, 0) AS RED_SELC_CNT,
+                                ( SELECT BASE_RGSR_NO
+                                  FROM ( SELECT Z.BASE_RGSR_NO
+                                         FROM TB_RSMI_DED_PDLS_SELC Z
+                                         WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                        ORDER BY DECODE (Z.RQST_BASE_CLSF_CD, 'AO', 1
+                                                                            , 'DE', 2
+                                                                            , 'MA', 3
+                                                                            , 'SC', 4
+                                                                            , 'FT', 5
+                                                                            , 'PR', 6
+                                                                            , 'HR', 7
+                                                                            , 'RA', 8
+                                                                            , 9) ASC ,
+                                        Z.APLY_PROR_RNK,
+                                        DECODE (Z.SELC_RSLT_CD,
+                                                'R', 1,
+                                                'O', 2,
+                                                'B', 3,
+                                                'G', 4),
+                                        Z.BASE_RGSR_DTTM DESC)
+                                  WHERE ROWNUM = 1
+                                ) AS BASE_RGSR_NO
+                            FROM TB_RSMI_DED_SELC A,
+                            TB_CLRI_DED_COMN D
+                    WHERE A.DTL_DCSH_NO = D.DTL_DCSH_NO
+                    AND A.DEL_YN = 'N'
+                    AND D.DEL_YN = 'N'
+                    <if test ='pridStartDt != "" and pridStartDt != null and pridEndDt != "" and pridEndDt != null'>
+                        AND    A.SELC_DT BETWEEN TO_CHAR(TO_DATE(#{pridStartDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{pridEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                    </if>
+
+                    ) A
+                    , TB_RSMI_BASE_MGMT_COMN B
+                    WHERE A.BASE_RGSR_NO = B.BASE_RGSR_NO
+                    AND B.DEL_YN = 'N'
+                  )
+                , COLI_NTFC AS
+                 ( SELECT A.REFF_NO
+                        , DECODE(COUNT(*), 0, 'N', 'Y') AS NTFC_YN
+                        , SUM(A.FINE_AMT) AS FINE_AMT
+                   FROM   TB_COLI_NTFC A
+                   WHERE  A.NTFC_PT_CD = 'A'
+                   AND    A.REFF_NO_PT_CD = '002'
+                   AND    A.DEL_YN = 'N'
+                   AND    A.CNCL_YN = 'N'
+                   GROUP BY A.REFF_NO
+                 )
+                , DED_ADRT_D AS
+                 ( SELECT A.DTL_DCSH_NO
+                        , DECODE (COUNT (*), 0, 'N', 'Y') AS ADRT_YN
+                   FROM   TB_CLRI_DED_ADRT_D A
+                   WHERE  A.DEL_YN = 'N'
+                   AND    A.AUDT_RSLT_CD NOT IN ('NORM00', 'ATVALU')
+                   GROUP BY A.DTL_DCSH_NO
+                 )
+    </sql>
+
+    <!--
+      [Gérer le rapport sur l'analyse des informations] Consulter la liste !== [정보분석보고서관리] 목록조회 ==!
+    -->
+    <select id="selectIfanRpdcList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo">
+
+        /* selectIfanRpdcList */
+        <include refid="pagination.header" />
+        SELECT
+              A.RPDC_NO                    /** Numéro de rapport !== 보고서번호 ==! */
+            , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+            , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE DEL_YN = 'N' AND ORGN_CD = A.CSTM_CD) AS CSTM_NM
+            , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+            , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.REGST_ID) AS REGST_NM
+            , A.RPDC_TTLE                  /** Titre du rapport !== 보고서제목 ==! */
+            , A.BSOP_TP_CD                 /** Code De Type De L'Opération !== 업무구분코드 ==! */
+            , A.ANAY_CN                    /** Contenu d'analyse !== 분석내용 ==! */
+            , A.RSLT_EV_CD                 /** Code d'évaluation du résultat !== 결과평가코드 ==! */
+            , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , A.ALRT_PT_CD                 /** Type d'alerte !== 경보유형코드 ==! */
+            , A.RSK_INFO_NO                /** Numéro de données sur les risques !== 위험정보번호 ==! */
+            , A.OPPB_YN                    /** Ouvert Au Public O/N !== 공개여부 ==! */
+            , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+            , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+            , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+            , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DT
+        FROM   TB_RSMI_IFAN_BSCS A
+        WHERE  A.DEL_YN = 'N'                                   /** Suppression ON !== 삭제여부 ==! */
+        <if test='sttsCd != null and !"".equals(sttsCd)'>
+            AND   A.PRCS_STTS_CD  = #{sttsCd}                   /** Code De Statut De Traitement !== 처리상태코드 ==! */
+        </if>
+        <if test='scrnTp != null and "rpdcEv".equals(scrnTp)'>
+            AND  A.PRCS_STTS_CD = 'J04'                         /** Code De Statut De Traitement !== 처리상태코드 ==! */
+        </if>
+        <if test='scrnTp != null and "rpdcInqt".equals(scrnTp)'>
+            AND  A.PRCS_STTS_CD = 'J04'
+            AND  EXISTS ( SELECT 1 FROM TB_RSMI_IFAN_BSCS_ALRT_RCVR
+                          WHERE DEL_YN = 'N'
+                          AND RPDC_NO = A.RPDC_NO
+                          AND ALRT_RCPN_EMP_ID = #{loginId}
+                        )
+        </if>
+        <if test='cstmCd != null and !"".equals(cstmCd)'>
+            AND  A.CSTM_CD = #{cstmCd}                          /** Code Du Bureau !== 세관코드 ==! */
+        </if>
+        <if test='alrtPtCd != null and !"".equals(alrtPtCd)'>
+            AND  A.ALRT_PT_CD = #{alrtPtCd}                     /** Type d'alerte !== 경보유형코드 ==! */
+        </if>
+        <if test='rpdcTtle != null and !"".equals(rpdcTtle)'>
+            AND A.RPDC_TTLE LIKE '%'|| #{rpdcTtle} || '%'       /** Titre du rapport !== 보고서제목 ==! */
+        </if>
+        <if test='(searchStrtDt != null and !"".equals(searchStrtDt)) and (searchEndDt != null and !"".equals(searchEndDt))'>
+            AND   TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDD') <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{searchEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            AND   TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDD') <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{searchStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        </if>
+        ORDER BY A.LAST_CHG_DTTM DESC
+
+        <include refid="pagination.footer" />
+
+    </select>
+
+    <!--
+      [Gérer le rapport sur l'analyse des informations] Consulter les détails !== [정보분석보고서관리] 상세조회 ==!
+    -->
+    <select id="selectIfanRpdcDtl"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo">
+        /* selectIfanRpdcDtl */
+        SELECT
+              A.RPDC_NO                    /** Numéro de rapport !== 보고서번호 ==! */
+            , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+            , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE DEL_YN = 'N' AND ORGN_CD = A.CSTM_CD) AS CSTM_NM
+            , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+            , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.REGST_ID) AS REGST_NM
+            , A.RPDC_TTLE                  /** Titre du rapport !== 보고서제목 ==! */
+            , A.BSOP_TP_CD                 /** Code De Type De L'Opération !== 업무구분코드 ==! */
+            , A.ANAY_CN                    /** Contenu d'analyse !== 분석내용 ==! */
+            , A.RSLT_EV_CD                 /** Code d'évaluation du résultat !== 결과평가코드 ==! */
+            , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , A.ALRT_PT_CD                 /** Type d'alerte !== 경보유형코드 ==! */
+            , A.RSK_INFO_NO                /** Numéro de données sur les risques !== 위험정보번호 ==! */
+            , NVL(A.OPPB_YN, 'N') AS  OPPB_YN    /** Ouvert Au Public O/N !== 공개여부 ==! */
+            , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+            , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+            , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+            , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DT  /** Date d'enregistrement !== 등록일자 ==! */
+        FROM   TB_RSMI_IFAN_BSCS A
+        WHERE  A.DEL_YN = 'N'              /** Suppression ON !== 삭제여부 ==! */
+        AND    A.RPDC_NO = #{rpdcNo}       /** Numéro de rapport !== 보고서번호 ==! */
+    </select>
+
+    <!--
+      [Gérer le rapport sur l'analyse des informations] Consulter la liste (Détails du rapport) !== [정보분석보고서관리] 정보분석상세 목록 조회 ==!
+    -->
+    <select id="selectIfanRpdcDtlList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.com.vo.RsmIfanDtlVo">
+        /* selectIfanRpdcDtlList */
+        SELECT
+              A.RPDC_NO                    /** Numéro de rapport !== 보고서번호 ==! */
+            , A.RPDC_SRNO                  /** Numéro de série du rapport !== 보고서일련번호 ==! */
+            , A.IFAN_TP_CD                 /** Code De Catégorie D'Analyse De L'Information !== 정보분석구분코드 ==! */
+            , A.RPDC_SRNO                  /** Numéro de série du rapport !== 보고서일련번호 ==! */
+            , A.INFO_TRGT_VAL              /** Valeur De L'Objet D El'Information  !== 정보대상값 ==! */
+        FROM TB_RSMI_IFAN_DTL A
+        WHERE A.DEL_YN = 'N'               /** Suppression ON !== 삭제여부 ==! */
+        AND    A.RPDC_NO = #{rpdcNo}       /** Numéro de rapport !== 보고서번호 ==! */
+    </select>
+
+    <!--
+      Consulter la liste destinataire de l'alerte !== 정보분석경보수신자 목록 조회 ==!
+    -->
+    <select id="selectIfanAlrtRcvrList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.anay.vo.RsmAnayIfanBscsAlrtRcvrVo">
+        /* selectIfanAlrtRcvrList */
+        SELECT RPDC_NO                      /** Numéro de rapport !== 보고서번호 ==! */
+            , ALRT_RCVR_PT_CD               /** Code de type de destinataire de l'alerte  !== 경보수신자유형코드 ==! */
+            , ALRT_RCPN_EMP_ID as PBSR_NO       /** Matricule Solde !== 공무원번호 ==! */
+            , ( SELECT EMP_NM FROM TB_POTI_EMP A
+                WHERE A.DEL_YN = 'N'
+                AND A.PBSR_NO = ALRT_RCPN_EMP_ID
+              ) as EMP_NM                   /** Nom De L'Employé !== 직원명 ==! */
+            , ( SELECT ORGN_MGMT_CD FROM TB_POTI_EMP A
+                WHERE A.DEL_YN = 'N'
+                AND A.PBSR_NO = ALRT_RCPN_EMP_ID
+               ) as ORGN_MGMT_CD            /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA
+                WHERE AA.ORGN_MGMT_CD = ( SELECT ORGN_MGMT_CD FROM TB_POTI_EMP A
+                                          WHERE A.DEL_YN = 'N'
+                                          AND A.PBSR_NO = ALRT_RCPN_EMP_ID
+                                        )
+              ) as ORGN_NM                  /** Nom D'Organisme !== 조직명 ==! */
+        FROM TB_RSMI_IFAN_BSCS_ALRT_RCVR
+        WHERE DEL_YN = 'N'
+        AND RPDC_NO = #{rpdcNo}             /** Numéro de rapport !== 보고서번호 ==! */
+        AND RCVR_PT_CHG_TP_CD = 'F'         /** Code de distinction de changement de type de destinataire !== 수신자유형변경구분코드 ==! */
+    </select>
+
+    <!--
+      Consulter la liste destinataire de l'alerte (Modification) !== 정보분석경보수신자(변동) 목록 조회 ==!
+    -->
+    <select id="selectIfanAlrtRcvrChgList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.anay.vo.RsmAnayIfanBscsAlrtRcvrVo">
+        /* selectIfanAlrtRcvrChgList */
+        SELECT RPDC_NO                      /** Numéro de rapport !== 보고서번호 ==! */
+            , ALRT_RCVR_PT_CD               /** Code de type de destinataire de l'alerte  !== 경보수신자유형코드 ==! */
+            , ALRT_RCPN_EMP_ID as PBSR_NO           /** Matricule Solde !== 공무원번호 ==! */
+            , ( SELECT EMP_NM FROM TB_POTI_EMP A
+                WHERE A.DEL_YN = 'N'
+                AND A.PBSR_NO = ALRT_RCPN_EMP_ID
+              ) as EMP_NM                   /** Nom De L'Employé !== 직원명 ==! */
+            , ( SELECT ORGN_MGMT_CD FROM TB_POTI_EMP A
+                WHERE A.DEL_YN = 'N'
+                AND A.PBSR_NO = ALRT_RCPN_EMP_ID
+               ) as ORGN_MGMT_CD            /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA
+                WHERE AA.ORGN_MGMT_CD = ( SELECT ORGN_MGMT_CD FROM TB_POTI_EMP A
+                                          WHERE A.DEL_YN = 'N'
+                                          AND A.PBSR_NO = ALRT_RCPN_EMP_ID
+                                        )
+              ) as ORGN_NM                  /** Nom D'Organisme !== 조직명 ==! */
+        FROM TB_RSMI_IFAN_BSCS_ALRT_RCVR
+        WHERE DEL_YN = 'N'
+        AND RPDC_NO = #{rpdcNo}             /** Numéro de rapport !== 보고서번호 ==! */
+        AND RCVR_PT_CHG_TP_CD = 'V'         /** Code de distinction de changement de type de destinataire !== 수신자유형변경구분코드 ==! */
+    </select>
+
+    <!--
+      [Gérer le rapport sur l'analyse des informations] Enregistrer !== [정보분석보고서관리] 등록 ==!
+    -->
+    <insert id="insertIfanBacs"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo">
+        /* insertIfanBacs */
+        INSERT INTO TB_RSMI_IFAN_BSCS
+        (
+              RPDC_NO                      /** Numéro de rapport !== 보고서번호 ==! */
+            , CSTM_CD                      /** Code Du Bureau !== 세관코드 ==! */
+            , REGST_ID                     /** Id De La Personne Enregistrant !== 등록자ID ==! */
+            , RPDC_TTLE                    /** Titre du rapport !== 보고서제목 ==! */
+            , BSOP_TP_CD                   /** Code De Type De L'Opération !== 업무구분코드 ==! */
+            , ANAY_CN                      /** Contenu d'analyse !== 분석내용 ==! */
+            , PRCS_STTS_CD                 /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , ALRT_PT_CD                   /** Type d'alerte !== 경보유형코드 ==! */
+            , RSK_INFO_NO                  /** Numéro de données sur les risques !== 위험정보번호 ==! */
+            , OPPB_YN                      /** Ouvert Au Public O/N !== 공개여부 ==! */
+            , APRV_ID                      /** Id D'Approbation  !== 결재ID ==! */
+            , ATCH_FILE_ID                 /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        VALUES
+        (
+              #{rpdcNo}                    /** Numéro de rapport !== 보고서번호 ==! */
+            , #{cstmCd}                    /** Code Du Bureau !== 세관코드 ==! */
+            , #{regstId}                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+            , #{rpdcTtle}                  /** Titre du rapport !== 보고서제목 ==! */
+            , #{bsopTpCd}                  /** Code De Type De L'Opération !== 업무구분코드 ==! */
+            , #{anayCn}                    /** Contenu d'analyse !== 분석내용 ==! */
+            , #{prcsSttsCd}                /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , #{alrtPtCd}                  /** Type d'alerte !== 경보유형코드 ==! */
+            , #{rskInfoNo}                 /** Numéro de données sur les risques !== 위험정보번호 ==! */
+            , NVL(#{oppbYn}, 'N')          /** Ouvert Au Public O/N !== 공개여부 ==! */
+            , #{aprvId}                    /** Id D'Approbation  !== 결재ID ==! */
+            , #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      [Gérer le rapport sur l'analyse des informations] Enregistrer !== [정보분석보고서관리] 등록 ==!
+    -->
+    <update id="updateIfanBacs"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo">
+        /* updateIfanBacs */
+        UPDATE TB_RSMI_IFAN_BSCS
+        SET   CSTM_CD = #{cstmCd}                         /** Code Du Bureau !== 세관코드 ==! */
+            , REGST_ID = #{regstId}                       /** Id De La Personne Enregistrant !== 등록자ID ==! */
+            , RPDC_TTLE = #{rpdcTtle}                     /** Titre du rapport !== 보고서제목 ==! */
+            , BSOP_TP_CD = #{bsopTpCd}                    /** Code De Type De L'Opération !== 업무구분코드 ==! */
+            , ANAY_CN = #{anayCn}                         /** Contenu d'analyse !== 분석내용 ==! */
+            , PRCS_STTS_CD = #{prcsSttsCd}                /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , ALRT_PT_CD = #{alrtPtCd}                    /** Type d'alerte !== 경보유형코드 ==! */
+            , RSK_INFO_NO = #{rskInfoNo}                  /** Numéro de données sur les risques !== 위험정보번호 ==! */
+            , OPPB_YN = NVL(#{oppbYn}, 'N')               /** Ouvert Au Public O/N !== 공개여부 ==! */
+            , APRV_ID = #{aprvId}                         /** Id D'Approbation  !== 결재ID ==! */
+            , ATCH_FILE_ID = #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , DEL_YN = 'N'                                /** Suppression On !== 삭제여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE RPDC_NO = #{rpdcNo}                         /** Numéro de rapport !== 보고서번호 ==! */
+
+    </update>
+
+    <!--
+      [Gérer le rapport sur l'analyse des informations] Supprimer détaillée !== [정보분석보고서관리] 상세 삭제 ==!
+    -->
+    <delete id="deleteAllIfanDtl"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo">
+        /* deleteAllIfanDtl */
+        DELETE FROM TB_RSMI_IFAN_DTL
+        WHERE RPDC_NO = #{rpdcNo}               /** Numéro de rapport !== 보고서번호 ==! */
+    </delete>
+
+    <!--
+      [Gérer le rapport sur l'analyse des informations] Supprimer le destinataire de l'alerte !== [정보분석보고서관리] 정보분석경보수신자 삭제 ==!
+    -->
+    <delete id="deleteAllIfanAlrtRcvr"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo">
+        /* deleteAllIfanAlrtRcvr */
+        DELETE FROM TB_RSMI_IFAN_BSCS_ALRT_RCVR
+        WHERE RPDC_NO = #{rpdcNo}               /** Numéro de rapport !== 보고서번호 ==! */
+    </delete>
+
+    <!--
+      [Gérer le rapport sur l'analyse des informations] Enregistrer détaillée !== [정보분석보고서관리] 상세 등록 ==!
+    -->
+    <insert id="insertIfanDtl"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo">
+        <selectKey  keyProperty="rpdcSrno" order="BEFORE" resultType="java.math.BigDecimal" >
+            SELECT NVL(MAX(RPDC_SRNO), 0) + 1 FROM TB_RSMI_IFAN_DTL WHERE RPDC_NO = #{rpdcNo} AND IFAN_TP_CD = #{ifanTpCd}
+        </selectKey>
+
+        /* insertIfanDtl */
+
+        INSERT INTO  TB_RSMI_IFAN_DTL
+        (
+              RPDC_NO                      /** Numéro de rapport !==  ==! */
+            , IFAN_TP_CD                   /** Code De Catégorie D'Analyse De L'Information !==  ==! */
+            , RPDC_SRNO                    /** Numéro de série du rapport !==  ==! */
+            , INFO_TRGT_VAL                /** Valeur De L'Objet D El'Information  !==  ==! */
+            , DEL_YN                       /** Suppression On !==  ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !==  ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !==  ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !==  ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !==  ==! */
+        )
+        VALUES
+        (
+              #{rpdcNo}                    /** Numéro de rapport !==  ==! */
+            , #{ifanTpCd}                  /** Code De Catégorie D'Analyse De L'Information !==  ==! */
+            , #{rpdcSrno}                  /** Numéro de série du rapport !==  ==! */
+            , #{infoTrgtVal}               /** Valeur De L'Objet D El'Information  !==  ==! */
+            , 'N'                          /** Suppression On !==  ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !==  ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !==  ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !==  ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !==  ==! */
+        )
+
+    </insert>
+
+    <!--
+      [Gérer le rapport sur l'analyse des informations] Enregistrer du destinataire de l'alerte !== [정보분석보고서관리] 정보분석경보수신자 등록 ==!
+    -->
+    <insert id="insertIfanAlrtRcvr"
+       parameterType="alpass.ipt.rsm.anay.vo.RsmAnayIfanBscsAlrtRcvrVo">
+       /* insertIfanAlrtRcvr */
+       INSERT INTO TB_RSMI_IFAN_BSCS_ALRT_RCVR
+       (
+            RPDC_NO                      /** Numéro de rapport !== 보고서번호 ==! */
+          , ALRT_RCVR_PT_CD              /** Code de type de destinataire de l'alerte !== 경보수신자유형코드 ==! */
+          , ALRT_RCPN_EMP_ID             /** ID du personnel recevant l'alerte !== 경보수신직원ID ==! */
+          , RCVR_PT_CHG_TP_CD            /** Code de distinction de changement de type de destinataire !== 수신자유형변경구분코드 ==! */
+          , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+          , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+       )
+       VALUES
+       (
+            #{rpdcNo}                    /** Numéro de rapport !== 보고서번호 ==! */
+          , #{alrtRcvrPtCd}              /** Code de type de destinataire de l'alerte !== 경보수신자유형코드 ==! */
+          , #{pbsrNo}                    /** ID du personnel recevant l'alerte !== 경보수신직원ID ==! */
+          , #{rcvrPtChgTpCd}             /** Code de distinction de changement de type de destinataire !== 수신자유형변경구분코드 ==! */
+          , 'N'                          /** Suppression On !== 삭제여부 ==! */
+          , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+       )
+
+    </insert>
+
+    <!--
+      [Gérer le rapport périodique sur les résultats du fonctionnement] Consulter la liste !== [운영실적정기보고서관리] 목록조회 ==!
+    -->
+    <select id="selectOprnAcrsReilRpdcList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOprnAcrsReilRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmOprnAcrsReilRpdcMgmtVo">
+        /* selectOprnAcrsReilRpdcList */
+
+        <include refid="pagination.header" />
+        SELECT T.*
+             , T.PRID_START_DT || '~' || T.PRID_END_DT AS EV_PRID
+        FROM
+        (
+            SELECT
+                  A.RPDC_NO                    /** Numéro de rapport !== 보고서번호 ==! */
+                , A.RPRT_YYMM                  /** Date de rapport !== 보고년월 ==! */
+                , TO_CHAR(TRUNC(ADD_MONTHS(TO_DATE(A.RPRT_YYMM||'01'), -1) , 'MM'),'DD/MM/YYYY') AS PRID_START_DT
+                , TO_CHAR(LAST_DAY(ADD_MONTHS(TO_DATE(A.RPRT_YYMM||'01'),-1)),'DD/MM/YYYY') AS PRID_END_DT
+                , A.RPRT_CN                    /** Contenu de rapport !== 보고내용 ==! */
+                , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+                , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+                , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+                , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+                , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DT
+            FROM   TB_RSMI_OPRN_ACRS_REIL_RPDC A
+            WHERE  DEL_YN = 'N'
+            <if test='(searchStrtDt != null and !"".equals(searchStrtDt)) and (searchEndDt != null and !"".equals(searchEndDt))'>
+                AND   TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDD') <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{searchEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                AND   TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDD') <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{searchStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            </if>
+            <if test='sttsCd != null and !"".equals(sttsCd)'>
+                AND A.PRCS_STTS_CD = #{sttsCd}          /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            </if>
+
+            ORDER BY A.LAST_CHG_DTTM DESC
+        ) T
+        <include refid="pagination.footer" />
+
+    </select>
+
+    <!--
+      [Gérer le rapport périodique sur les résultats du fonctionnement] Consulter les détails !== [운영실적정기보고서관리] 상세 조회 ==!
+    -->
+    <select id="selectOprnAcrsReilRpdcDtl"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOprnAcrsReilRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmOprnAcrsReilRpdcMgmtVo">
+        /* selectOprnAcrsReilRpdcDtl */
+        SELECT
+              A.RPDC_NO                    /** Numéro de rapport !== 보고서번호 ==! */
+            , A.RPRT_YYMM                  /** Date de rapport !== 보고년월 ==! */
+            , TO_CHAR(TRUNC(ADD_MONTHS(TO_DATE(A.RPRT_YYMM||'01'), -1) , 'MM'),'DD/MM/YYYY') AS PRID_START_DT
+            , TO_CHAR(LAST_DAY(ADD_MONTHS(TO_DATE(A.RPRT_YYMM||'01'),-1)),'DD/MM/YYYY') AS PRID_END_DT
+            , A.RPRT_CN                    /** Contenu de rapport !== 보고내용 ==! */
+            , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+            , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+            , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+            , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DT
+        FROM   TB_RSMI_OPRN_ACRS_REIL_RPDC A
+        WHERE  A.DEL_YN = 'N'
+        AND   A.RPDC_NO = #{rpdcNo}             /** Numéro de rapport !== 보고서번호 ==! */
+        AND   A.RPRT_YYMM = #{rprtYymm}         /** Date de rapport !== 보고년월 ==! */
+    </select>
+
+    <!--
+      [Gérer le rapport périodique sur les résultats du fonctionnement] Consulter la liste (Détails) !== [운영실적보고서관리] 상세내역 건수 목록 조회 ==!
+    -->
+    <select id="selectOprnAcrsRpdcDtlCntList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOprnAcrsReilRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmOprnAcrsReilRpdcDtlRsltVo">
+        /* selectOprnAcrsRpdcDtlCntList */
+        SELECT
+              A.RPDC_NO                    /** Numéro de rapport !== 보고서번호 ==! */
+            , A.RPRT_YYMM                  /** Date de rapport !== 보고년월 ==! */
+            , A.RSK_INFO_TCNT              /** Nombre total des données sur les riques !== 위험정보총건수 ==! */
+            , A.RSK_INFO_MM_CNT            /** Nombre total mensuel des données sur les riques !== 위험정보월건수 ==! */
+            , A.RSK_INFO_MM_CNT ||' ( ' || A.RSK_INFO_TCNT || ' ) ' AS INFO_EV
+            , A.RSK_FTOR_TCNT              /** Nombre total des éléments de risque !== 위험요소총건수 ==! */
+            , A.RSK_FTOR_MM_CNT            /** Nombre total mensuel des éléments de risque !== 위험요소월건수 ==! */
+            , A.RSK_FTOR_MM_CNT ||' ( '||A.RSK_FTOR_TCNT || ' ) ' AS RSK_FTOR
+            , A.SELC_BASE_TCNT             /** Nombre total des critères de ciblage !== 선별기준총건수 ==! */
+            , A.SELC_BASE_MM_CNT           /** Nombre total mensuel des critères de ciblage !== 선별기준월건수 ==! */
+            , A.SELC_BASE_MM_CNT ||' ( '||A.SELC_BASE_TCNT || ' ) ' AS SELC_BASE
+            , A.SMLT_TCNT                  /** Nombre total de simulation !== 시뮬레이션총건수 ==! */
+            , A.SMLT_MM_CNT                /** Nombre total mensuel de simulation !== 시뮬레이션월건수 ==! */
+            , A.SMLT_MM_CNT || ' ( '||A.SMLT_TCNT || ' ) ' AS SMLT
+        FROM   TB_RSMI_OPRN_ACRS_REIL_RPDC_DTL A
+        WHERE  DEL_YN = 'N'                       /** Suppression ON !== 삭제여부 ==! */
+        AND  A.RPDC_NO = #{rpdcNo}                /** Numéro de rapport !== 보고서번호 ==! */
+        AND  A.RPRT_YYMM = #{rprtYymm}            /** Date de rapport !== 보고년월 ==! */
+    </select>
+
+    <!--
+      [Gérer le rapport périodique sur les résultats du fonctionnement] Consulter la liste des cas d'information des critères !== [운영실적보고서관리] 기준정보 건수 목록 조회 ==!
+    -->
+    <select id="selectBaseInfoCntList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOprnAcrsReilRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmOprnAcrsReilRpdcDtlRsltVo">
+        /* selectBaseInfoCntList */
+        SELECT  NVL(RQST_BASE_CLSF_CD, 'Total') AS RQST_BASE_CLSF_CD        /** Code De Classification Du Critère Renseigné !== 신청기준분류코드 ==! */
+            , COUNT(CASE WHEN DCSH_TP_CD = 'D' THEN 1 END) AS DED_CNT       /** nombre(DeD) !== 건수(Ded) ==! */
+            , COUNT(CASE WHEN DCSH_TP_CD = 'M' THEN 1 END) AS MANIFEST_CNT  /** nombre(Manifest) !== 건수(Manifest) ==! */
+        FROM TB_RSMI_BASE_MGMT_COMN
+        WHERE DEL_YN = 'N'
+        AND RQST_BASE_CLSF_CD NOT IN ('CW', 'SW')           /** Code De Classification Du Critère Renseigné !== 신청기준분류코드 ==! */
+        AND APLY_END_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{pridStartDt}, 'DD/MM/YYYY'), 'YYYYMMDD')         /** Date De Fin De L'Application !== 적용종료일자 ==! */
+        AND APLY_STRT_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{pridEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')          /** Date De Début De L'Application !== 적용시작일자 ==! */
+        AND BASE_RQST_TP_CD = 'O'                           /** Code De Type De Renseignement  !== 기준신청구분코드 ==! */
+        AND BASE_APLY_YN = 'Y'                              /** En Vigueur O/N !== 기준적용여부 ==! */
+        GROUP BY ROLLUP(RQST_BASE_CLSF_CD)
+        ORDER BY DECODE(RQST_BASE_CLSF_CD, 'AO', 1
+                                         , 'DE', 2
+                                         , 'MA', 3
+                                         , 'SC', 4
+                                         , 'FT', 5
+                                         , 'PR', 6
+                                         , 'HR', 7
+                                         , 'RA', 8
+                                         , 'SY', 9 , 10 ) ASC
+    </select>
+
+    <!--
+      [Gérer le rapport périodique sur les résultats du fonctionnement] Consulter la liste par n° d'enreg. critère
+      !== [운영실적정기보고서관리] 기준정보 목록조회 ==!
+    -->
+    <select id="selectBaseInfoList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOprnAcrsReilRpdcDtlRsltVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmBaseMgmtComnRsltVo">
+        /* selectBaseInfoList */
+        SELECT RQST_BASE_CLSF_CD        /** Code De Classification Du Critère Renseigné !== 신청기준분류코드 ==! */
+            , BASE_RGSR_NO              /** Numéro D'Enregistrement !== 기준등록번호 ==! */
+            , APLY_STRT_DT              /** Date De Début De L'Application !== 적용시작일자 ==! */
+            , APLY_END_DT               /** Date De Fin De L'Application !== 적용종료일자 ==! */
+            , TO_CHAR(TO_DATE(APLY_STRT_DT,'YYYYMMDD'),'DD/MM/YYYY') || '~' || TO_CHAR(TO_DATE(APLY_END_DT,'YYYYMMDD'),'DD/MM/YYYY') AS APLY_PRID
+            , BASE_DESC                 /** Description De Critère !== 기준설명 ==! */
+            , INSC_GDLN_CN              /** Directives D'Inspection  !== 검사지침내용 ==! */
+            , RSK_INFO_NO               /** Numéro de données sur les risques !== 위험정보번호 ==! */
+            , RSK_FTOR_NO               /** Numéro d'élément de risque !== 위험요소번호 ==! */
+        FROM TB_RSMI_BASE_MGMT_COMN
+        WHERE DEL_YN = 'N'
+        AND RQST_BASE_CLSF_CD NOT IN ('CW', 'SW')           /** Code De Classification Du Critère Renseigné !== 신청기준분류코드 ==! */
+        AND APLY_END_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{pridStartDt}, 'DD/MM/YYYY'), 'YYYYMMDD')         /** Date De Fin De L'Application !== 적용종료일자 ==! */
+        AND APLY_STRT_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{pridEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')          /** Date De Début De L'Application !== 적용시작일자 ==! */
+        <if test="rqstBaseClsfCd != null and rqstBaseClsfCd != '' and rqstBaseClsfCd != 'Total'">
+        AND RQST_BASE_CLSF_CD = #{rqstBaseClsfCd}           /** Code De Classification Du Critère Renseigné !== 신청기준분류코드 ==! */
+        </if>
+        AND BASE_RQST_TP_CD='O'                             /** Code De Type De Renseignement  !== 기준신청구분코드 ==! */
+        AND BASE_APLY_YN ='Y'                               /** En Vigueur O/N !== 기준적용여부 ==! */
+        ORDER BY DECODE(RQST_BASE_CLSF_CD, 'AO', 1
+                                        , 'DE', 2
+                                        , 'MA', 3
+                                        , 'SC', 4
+                                        , 'FT', 5
+                                        , 'PR', 6
+                                        , 'HR', 7
+                                        , 'RA', 8
+                                        , 'SY', 9
+                                        , 10 ) ASC
+
+    </select>
+
+    <!--
+      [Gérer le rapport périodique sur les résultats du fonctionnement] Résultat du ciblage des DeD par mois !== [운영실적보고서관리] 월간DeD선별실적조회 ==!
+    -->
+    <select id="selectDedAcrsList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOprnAcrsReilRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmDedAcrsRsltVo">
+        /* selectDedAcrsList */
+        SELECT
+              NVL(B.RQST_BASE_CLSF_CD, 'Total') AS BASE_CLSF_CD    /** Code de classification du critère renseigné !== 기준분류코드 ==! */
+            , NVL(SUM(1),0) AS SELC_CNT /** Nombre de ciblage !== 선별건수 ==!*/
+            , NVL(SUM(B.GRN_SELC_CNT),0) AS GRN_SELC_CNT /** Nombre de déclaration en vert !== 녹색선별건수 ==!*/
+            , NVL(SUM(B.BLU_SELC_CNT),0) AS BLU_SELC_CNT /** Nombre de déclaration en bleu !== 파랑선별건수 ==!*/
+            , NVL(SUM(B.ORE_SELC_CNT),0) AS ORE_SELC_CNT /** Nombre de déclaration en jaune !== 노랑선별건수 ==!*/
+            , NVL(SUM(B.RED_SELC_CNT),0) AS RED_SELC_CNT /** Nombre de déclaration en rouge !== 빨강선별건수 ==!*/
+            , DECODE( NVL(SUM(B.GRN_SELC_CNT),0), 0, 0, (SUM(B.GRN_SELC_CNT) :: decimal / SUM(1) :: decimal) * 100 ) AS GRN_SELC_RT /** Taux de déclaration en circuit vert  !== 녹색선별률 ==!*/
+            , DECODE( NVL(SUM(B.BLU_SELC_CNT),0), 0, 0, (SUM(B.BLU_SELC_CNT) :: decimal / SUM(1) :: decimal) * 100 ) AS BLU_SELC_RT /** Taux de déclaration en circuit bleu  !== 파랑선별률 ==!*/
+            , DECODE( NVL(SUM(B.ORE_SELC_CNT),0), 0, 0, (SUM(B.ORE_SELC_CNT) :: decimal / SUM(1) :: decimal) * 100 ) AS ORE_SELC_RT /** Taux de déclaration en circuit orange !== 오렌지선별률 ==!*/
+            , DECODE( NVL(SUM(B.RED_SELC_CNT),0), 0, 0, (SUM(B.RED_SELC_CNT) :: decimal / SUM(1) :: decimal) * 100 ) AS RED_SELC_RT /** Taux de déclaration en circuit rouge !== 빨강선별률 ==!*/
+        <include refid="selectAnayDdPerDedNotInBody"></include>
+        GROUP BY ROLLUP(B.RQST_BASE_CLSF_CD)
+        ORDER BY B.RQST_BASE_CLSF_CD
+    </select>
+
+    <!--
+      Consulter la performance par critère !== 기준별 목록조회 ==!
+    -->
+    <select id="selectAnayBasePerList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOprnAcrsReilRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmDedAcrsRsltVo">
+        /* selectAnayBasePerList */
+        <include refid="selectAnayBasePerListBody"/>
+        SELECT CD
+            , RQST_BASE_CLSF_CD                 /** Code de classification du critère renseigné !== 신청기준분류코드 ==!*/
+            , BASE_RQST_TP_CD                   /** Code de type de renseignement !== 기준신청구분코드 ==! */
+            , NVL (SUM (DCLR_CNT) OVER () / 2, 0) AS DCLR_CNT           /** Nombre de DED !== 신고건수==!*/
+            , NVL (SUM (TAX_AMT) OVER () / 2, 0) AS TAX_TAMT            /** Taxe !== 세금 ==!*/
+            , NVL (SUM (TXBS_AMT) OVER () / 2, 0) AS TXBS_TAMT          /** Valeur statistique(DZD) !== 과세기준가격 ==!*/
+            , SELC_CNT AS SELC_CNT              /** Nombre de saisi !== 선별건수 ==!*/
+            , NVL (SELC_TAX_AMT, 0) AS SELC_TAX_AMT                     /** Droits et taxes de déclaration filtrée !== 선별세금 ==!*/
+            , NVL (SELC_TXBS_AMT, 0) AS SELC_TXBS_AMT /** Valeur statistique de déclaration filitrée !== 선별과세기준금액 ==!*/
+            , DECODE(SELC_CNT, 0, 0, (GRN_SELC_CNT :: decimal / SELC_CNT :: decimal ) * 100 ) AS GRN_SELC_RT        /** Taux de déclaration en circuit vert  !== 녹색선별율 ==!*/
+            , DECODE(SELC_CNT, 0, 0, (BLU_SELC_CNT :: decimal / SELC_CNT :: decimal ) * 100 ) AS BLU_SELC_RT        /** Taux de déclaration en circuit bleu  !== 파랑선별율 ==!*/
+            , DECODE(SELC_CNT, 0, 0, (ORE_SELC_CNT :: decimal / SELC_CNT :: decimal ) * 100 ) AS ORE_SELC_RT        /** Taux de déclaration en circuit orange !== 오렌지선별율 ==!*/
+            , DECODE(SELC_CNT, 0, 0, (RED_SELC_CNT :: decimal / SELC_CNT :: decimal ) * 100 ) AS RED_SELC_RT        /** Taux de déclaration en circuit rouge !== 빨간선별율 ==!*/
+            , DSCL_CNT                          /** Nombre de détection !== 적발건수 ==!*/
+            , NVL(DSCL_TAX_AMT, 0) AS DSCL_TAX_AMT                      /** Droits et taxes de déclaration détectée  !== 적발세금금액 ==!*/
+            , NVL(DSCL_TXBS_AMT, 0) AS DSCL_TXBS_AMT                    /** Valeur statistique de déclaration détectée !== 적발과세기준금액 ==!*/
+            , DECODE(SELC_CNT, 0, 0, (DSCL_CNT :: decimal / SELC_CNT :: decimal ) * 100 ) AS DSCL_RT                /** Taux de détection !== 적발율 ==!*/
+            , NVL(FINE_AMT, 0) AS FINE_AMT      /** Taux de détection !== 벌금액 ==!*/
+        FROM (  SELECT NVL(BASE_RGSR_NO, 'Total') AS CD
+                     , MIN(RQST_BASE_CLSF_CD) AS RQST_BASE_CLSF_CD
+                     , MIN(BASE_RQST_TP_CD) AS BASE_RQST_TP_CD
+                     , SUM(1) AS DCLR_CNT
+                     , SUM(TAX_AMT) AS TAX_AMT
+                     , SUM(TXBS_AMT) AS TXBS_AMT
+                     , COUNT(*) AS SELC_CNT
+                     , SUM(TAX_AMT) AS SELC_TAX_AMT
+                     , SUM(TXBS_AMT) AS SELC_TXBS_AMT
+                     , SUM(GRN_SELC_CNT) AS GRN_SELC_CNT
+                     , SUM(BLU_SELC_CNT) AS BLU_SELC_CNT
+                     , SUM(ORE_SELC_CNT) AS ORE_SELC_CNT
+                     , SUM(RED_SELC_CNT) AS RED_SELC_CNT
+                     , NVL(SUM(CASE WHEN  A.ADRT_YN = 'Y' OR A.NTFC_YN = 'Y' THEN 1
+                               ELSE 0
+                               END
+                              ) , 0) AS DSCL_CNT    /** Nombre de détection !== 적발건수 ==! */
+                     , SUM(A.FINE_AMT) AS FINE_AMT
+                     , SUM(CASE WHEN ('Y' = A.ADRT_YN OR 'Y' = A.NTFC_YN)
+                                THEN ABS(A.TAX_AMT - ( SELECT SUM(Z.TAX_AMT)
+                                                       FROM  TB_CLRI_DED_TAX Z
+                                                       WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                       AND   Z.DEL_YN = 'N')
+                                                      )
+                                ELSE 0
+                                END
+                       ) AS DSCL_TAX_AMT
+                    , SUM(CASE WHEN ( 'Y' = A.ADRT_YN
+                                      OR 'Y' = A.NTFC_YN)
+                               THEN
+                                    ABS(A.TXBS_AMT - ( SELECT SUM(Z.TTXBS_NCY_AMT)
+                                                       FROM  TB_CLRI_DED_VLUT_COMN Z
+                                                       WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                       AND   Z.DEL_YN = 'N')
+                                        )
+                               ELSE 0
+                               END
+                       ) AS DSCL_TXBS_AMT
+                FROM ( SELECT A.DTL_DCSH_NO
+                            , A.SELC_DT
+                            , A.GRN_SELC_CNT
+                            , A.BLU_SELC_CNT
+                            , A.ORE_SELC_CNT
+                            , A.RED_SELC_CNT
+                            , A.RQST_BASE_CLSF_CD
+                            , A.BASE_RQST_TP_CD
+                            , A.BASE_RGSR_NO
+                            , A.TAX_AMT
+                            , A.TXBS_AMT
+                            , F.FINE_AMT
+                            , F.NTFC_YN
+                            , G.ADRT_YN
+                       FROM SELC_TABLE A
+                         , COLI_NTFC F
+                         , DED_ADRT_D G
+                       WHERE A.DTL_DCSH_NO = F.REFF_NO(+)
+                       AND   A.DTL_DCSH_NO = G.DTL_DCSH_NO(+)
+                ) A
+                GROUP BY ROLLUP(A.BASE_RGSR_NO)
+        )
+        ORDER BY DECODE(CD, 'AO', 1
+                          , 'DE', 2
+                          , 'MA', 3
+                          , 'SC', 4
+                          , 'FT', 5
+                          , 'PR', 6
+                          , 'HR', 7
+                          , 'RA', 8
+                          , 'SY', 9
+                          , 10 )
+    </select>
+
+    <!--
+      Consulter la liste par n° d'enreg. critère !== 기준등록번호별 목록 조회 (Ded실적조회 그리드에서 기준유형 선택시) ==!
+    -->
+    <select id="selectBaseRgsrNoPerList"
+            parameterType="alpass.ipt.rsm.basc.vo.RsmOprnAcrsReilRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmDedAcrsRsltVo">
+        /* selectBaseRgsrNoPerList */
+        <include refid="selectAnayBasePerListBody"/>
+        SELECT CD
+            , RQST_BASE_CLSF_CD             /** Code de classification du critère renseigné !== 신청기준분류코드 ==!*/
+            , BASE_RQST_TP_CD               /** Code de type de renseignement !== 기준신청구분코드 ==! */
+            , NVL (SUM (DCLR_CNT) OVER () / 2, 0) AS DCLR_CNT       /** Nombre de DED !== 신고건수==!*/
+            , NVL (SUM (TAX_AMT) OVER () / 2, 0) AS TAX_TAMT        /** Taxe !== 세금 ==!*/
+            , NVL (SUM (TXBS_AMT) OVER () / 2, 0) AS TXBS_TAMT      /** Valeur statistique(DZD) !== 과세기준가격 ==!*/
+            , SELC_CNT AS SELC_CNT          /** Nombre de saisi !== 선별건수 ==!*/
+            , NVL (SELC_TAX_AMT, 0) AS SELC_TAX_AMT                 /** Droits et taxes de déclaration filtrée !== 선별세금 ==!*/
+            , NVL (SELC_TXBS_AMT, 0) AS SELC_TXBS_AMT               /** Valeur statistique de déclaration filitrée !== 선별과세기준금액 ==!*/
+            , DECODE(SELC_CNT, 0, 0, (GRN_SELC_CNT :: decimal / SELC_CNT :: decimal ) * 100 ) AS GRN_SELC_RT        /** Taux de déclaration en circuit vert  !== 녹색선별율 ==!*/
+            , DECODE(SELC_CNT, 0, 0, (BLU_SELC_CNT :: decimal / SELC_CNT :: decimal ) * 100 ) AS BLU_SELC_RT        /** Taux de déclaration en circuit bleu  !== 파랑선별율 ==!*/
+            , DECODE(SELC_CNT, 0, 0, (ORE_SELC_CNT :: decimal / SELC_CNT :: decimal ) * 100 ) AS ORE_SELC_RT        /** Taux de déclaration en circuit orange !== 오렌지선별율 ==!*/
+            , DECODE(SELC_CNT, 0, 0, (RED_SELC_CNT :: decimal / SELC_CNT :: decimal ) * 100 ) AS RED_SELC_RT        /** Taux de déclaration en circuit rouge !== 빨간선별율 ==!*/
+            , DSCL_CNT                      /** Nombre de détection !== 적발건수 ==!*/
+            , NVL(DSCL_TAX_AMT, 0) AS DSCL_TAX_AMT      /** Droits et taxes de déclaration détectée  !== 적발세금금액 ==!*/
+            , NVL(DSCL_TXBS_AMT, 0) AS DSCL_TXBS_AMT    /** Valeur statistique de déclaration détectée !== 적발과세기준금액 ==!*/
+            , DECODE(SELC_CNT, 0, 0, (DSCL_CNT / SELC_CNT) * 100 ) AS DSCL_RT       /** Taux de détection !== 적발율 ==!*/
+            , NVL(FINE_AMT, 0) AS FINE_AMT              /** Taux de détection !== 벌금액 ==!*/
+        FROM (  SELECT NVL(BASE_RGSR_NO, 'Total') AS CD
+                     , MIN(RQST_BASE_CLSF_CD) AS RQST_BASE_CLSF_CD
+                     , MIN(BASE_RQST_TP_CD) AS BASE_RQST_TP_CD
+                     , SUM(1) AS DCLR_CNT
+                     , SUM(TAX_AMT) AS TAX_AMT
+                     , SUM(TXBS_AMT) AS TXBS_AMT
+                     , COUNT(*) AS SELC_CNT
+                     , SUM(TAX_AMT) AS SELC_TAX_AMT
+                     , SUM(TXBS_AMT) AS SELC_TXBS_AMT
+                     , SUM(GRN_SELC_CNT) AS GRN_SELC_CNT
+                     , SUM(BLU_SELC_CNT) AS BLU_SELC_CNT
+                     , SUM(ORE_SELC_CNT) AS ORE_SELC_CNT
+                     , SUM(RED_SELC_CNT) AS RED_SELC_CNT
+                     , NVL(SUM(CASE WHEN  A.ADRT_YN = 'Y' OR A.NTFC_YN = 'Y' THEN 1
+                               ELSE 0
+                               END
+                              ) , 0) AS DSCL_CNT    /** Nombre de détection !== 적발건수 ==! */
+                     , SUM(A.FINE_AMT) AS FINE_AMT
+                     , SUM(CASE WHEN ('Y' = A.ADRT_YN OR 'Y' = A.NTFC_YN)
+                                THEN ABS(A.TAX_AMT - ( SELECT SUM(Z.TAX_AMT)
+                                                       FROM  TB_CLRI_DED_TAX Z
+                                                       WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                       AND   Z.DEL_YN = 'N')
+                                                      )
+                                ELSE 0
+                                END
+                       ) AS DSCL_TAX_AMT    /** Droits et taxes de déclaration détectée !== 적발세금금액 ==! */
+                    , SUM(CASE WHEN ( 'Y' = A.ADRT_YN
+                                      OR 'Y' = A.NTFC_YN)
+                               THEN
+                                    ABS(A.TXBS_AMT - ( SELECT SUM(Z.TTXBS_NCY_AMT)
+                                                       FROM  TB_CLRI_DED_VLUT_COMN Z
+                                                       WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                       AND   Z.DEL_YN = 'N')
+                                        )
+                               ELSE 0
+                               END
+                       ) AS DSCL_TXBS_AMT   /** Valeur statistique de déclaration détectée !== 적발과세기준금액 ==! */
+                FROM ( SELECT A.DTL_DCSH_NO
+                            , A.SELC_DT
+                            , A.GRN_SELC_CNT
+                            , A.BLU_SELC_CNT
+                            , A.ORE_SELC_CNT
+                            , A.RED_SELC_CNT
+                            , A.RQST_BASE_CLSF_CD
+                            , A.BASE_RQST_TP_CD
+                            , A.BASE_RGSR_NO
+                            , A.TAX_AMT
+                            , A.TXBS_AMT
+                            , F.FINE_AMT
+                            , F.NTFC_YN
+                            , G.ADRT_YN
+                       FROM SELC_TABLE A
+                         , COLI_NTFC F
+                         , DED_ADRT_D G
+                       WHERE A.DTL_DCSH_NO = F.REFF_NO(+)               /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+                       AND   A.DTL_DCSH_NO = G.DTL_DCSH_NO(+)           /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+                       <if test="rqstBaseClsfCd != null and rqstBaseClsfCd != '' and rqstBaseClsfCd != 'Total'">
+                       AND   A.RQST_BASE_CLSF_CD = #{rqstBaseClsfCd}    /** Code De Classification Du Critère Renseigné !== 신청기준분류코드 ==! */
+                       </if>
+                       AND A.RQST_BASE_CLSF_CD NOT IN ('CW', 'SW')
+                ) A
+                GROUP BY A.BASE_RGSR_NO
+        )
+        ORDER  BY DECODE(RQST_BASE_CLSF_CD, 'AO', 1
+                                          , 'DE', 2
+                                          , 'MA', 3
+                                          , 'SC', 4
+                                          , 'FT', 5
+                                          , 'PR', 6
+                                          , 'HR', 7
+                                          , 'RA', 8
+                                          , 'SY', 9
+                                          , 10 ), CD ASC
+    </select>
+
+
+    <!--
+      Supprimer (détails de l'analyse des informations) !== 정보분석상세 삭제  ==!
+    -->
+    <update id="deleteIfanDtl"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo">
+        /* deleteIfanDtl */
+        UPDATE TB_RSMI_IFAN_DTL
+        SET DEL_YN = 'Y'
+          , LAST_CHPR_ID = #{lastChprId}               /* ID du modificateur final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM = SYSTIMESTAMP               /* Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE RPDC_NO = #{rpdcNo}                      /* Numéro de rapport !== 보고서번호 ==! */
+    </update>
+
+    <!--
+      Supprimer (bases de l'analyse de l'information) !== 정보분석기본 삭제  ==!
+    -->
+    <update id="deleteIfanBacs"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo">
+        /* deleteIfanBacs */
+        UPDATE TB_RSMI_IFAN_BSCS
+        SET DEL_YN = 'Y'
+        , LAST_CHPR_ID = #{lastChprId}               /* ID du modificateur final !== 최종변경자ID ==! */
+        , LAST_CHG_DTTM = SYSTIMESTAMP               /* Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE RPDC_NO = #{rpdcNo}                    /* Numéro de rapport !== 보고서번호 ==! */
+    </update>
+
+    <!--
+      Supprimer (destinataire de l'alerte) !== 정보분석경보수신자 삭제  ==!
+    -->
+    <update id="deleteIfanAlrtRcvr"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo">
+        /* deleteIfanAlrtRcvr */
+        UPDATE TB_RSMI_IFAN_BSCS_ALRT_RCVR
+        SET   DEL_YN = 'Y'
+            , LAST_CHPR_ID = #{lastChprId}           /* ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP           /* Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE RPDC_NO = #{rpdcNo}                    /* Numéro de rapport !== 보고서번호 ==! */
+    </update>
+
+    <!--
+      [Gérer le rapport périodique sur les résultats du fonctionnement] Modifier !== [운영실적정기보고서관리] 수정 ==!
+    -->
+    <update id="updateOprnAcrsReilRpdc"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOprnAcrsReilRpdcMgmtVo">
+        /* updateOprnAcrsReilRpdc */
+        UPDATE TB_RSMI_OPRN_ACRS_REIL_RPDC
+        SET ATCH_FILE_ID = #{atchFileId}                /* Id Du Fichier Joint !== 첨부파일ID ==! */
+          , RPRT_CN = #{rprtCn}                         /* Contenu de rapport !== 보고내용 ==! */
+          , LAST_CHPR_ID = #{lastChprId}                /* ID du modificateur final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM = CURRENT_TIMESTAMP           /* Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE RPDC_NO = #{rpdcNo}                       /* Numéro de rapport !== 보고서번호 ==! */
+        AND   RPRT_YYMM = #{rprtYymm}                   /* Date de rapport !== 보고년월 ==! */
+    </update>
+
+    <!--
+      [Gérer le rapport périodique sur les résultats du fonctionnement] Supprimer
+      !== [운영실적정기보고서관리] 삭제 ==!
+      !== 기능은 삭제이나 입력항목인 '보고내용','첨부파일' 항목만을 삭제 ==!
+    -->
+    <update id="deleteOprnAcrsReilRpdc"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOprnAcrsReilRpdcMgmtVo">
+        /* deleteOprnAcrsReilRpdc */
+        UPDATE TB_RSMI_OPRN_ACRS_REIL_RPDC
+        SET ATCH_FILE_ID = NULL                         /** Id Du Fichier Joint !== 첨부파일ID ==! */
+          , RPRT_CN = NULL                              /** Contenu de rapport !== 보고내용 ==! */
+          , LAST_CHPR_ID = #{lastChprId}                /* ID du modificateur final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM = CURRENT_TIMESTAMP           /* Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE RPDC_NO = #{rpdcNo}                       /* Numéro de rapport !== 보고서번호 ==! */
+        AND   RPRT_YYMM = #{rprtYymm}                   /* Date de rapport !== 보고년월 ==! */
+    </update>
+
+    <!--
+      [Gérer le rapport périodique sur les résultats du fonctionnement] Consulter la liste d'informations des critères non ciblage(s) !== [운영실적정기보고서관리] 미선별기준정보 목록 조회 ==!
+    -->
+    <select id="selectNoselBaseInfoList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOprnAcrsReilRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmBaseMgmtComnRsltVo">
+        /* selectNoselBaseInfoList */
+        SELECT RQST_BASE_CLSF_CD    /** Code De Classification Du Critère Renseigné !== 신청기준분류코드 ==! */
+            , BASE_RGSR_NO          /** Numéro D'Enregistrement !== 기준등록번호 ==! */
+            , APLY_STRT_DT          /** Date De Début De L'Application !== 적용시작일자 ==! */
+            , APLY_END_DT           /** Date De Fin De L'Application !== 적용종료일자 ==! */
+            , TO_CHAR(TO_DATE(APLY_STRT_DT,'YYYYMMDD'),'DD/MM/YYYY') || '~' || TO_CHAR(TO_DATE(APLY_END_DT,'YYYYMMDD'),'DD/MM/YYYY') AS APLY_PRID
+            , BASE_DESC             /** Description De Critère !== 기준설명 ==! */
+            , INSC_GDLN_CN          /** Directives D'Inspection  !== 검사지침내용 ==! */
+            , RSK_INFO_NO           /** Numéro de données sur les risques !== 위험정보번호 ==! */
+            , RSK_FTOR_NO           /** Numéro d'élément de risque !== 위험요소번호 ==! */
+        FROM TB_RSMI_BASE_MGMT_COMN
+        WHERE DEL_YN = 'N'
+        AND BASE_RGSR_NO IN
+		(
+			SELECT BASE_RGSR_NO
+			FROM TB_RSMI_NOSEL_BASE_INFO
+			WHERE DEL_YN = 'N'
+			AND RPDC_NO = #{rpdcNo}
+            AND RPRT_YYMM = #{rprtYymm}
+        )
+		ORDER BY RQST_BASE_CLSF_CD
+
+    </select>
+
+    <!--
+      [Évaluer le rapport sur l'analyse des informations] Sauvegarder !== [정보분석보고서평가] 저장 ==!
+    -->
+    <update id="updateIfanRpdcEv"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo">
+        /* updateIfanRpdcEv */
+        UPDATE TB_RSMI_IFAN_BSCS
+        SET RSLT_EV_CD = #{rsltEvCd}                /** Code d'évaluation du résultat !== 결과평가코드 ==! */
+          , LAST_CHPR_ID = #{lastChprId}            /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM = SYSTIMESTAMP            /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE RPDC_NO = #{rpdcNo}                   /** Numéro de rapport !== 보고서번호 ==! */
+        AND DEL_YN = 'N'
+    </update>
+
+    <!--
+      Consulter la liste complète des destinataires des alertes !== 경보수신자 전체 목록 조회 ==!
+    -->
+    <select id="selectAlrtRcvrAllList"
+            parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo"
+            resultType="alpass.ipt.rsm.anay.vo.RsmAnayIfanBscsAlrtRcvrVo">
+        /* selectAlrtRcvrAllList */
+        SELECT 'A' as ALRT_RCVR_PT_CD           /** Code de type de destinataire de l'alerte  !== 경보수신자유형코드 ==! */
+            , A.PBSR_NO                         /** Matricule Solde !== 공무원번호 ==! */
+            , A.ORGN_MGMT_CD                    /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )         /** Nom D'Organisme !== 조직명 ==! */
+            , A.EMP_NM                          /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.FONC_CD='500'
+        AND    ORGN_MGMT_CD IN (
+            SELECT B.ORGN_MGMT_CD
+            FROM   TB_POTI_ORGN B
+            WHERE  B.ORGN_TP_CD='DIR'
+            AND    B.UPR_ORGN_MGMT_CD='ORG0000205'
+        )
+        UNION ALL
+        SELECT 'B' as ALRT_RCVR_PT_CD
+             , A.PBSR_NO
+             , A.ORGN_MGMT_CD
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+             , A.EMP_NM
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.FONC_CD ='600'
+        UNION ALL
+        SELECT 'C' as ALRT_RCVR_PT_CD
+             , A.PBSR_NO
+             , A.ORGN_MGMT_CD
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+             , A.EMP_NM
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.ORGN_MGMT_CD='ORG0000106'
+        AND    A.FONC_CD ='300'
+        UNION ALL
+        SELECT 'D' as ALRT_RCVR_PT_CD
+            , A.PBSR_NO
+            , A.ORGN_MGMT_CD
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+            , A.EMP_NM
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.ORGN_MGMT_CD='ORG0000011'
+        AND    A.FONC_CD ='200'
+        UNION ALL
+        SELECT 'E' as ALRT_RCVR_PT_CD
+             , A.PBSR_NO
+             , A.ORGN_MGMT_CD
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+             , A.EMP_NM
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.PBSR_NO IN (
+           SELECT B.PBSR_NO
+           FROM   VW_POTI_ROLE_UNFC B
+           WHERE  B.ROLE_ID ='RSM004'
+        )
+        UNION ALL
+        SELECT 'F' as ALRT_RCVR_TP_CD
+             , A.PBSR_NO
+             , A.ORGN_MGMT_CD
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+             , A.EMP_NM
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.PBSR_NO IN (
+            SELECT B.PBSR_NO
+            FROM   VW_POTI_ROLE_UNFC B
+            WHERE  B.ROLE_ID ='RSM002'
+        )
+
+
+    </select>
+
+    <!--
+      Destinataire de l'alerte (Directeur régional) Consulter la liste !== 경보수신자(본부세관장) 목록 조회 ==!
+    -->
+    <select id="selectAlrtRcvrAList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.anay.vo.RsmAnayIfanBscsAlrtRcvrVo">
+        /* selectAlrtRcvrAList */
+        SELECT 'A' as ALRT_RCVR_PT_CD       /** Code de type de destinataire de l'alerte  !== 경보수신자유형코드 ==! */
+            , A.PBSR_NO                     /** Matricule Solde !== 공무원번호 ==! */
+            , A.ORGN_MGMT_CD                /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )         /** Nom D'Organisme !== 조직명 ==! */
+            , A.EMP_NM                      /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.FONC_CD='500'
+        AND    ORGN_MGMT_CD IN (
+            SELECT B.ORGN_MGMT_CD
+            FROM   TB_POTI_ORGN B
+            WHERE  B.ORGN_TP_CD='DIR'
+            AND    B.UPR_ORGN_MGMT_CD='ORG0000205'
+        )
+    </select>
+
+    <!--
+      Destinataire de l'alerte (Chef de service régional des contrôles a posteriori) Consulter la liste !== 경보수신자(계획심사부서장) 목록 조회 ==!
+    -->
+    <select id="selectAlrtRcvrBList"
+         parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo"
+         resultType="alpass.ipt.rsm.anay.vo.RsmAnayIfanBscsAlrtRcvrVo">
+        /* selectAlrtRcvrBList */
+        SELECT 'B' as ALRT_RCVR_PT_CD       /** Code de type de destinataire de l'alerte  !== 경보수신자유형코드 ==! */
+             , A.PBSR_NO                    /** Matricule Solde !== 공무원번호 ==! */
+             , A.ORGN_MGMT_CD               /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )        /** Nom D'Organisme !== 조직명 ==! */
+             , A.EMP_NM                     /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.FONC_CD ='600'
+    </select>
+
+    <!--
+      Destinataire de l'alerte (Directeur des enquêtes) Consulter la liste !== 경보수신자(조사국장) 목록 조회 ==!
+    -->
+    <select id="selectAlrtRcvrCList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.anay.vo.RsmAnayIfanBscsAlrtRcvrVo">
+        /* selectAlrtRcvrCList */
+        SELECT 'C' as ALRT_RCVR_PT_CD       /** Code de type de destinataire de l'alerte  !== 경보수신자유형코드 ==! */
+             , A.PBSR_NO                    /** Matricule Solde !== 공무원번호 ==! */
+             , A.ORGN_MGMT_CD               /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )        /** Nom D'Organisme !== 조직명 ==! */
+             , A.EMP_NM                     /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.ORGN_MGMT_CD='ORG0000106'
+        AND    A.FONC_CD ='300'
+    </select>
+
+    <!--
+      Destinataire de l'alerte (Inspection Générale des Services des Douanes) Consulter la liste !== 경보수신자(관세업무 총감독실) 목록 조회 ==!
+    -->
+    <select id="selectAlrtRcvrDList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.anay.vo.RsmAnayIfanBscsAlrtRcvrVo">
+        /* selectAlrtRcvrDList */
+        SELECT 'D' as ALRT_RCVR_PT_CD       /** Code de type de destinataire de l'alerte  !== 경보수신자유형코드 ==! */
+            , A.PBSR_NO                     /** Matricule Solde !== 공무원번호 ==! */
+            , A.ORGN_MGMT_CD                /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )         /** Nom D'Organisme !== 조직명 ==! */
+            , A.EMP_NM                      /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.ORGN_MGMT_CD='ORG0000011'
+        AND    A.FONC_CD ='200'
+    </select>
+
+    <!--
+      Destinataire de l'alerte (Analyste régional de la gestion des risques) Consulter la liste !== 경보수신자(RM세관분석가) 목록 조회 ==!
+    -->
+    <select id="selectAlrtRcvrEList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.anay.vo.RsmAnayIfanBscsAlrtRcvrVo">
+        /* selectAlrtRcvrEList */
+        SELECT 'E' as ALRT_RCVR_PT_CD       /** Code de type de destinataire de l'alerte  !== 경보수신자유형코드 ==! */
+             , A.PBSR_NO                    /** Matricule Solde !== 공무원번호 ==! */
+             , A.ORGN_MGMT_CD               /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )        /** Nom D'Organisme !== 조직명 ==! */
+             , A.EMP_NM                     /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.PBSR_NO IN (
+            SELECT B.PBSR_NO
+            FROM   VW_POTI_ROLE_UNFC B
+            WHERE  B.ROLE_ID ='RSM004'
+        )
+    </select>
+
+    <!--
+      Destinataire de l'alerte (Personne chargée de ciblage de la gestion des risques) Consulter la liste !== 경보수신자(RM선별담당자) 목록 조회 ==!
+    -->
+    <select id="selectAlrtRcvrFList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmIfanRpdcMgmtVo"
+        resultType="alpass.ipt.rsm.anay.vo.RsmAnayIfanBscsAlrtRcvrVo">
+        /* selectAlrtRcvrFList */
+        SELECT 'F' as ALRT_RCVR_PT_CD       /** Code de type de destinataire de l'alerte  !== 경보수신자유형코드 ==! */
+             , A.PBSR_NO                    /** Matricule Solde !== 공무원번호 ==! */
+             , A.ORGN_MGMT_CD               /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )        /** Nom D'Organisme !== 조직명 ==! */
+             , A.EMP_NM                     /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.PBSR_NO IN (
+            SELECT B.PBSR_NO
+            FROM   VW_POTI_ROLE_UNFC B
+            WHERE  B.ROLE_ID ='RSM002'
+        )
+    </select>
+
+
+</mapper>

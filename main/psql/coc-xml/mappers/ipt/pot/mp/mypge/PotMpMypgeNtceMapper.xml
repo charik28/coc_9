@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.mp.mypge.mapper.PotMpMypgeNtceMapper">
+
+  <!--
+    Consulter la liste de notification !== 알림 목록을 조회한다 ==!
+  -->
+  <select id="selectNtceList"
+    parameterType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeNtceVo"
+    resultType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeNtceVo">
+    /** selectNtceList */
+    <if test="navbarYn == null or navbarYn == ''">
+      <include refid="pagination.header"/>
+    </if>
+    SELECT PBSR_NO,
+           NTCE_SRNO,
+           NTCE_METH_CD,
+           NTCE_TTLE_NM,
+           NTCE_CN,
+           TO_CHAR(NTCE_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS NTCE_DTTM,
+           TO_CHAR(NTCE_DTTM, 'DD/MM/YYYY') AS NTCE_DT,
+           SNDR_NM,
+           SNDR_DEPT_CD,
+           SNDR_EML,
+           SNDR_TLPH_NO,
+           NTCE_SRVC_CNTT_ID,
+           NTCE_CFRM_YN,
+           FRST_REGST_ID,
+           TO_CHAR(FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM,
+           LAST_CHPR_ID,
+           TO_CHAR(LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+    FROM TB_POTI_NTCE
+    WHERE PBSR_NO = #{pbsrNo}
+    AND DEL_YN = 'N'
+    <if test="ntceSrno != null and ntceSrno != ''">
+      AND NTCE_SRNO = #{ntceSrno}
+    </if>
+    <if test="ntceSrno == null or ntceSrno == ''">
+      <if test="ntceStrtDt != null and ntceStrtDt != ''">
+        AND NTCE_DTTM <![CDATA[ >= ]]> TO_DATE(#{ntceStrtDt}, 'DD/MM/YYYY')
+      </if>
+      <if test="ntceEndDt != null and ntceEndDt != ''">
+        AND NTCE_DTTM <![CDATA[ <= ]]> TO_DATE(#{ntceEndDt}, 'DD/MM/YYYY')+0.9999
+      </if>
+      <if test="ntceTtleNm != null and ntceTtleNm != ''">
+        AND UPPER(NTCE_TTLE_NM) LIKE '%'||UPPER(#{ntceTtleNm})||'%'
+      </if>
+    </if>
+    <if test="ntceCfrmYn != null and ntceCfrmYn != ''">
+      AND NTCE_CFRM_YN = #{ntceCfrmYn}
+    </if>
+    <if test="searchNtceMethCd != null and searchNtceMethCd != ''">
+      AND NTCE_METH_CD = #{searchNtceMethCd}
+    </if>
+    ORDER BY NTCE_SRNO DESC, NTCE_DTTM
+    <if test="navbarYn == null or navbarYn == ''">
+      <include refid="pagination.footer"/>
+    </if>
+  </select>
+
+  <!--
+    Consulter le détail de notification !== 알림 상세를 조회한다 ==!
+  -->
+  <select id="selectNtce"
+    resultType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeNtceVo">
+    /** selectNtce */
+    SELECT PBSR_NO,
+			     NTCE_SRNO,
+			     NTCE_METH_CD,
+			     FN_GET_CD_VDVAL_NM('COM_0014', NTCE_METH_CD, #{langCd}) AS NTCE_METH_CD_NM,
+			     NTCE_TTLE_NM,
+			     NTCE_CN,
+			     TO_CHAR(NTCE_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS NTCE_DTTM,
+			     TO_CHAR(NTCE_DTTM, 'DD/MM/YYYY') AS NTCE_DT,
+			     SNDR_NM,
+			     SNDR_DEPT_CD,
+			     SNDR_EML,
+			     SNDR_TLPH_NO,
+			     NTCE_SRVC_CNTT_ID,
+			     NTCE_CFRM_YN,
+			     FRST_REGST_ID,
+			     TO_CHAR(FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM,
+			     LAST_CHPR_ID,
+			     TO_CHAR(LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+		FROM TB_POTI_NTCE
+		WHERE PBSR_NO = #{pbsrNo}
+		AND NTCE_SRNO = #{ntceSrno}
+		AND DEL_YN = 'N'
+  </select>
+
+  <!--
+    Modifier la confirmation de notification en 'Y' !== 알림 확인여부를 'Y'로 수정한다 ==!
+  -->
+  <update id="updateEmlSmsRcpnCfrm"
+          parameterType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeNtceVo">
+    /** updateEmlSmsRcpnCfrm */
+    UPDATE TB_POTI_NTCE
+		SET NTCE_CFRM_YN = 'Y',
+		    LAST_CHPR_ID = #{pbsrNo},
+			  LAST_CHG_DTTM = SYSTIMESTAMP
+		WHERE PBSR_NO = #{pbsrNo}
+		AND NTCE_SRNO = #{ntceSrno}
+  </update>
+
+</mapper>

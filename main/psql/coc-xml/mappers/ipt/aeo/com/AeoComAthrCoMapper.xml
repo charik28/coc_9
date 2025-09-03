@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+Mapper : OEA !==공인업체 Mapper==!
+(wonjun.cha)
+-->
+<mapper namespace="alpass.ipt.aeo.com.mapper.AeoComAthrCoMapper">
+
+    <!--
+    [OEA] Enregistrer !== [공인업체] 등록 ==!
+    -->
+	<insert id="insertAeoComAthrCo"
+		parameterType="alpass.ipt.aeo.com.vo.AeoiAthrCoVo">
+		/* insertAeoComAthrCo */
+        WITH UPSERT AS  (
+			UPDATE TB_AEOI_ATHR_CO    /** AEOI_OPÉRATEURS AGRÉÉS !== AEOI_공인업체 ==! */
+			   SET
+					  LAST_CHPR_ID = #{lastChprId}          /** Id Du Modificateur Final !== 최종변경자ID ==! */            
+					, LAST_CHG_DTTM = CURRENT_TIMESTAMP		/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */ 
+		    	<if test='aeoAthrGdCd != null and !"".equals(aeoAthrGdCd)'>
+					, AEO_ATHR_GD_CD = #{aeoAthrGdCd}             	/** Code de classement d'OEA !== AEO공인등급코드 ==! */
+	            </if>
+		    	<if test='athrStrtDt != null and !"".equals(athrStrtDt)'>
+	                , ATHR_STRT_DT = TO_CHAR(TO_DATE(REPLACE(#{athrStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')                /** Date de commencement d'agrément !== 공인시작일자 ==! */
+	            </if>
+		    	<if test='athrEndDt != null and !"".equals(athrEndDt)'>
+	                , ATHR_END_DT = TO_CHAR(TO_DATE(REPLACE(#{athrEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')                  /** Date de fermeture d'agrément !== 공인종료일자 ==! */
+	            </if>
+		    	<if test='athrSttsCd != null and !"".equals(athrSttsCd)'>
+	                , ATHR_STTS_CD = #{athrSttsCd}                	/** Code d'état d'agrément !== 공인상태코드 ==! */
+	            </if>
+		    	<if test='jrsdCstmCd != null and !"".equals(jrsdCstmCd)'>
+	                , JRSD_CSTM_CD = #{jrsdCstmCd}                	/** Code de bureau compétent !== 관할세관코드 ==! */
+	            </if>
+			 WHERE
+	           		  AEO_ATHR_NO = #{aeoAthrNo}                  	/** Numéro d'OEA !== AEO공인번호 ==! */
+	           AND	  NIF = #{nif}                  				/** NIF !== 납세번호 ==! */
+		     RETURNING *
+        )
+		INSERT INTO TB_AEOI_ATHR_CO (          /** AEOI_OPÉRATEURS AGRÉÉS !== AEOI_공인업체 ==! */
+				  AEO_ATHR_NO                  /** Numéro d'OEA !== AEO공인번호 ==! */
+                , CO_CD                        /** Code De La Compagnie !== 업체코드 ==! */
+                , AEO_ATHR_GD_CD               /** Code de classement d'OEA !== AEO공인등급코드 ==! */
+                , ATHR_STRT_DT                 /** Date de commencement d'agrément !== 공인시작일자 ==! */
+                , ATHR_END_DT                  /** Date de fermeture d'agrément !== 공인종료일자 ==! */
+                , ATHR_STTS_CD                 /** Code d'état d'agrément !== 공인상태코드 ==! */
+                , JRSD_CSTM_CD                 /** Code de bureau compétent !== 관할세관코드 ==! */
+                , NIF						/** NIF !== 납세번호 ==! */
+                , REGST_ID					/** ID du enregistrant !== 등록자ID ==! */
+				, FRST_REGST_ID				/** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+				, FRST_RGSR_DTTM			/** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+				, LAST_CHPR_ID				/** Id Du Modificateur Final !== 최종변경자ID ==! */
+				, LAST_CHG_DTTM				/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		)
+		SELECT
+                  #{aeoAthrNo}                 /** Numéro d'OEA !== AEO공인번호 ==! */
+                , #{coCd}                      /** Code De La Compagnie !== 업체코드 ==! */
+                , #{aeoAthrGdCd}               /** Code de classement d'OEA !== AEO공인등급코드 ==! */
+                , TO_CHAR(CURRENT_TIMESTAMP + '1 DAY', 'YYYYMMDD')                /** Date de commencement d'agrément !== 공인시작일자 ==! */
+                , TO_CHAR(CURRENT_TIMESTAMP + '1 DAY + 3 YEARS', 'YYYYMMDD')      /** Date de fermeture d'agrément !== 공인종료일자 ==! */
+                , #{athrSttsCd}                /** Code d'état d'agrément !== 공인상태코드 ==! */
+                , #{jrsdCstmCd}                /** Code de bureau compétent !== 관할세관코드 ==! */
+                , #{nif}               		/** NIF !== 납세번호 ==! */
+                , #{regstId}				/** ID du enregistrant !== 등록자ID ==! */
+				, #{frstRegstId}          	/** Id Du Premier Enregistrant  !== 최초등록자ID ==! */              
+				, CURRENT_TIMESTAMP         /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */   
+				, #{lastChprId}          	/** Id Du Modificateur Final !== 최종변경자ID ==! */                 
+				, CURRENT_TIMESTAMP         /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */ 
+		 WHERE	NOT EXISTS (SELECT * FROM UPSERT)
+	</insert>
+	
+    <!--
+    [OEA] Modifier !== [공인업체] 수정 ==!
+    -->
+	<update id="updateAeoComAthrCo"
+		parameterType="alpass.ipt.aeo.com.vo.AeoiAthrCoVo">
+		/* updateAeoComAthrCo */
+		UPDATE	  TB_AEOI_ATHR_CO                               /** AEOI_OPÉRATEURS AGRÉÉS !== AEOI_공인업체 ==! */
+		   SET
+				  LAST_CHPR_ID = #{lastChprId}          		/** Id Du Modificateur Final !== 최종변경자ID ==! */            
+				, LAST_CHG_DTTM = CURRENT_TIMESTAMP				/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */ 
+	    	<if test='aeoAthrGdCd != null and !"".equals(aeoAthrGdCd)'>
+				, AEO_ATHR_GD_CD = #{aeoAthrGdCd}             	/** Code de classement d'OEA !== AEO공인등급코드 ==! */
+            </if>
+	    	<if test='athrStrtDt != null and !"".equals(athrStrtDt)'>
+                , ATHR_STRT_DT = TO_CHAR(TO_DATE(REPLACE(#{athrStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')                /** Date de commencement d'agrément !== 공인시작일자 ==! */
+            </if>
+	    	<if test='athrEndDt != null and !"".equals(athrEndDt)'>
+                , ATHR_END_DT = TO_CHAR(TO_DATE(REPLACE(#{athrEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')                  /** Date de fermeture d'agrément !== 공인종료일자 ==! */
+            </if>
+	    	<if test='athrSttsCd != null and !"".equals(athrSttsCd)'>
+                , ATHR_STTS_CD = #{athrSttsCd}                	/** Code d'état d'agrément !== 공인상태코드 ==! */
+            </if>
+	    	<if test='jrsdCstmCd != null and !"".equals(jrsdCstmCd)'>
+                , JRSD_CSTM_CD = #{jrsdCstmCd}                	/** Code de bureau compétent !== 관할세관코드 ==! */
+            </if>
+		 WHERE
+           		  AEO_ATHR_NO = #{aeoAthrNo}                  	/** Numéro d'OEA !== AEO공인번호 ==! */
+           AND	  NIF = #{nif}                  				/** Numéro d’identification fiscale !== 납세식별번호 ==! */
+	</update>
+
+	<!--
+    [OEA commun] Consulter la liste des opérateurs agréés !==[AEO 공통] 공인업체 목록 조회==!
+    -->
+    <select id="selectAeoAthrCoList"
+    	parameterType="alpass.com.co.vo.ComCoVo"
+        resultType="alpass.ipt.aeo.com.vo.AeoComAthrCoVo">
+        /* selectAeoAthrCoList */
+		<include refid="pagination.header"/>
+		SELECT AC.AEO_ATHR_NO     /** Numéro d'OEA !== 	AEO공인번호 ==! */
+		     , AC.NIF             /** Numéro d’identification fiscale !== 납세식별번호 ==! */
+		     , PN.CONM AS CO_NM   /** Nom De L'Entreprise !== 상호 ==! */
+		     , AC.AEO_ATHR_GD_CD  /** Code de classement d'OEA !== AEO공인등급코드 ==! */
+		     , TO_CHAR(TO_DATE(AC.ATHR_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS ATHR_STRT_DT    /** Date de commencement d'agrément !== 공인시작일자 ==! */
+		     , TO_CHAR(TO_DATE(AC.ATHR_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS ATHR_END_DT      /** Date de fermeture d'agrément !== 공인종료일자 ==! */
+		     , AC.ATHR_STTS_CD    /** Code d'état d'agrément !== 공인상태코드 ==! */
+		FROM  TB_AEOI_ATHR_CO AC           /** AEOI_OPÉRATEURS AGRÉÉS !== AEOI_공인업체 ==! */
+		     , ALPASSEXT.TB_POTE_NIF PN    /** POTE_NIF !== POTE_NIF ==! */
+		WHERE AC.ATHR_STTS_CD IN ('AS1','AS4')
+		AND AC.ATHR_STRT_DT <![CDATA[ <= ]]> CURRENT_DATE
+		AND CURRENT_DATE  <![CDATA[ <= ]]> AC.ATHR_END_DT
+		<if test='nif != null and !"".equals(nif)'>
+			AND AC.NIF = #{nif}
+		</if>
+		<if test='coNm != null and !"".equals(coNm)'>
+			AND PN.CONM LIKE '%'||UPPER(#{coNm})||'%'
+		</if>
+		AND PN.DEL_YN = 'N'
+		AND PN.NIF = AC.NIF
+		ORDER BY AC.AEO_ATHR_NO DESC
+		<include refid="pagination.footer"/>
+    </select>
+
+	<!--
+    [OEA commun] Consulter le nom de l'opérateur agrée !==[AEO 공통] 공인업체 업체명 조회==!
+    -->
+	<select id="selectAeoAthrCoNm"
+		parameterType="alpass.ipt.aeo.com.vo.AeoComAthrCoVo"
+		resultType="alpass.ipt.aeo.com.vo.AeoComAthrCoVo">
+		/* selectAeoAthrCoNm */
+		SELECT PN.CONM AS CO_NM          /** Nom De L'Entreprise !== 상호 ==! */
+		FROM TB_AEOI_ATHR_CO AC          /** AEOI_OPÉRATEURS AGRÉÉS !== AEOI_공인업체 ==! */
+		   , ALPASSEXT.TB_POTE_NIF PN    /** POTE_NIF !== POTE_NIF ==! */
+		WHERE PN.DEL_YN = 'N'
+		AND PN.NIF = AC.NIF
+		AND AC.AEO_ATHR_NO = #{aeoAthrNo}
+	</select>
+
+
+</mapper>

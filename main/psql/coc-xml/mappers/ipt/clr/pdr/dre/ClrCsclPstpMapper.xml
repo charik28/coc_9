@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.clr.pdr.dre.mapper.ClrCsclPstpMapper">
+	<!-- 통관보류 처리 여부 조회   -->
+	<select id="selectCsclPstpPrcsYn" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedCsclPstpDcshVo" resultType="java.lang.String">
+		SELECT 1 AS CSCL_PSTY_YN
+		FROM TB_CLRI_DED_CSCL_PSTP
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		AND DEL_YN = 'N'
+		AND LAST_YN = 'Y'
+		AND CSCL_PSTP_RELE_YN = 'N'
+		<if test="inscPstpYn != null and inscPstpYn != ''">
+			AND	CSCL_PSTP_RSN_CD = 'C'
+		</if>
+		<if test="inscPstpYn == null">
+			AND	CSCL_PSTP_RSN_CD <![CDATA[ <> ]]> 'C'
+		</if>
+	</select>
+
+	<!-- 통관보류 해제   -->
+	<update id="updateTempPstpRele" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedCsclPstpVo" >
+		/* updatePstpRele */
+		UPDATE TB_CLRI_DED_CSCL_PSTP
+		SET CSCL_PSTP_RELE_CN = #{csclPstpReleCn}
+		  , LAST_CHPR_ID = #{lastChprId}
+		  , LAST_CHG_DTTM =  SYSTIMESTAMP
+		  , DEL_YN = 'N'
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		  AND LAST_YN = 'Y'
+
+	</update>
+
+	<!-- 통관보류 해제   -->
+	<update id="updatePstpRele" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedCsclPstpDcshVo" >
+		/* updatePstpRele */
+		UPDATE TB_CLRI_DED_CSCL_PSTP
+		SET CSCL_PSTP_RELE_EMP_ID = #{lastChprId}
+		  , CSCL_PSTP_RELE_DTTM =  SYSDATE
+		  , CSCL_PSTP_RELE_CN = #{csclPstpReleCn}
+		  , CSCL_PSTP_RELE_YN = 'Y'
+		  , LAST_CHPR_ID = #{lastChprId}
+		  , LAST_CHG_DTTM =  SYSTIMESTAMP
+		  , DEL_YN = 'N'
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		  AND LAST_YN = 'Y'
+
+	</update>
+
+	<!--
+    Modification de suspension O/N de dédouanement !== 통관보류여부 수정 ==!
+    -->
+	<update id="updateCsclPstpYn" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedComnVo">
+		/* ClriComPrcs_updateCsclPstpYn */
+		UPDATE TB_CLRI_DED_COMN
+		SET CSCL_PSTP_YN = #{csclPstpYn}
+		  , LAST_CHPR_ID = #{lastChprId}
+		  , LAST_CHG_DTTM =  SYSTIMESTAMP
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		  AND DEL_YN = 'N'
+	</update>
+
+	<!-- 통관보류 이력 목록조회   -->
+	<select id="selectPstpHistList" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo" resultType="alpass.ipt.clr.pdr.dre.vo.ClrDedCsclPstpHistVo">
+		/* selectPstpHistList */
+		<include refid="pagination.header" ></include>
+		SELECT
+			B.DTL_DCSH_NO
+			 , TO_CHAR(TO_DATE(B.DCLR_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS DCLR_DT
+			 , A.CSCL_PSTP_DGCNT
+			 , A.CSCL_PSTP_RSN_CD
+			 , A.CSCL_PSTP_CN
+			 , A.CSCL_PSTP_EMP_ID
+			 , (SELECT D.EMP_NM FROM TB_POTI_EMP D WHERE D.PBSR_NO = A.CSCL_PSTP_EMP_ID ) AS CSCL_PSTP_EMP_NM
+			 , TO_CHAR(A.CSCL_PSTP_DTTM,'DD/MM/YYYY HH24:MI:SS') AS CSCL_PSTP_DTTM
+			 , A.APRV_ID
+			 , C.APRV_SRNO
+			 , C.APRV_EMP_PBSR_NO
+			 , (SELECT D.EMP_NM FROM TB_POTI_EMP D WHERE C.APRV_EMP_PBSR_NO = D.PBSR_NO ) AS APRV_EMP_NM
+			 , TO_CHAR(C.APRV_PRCS_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS APRV_PRCS_DTTM
+			 , (SELECT APRV_PRCS_STTS_CD FROM TB_POTI_APRV WHERE DEL_YN = 'N' AND APRV_ID = A.APRV_ID) AS APRV_PRCS_STTS_CD
+			 , A.CSCL_PSTP_RELE_CN
+			 , A.CSCL_PSTP_RELE_YN
+			 , A.CSCL_PSTP_RELE_EMP_ID
+			 , A.CSCL_PSTP_RELE_EMP_ID||(SELECT ' | '||D.EMP_NM FROM TB_POTI_EMP D WHERE D.PBSR_NO = A.CSCL_PSTP_RELE_EMP_ID) AS CSCL_PSTP_RELE_EMP_NM
+			 , TO_CHAR(A.CSCL_PSTP_RELE_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS CSCL_PSTP_RELE_DTTM
+			 , A.cscl_pstp_rele_aprv_id
+			 , C1.APRV_SRNO as cscl_pstp_rele_APRV_SRNO
+			 , C1.APRV_EMP_PBSR_NO as cscl_pstp_rele_APRV_EMP_PBSR_NO
+			, (SELECT D.EMP_NM FROM TB_POTI_EMP D WHERE C1.APRV_EMP_PBSR_NO = D.PBSR_NO ) AS cscl_pstp_rele_APRV_EMP_NM
+			, TO_CHAR(C1.APRV_PRCS_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS cscl_pstp_rele_APRV_PRCS_DTTM
+			, (SELECT APRV_PRCS_STTS_CD FROM TB_POTI_APRV WHERE DEL_YN = 'N' AND APRV_ID = A.cscl_pstp_rele_aprv_id) AS cscl_pstp_rele_APRV_PRCS_STTS_CD
+			, (CASE WHEN A.cscl_pstp_rele_aprv_id <![CDATA[ <> ]]> '' THEN
+			    (SELECT ad.aprv_opin_cn from tb_poti_aprv_d ad where ad.aprv_id = A.cscl_pstp_rele_aprv_id LIMIT 1) ELSE '' END) AS cscl_pstp_rele_APRV_RTRN_DSMS_RSN
+		FROM  TB_CLRI_DED_CSCL_PSTP A
+		   , TB_CLRI_DED_COMN B
+		   , TB_POTI_APRV_D C
+		   , TB_POTI_APRV_D C1
+		WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+		  AND A.DEL_YN = 'N'
+		  AND B.DEL_YN = 'N'
+		  AND C.DEL_YN(+) = 'N'
+		  AND C1.del_yn(+) = 'N'
+		  AND A.DTL_DCSH_NO = #{dtlDcshNo}
+		  AND A.APRV_ID = C.APRV_ID(+)
+		  AND A.cscl_pstp_rele_aprv_id = C1.aprv_id(+)
+		ORDER BY TO_NUMBER(A.CSCL_PSTP_DGCNT) DESC
+		<include refid="pagination.footer" ></include>
+	</select>
+
+	<!-- 통관보류 조회   -->
+	<select id="selectPstp" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo" resultType="alpass.ipt.clr.pdr.dre.vo.ClrDedCsclPstpDcshVo">
+		/* selectPstp */
+		SELECT
+			A.DTL_DCSH_NO
+			 , A.CSCL_PSTP_DGCNT
+			 , A.CSCL_PSTP_EMP_ID
+			 , A.CSCL_PSTP_DTTM
+			 , A.CSCL_PSTP_RSN_CD
+			 , A.CSCL_PSTP_CN
+			 , A.APRV_ID
+			 , A.cscl_pstp_rele_aprv_id
+			 , B.APRV_PRCS_STTS_CD
+		     , C.APRV_PRCS_STTS_CD AS cscl_pstp_rele_APRV_PRCS_STTS_CD
+		FROM TB_CLRI_DED_CSCL_PSTP A
+		   , TB_POTI_APRV B
+		   , TB_POTI_APRV C
+		WHERE A.DTL_DCSH_NO =  #{dtlDcshNo}
+		  AND A.DEL_YN = 'N'
+		  AND A.LAST_YN = 'Y'
+		  AND A.CSCL_PSTP_RELE_YN = 'N'
+		  AND A.APRV_ID = B.APRV_ID(+)
+		  AND A.cscl_pstp_rele_aprv_id = C.APRV_ID(+)
+		  AND B.DEL_YN(+) = 'N'
+		  AND C.del_yn(+) = 'N'
+
+	</select>
+
+	<!-- Enregistrement de la suspension de dédouanement !== 통관보류 등록 ==!  -->
+	<insert id="insertPstp" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedCsclPstpDcshVo"	>
+		/* insertPstp */
+		<selectKey keyProperty="csclPstpDgcnt" resultType="BigDecimal" order="BEFORE">
+			SELECT NVL(MAX(CSCL_PSTP_DGCNT), 0) + 1 FROM TB_CLRI_DED_CSCL_PSTP WHERE DTL_DCSH_NO =  #{dtlDcshNo}
+		</selectKey>
+		INSERT INTO TB_CLRI_DED_CSCL_PSTP (
+		dtl_dcsh_no                            /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+		, cscl_pstp_dgcnt                      /** Nombre De Fois De La Suspension De Dédouanement !== 통관보류차수 ==! */
+		, cscl_pstp_emp_id                     /** Id De La Personne Suspendant Le Dédouanement !== 통관보류직원ID ==! */
+		, cscl_pstp_dttm                       /** Date Et Heure De La Suspension De Dédouanement !== 통관보류일시 ==! */
+		, cscl_pstp_rsn_cd                     /** Code De Motif De La Suspension De Dédouanement !== 통관보류사유코드 ==! */
+		, cscl_pstp_cn                         /** Contenu De La Suspension De Dédouanement !== 통관보류내용 ==! */
+		, cscl_pstp_rele_yn                    /** Suspension De Dédouanement On !== 통관보류해제여부 ==! */
+		, last_yn                              /** Final On !== 최종여부 ==! */
+		, del_yn                               /** Suppression On !== 삭제여부 ==! */
+		, frst_regst_id                        /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+		, frst_rgsr_dttm                              /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+		, last_chpr_id                         /** Id Du Modificateur Final !== 최종변경자ID ==! */
+		, last_chg_dttm                               /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		) VALUES (
+		#{dtlDcshNo}                           /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+		, #{csclPstpDgcnt}                             /** Nombre De Fois De La Suspension De Dédouanement !== 통관보류차수 ==! */
+		, #{frstRegstId}                             /** Id De La Personne Suspendant Le Dédouanement !== 통관보류직원ID ==! */
+		, SYSDATE                              /** Date Et Heure De La Suspension De Dédouanement !== 통관보류일시 ==! */
+		, #{csclPstpRsnCd}                             /** Code De Motif De La Suspension De Dédouanement !== 통관보류사유코드 ==! */
+		, #{csclPstpCn}                                /** Contenu De La Suspension De Dédouanement !== 통관보류내용 ==! */
+		, 'N'                            /** Suspension De Dédouanement On !== 통관보류해제여부 ==! */
+		, 'Y'                                    /** Final On !== 최종여부 ==! */
+		, 'N'                                          /** Suppression On !== 삭제여부 ==! */
+		, #{frstRegstId}                               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+		, SYSTIMESTAMP                                /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+		, #{lastChprId}                                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+		, SYSTIMESTAMP                                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		)
+		ON CONFLICT ( dtl_dcsh_no,cscl_pstp_dgcnt )
+		DO UPDATE SET
+		cscl_pstp_emp_id = #{lastChprId}                   /** Id De La Personne Suspendant Le Dédouanement !== 통관보류직원ID ==! */
+		,cscl_pstp_dttm = SYSTIMESTAMP                    /** Date Et Heure De La Suspension De Dédouanement !== 통관보류일시 ==! */
+		<if test="csclPstpRsnCd != null and csclPstpRsnCd != ''">
+			,cscl_pstp_rsn_cd = #{csclPstpRsnCd}                  /** Code De Motif De La Suspension De Dédouanement !== 통관보류사유코드 ==! */
+		</if>
+		<if test="csclPstpCn != null and csclPstpCn != ''">
+			,cscl_pstp_cn = #{csclPstpCn}                         /** Contenu De La Suspension De Dédouanement !== 통관보류내용 ==! */
+		</if>
+		<if test="csclPstpReleEmpId != null and csclPstpReleEmpId != ''">
+			,cscl_pstp_rele_emp_id = #{csclPstpReleEmpId}         /** Id De La Personne Clôturant La Suspension De Dédouanement !== 통관보류해제직원ID ==! */
+		</if>
+		<if test="csclPstpReleDttm != null and csclPstpReleDttm != ''">
+			,cscl_pstp_rele_dttm = #{csclPstpReleDttm}            /** Date Et Heure De La Clôture De La Suspension De Dédouanement !== 통관보류해제일시 ==! */
+		</if>
+		<if test="csclPstpReleCn != null and csclPstpReleCn != ''">
+			,cscl_pstp_rele_cn = #{csclPstpReleCn}                /** Contenu De La Clôture De La Suspension De Dédouanement !== 통관보류해제내용 ==! */
+		</if>
+		,cscl_pstp_rele_yn = 'N'                /** Suspension De Dédouanement On !== 통관보류해제여부 ==! */
+		,last_yn = 'Y'                                  /** Final On !== 최종여부 ==! */
+		,last_chpr_id = #{lastChprId}                         /** Id Du Modificateur Final !== 최종변경자ID ==! */
+		, last_chg_dttm = SYSTIMESTAMP                               /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		<if test="aprvId != null and aprvId != ''">
+			,aprv_id = #{aprvId}                                  /** Id D'Approbation  !== 결재 ID ==! */
+		</if>
+	</insert>
+
+	<!-- 통관보류 수정   -->
+	<update id="updatePstp" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedCsclPstpDcshVo" >
+		/* updatePstp */
+		UPDATE TB_CLRI_DED_CSCL_PSTP
+		SET CSCL_PSTP_EMP_ID = #{lastChprId}
+		  , CSCL_PSTP_DTTM =  SYSDATE
+		  , CSCL_PSTP_RSN_CD = #{csclPstpRsnCd}
+		  , CSCL_PSTP_CN = #{csclPstpCn}
+		  , LAST_CHPR_ID = #{lastChprId}
+		  , LAST_CHG_DTTM =  SYSTIMESTAMP
+		  , DEL_YN = 'N'
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		AND CSCL_PSTP_DGCNT = #{csclPstpDgcnt}
+
+	</update>
+
+	<!-- 통관보류해제 최신여부 수정   -->
+	<update id="updatePstpReleLastYn"  parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedCsclPstpVo"	>
+		/* updatePstpLastYn */
+		UPDATE TB_CLRI_DED_CSCL_PSTP
+		SET DEL_YN = 'N'
+		  , LAST_CHPR_ID = #{lastChprId}
+		  , LAST_CHG_DTTM =  SYSTIMESTAMP
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		  AND CSCL_PSTP_DGCNT = #{csclPstpDgcnt}
+
+	</update>
+
+	<!-- 통관보류 최신여부 수정   -->
+	<update id="updatePstpLastYn"  parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedCsclPstpDcshVo"	>
+		/* updatePstpLastYn */
+		UPDATE TB_CLRI_DED_CSCL_PSTP
+		SET   LAST_YN = 'N'
+		  , DEL_YN = 'N'
+		  , LAST_CHPR_ID = #{lastChprId}
+		  , LAST_CHG_DTTM =  SYSTIMESTAMP
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		  AND CSCL_PSTP_DGCNT = #{csclPstpDgcnt}
+
+	</update>
+
+	<!--
+    Suppression de la suspension de dédouanement !== 통관보류 삭제 ==!
+    -->
+	<update id="deletePstp" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedCsclPstpDcshVo">
+		/* deletePstp */
+		UPDATE  TB_CLRI_DED_CSCL_PSTP
+		SET
+			DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+		  ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+		  ,  LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+		WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+		  AND DTL_DCSH_NO = #{dtlDcshNo}
+		  AND CSCL_PSTP_DGCNT = #{csclPstpDgcnt}
+	</update>
+
+	<!--
+		Mettre à jour l'ID d'approvation de la main-levée de suspension de dédouanement !== 통관보류 해제 결재 ID 업데이트 ==!
+	-->
+	<update id="updateCsclPstpAprvId" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedCsclPstpVo">
+		/* updateCsclPstpAprvId */
+		UPDATE TB_CLRI_DED_CSCL_PSTP
+		SET APRV_ID = #{aprvId}
+		  , LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+		  , LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+		WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+		  AND DTL_DCSH_NO = #{dtlDcshNo}
+		  AND CSCL_PSTP_DGCNT = #{csclPstpDgcnt}
+	</update>
+
+	<!--
+		Mettre à jour l'ID d'approvation de la main-levée de suspension de dédouanement !== 통관보류 해제 결재 ID 업데이트 ==!
+	-->
+	<update id="updateCsclPstpReleAprvId" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedCsclPstpVo">
+		/* updateCsclPstpAprvId */
+		UPDATE TB_CLRI_DED_CSCL_PSTP
+		SET cscl_pstp_rele_aprv_id = #{csclPstpReleAprvId}
+		  , LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+		  , LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+		WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+		  AND DTL_DCSH_NO = #{dtlDcshNo}
+		  AND CSCL_PSTP_DGCNT = #{csclPstpDgcnt}
+	</update>
+
+
+	<!--
+		* SQL 설명 : Consulter l'ordre séquentielle maximale de la suspension de dédouanement !== 통관보류 최대 차수 조회 ==!
+	-->
+	<select id="selectCsclPstpDgcnt" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedCsclPstpVo" resultType="int">
+		/* selectCsclPstpDgcnt */
+		SELECT NVL(MAX(CSCL_PSTP_DGCNT), 0)
+		FROM   TB_CLRI_DED_CSCL_PSTP
+		WHERE  DTL_DCSH_NO =  #{dtlDcshNo}
+		  AND    DEL_YN = 'N'
+	</select>
+
+	<!-- 수리여부 조회   -->
+	<select id="selectDAUAcptYn" parameterType="java.lang.String" resultType="java.lang.String">
+		/* selectDAUAcptYn */
+		SELECT
+			DTL_DCSH_NO
+		FROM TB_CLRI_DED_PRCS_BRKD
+		WHERE DTL_DCSH_NO       =  #{dtlDcshNo}
+		  AND DEL_YN       = 'N'
+		  AND PRCS_STTS_CD = 'D04' /* 수리 */
+		  AND ROWNUM       = 1
+	</select>
+
+	<!-- 통관보류 여부 조회   -->
+	<select id="selectCsclPstpYn" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedCsclPstpDcshVo" resultType="java.lang.String">
+		/* ClriComPrcs_selectCsclPstpYn */
+
+		SELECT 1 AS CSCL_PSTY_YN
+		FROM TB_CLRI_DED_CSCL_PSTP A
+		   , TB_POTI_APRV B
+		WHERE A.DTL_DCSH_NO =  #{dtlDcshNo}
+		  AND A.DEL_YN = 'N'
+		  AND A.LAST_YN = 'Y'
+		  AND A.CSCL_PSTP_RELE_YN = 'N'
+		  AND A.APRV_ID = B.APRV_ID
+		  AND A.CSCL_PSTP_RSN_CD = 'A'
+		  AND B.APRV_PRCS_STTS_CD = 'I04' /* I04 : 결재승인완료 */
+		UNION ALL
+		SELECT 1 FROM tb_clri_ded_comn A
+		WHERE A.DEL_YN(+) = 'N'
+		  AND A.dtl_dcsh_no(+) = #{dtlDcshNo} AND A.cscl_pstp_yn = 'Y'
+		UNION DISTINCT
+		SELECT 1
+		FROM TB_CLRI_DED_CSCL_PSTP A
+		   , TB_POTI_APRV B
+		WHERE A.DEL_YN = 'N'
+		  AND B.del_yn(+) = 'N'
+		  AND A.LAST_YN = 'Y'
+		  AND A.CSCL_PSTP_RELE_YN = 'N'
+		  AND A.cscl_pstp_rele_aprv_id = B.APRV_ID
+		  AND A.DTL_DCSH_NO =  #{dtlDcshNo}
+		  AND B.APRV_PRCS_STTS_CD(+) <![CDATA[ <> ]]> 'I04' /* I04 : 결재승인완료 */
+		  AND A.CSCL_PSTP_RSN_CD <![CDATA[ <> ]]> 'A'
+	</select>
+</mapper>

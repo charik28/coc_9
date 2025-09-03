@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.crpt.mapper.PotPmCrptDcshMapper">
+
+    <!--
+       Consulter la liste des signalements de cas d'irrégularité !==부패신고관리 리스트를 조회한다==!
+    -->
+    <select id="selectCrptDcshList"
+            parameterType="alpass.ipt.pot.pm.crpt.vo.PotPmCrptDcshVo"
+            resultType="alpass.ipt.pot.pm.crpt.vo.PotPmCrptDcshVo">
+        /** selectCrptDcshList */
+        <include refid="pagination.header"/>
+      SELECT
+          COMP_SRNO
+        , COMP_TP_CD
+        , FN_GET_CD_VDVAL_NM('COM_0043', COMP_TP_CD, #{langCd}) AS COMP_TP_NM
+        , convert_from(decode(COMP_TTLE, 'base64'), 'utf8') AS COMP_TTLE
+        , convert_from(decode(COMP_CN, 'base64'), 'utf8') AS COMP_CN
+        , convert_from(decode(REPN_NM, 'base64'), 'utf8') AS REPN_NM
+        , convert_from(decode(REPN_EML, 'base64'), 'utf8') AS REPN_EML
+        , convert_from(decode(REPN_TLPH_NO, 'base64'), 'utf8') AS REPN_TLPH_NO
+        , COMP_PRCS_CN
+        , COMP_PRCS_STTS_CD
+        , FN_GET_PRCS_STTS_CD_VDVAL_NM('COM_9308', COMP_PRCS_STTS_CD, #{langCd}) AS COMP_PRCS_STTS_NM
+        , SAVE_TP_CD
+        , FN_GET_CD_VDVAL_NM('COM_0045', SAVE_TP_CD, #{langCd}) AS SAVE_TP_NM
+        , ATCH_FILE_ID
+        , FRST_REGST_ID
+        , TO_CHAR(FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , TO_CHAR(LAST_CHG_DTTM, 'DD/MM/YYYY') AS LAST_CHG_DTTM
+      FROM TB_POTE_COMP
+      WHERE DEL_YN = 'N'
+      <if test="acapDttmFrom != null and acapDttmFrom != ''">
+        AND ACAP_DTTM BETWEEN TO_DATE('000000' || #{acapDttmFrom}, 'HH24MISSDD/MM/YYYY') AND TO_DATE('235959' || #{acapDttmTo}, 'HH24MISSDD/MM/YYYY')
+      </if>
+      <if test="compTpCd != null and compTpCd != ''">
+        AND COMP_TP_CD = #{compTpCd}
+      </if>
+      <if test="compTtle != null and compTtle != ''">
+        AND convert_from(decode(COMP_TTLE, 'base64'), 'utf8')  LIKE '%'||#{compTtle}||'%'
+      </if>
+      <if test="compPrcsSttsCd != null and compPrcsSttsCd != ''">
+        AND COMP_PRCS_STTS_CD = #{compPrcsSttsCd}
+      </if>
+      ORDER BY ACAP_DTTM DESC
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+      Gérer un signalement de cas d'irrégularité !==부패신고를 처리한다==!
+    -->
+    <update id="updateCrptDcshPrcs" parameterType="alpass.ipt.pot.pm.crpt.vo.PotPmCrptDcshVo">
+      /** updateCrptDcshPrcs */
+      UPDATE TB_POTE_COMP
+      SET
+        COMP_PRCS_CN = #{compPrcsCn}
+      , COMP_PRCS_STTS_CD = #{compPrcsSttsCd}
+      , LAST_CHPR_ID = #{lastChprId}
+      , LAST_CHG_DTTM = SYSTIMESTAMP
+      WHERE COMP_SRNO = #{compSrno}
+    </update>
+
+</mapper>

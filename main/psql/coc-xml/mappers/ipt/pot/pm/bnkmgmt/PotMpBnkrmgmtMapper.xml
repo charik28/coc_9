@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.pot.pm.bnkmgmt.mapper.PotPmBnkmgmtMapper">
+
+	<!--
+			Consulter la liste des utilisateurs de banque !== 은행사용자 목록을 조회한다.==!
+	-->
+	<select id="selectBnkUserList" parameterType="alpass.ipt.pot.pm.bnkmgmt.vo.PotPmBnkmgmtRgsrVo"
+			resultType="alpass.ipt.pot.pm.bnkmgmt.vo.PotPmBnkmgmtRgsrVo">
+		/* selectBnkUserList */
+		<include refid="pagination.header"/>
+		SELECT
+		A.USER_ID
+		, A.USER_NM
+		, A.BNK_CD
+		, A.BNK_BRNH_CD
+		, A.BNK_HOFC_BRNH_CD
+		, A.RGSR_DT
+		, A.RGSR_ID
+		, A.USER_POSI_CD
+		, A.INHB_RGSR_NO
+		, A.TLPH_NO
+		, A.GNDR_CD
+		, A.USER_ADDR
+		, A.EML
+		, A.PSPR_NO
+		, A.EML_RCPN_YN
+		, A.SMS_RCPN_YN
+		, A.POST_CD
+		, A.USER_IMG
+		, A.USER_FMNM
+		, A.NIN
+		, A.BRDY
+		, A.BTHP
+		, A.NATV_IDCR_TP_CD
+		, A.NATV_IDCR_NO
+		, TO_CHAR(TO_DATE(A.NATV_IDCR_VALD_STRT_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') NATV_IDCR_VALD_STRT_DT
+		, TO_CHAR(TO_DATE(A.NATV_IDCR_VALD_END_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') NATV_IDCR_VALD_END_DT
+		, A.NATV_IDCR_ISS_PLC_NM
+		, A.TLPH_NO2
+		, A.TLPH_NO3
+		, A.USER_STTS_CD
+		, FN_GET_BNK_NM(A.BNK_CD) AS BNK_NM
+		, FN_GET_BNK_BRNH_NM(A.BNK_CD, A.BNK_BRNH_CD) AS BNK_BRNH_NM
+		, TO_CHAR(TO_DATE(A.RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RGSR_DT
+		, CONVERT_FROM(DECODE(A.PWD, 'base64'), 'utf8') AS PWD
+		, A.INTZ_REQST_YN
+		, A.DEL_YN
+		, A.FRST_RGSR_DTTM
+		, A.FRST_REGST_ID
+		, A.LAST_CHPR_ID
+		, A.LAST_CHG_DTTM
+		, B.ACCT_LCKED_YN
+		FROM TB_POTE_BNK_USER A, TB_COM_USER_ACCT B
+		WHERE A.DEL_YN = 'N'
+		AND A.USER_ID = B.USER_ID
+		<if test="(searchKeywordFrom != null and searchKeywordFrom != '') and (searchKeywordTo != null and searchKeywordTo != '') ">
+				AND A.RGSR_DT BETWEEN TO_CHAR(TO_DATE(#{searchKeywordFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{searchKeywordTo},'DD/MM/YYYY'), 'YYYYMMDD')
+			</if>
+			<if test="searchUserId != null and searchUserId != ''">
+				AND UPPER(A.USER_ID) LIKE '%' || UPPER(#{searchUserId}) || '%'
+			</if>
+			<if test="searchBnkEmpNo != null and searchBnkEmpNo != ''">
+				AND A.BNK_EMP_NO = #{searchBnkEmpNo}
+			</if>
+			<if test="searchBnkCd != null and searchBnkCd != ''">
+				AND A.BNK_CD = #{searchBnkCd}
+			</if>
+			<if test="searchBnkBrnhCd != null and searchBnkBrnhCd != ''">
+				AND A.BNK_BRNH_CD = #{searchBnkBrnhCd}
+			</if>
+			<if test="searchUserPosiCd != null and searchUserPosiCd != ''">
+				AND A.USER_POSI_CD = #{searchUserPosiCd}
+			</if>
+			ORDER BY BNK_CD
+		<include refid="pagination.footer"/>
+	</select>
+
+
+	<!--
+    Consulter l'enregistrement d'ID d'utilisateur !== 사용자ID 등록 여부를 조회 한다. ==!
+	-->
+	<select id="selectUserIdChk" parameterType="alpass.ipt.pot.pm.bnkmgmt.vo.PotPmBnkmgmtRgsrVo" resultType="int">
+		/* selectUserIdChk */
+
+		SELECT
+	  			 COUNT(1)
+		FROM TB_POTE_BNK_USER A
+		WHERE DEL_YN = 'N'
+		AND   USER_ID = #{userId}
+	</select>
+
+	<!--
+    Consulter l'enregistrement de numéro d'employé de la banque O/N !== 은행직원번호 등록 여부를 조회 한다. ==!
+	-->
+	<select id="selectBnkEmpNoChk" parameterType="alpass.ipt.pot.pm.bnkmgmt.vo.PotPmBnkmgmtRgsrVo" resultType="int">
+		/* selectBnkEmpNoChk */
+		SELECT
+			COUNT(1)
+		FROM TB_POTE_BNK_USER A
+		WHERE DEL_YN = 'N'
+			AND   BNK_EMP_NO = #{bnkEmpNo}
+	</select>
+
+
+	<!--
+    Enregistrer l'utilisateur bancaire !== 은행사용자를 등록 한다. ==!
+	-->
+	<insert id="insertBnkUser" parameterType="alpass.ipt.pot.pm.bnkmgmt.vo.PotPmBnkmgmtRgsrVo">
+		/* insertBnkUser */
+		WITH UPSERT AS
+		(
+		UPDATE TB_POTE_BNK_USER SET
+			  DEL_YN = 'N'
+			, LAST_CHPR_ID = #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+		  , PWD = ENCODE(CONVERT_TO(#{pwd}, 'utf8'), 'base64')
+      , USER_NM = #{userNm}
+			, INHB_RGSR_NO = #{inhbRgsrNo}
+			, TLPH_NO = #{tlphNo}
+			, GNDR_CD = #{gndrCd}
+			, USER_ADDR = #{userAddr}
+			, EML = #{eml}
+			, PSPR_NO = #{psprNo}
+			, EML_RCPN_YN = #{smsRcpnYn}
+			, SMS_RCPN_YN = #{smsRcpnYn}
+			, USER_STTS_CD = #{userSttsCd}
+			, POST_CD = #{postCd}
+			, USER_IMG = #{userImg}
+			, USER_FMNM = #{userFmnm}
+			, NIN = #{nin}
+			, NATV_IDCR_TP_CD = #{natvIdcrTpCd}
+			, NATV_IDCR_NO = #{natvIdcrNo}
+			, NATV_IDCR_VALD_STRT_DT = REPLACE(#{natvIdcrValdStrtDt}, '/','')
+			, NATV_IDCR_VALD_END_DT = REPLACE(#{natvIdcrValdEndDt}, '/','')
+			, NATV_IDCR_ISS_PLC_NM = #{natvIdcrIssPlcNm}
+			, BRDY = REPLACE(#{brdy}, '/', '')
+			, BTHP = #{bthp}
+			, TLPH_NO2 = #{tlphNo2}
+			, TLPH_NO3 = #{tlphNo3}
+			, BNK_CD = #{bnkCd}
+			, RGSR_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+			, USER_POSI_CD = #{userPosiCd}
+		  , BNK_HOFC_BRNH_CD = #{bnkHofcBrnhCd}
+		  , INTZ_REQST_YN = 'N'
+		WHERE USER_ID = #{userId}
+			returning *
+		)
+		INSERT INTO TB_POTE_BNK_USER
+		(
+				USER_ID
+		  , PWD
+			, BNK_CD
+			, USER_POSI_CD
+			, BNK_HOFC_BRNH_CD
+			, USER_NM
+			, INHB_RGSR_NO
+			, TLPH_NO
+			, GNDR_CD
+			, USER_ADDR
+			, EML
+			, PSPR_NO
+			, EML_RCPN_YN
+			, SMS_RCPN_YN
+			, USER_STTS_CD
+			, POST_CD
+			, USER_IMG
+			, USER_FMNM
+			, NIN
+			, NATV_IDCR_TP_CD
+			, NATV_IDCR_NO
+			, NATV_IDCR_VALD_STRT_DT
+			, NATV_IDCR_VALD_END_DT
+			, BRDY
+			, BTHP
+			, TLPH_NO2
+			, TLPH_NO3
+			, NATV_IDCR_ISS_PLC_NM
+			, RGSR_DT
+			, RGSR_ID
+			, INTZ_REQST_YN
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+		)
+		SELECT
+			  #{userId}
+			,	ENCODE(CONVERT_TO(#{pwd}, 'utf8'), 'base64')
+			, #{bnkCd}
+			, #{userPosiCd}
+		  , #{bnkHofcBrnhCd}
+			, #{userNm}
+			, #{inhbRgsrNo}
+			, #{tlphNo}
+			, #{gndrCd}
+			, #{userAddr}
+			, #{eml}
+			, #{psprNo}
+			, #{smsRcpnYn}
+			, #{smsRcpnYn}
+			, #{userSttsCd}
+			, #{postCd}
+			, #{userImg}
+			, #{userFmnm}
+			, #{nin}
+			, #{natvIdcrTpCd}
+			, #{natvIdcrNo}
+			, REPLACE(#{natvIdcrValdStrtDt}, '/','')
+			, REPLACE(#{natvIdcrValdEndDt}, '/','')
+			, REPLACE(#{brdy}, '/', '')
+			, #{bthp}
+			, #{tlphNo2}
+			, #{tlphNo3}
+			, #{natvIdcrIssPlcNm}
+			, TO_CHAR(SYSDATE, 'YYYYMMDD')
+			, #{frstRegstId}
+		  , 'N'
+			, 'N'
+			, #{frstRegstId}
+			, SYSTIMESTAMP
+			, #{lastChprId}
+			, SYSTIMESTAMP
+			WHERE NOT EXISTS(SELECT * FROM UPSERT)
+	</insert>
+
+
+	<!--
+    Enregistrer le compte de l'utilisateur bancaire !== 은행사용자 계정을 등록 한다. ==!
+	-->
+	<insert id="insertBnkUserAcct" parameterType="alpass.ipt.pot.pm.bnkmgmt.vo.PotPmBnkUserAcctVo">
+		/* insertBnkUserAcct */
+		WITH UPSERT AS
+		(
+			UPDATE TB_COM_USER_ACCT
+			SET
+					DEL_YN = 'N'
+				, LAST_CHPR_ID = #{lastChprId}
+				, LAST_CHG_DTTM = SYSTIMESTAMP
+				, PWD = #{pwd}
+				, PWD_CHG_DT = #{pwdChgDt}
+				, PWD_INTZ_YN = #{pwdIntzYn}
+				, PWD_FAIL_NCNT = #{pwdFailNcnt}
+				, ACCT_LCKED_YN = #{acctLckedYn}
+				, ACCT_LCKED_RSN_CD = #{acctLckedRsnCd}
+				, ACCT_LCKED_DT = #{acctLckedDt}
+				, ACCT_LCKED_RELE_DT = #{acctLckedReleDt}
+				, ACCT_PUSE_YN = #{acctPuseYn}
+				, ACCT_PUSE_RSN_CD = #{acctPuseRsnCd}
+				, ACCT_PUSE_STRT_DT = #{acctPuseStrtDt}
+				, ACCT_PUSE_END_DT = #{acctPuseEndDt}
+				, USER_IP = #{userIp}
+				, LAST_LGN_DTTM = #{lastLgnDttm}
+				, ADIT_CRTF_CD = #{aditCrtfCd}
+				, USER_CLSF_CD = #{userClsfCd}
+				, FRST_LGN_YN = #{frstLgnYn}
+			WHERE USER_ID = #{userId}
+			AND USER_CLSF_CD = 'B'
+				RETURNING *
+	  )
+		INSERT INTO TB_COM_USER_ACCT
+		(
+				USER_ID
+			, PWD
+			, PWD_CHG_DT
+			, PWD_INTZ_YN
+			, PWD_FAIL_NCNT
+			, ACCT_LCKED_YN
+			, ACCT_LCKED_RSN_CD
+		  , ACCT_LCKED_DT
+			, ACCT_LCKED_RELE_DT
+		  , ACCT_PUSE_YN
+		  , ACCT_PUSE_RSN_CD
+		  , ACCT_PUSE_STRT_DT
+		  , ACCT_PUSE_END_DT
+		  , USER_IP
+		  , LAST_LGN_DTTM
+		  , ADIT_CRTF_CD
+		  , USER_CLSF_CD
+		  , FRST_LGN_YN
+		  , DEL_YN
+		  , FRST_REGST_ID
+		  , FRST_RGSR_DTTM
+		  , LAST_CHPR_ID
+		  , LAST_CHG_DTTM
+		)
+		SELECT
+			  #{userId}
+			, #{pwd}
+			, #{pwdChgDt}
+			, #{pwdIntzYn}
+			, #{pwdFailNcnt}
+			, #{acctLckedYn}
+			, #{acctLckedRsnCd}
+			, #{acctLckedDt}
+			, #{acctLckedReleDt}
+			, #{acctPuseYn}
+			, #{acctPuseRsnCd}
+			, #{acctPuseStrtDt}
+			, #{acctPuseEndDt}
+			, #{userIp}
+			, #{lastLgnDttm}
+			, #{aditCrtfCd}
+			, #{userClsfCd}
+			, 'Y'
+			, 'N'
+			, #{frstRegstId}
+			, SYSTIMESTAMP
+			, #{lastChprId}
+			, SYSTIMESTAMP
+			WHERE  NOT EXISTS(SELECT * FROM UPSERT)
+	</insert>
+
+	<!--
+    Modifier le compte de l'utilisateur bancaire !== 은행사용자 계정을 수정 한다. ==!
+	-->
+	<update id="updateBnkUserAcct" parameterType="alpass.ipt.pot.pm.bnkmgmt.vo.PotPmBnkUserAcctVo">
+		/* updateBnkUserAcct */
+		UPDATE TB_COM_USER_ACCT
+		SET
+        DEL_YN = 'N'
+			, ACCT_LCKED_YN = #{acctLckedYn}
+			, ACCT_LCKED_RSN_CD = #{acctLckedRsnCd}
+			, LAST_CHPR_ID = #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+		  , PWD_CHG_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+		  , PWD_INTZ_YN = 'Y'
+		  , PWD_FAIL_NCNT = 0
+		  , FRST_LGN_YN = 'Y'
+		  , PWD = #{pwd}
+			, ADIT_CRTF_CD = #{aditCrtfCd}
+		WHERE USER_ID = #{userId}
+			AND USER_CLSF_CD = 'B'
+	</update>
+
+	<!--
+    Enregistrer le rôle de l'utilisateur bancaire !== 은행사용자 역할을 등록 한다. ==!
+	-->
+	<insert id="insertBnkUserAuth" parameterType="alpass.ipt.pot.pm.bnkmgmt.vo.PotPmBnkUserAuthVo">
+		/* insertBnkUserAuth */
+		WITH UPSERT AS
+		(
+			UPDATE TB_COM_BNK_USER_AUTH
+			SET
+					DEL_YN = 'N'
+				, LAST_CHPR_ID = #{lastChprId}
+				, LAST_CHG_DTTM = SYSTIMESTAMP
+				, ROLE_ID = #{roleId}
+			WHERE USER_ID = #{userId}
+				RETURNING *
+	  )
+		INSERT INTO TB_COM_BNK_USER_AUTH
+		(
+				USER_ID
+			, ROLE_ID
+			, USE_YN
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+		)
+		SELECT
+			  #{userId}
+			, #{roleId}
+			, #{useYn}
+			, 'N'
+			, #{frstRegstId}
+			, SYSTIMESTAMP
+			, #{lastChprId}
+			, SYSTIMESTAMP
+			WHERE  NOT EXISTS(SELECT * FROM UPSERT)
+	</insert>
+
+	<!--
+    Modifier l'utilisateur bancaire !== 은행사용자를 수정 한다. ==!
+	-->
+	<update id="updateBnkUser" parameterType="alpass.ipt.pot.pm.bnkmgmt.vo.PotPmBnkmgmtRgsrVo">
+		/* updateBnkUser */
+		UPDATE TB_POTE_BNK_USER
+		SET
+		    DEL_YN = 'N'
+			, BNK_EMP_NO = #{bnkEmpNo}
+			, BNK_CD = #{bnkCd}
+			, BNK_BRNH_CD = #{bnkBrnhCd}
+			, USER_NM = #{userNm}
+			, USER_FMNM = #{userFmnm}
+			, USER_IMG = #{userImg}
+			, USER_POSI_CD = #{userPosiCd}
+			, LAST_CHPR_ID = #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+		WHERE USER_ID = #{userId}
+			AND   DEL_YN = 'N'
+	</update>
+
+	<!--
+  Supprimer l'utilisateur bancaire !== 은행사용자를 삭제 한다. ==!
+-->
+	<update id="deleteBnkUser" parameterType="alpass.ipt.pot.pm.bnkmgmt.vo.PotPmBnkmgmtRgsrVo">
+		/* deleteBnkUser */
+		UPDATE TB_POTE_BNK_USER
+		SET
+			  DEL_YN = 'Y'
+			, LAST_CHPR_ID = #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+		WHERE USER_ID = #{userId}
+			AND   DEL_YN = 'N';
+	</update>
+
+
+	<!--
+  Supprimer le compte de l'utilisateur bancaire !== 은행사용자 계정을 삭제 한다. ==!
+	-->
+	<update id="deleteBnkUserAcct" parameterType="alpass.ipt.pot.pm.bnkmgmt.vo.PotPmBnkmgmtRgsrVo">
+		/* deleteBnkUserAcct */
+		UPDATE TB_COM_USER_ACCT
+		SET
+			DEL_YN = 'Y'
+			, LAST_CHPR_ID = #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+		WHERE USER_ID = #{userId}
+			AND USER_CLSF_CD = 'B'
+			AND   DEL_YN = 'N';
+	</update>
+
+
+	<!--
+  Supprimer le rôle de l'utilisateur bancaire !== 은행사용자 역할을 삭제 한다. ==!
+	-->
+	<update id="deleteBnkUserAuth" parameterType="alpass.ipt.pot.pm.bnkmgmt.vo.PotPmBnkmgmtRgsrVo">
+		/* deleteBnkUserAuth */
+		UPDATE TB_COM_BNK_USER_AUTH
+		SET DEL_YN        = 'Y'
+			, LAST_CHPR_ID  = #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+		WHERE USER_ID = #{userId}
+			AND DEL_YN = 'N';
+	</update>
+
+	<!--
+	Bloquer le compte !== 계정잠금  ==!
+-->
+	<update id="updateBankUserAcctLckedRele"
+		parameterType="alpass.ipt.pot.pm.bnkmgmt.vo.PotPmBnkmgmtRgsrVo">
+		/* updateBankUserAcctLckedRele */
+		UPDATE TB_COM_USER_ACCT
+		SET ACCT_LCKED_YN = #{acctLckedYn}
+		<if test="acctLckedYn == 'Y'.toString()">
+			, ACCT_LCKED_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+		</if>
+		<if test="acctLckedYn == 'N'.toString()">
+			, ACCT_LCKED_RSN_CD = NULL
+			, ACCT_LCKED_DT = NULL
+			, ACCT_LCKED_RELE_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+			, PWD_FAIL_NCNT = 0
+		</if>
+		, LAST_CHG_DTTM = SYSTIMESTAMP
+		, LAST_CHPR_ID = #{lastChprId}
+		WHERE DEL_YN = 'N'
+		AND USER_ID = #{userId}
+		AND USER_CLSF_CD = 'B'
+	</update>
+</mapper>

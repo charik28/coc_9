@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.ii.cd.mapper.PotIiCdDcshSynsCdMapper">
+
+  <!--
+      Consulter la date et heure de création du fichier de synthèse de codes de déclaration !==신고서종합코드 파일 생성일시을 조회한다.==!
+   -->
+  <select id="selectDcshSynsCodeFileCretDttm" parameterType="alpass.ipt.pot.ii.cd.vo.PotIiCdDcshSynsCdVo" resultType="String">
+    /** selectDcshSynsCodeFileCretDttm */
+    SELECT
+      TO_CHAR(FILE_CRET_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FILE_CRET_DTTM
+    FROM TB_COM_DCSH_SYNS_CODE
+    WHERE DCSH_SYNS_CODE = #{dcshSynsCode}
+  </select>
+
+  <!--
+      Consulter le fichier de synthèse de codes de déclaration !==신고서종합코드 파일을 조회한다.==!
+   -->
+  <select id="selectDcshSynsCodeFile" parameterType="alpass.ipt.pot.ii.cd.vo.PotIiCdDcshSynsCdVo" resultType="alpass.ipt.pot.ii.cd.vo.PotIiCdDcshSynsCdVo">
+    /** selectDcshSynsCodeFile */
+    SELECT
+      DCSH_SYNS_CODE
+         , FILE_PATH_NM
+         , SAVE_FILE_NM
+         , TO_CHAR(FILE_CRET_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FILE_CRET_DTTM
+         , ATCH_FILE_ID
+         , ATCH_FILE_SRNO
+    FROM TB_COM_DCSH_SYNS_CODE
+    WHERE DCSH_SYNS_CODE = #{dcshSynsCode}
+  </select>
+
+</mapper>

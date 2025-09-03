@@ -1,0 +1,1359 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.cstm.mapper.PotPmCstmEmpMapper">
+
+    <!--
+     Consulter les douaniers !==세관직원을 조회한다==!
+  -->
+    <select id="selectCstmEmp"
+            parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpVo"
+            resultType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpVo">
+        /**selectCstmEmp*/
+        SELECT A.PBSR_NO,
+               SUBSTR(A.PBSR_NO, 0, 2)                                                                         AS PBSR_NO_2,
+               SUBSTR(A.PBSR_NO, 3, 4)                                                                         AS PBSR_NO_4,
+               A.ORGN_MGMT_CD,
+               (SELECT M.ORGN_NM
+                FROM TB_POTI_ORGN M
+                WHERE M.DEL_YN = 'N'
+                  AND M.ORGN_MGMT_CD = A.ORGN_MGMT_CD)                                                         AS ORGN_MGMT_NM,
+               A.SCTR_MGMT_CD,
+               (SELECT M.ORGN_CD
+                FROM TB_POTI_ORGN M
+                WHERE M.DEL_YN = 'N'
+                  AND M.ORGN_MGMT_CD = A.SCTR_MGMT_CD)                                                         AS SCTR_CD,
+               A.CSTM_MGMT_CD,
+               A.DEPT_MGMT_CD,
+               A.EMP_NM,
+               A.CSTM_EMP_NO,
+               A.EMP_STTS_CD,
+               A.EMP_FMNM,
+               A.EMP_BWRK_STTS_CD,
+               C.absn_rsn_cd,
+               A.CTGY_CD,
+               A.GD_CD,
+               A.FONC_CD,
+               A.INHB_RGSR_NO,
+               A.EML,
+               TO_CHAR(TO_DATE(A.BRDY, 'YYYYMMDD'), 'DD/MM/YYYY')                                              AS BRDY,
+               A.GNDR_CD,
+               FN_GET_CD_VDVAL_NM('COM_0027', A.GNDR_CD, #{langCd})                                            AS GNDR_NM,
+               A.MOBL_NO,
+               A.DEPT_TLPH_NO,
+               A.EMP_ADDR,
+               A.EMP_POST_CD,
+               A.EMP_POST_NM,
+               TO_CHAR(TO_DATE(A.now_fonc_strt_dt, 'YYYYMMDD'), 'DD/MM/YYYY')                                  AS now_fonc_strt_dt,
+               TO_CHAR(TO_DATE(A.WRKP_ASN_DT, 'YYYYMMDD'), 'DD/MM/YYYY')                                       AS WRKP_ASN_DT,
+               TO_CHAR(TO_DATE(A.BF_WRKP_ASN_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY')                                AS BF_WRKP_ASN_END_DT,
+               TO_CHAR(TO_DATE(A.ENCO_DT, 'YYYYMMDD'), 'DD/MM/YYYY')                                           AS ENCO_DT,
+               SUBSTR(A.ENCO_DT, 0, 4)                                                                         AS ENCO_YY,
+               TO_CHAR(TO_DATE(A.RTMN_DT, 'YYYYMMDD'), 'DD/MM/YYYY')                                           AS RTMN_DT,
+               A.XTRN_EMP_YN,
+               NVL(A.EML_RCPN_YN, 'N')                                                                         AS EML_RCPN_YN,
+               NVL(A.SMS_RCPN_YN, 'N')                                                                         AS SMS_RCPN_YN,
+               A.DEL_YN,
+               A.FRST_REGST_ID,
+               TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS')                                              AS FRST_RGSR_DTTM,
+               A.LAST_CHPR_ID,
+               TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS')                                               AS LAST_CHG_DTTM,
+               A.PHTO_IMGE_CN,
+               A.BLNG_ITT_CD,
+               (SELECT TO_CHAR(TO_DATE(T.BWRK_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') || ' - ' ||
+                       TO_CHAR(TO_DATE(T.BWRK_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY')
+                FROM TB_POTI_BWRK_MTR T
+                WHERE T.PBSR_NO = A.PBSR_NO
+                  AND T.BWRK_MTR_MGMT_NO = (SELECT MAX(BWRK_MTR_MGMT_NO)
+                                            FROM TB_POTI_BWRK_MTR
+                                            WHERE PBSR_NO = T.PBSR_NO))                                        AS NOW_BSOP_PRID,
+               A.BSOP_CLSF_CD,
+               A.FAR_NM,
+               A.MOR_FMNM,
+               A.MOR_NM,
+               B.ADIT_CRTF_CD,
+               B.ACCT_LCKED_YN,
+               A.FONC_CD,
+               A.GRD_CD,
+               TO_CHAR(B.LAST_LGN_DTTM, 'DD/MM/YYYY HH24:MI:SS')                                               AS LAST_LGN_DTTM,
+               A.ATCH_FILE_ID,
+               A.ORGN_CHG_RSN_CD,
+               (SELECT ORGN_CD
+                FROM TB_POTI_ORGN ORGN
+                WHERE ORGN.ORGN_MGMT_CD = A.ORGN_MGMT_CD)                                                      AS ORGN_CD,
+               NVL(A.TEMP_BRDY, 'N')                                                                           AS TEMP_BRDY
+        FROM TB_POTI_EMP A
+           , TB_POTI_EMP_ACCT B
+           , (SELECT PBSR_NO,
+                     EMP_STTS_CD,
+                     ABSN_RSN_CD
+              FROM TB_POTI_EMP_BWRK_STTS_HIST
+              WHERE PBSR_NO = #{srchPbsrNo}
+                AND HIST_SRNO = (SELECT MAX(HIST_SRNO)
+                                 FROM TB_POTI_EMP_BWRK_STTS_HIST
+                                 WHERE PBSR_NO = #{srchPbsrNo} AND DEL_YN = 'N')
+	  			  <![CDATA[AND EMP_STTS_CD <> 'A']]>
+                AND (
+                      TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS') BETWEEN APLY_STRT_DT AND CMBK_STRT_DT
+                      or TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS') >= APLY_STRT_DT AND CMBK_STRT_DT IS NULL
+                  )) C
+        WHERE A.DEL_YN = 'N'
+          AND A.PBSR_NO = B.PBSR_NO
+          AND A.PBSR_NO = C.PBSR_NO(+)
+          AND A.PBSR_NO = #{srchPbsrNo}
+    </select>
+
+    <!--
+     Consulter la liste des historiques des douaniers !==세관직원 이력 목록을 조회한다==!
+  -->
+    <select id="selectCstmEmpHistList" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpHistVo"
+            resultType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpHistVo">
+        /**selectCstmEmpHistList*/
+        SELECT A.PBSR_NO,
+               A.COL_NM,
+               A.CHG_HIST_SRNO,
+               A.BFCH_CN,
+               A.AFCH_CN,
+               A.CHG_TP_CD,
+               A.CHG_CTGY,
+               NVL((SELECT LBL_NM FROM TB_COM_LBL_LANG WHERE LBL_ID = A.CHG_CTGY AND LANG_CD = #{langCd}),
+                   A.CHG_CTGY)                                    AS CHG_CTGY_NM,
+               A.FRST_REGST_ID,
+               TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM,
+               A.LAST_CHPR_ID,
+               TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS')  AS LAST_CHG_DTTM
+        FROM TB_POTI_EMP_H A
+        WHERE A.DEL_YN = 'N'
+          AND A.PBSR_NO = #{pbsrNo}
+        ORDER BY A.CHG_HIST_SRNO DESC
+    </select>
+
+    <!--
+             Consulter la liste des douaniers !==세관조직 직원 목록을 조회 한다.==!
+     -->
+    <select id="selectCstmEmpList" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpVo"
+            resultType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpVo">
+        /** selectCstmEmpList */
+        <if test="pagingYn != 'N'.toString()">
+            <include refid="pagination.header"/>
+        </if>
+        SELECT
+        A.PBSR_NO
+        , SUBSTR(A.PBSR_NO, 0, 2) AS PBSR_NO_2
+        , SUBSTR(A.PBSR_NO, 3, 4) AS PBSR_NO_4
+        , A.ORGN_MGMT_CD
+        ,CASE
+        WHEN (SELECT ORGN_TP_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = A.ORGN_MGMT_CD) = 'BRI'
+        THEN (
+        <if test="langCd == 'AR'">
+            SELECT orgn_ar_nm FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = (SELECT UPR_ORGN_MGMT_CD FROM
+            TB_POTI_ORGN WHERE ORGN_MGMT_CD = A.CSTM_MGMT_CD)
+        </if>
+        <if test="langCd == 'FR'">
+            SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = (SELECT UPR_ORGN_MGMT_CD FROM
+            TB_POTI_ORGN WHERE ORGN_MGMT_CD = A.CSTM_MGMT_CD)
+        </if>
+        )
+        ELSE (
+        <if test="langCd == 'AR'">
+            SELECT orgn_ar_nm FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = A.CSTM_MGMT_CD and del_yn = 'N'
+        </if>
+        <if test="langCd == 'FR'">
+            SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = A.CSTM_MGMT_CD and del_yn = 'N'
+        </if>
+        )
+        END AS ORGN_MGMT_NM
+        , CASE
+        WHEN (SELECT orgn_tp_cd FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = a.ORGN_MGMT_CD) = 'DIR'
+        THEN ''
+        ELSE (
+        <if test="langCd == 'AR'">
+            SELECT orgn_ar_nm FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = a.ORGN_MGMT_CD
+        </if>
+        <if test="langCd == 'FR'">
+            SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = a.ORGN_MGMT_CD
+        </if>
+        )
+        END AS DEPT_MGMT_NM
+        , A.SCTR_MGMT_CD
+        , A.CSTM_MGMT_CD
+        , A.DEPT_MGMT_CD
+        , A.EMP_NM
+        , A.CSTM_EMP_NO
+        , A.EMP_STTS_CD
+        , CASE WHEN alpassint.fn_get_emp_bwrk_stts(A.PBSR_NO, 'Y') = 'TRUE'
+        THEN '01' ELSE '02' END AS EMP_BWRK_STTS_CD
+        , A.CTGY_CD
+        , A.GD_CD
+        , A.FONC_CD
+        , A.INHB_RGSR_NO
+        , A.EML
+        , TO_CHAR(TO_DATE(A.BRDY,'YYYYMMDD'),'DD/MM/YYYY') AS BRDY
+        , A.GNDR_CD
+        , A.MOBL_NO
+        , TO_CHAR(TO_DATE(A.now_fonc_strt_dt,'YYYYMMDD'),'DD/MM/YYYY') AS now_fonc_strt_dt
+        , A.DEPT_TLPH_NO
+        , A.EMP_ADDR
+        , TO_CHAR(TO_DATE(A.WRKP_ASN_DT,'YYYYMMDD'),'DD/MM/YYYY') AS WRKP_ASN_DT
+        , TO_CHAR(TO_DATE(A.ENCO_DT,'YYYYMMDD'),'DD/MM/YYYY') AS ENCO_DT
+        , SUBSTR(A.ENCO_DT,0,4) AS ENCO_YY
+        , TO_CHAR(TO_DATE(A.RTMN_DT,'YYYYMMDD'),'DD/MM/YYYY') AS RTMN_DT
+        , A.XTRN_EMP_YN
+        , NVL(EML_RCPN_YN,'N') AS EML_RCPN_YN
+        , NVL(SMS_RCPN_YN,'N') AS SMS_RCPN_YN
+        , A.DEL_YN
+        , A.FRST_REGST_ID
+        , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+        , A.LAST_CHPR_ID
+        , TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+        , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = A.ORGN_MGMT_CD) AS ORGN_NM
+        , A.BLNG_ITT_CD
+        , A.EMP_FMNM
+        , B.ACCT_LCKED_YN
+        , A.FONC_CD
+        , FN_GET_FONC_NM(A.FONC_CD, #{langCd}) AS FONC_NM
+        , TO_CHAR(B.LAST_LGN_DTTM,'DD/MM/YYYY HH24:MI:SS') AS LAST_LGN_DTTM
+        FROM TB_POTI_EMP A, TB_POTI_EMP_ACCT B
+        WHERE A.DEL_YN = 'N'
+        AND B.DEL_YN = 'N'
+        AND (
+        #{orgnCd} IN ('000000000', '308000000')
+        OR A.ORGN_MGMT_CD IN (
+        SELECT ORGN_MGMT_CD
+        FROM TB_POTI_ORGN
+        WHERE DEL_YN = 'N'
+        START WITH ORGN_CD = #{orgnCd}
+        CONNECT BY PRIOR ORGN_MGMT_CD = UPR_ORGN_MGMT_CD
+        )
+        )
+        AND A.PBSR_NO = B.PBSR_NO
+        AND (
+        #{orgnCd} IN ('000000000', '308000000')
+        OR A.FONC_CD != '599'
+        )
+        <!-- 지역세관이면 자신의 조직과 아래 조직을 조회 한다-->
+        <if test='cntDeptYn == "N"'>
+            AND A.ORGN_MGMT_CD IN
+            (
+            SELECT ORGN_MGMT_CD
+            FROM TB_POTI_ORGN START WITH ORGN_CD = #{orgnCd}
+            CONNECT BY PRIOR ORGN_MGMT_CD = UPR_ORGN_MGMT_CD AND DEL_YN='N'
+            )
+        </if>
+        <if test="srchPbsrNo != null and srchPbsrNo != ''">
+            AND UPPER(A.PBSR_NO) LIKE '%'|| UPPER(#{srchPbsrNo}) ||'%'
+        </if>
+        <if test="srchOrgnMgmtCd != null and srchOrgnMgmtCd != ''">
+            AND A.ORGN_MGMT_CD IN
+            (
+            SELECT ORGN_MGMT_CD
+            FROM TB_POTI_ORGN START WITH ORGN_MGMT_CD = #{srchOrgnMgmtCd}
+            CONNECT BY PRIOR ORGN_MGMT_CD = UPR_ORGN_MGMT_CD AND DEL_YN='N'
+            )
+        </if>
+        <if test="srchEmpNm != null and srchEmpNm != ''">
+            AND UPPER(A.EMP_NM) LIKE '%'|| UPPER(#{srchEmpNm}) ||'%'
+        </if>
+        <if test="srchEmpFmnm != null and srchEmpFmnm != ''">
+            AND UPPER(A.EMP_FMNM) LIKE '%'|| UPPER(#{srchEmpFmnm}) ||'%'
+        </if>
+        <if test="srchEncoYy != null and srchEncoYy != ''">
+            AND SUBSTR(A.ENCO_DT,0,4) = #{srchEncoYy}
+        </if>
+        <if test="sctrCd != null and sctrCd != ''">
+            <if test="sctrCd != 'DGD05'">
+                <if test="sctrCd != 'DGD04'">
+                    AND A.SCTR_MGMT_CD = (SELECT ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE DEL_YN = 'N' AND ORGN_CD
+                    = #{sctrCd} AND ROWNUM = 1)
+                </if>
+            </if>
+        </if>
+        <if test="srchLastLgnDttm != null and srchLastLgnDttm != ''">
+            AND TO_CHAR(B.LAST_LGN_DTTM,'DD/MM/YYYY') = #{srchLastLgnDttm}
+        </if>
+        <if test="srchFrstSbsrDttm != null and srchFrstSbsrDttm != ''">
+            AND TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY') = #{srchFrstSbsrDttm}
+        </if>
+        <if test="srchFoncCd != null and srchFoncCd != ''">
+            AND FONC_CD = #{srchFoncCd}
+        </if>
+        <if test="srchEmpBwrkSttsCd == '01'">
+            AND fn_get_emp_bwrk_stts(A.PBSR_NO, 'Y') = 'TRUE'
+        </if>
+        <if test="srchEmpBwrkSttsCd == '02'">
+            AND fn_get_emp_bwrk_stts(A.PBSR_NO, 'Y') = 'FALSE'
+        </if>
+        <if test="srchTempBrdy != null and srchTempBrdy != ''">
+            AND NVL(TEMP_BRDY, 'N') = NVL(#{srchTempBrdy}, 'N')
+        </if>
+        ORDER BY A.PBSR_NO DESC
+        <if test="pagingYn != 'N'.toString()">
+            <include refid="pagination.footer"/>
+        </if>
+    </select>
+
+    <!--
+         Consulter la liste des diplômes du douanier !==세관조직 직원 학력사항 목록을 조회 한다.==!
+     -->
+    <select id="selectCstmHistMtrList" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmHistMtrVo"
+            resultType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmHistMtrVo">
+        /** selectCstmHistMtrList */
+        <include refid="pagination.header"/>
+        SELECT * FROM (
+        SELECT
+        A.PBSR_NO
+        , A.SRNO
+        , ROWNUM AS ORDR_NO
+        , A.HIST_TP_CD
+        , A.HIST_STRT_YY||'-'||HIST_END_YY AS HIST_PRID_YY
+        , A.HIST_STRT_YY
+        , A.HIST_END_YY
+        , A.CRQL_NM
+        , A.CN
+        , A.PBLS_ITT_NM
+        , A.DEL_YN
+        , A.FRST_REGST_ID
+        , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+        , A.LAST_CHPR_ID
+        , TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+        FROM TB_POTI_HIST_MTR A
+        WHERE A.DEL_YN = 'N'
+        AND A.PBSR_NO = #{srchPbsrNo}
+        )
+        ORDER BY SRNO DESC
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+         Consulter les détails des diplômes du douanier !==세관조직 직원 학력사항 상세를 조회 한다.==!
+     -->
+    <select id="selectCstmHistMtr" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmHistMtrVo"
+            resultType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmHistMtrVo">
+        /** selectCstmHistMtr */
+        SELECT A.PBSR_NO
+             , A.SRNO
+             , A.HIST_TP_CD
+             , A.HIST_STRT_YY || '-' || HIST_END_YY               AS HIST_PRID_YY
+             , A.HIST_STRT_YY
+             , A.HIST_END_YY
+             , A.CRQL_NM
+             , A.CN
+             , A.PBLS_ITT_NM
+             , A.DEL_YN
+             , A.FRST_REGST_ID
+             , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+             , A.LAST_CHPR_ID
+             , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS')  AS LAST_CHG_DTTM
+        FROM TB_POTI_HIST_MTR A
+        WHERE A.DEL_YN = 'N'
+          AND A.PBSR_NO = #{srchPbsrNo}
+          AND A.SRNO = #{srchSrno}
+    </select>
+
+
+    <!--
+         Vérifier le douanier déjà existant !==세관조직 직원 중복체크 조회를 한다.==!
+     -->
+    <select id="selectCstmEmpPbsrNoDupChk" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpVo"
+            resultType="java.lang.Integer">
+        /** selectCstmEmpPbsrNoDupChk */
+        SELECT COUNT(1) AS CNT
+        FROM TB_POTI_EMP A
+        WHERE UPPER(A.PBSR_NO) = UPPER(#{pbsrNo})
+          AND DEL_YN = 'N'
+    </select>
+
+    <!--
+         Enregistrer un douanier !==세관조직 직원을 등록 한다.==!
+     -->
+    <insert id="insertCstmEmp" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpVo">
+        /** insertCstmEmp */
+        with upsert as
+                     (
+        UPDATE TB_POTI_EMP
+        SET ORGN_MGMT_CD       = #{orgnMgmtCd}
+          , SCTR_MGMT_CD       = #{sctrMgmtCd}
+          , CSTM_MGMT_CD       = #{cstmMgmtCd}
+          , DEPT_MGMT_CD       = #{deptMgmtCd}
+          , EMP_NM             = #{empNm}
+          , EMP_FMNM           = #{empFmnm}
+          , CSTM_EMP_NO        = #{cstmEmpNo}
+          , EMP_STTS_CD        = #{empSttsCd}
+          , EMP_BWRK_STTS_CD   = #{empBwrkSttsCd}
+          , INHB_RGSR_NO       = #{inhbRgsrNo}
+          , EML                = #{eml}
+          , BRDY               = #{brdy}
+          , GNDR_CD            = #{gndrCd}
+          , MOBL_NO            = #{moblNo}
+          , DEPT_TLPH_NO       = #{deptTlphNo}
+          , EMP_ADDR           = #{empAddr}
+          , EMP_POST_CD        = #{empPostCd}
+          , EMP_POST_NM        = #{empPostNm}
+          , WRKP_ASN_DT        = #{wrkpAsnDt}
+          , ENCO_DT            = #{encoDt}
+          , RTMN_DT            = #{rtmnDt}
+          , XTRN_EMP_YN        = #{xtrnEmpYn}
+          , EML_RCPN_YN        = #{emlRcpnYn}
+          , SMS_RCPN_YN        = #{smsRcpnYn}
+          , DEL_YN             = #{delYn}
+          , FRST_REGST_ID      = #{frstRegstId}
+          , FRST_RGSR_DTTM     = SYSTIMESTAMP
+          , LAST_CHPR_ID       = #{lastChprId}
+          , LAST_CHG_DTTM      = SYSTIMESTAMP
+          , FAR_NM             = #{farNm}
+          , MOR_FMNM           = #{morFmnm}
+          , MOR_NM             = #{morNm}
+          , GRD_CD             = #{grdCd}
+          , FONC_CD            = #{foncCd}
+          , BF_WRKP_ASN_END_DT = #{bfWrkpAsnEndDt}
+          , ATCH_FILE_ID       = #{atchFileId}
+          , ORGN_CHG_RSN_CD    = #{orgnChgRsnCd}
+          , now_fonc_strt_dt   = TO_CHAR(TO_DATE(#{nowFoncStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+
+          , TEMP_BRDY          = NVL(#{tempBrdy}, 'N')
+        WHERE PBSR_NO = #{pbsrNo} returning *
+		)
+        INSERT
+        INTO TB_POTI_EMP
+        ( PBSR_NO
+        , ORGN_MGMT_CD
+        , SCTR_MGMT_CD
+        , CSTM_MGMT_CD
+        , DEPT_MGMT_CD
+        , EMP_NM
+        , EMP_FMNM
+        , CSTM_EMP_NO
+        , EMP_STTS_CD
+        , EMP_BWRK_STTS_CD
+        , INHB_RGSR_NO
+        , EML
+        , BRDY
+        , GNDR_CD
+        , MOBL_NO
+        , DEPT_TLPH_NO
+        , EMP_ADDR
+        , EMP_POST_CD
+        , EMP_POST_NM
+        , WRKP_ASN_DT
+        , ENCO_DT
+        , RTMN_DT
+        , XTRN_EMP_YN
+        , EML_RCPN_YN
+        , SMS_RCPN_YN
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM
+        , FAR_NM
+        , MOR_FMNM
+        , MOR_NM
+        , GRD_CD
+        , FONC_CD
+        , BF_WRKP_ASN_END_DT
+        , ATCH_FILE_ID
+        , ORGN_CHG_RSN_CD
+        , now_fonc_strt_dt
+        , TEMP_BRDY)
+        SELECT #{pbsrNo}
+             , #{orgnMgmtCd}
+             , #{sctrMgmtCd}
+             , #{cstmMgmtCd}
+             , #{deptMgmtCd}
+             , #{empNm}
+             , #{empFmnm}
+             , #{cstmEmpNo}
+             , #{empSttsCd}
+             , #{empBwrkSttsCd}
+             , #{inhbRgsrNo}
+             , #{eml}
+             , #{brdy}
+             , #{gndrCd}
+             , #{moblNo}
+             , #{deptTlphNo}
+             , #{empAddr}
+             , #{empPostCd}
+             , #{empPostNm}
+             , #{wrkpAsnDt}
+             , #{encoDt}
+             , #{rtmnDt}
+             , #{xtrnEmpYn}
+             , #{emlRcpnYn}
+             , #{smsRcpnYn}
+             , 'N'
+             , #{frstRegstId}
+             , SYSTIMESTAMP
+             , #{lastChprId}
+             , SYSTIMESTAMP
+             , #{farNm}
+             , #{morFmnm}
+             , #{morNm}
+             , #{grdCd}
+             , #{foncCd}
+             , TO_CHAR(TO_DATE(#{bfWrkpAsnEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+             , #{atchFileId}
+             , #{orgnChgRsnCd}
+             , TO_CHAR(TO_DATE(#{nowFoncStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+             , NVL(#{tempBrdy}, 'N') WHERE NOT exists(select * from upsert)
+    </insert>
+
+    <!--
+         Modifier un douanier !==세관조직 직원을 수정 한다.==!
+     -->
+    <update id="updateCstmEmp" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpVo">
+        /** updateCstmEmp */
+        UPDATE TB_POTI_EMP SET
+        PBSR_NO = #{pbsrNo}
+        , ORGN_MGMT_CD = #{orgnMgmtCd}
+        , SCTR_MGMT_CD = #{sctrMgmtCd}
+        , CSTM_MGMT_CD = #{cstmMgmtCd}
+        , DEPT_MGMT_CD = #{deptMgmtCd}
+        , EMP_NM = #{empNm}
+        , CSTM_EMP_NO = #{cstmEmpNo}
+        , EMP_STTS_CD = #{empSttsCd}
+        , EMP_BWRK_STTS_CD = #{empBwrkSttsCd}
+        , INHB_RGSR_NO = #{inhbRgsrNo}
+        , EML = #{eml}
+        , BRDY = #{brdy}
+        , GNDR_CD = #{gndrCd}
+        , MOBL_NO = #{moblNo}
+        , DEPT_TLPH_NO = #{deptTlphNo}
+        , EMP_ADDR = #{empAddr}
+        , EMP_POST_CD = #{empPostCd}
+        , EMP_POST_NM = #{empPostNm}
+        <if test='phtoImgeCn != null'>
+            , PHTO_IMGE_CN = #{phtoImgeCn:BLOB}
+        </if>
+        , WRKP_ASN_DT = #{wrkpAsnDt}
+        , ENCO_DT = #{encoDt}
+        , RTMN_DT = #{rtmnDt}
+        , XTRN_EMP_YN = #{xtrnEmpYn}
+        , EML_RCPN_YN = #{emlRcpnYn}
+        , SMS_RCPN_YN = #{smsRcpnYn}
+        , DEL_YN = #{delYn}
+        , LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        , BSOP_CLSF_CD = #{bsopClsfCd}
+        , EMP_FMNM = #{empFmnm}
+        , FAR_NM = #{farNm}
+        , MOR_FMNM = #{morFmnm}
+        , MOR_NM = #{morNm}
+        , FONC_CD = #{foncCd}
+        , GRD_CD = #{grdCd}
+        , BF_WRKP_ASN_END_DT = TO_CHAR(TO_DATE(#{bfWrkpAsnEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        , ATCH_FILE_ID = #{atchFileId}
+        , ORGN_CHG_RSN_CD = #{orgnChgRsnCd}
+        , now_fonc_strt_dt = TO_CHAR(TO_DATE(#{nowFoncStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        , TEMP_BRDY = NVL(#{tempBrdy}, 'N')
+        WHERE PBSR_NO = #{pbsrNo}
+    </update>
+
+    <!--
+         Enregistrer un compte du douanier !==세관조직 직원 계정을 등록 한다.==!
+     -->
+    <update id="insertCstmEmpAcct" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpAcctVo">
+        /** insertCstmEmpAcct */
+        with upsert as
+        (
+        UPDATE TB_POTI_EMP_ACCT SET
+        PWD = #{pwd} /** Mot de passe !== 비밀번호 ==! */
+        , PWD_CHG_DT = #{pwdChgDt} /** Date de modification du mot de passe !== 비밀번호변경일자 ==! */
+        , PWD_INTZ_YN = #{pwdIntzYn} /** Initialisation du mot de passe ON !== 비밀번호초기화여부 ==! */
+        , PWD_FAIL_NCNT = #{pwdFailNcnt} /** Nombre d'essais infructueux du mot de passe !== 비밀번호실패횟수 ==! */
+        , ACCT_LCKED_YN = #{acctLckedYn} /** Blocage du compte ON !== 계정잠김여부 ==! */
+        , ACCT_LCKED_RSN_CD = #{acctLckedRsnCd} /** Code de motif de blocage du compte !== 계정잠김사유코드 ==! */
+        <if test='acctLckedYn == "Y"'>
+            , ACCT_LCKED_DT = TO_CHAR(SYSTIMESTAMP,'YYYYMMDD') /** Date de blocage du compte !== 계정잠김일자 ==! */
+            , ACCT_LCKED_RELE_DT = NULL /** Date d'annulation du blocage du compte !== 계정잠김해제일자 ==! */
+        </if>
+        <if test='acctLckedYn == "N"'>
+            , ACCT_LCKED_DT = NULL
+            , ACCT_LCKED_RELE_DT = TO_CHAR(SYSTIMESTAMP,'YYYYMMDD')
+        </if>
+        , ACCT_PUSE_YN = #{acctPuseYn} /** Suspension du compte ON !== 계정일시정지여부 ==! */
+        , ACCT_PUSE_RSN_CD = #{acctPuseRsnCd} /** Code de motif de suspension du compte !== 계정일시정지사유코드 ==! */
+        , ACCT_PUSE_STRT_DT = #{acctPuseStrtDt} /** Date de debut de suspension du compte !== 계정일시정지시작일자 ==! */
+        , ACCT_PUSE_END_DT = #{acctPuseEndDt} /** Date de fin de suspension du compte !== 계정일시정지종료일자 ==! */
+        , EMP_IP = #{empIp} /** @TODO : 번역필요 !== 직원IP ==! */
+        , ADIT_CRTF_CD = #{aditCrtfCd}
+        , DEL_YN = #{delYn}
+        , FRST_REGST_ID = #{frstRegstId}
+        , FRST_RGSR_DTTM = SYSTIMESTAMP
+        , LAST_CHPR_ID = #{lastChprId} /** ID du modificateur final !== 최종변경자ID ==! */
+        , LAST_CHG_DTTM = SYSTIMESTAMP /** Date et heure de modification finale !== 최종변경일시 ==! */
+        , LAST_LGN_DTTM = SYSTIMESTAMP
+        WHERE PBSR_NO = #{pbsrNo}
+        returning *
+        )
+        INSERT INTO TB_POTI_EMP_ACCT
+        (
+        PBSR_NO
+        , PWD
+        , PWD_CHG_DT
+        , PWD_INTZ_YN
+        , PWD_FAIL_NCNT
+        , ACCT_LCKED_YN
+        , ACCT_LCKED_RSN_CD
+        , ACCT_LCKED_DT
+        , ACCT_LCKED_RELE_DT
+        , ACCT_PUSE_YN
+        , ACCT_PUSE_RSN_CD
+        , ACCT_PUSE_STRT_DT
+        , ACCT_PUSE_END_DT
+        , EMP_IP
+        , FRST_LGN_YN
+        , ADIT_CRTF_CD
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM
+        , LAST_LGN_DTTM
+        )
+        SELECT
+        #{pbsrNo}
+        , #{pwd}
+        , #{pwdChgDt}
+        , #{pwdIntzYn}
+        , #{pwdFailNcnt}
+        , #{acctLckedYn}
+        , #{acctLckedRsnCd}
+        , #{acctLckedDt}
+        , #{acctLckedReleDt}
+        , #{acctPuseYn}
+        , #{acctPuseRsnCd}
+        , #{acctPuseStrtDt}
+        , #{acctPuseEndDt}
+        , #{empIp}
+        , 'Y'
+        , #{aditCrtfCd}
+        , 'N'
+        , #{frstRegstId}
+        , SYSTIMESTAMP
+        , #{lastChprId}
+        , SYSTIMESTAMP
+        , SYSTIMESTAMP
+        WHERE NOT exists(select * from upsert)
+    </update>
+
+    <!--
+         Supprimer des rôles du service !==세관조직 역할을 삭제 한다.==!
+     -->
+    <update id="deleteCstmEmpAuth" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpAuthVo">
+        /** deleteCstmEmpAuth */
+        DELETE FROM TB_POTI_EMP_AUTH
+        WHERE PBSR_NO = #{pbsrNo}
+        <if test="roleId != null and roleId != ''">
+            AND ROLE_ID = #{roleId}
+        </if>
+    </update>
+
+    <!--
+         Enregistrer des rôles du service !==세관조직 역할을 등록 한다.==!
+     -->
+    <update id="insertCstmEmpAuth" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpAuthVo">
+        /** insertCstmEmpAuth */
+        INSERT INTO TB_POTI_EMP_AUTH
+        ( PBSR_NO
+        , ROLE_ID
+        , MN_ROLE_YN
+        , AUTH_VALD_STRT_DT
+        , AUTH_VALD_END_DT
+        , AUTH_RGSR_DT
+        , AUTH_WDRW_YN
+        , AUTH_WDRW_DT
+        , AUTH_WDRW_RSN_CD
+        , USE_YN
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM)
+        VALUES ( #{pbsrNo}
+               , #{roleId}
+               , #{mnRoleYn}
+               , TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD')
+               , #{authValdEndDt}
+               , TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD')
+               , #{authWdrwYn}
+               , #{authWdrwDt}
+               , #{authWdrwRsnCd}
+               , 'Y'
+               , 'N'
+               , #{frstRegstId}
+               , SYSTIMESTAMP
+               , #{lastChprId}
+               , SYSTIMESTAMP)
+    </update>
+
+    <!--
+         Enregistrer un douanier(Historique) !==세관직원 이력을 등록 한다.==!
+     -->
+    <insert id="insertCstmEmpH" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpHistVo">
+        /** insertCstmEmpH */
+        INSERT INTO TB_POTI_EMP_H
+        ( PBSR_NO
+        , COL_NM
+        , CHG_HIST_SRNO
+        , BFCH_CN
+        , AFCH_CN
+        , CHG_TP_CD
+        , CHG_CTGY
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM)
+        VALUES ( #{pbsrNo}
+               , #{colNm}
+               , NVL((SELECT MAX(CHG_HIST_SRNO) + 1 FROM TB_POTI_EMP_H WHERE PBSR_NO = #{pbsrNo}), 1)
+               , #{bfchCn}
+               , #{afchCn}
+               , #{chgTpCd}
+               , #{chgCtgy}
+               , #{delYn}
+               , #{frstRegstId}
+               , SYSTIMESTAMP
+               , #{lastChprId}
+               , SYSTIMESTAMP)
+    </insert>
+
+    <!--
+         Vérifier le statut suspendu du compte du douanier !==세관조직 직원 계정을 잠금여부를 수정 한다.==!
+     -->
+    <update id="updateCstmEmpAcct" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpAcctVo">
+        /** updateCstmEmpAcct */
+        UPDATE TB_POTI_EMP_ACCT SET
+        ACCT_LCKED_YN = #{acctLckedYn}
+        , ACCT_LCKED_RSN_CD = #{acctLckedRsnCd}
+        <if test='acctLckedYn == "Y"'>
+            , ACCT_LCKED_DT = TO_CHAR(SYSTIMESTAMP,'YYYYMMDD')
+            , ACCT_LCKED_RELE_DT = NULL
+        </if>
+        <if test='acctLckedYn == "N"'>
+            , ACCT_LCKED_DT = NULL
+            , ACCT_LCKED_RELE_DT = TO_CHAR(SYSTIMESTAMP,'YYYYMMDD')
+        </if>
+        , LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        , LAST_LGN_DTTM = SYSTIMESTAMP
+        WHERE PBSR_NO = #{pbsrNo}
+    </update>
+
+    <!--
+         Supprimer un douanier !==세관조직 직원을 삭제 한다.==!
+     -->
+    <update id="deleteCstmEmp" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpVo">
+        /** deleteCstmEmp */
+        UPDATE TB_POTI_EMP
+        SET DEL_YN        = #{delYn}
+          , LAST_CHPR_ID  = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE PBSR_NO = #{pbsrNo}
+    </update>
+
+    <!--
+         Enregistrer des diplômes du douanier !==세관조직 직원 학력사항을 등록 한다.==!
+     -->
+    <insert id="insertCstmHistMtr" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmHistMtrVo">
+        /** insertCstmHistMtr */
+        INSERT INTO TB_POTI_HIST_MTR
+        ( PBSR_NO
+        , SRNO
+        , HIST_TP_CD
+        , HIST_STRT_YY
+        , HIST_END_YY
+        , CRQL_NM
+        , CN
+        , PBLS_ITT_NM
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM)
+        VALUES ( #{pbsrNo}
+               , NVL((SELECT MAX(SRNO) + 1 FROM TB_POTI_HIST_MTR WHERE PBSR_NO = #{pbsrNo}), 1)
+               , #{histTpCd}
+               , #{histStrtYy}
+               , #{histEndYy}
+               , #{crqlNm}
+               , #{cn}
+               , #{pblsIttNm}
+               , #{delYn}
+               , #{frstRegstId}
+               , SYSTIMESTAMP
+               , #{lastChprId}
+               , SYSTIMESTAMP)
+    </insert>
+
+    <!--
+         Modifier des diplômes du douanier !==세관조직 직원 학력사항을 수정 한다.==!
+     -->
+    <update id="updateCstmHistMtr" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmHistMtrVo">
+        /** updateCstmHistMtr */
+        UPDATE TB_POTI_HIST_MTR
+        SET PBSR_NO       = #{pbsrNo}
+          , SRNO          = #{srno}
+          , HIST_TP_CD    = #{histTpCd}
+          , HIST_STRT_YY  = #{histStrtYy}
+          , HIST_END_YY   = #{histEndYy}
+          , CRQL_NM       = #{crqlNm}
+          , CN            = #{cn}
+          , PBLS_ITT_NM   = #{pblsIttNm}
+          , DEL_YN        = #{delYn}
+          , LAST_CHPR_ID  = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE PBSR_NO = #{pbsrNo}
+          AND SRNO = #{srno}
+    </update>
+
+    <!--
+         Supprimer des diplômes du douanier !==세관조직 직원 학력사항을 삭제 한다.==!
+     -->
+    <update id="deleteCstmHistMtr" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmHistMtrVo">
+        /** deleteCstmHistMtr */
+        UPDATE TB_POTI_HIST_MTR SET
+        DEL_YN = #{delYn}
+        , LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE PBSR_NO = #{pbsrNo}
+        <if test="srno != null and srno != ''">
+            AND srno = #{srno}
+        </if>
+    </update>
+
+    <!--
+         Supprimer le statut actuel du douanier !==세관조직 직원 근무사항을 삭제 한다.==!
+     -->
+    <update id="deleteCstmBwrkMtr" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmBwrkMtrVo">
+        /** deleteCstmBwrkMtr */
+        UPDATE TB_POTI_BWRK_MTR SET
+        DEL_YN = #{delYn}
+        , LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE PBSR_NO = #{pbsrNo}
+        <if test="srno != null and srno != ''">
+            AND SRNO = #{srno}
+        </if>
+    </update>
+
+    <!--
+         Supprimer un compte du douanier !==세관조직 직원 계정을 삭제 한다.==!
+     -->
+    <update id="deleteCstmEmpAcct" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpAcctVo">
+        /** deleteCstmEmpAcct */
+        UPDATE TB_POTI_EMP_ACCT
+        SET DEL_YN        = 'Y'
+          , LAST_CHPR_ID  = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE PBSR_NO = #{pbsrNo}
+    </update>
+
+    <!--
+        Consulter la liste des absences des employés des services de la douane !==세관조직 직원 결근 목록을 조회한다.==!
+     -->
+    <select id="selectBwrkSttsList" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmEmpBwrkSttsHistVo"
+            resultType="alpass.ipt.pot.pm.cstm.vo.PotPmEmpBwrkSttsHistVo">
+        /** selectBwrkSttsList */
+        <include refid="pagination.header"/>
+        SELECT
+        A.PBSR_NO
+        , A.HIST_SRNO
+        , A.EMP_STTS_CD
+        , fn_get_cd_vdval_nm('POT_0093', A.EMP_STTS_CD, #{langCd}) as EMP_STTS_NM
+        , A.EMP_STTS_CHG_RSN_CN
+        , FONC_CD
+        , GRD_CD
+        , ABSN_RSN_CD as ABSN_RSN
+        , CMBK_RSN_CD AS CMBK_RSN
+        , DECODE(A.EMP_STTS_CD, 'A', fn_get_cd_vdval_nm('POT_0092', CMBK_RSN_CD, #{langCd}),
+        fn_get_cd_vdval_nm('POT_0091', ABSN_RSN_CD, #{langCd})) AS RSN_CD
+        , A.ATCH_FILE_ID
+        , TO_CHAR(TO_DATE(A.ABSN_STRT_DT, 'YYYYMMDDHH24:MI'), 'DD/MM/YYYY HH24:MI') AS ABSN_STRT_DT
+        , TO_CHAR(TO_DATE(A.ABSN_END_DT, 'YYYYMMDDHH24:MI'), 'DD/MM/YYYY HH24:MI') AS ABSN_END_DT
+        , TO_CHAR(TO_DATE(A.CMBK_STRT_DT, 'YYYYMMDDHH24:MI'), 'DD/MM/YYYY HH24:MI') AS CMBK_STRT_DT
+        , TO_CHAR(TO_DATE(A.CMBK_END_DT, 'YYYYMMDDHH24:MI'), 'DD/MM/YYYY HH24:MI') AS CMBK_END_DT
+        , XTNS_YN
+        , XTNS_RSN_CN
+        , A.FRST_REGST_ID
+        , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+        , A.LAST_CHPR_ID
+        , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+        , ROW_NUMBER() OVER () AS RNUM
+        FROM TB_POTI_EMP_BWRK_STTS_HIST A
+        WHERE A.DEL_YN = 'N'
+        AND A.PBSR_NO = #{pbsrNo}
+        ORDER BY A.HIST_SRNO DESC
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+         Consulter la liste des historiques d'absence des employés des services de la douane !==세관조직 직원 결근 이력 목록을 조회한다.==!
+     -->
+    <select id="selectBwrkSttsHistList" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmEmpBwrkSttsHistVo"
+            resultType="alpass.ipt.pot.pm.cstm.vo.PotPmEmpBwrkSttsHistVo">
+        /** selectBwrkSttsHistList */
+        <include refid="pagination.header"/>
+        SELECT PBSR_NO
+        , HIST_SRNO
+        , EMP_STTS_CD
+        , fn_get_cd_vdval_nm('POT_0093', 'C', #{langCd}) as EMP_STTS_NM
+        , ABSN_RSN_CD as ABSN_RSN
+        , null AS CMBK_RSN
+        , fn_get_cd_vdval_nm('POT_0091', ABSN_RSN_CD, #{langCd}) as rsn_cd
+        , TO_CHAR(TO_DATE(ABSN_STRT_DT, 'YYYYMMDDHH24:MI'), 'DD/MM/YYYY HH24:MI') AS aply_strt_dt
+        , TO_CHAR(TO_DATE(ABSN_END_DT, 'YYYYMMDDHH24:MI'), 'DD/MM/YYYY HH24:MI') AS Aply_END_DT
+        , XTNS_YN
+        , FRST_REGST_ID
+        , TO_CHAR(FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , TO_CHAR(LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+        , 1 as rum
+        , ROW_NUMBER() OVER () AS RNUM
+        FROM TB_POTI_EMP_BWRK_STTS_HIST A
+        WHERE DEL_YN = 'N'
+        AND PBSR_NO = #{pbsrNo}
+        AND ABSN_RSN_CD IS NOT NULL
+        AND ABSN_RSN_CD != ''
+        union all
+        SELECT PBSR_NO
+        , HIST_SRNO
+        , EMP_STTS_CD
+        , fn_get_cd_vdval_nm('POT_0093', 'A', #{langCd}) as EMP_STTS_NM
+        , null as ABSN_RSN
+        , CMBK_RSN_CD AS CMBK_RSN
+        , fn_get_cd_vdval_nm('POT_0092', CMBK_RSN_CD, #{langCd}) AS RSN_CD
+        , TO_CHAR(TO_DATE(CMBK_STRT_DT, 'YYYYMMDDHH24:MI'), 'DD/MM/YYYY HH24:MI') AS aply_strt_dt
+        , TO_CHAR(TO_DATE(CMBK_END_DT, 'YYYYMMDDHH24:MI'), 'DD/MM/YYYY HH24:MI') AS aply_END_DT
+        , XTNS_YN
+        , FRST_REGST_ID
+        , TO_CHAR(FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , TO_CHAR(LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+        , 2 as rum
+        , ROW_NUMBER() OVER () AS RNUM
+        FROM TB_POTI_EMP_BWRK_STTS_HIST
+        WHERE DEL_YN = 'N'
+        AND PBSR_NO = #{pbsrNo}
+        AND CMBK_RSN_CD IS NOT NULL
+        AND CMBK_RSN_CD != ''
+        ORDER BY HIST_SRNO DESC, rum desc
+        <include refid="pagination.footer"/>
+    </select>
+
+
+    <!--
+     Consulter la liste des rôles des employés des services de la douane !==세관조직 직원역할목록을 조회한다.==!
+ -->
+    <select id="selectEmpRoleList" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpRoleVo"
+            resultType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpRoleVo">
+        /** selectEmpRoleList */
+        <include refid="pagination.header"/>
+        SELECT (SELECT B.CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG B WHERE B.COMN_CD = 'COM_0022' AND B.LANG_CD = #{langCd}
+        AND B.CD_VDVAL = A.BSOP_CLSF_CD) AS BSOP_CLSF_CD
+        , FN_GET_CD_VDVAL_NM('POT_0103', '1', #{langCd}) AS TP_CD
+        , B.ROLE_ID
+        , (SELECT ROLE_NM FROM TB_COM_ROLE_LANG C WHERE C.ROLE_ID = A.ROLE_ID AND LANG_CD = #{langCd} AND C.DEL_YN =
+        'N')
+        , 1 as rum
+        , B.FRST_REGST_ID
+        , B.FRST_RGSR_DTTM
+        , B.LAST_CHPR_ID
+        , B.LAST_CHG_DTTM
+        FROM TB_COM_ROLE A,
+        TB_POTI_EMP_AUTH B
+        WHERE A.ROLE_ID(+) = B.ROLE_ID
+        AND A.DEL_YN = 'N'
+        AND B.DEL_YN = 'N'
+        AND B.PBSR_NO = #{pbsrNo}
+        UNION ALL
+        SELECT (SELECT B.CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG B WHERE B.COMN_CD = 'COM_0022' AND B.LANG_CD = #{langCd}
+        AND B.CD_VDVAL = A.BSOP_CLSF_CD) AS BSOP_CLSF_CD
+        , FN_GET_CD_VDVAL_NM('POT_0103', '2', #{langCd}) AS TP_CD
+        , B.ROLE_ID
+        , (SELECT ROLE_NM FROM TB_COM_ROLE_LANG C WHERE C.ROLE_ID = A.ROLE_ID AND LANG_CD = #{langCd} AND C.DEL_YN =
+        'N')
+        , 2 as rum
+        , B.FRST_REGST_ID
+        , B.FRST_RGSR_DTTM
+        , B.LAST_CHPR_ID
+        , B.LAST_CHG_DTTM
+        FROM TB_COM_ROLE A,
+        TB_POTI_ORGN_ROLE_REL B
+        WHERE A.ROLE_ID(+) = B.ROLE_ID
+        AND A.DEL_YN = 'N'
+        AND B.DEL_YN = 'N'
+        AND B.ORGN_MGMT_CD = #{orgnMgmtCd}
+        AND B.FONC_CD = #{foncCd}
+        UNION ALL
+        SELECT (SELECT B.CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG B WHERE B.COMN_CD = 'COM_0022' AND B.LANG_CD = #{langCd}
+        AND B.CD_VDVAL = A.BSOP_CLSF_CD) AS BSOP_CLSF_CD
+        , FN_GET_CD_VDVAL_NM('POT_0103', '3', #{langCd}) AS TP_CD
+        , B.ROLE_ID
+        , (SELECT ROLE_NM FROM TB_COM_ROLE_LANG C WHERE C.ROLE_ID = A.ROLE_ID AND LANG_CD = #{langCd} AND C.DEL_YN =
+        'N')
+        , 3 as rum
+        , B.FRST_REGST_ID
+        , B.FRST_RGSR_DTTM
+        , B.LAST_CHPR_ID
+        , B.LAST_CHG_DTTM
+        FROM TB_COM_ROLE A,
+        TB_POTI_FONC_ROLE_REL B
+        WHERE A.ROLE_ID(+) = B.ROLE_ID
+        AND A.DEL_YN = 'N'
+        AND B.DEL_YN = 'N'
+        AND B.FONC_CD = #{foncCd}
+        ORDER BY ROLE_ID ASC
+        <include refid="pagination.footer"/>
+    </select>
+
+
+    <!--
+         Consulter le N° série de l'historique des statuts de l'employé  !==근무상태이력 일련번호 조회==!
+     -->
+    <select id="selectBwrkSttsHistSrno" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmEmpBwrkSttsHistVo"
+            resultType="java.math.BigDecimal">
+        SELECT COUNT(1) + 1
+        FROM TB_POTI_EMP_BWRK_STTS_HIST
+        WHERE PBSR_NO = #{pbsrNo}
+    </select>
+
+    <!--
+         Enregistrer l'historique des statuts de l'employé !== 직원근무상태이력 등록 한다.==!
+     -->
+    <insert id="insertBwrkSttsHistList" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmEmpBwrkSttsHistVo">
+        /** insertBwrkSttsHistList */
+        INSERT INTO TB_POTI_EMP_BWRK_STTS_HIST
+        (
+        PBSR_NO
+        , HIST_SRNO
+        , EMP_STTS_CD
+        , EMP_STTS_CHG_RSN_CN
+        , FONC_CD
+        , GRD_CD
+        , ABSN_RSN_CD
+        , CMBK_RSN_CD
+        , ATCH_FILE_ID
+        , APLY_STRT_DT
+        , APLY_END_DT
+        , ABSN_STRT_DT
+        , ABSN_END_DT
+        , CMBK_STRT_DT
+        , CMBK_END_DT
+        , XTNS_YN
+        , XTNS_RSN_CN
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM
+        )
+        VALUES
+        (
+        #{pbsrNo}
+        , (SELECT COUNT(1) + 1 FROM TB_POTI_EMP_BWRK_STTS_HIST WHERE PBSR_NO = #{pbsrNo})
+        , #{empSttsCd}
+        , #{empSttsChgRsnCn}
+        , #{foncCd}
+        , #{grdCd}
+        , #{absnRsn}
+        , #{cmbkRsn}
+        , #{atchFileId}
+        <if test='firstYn == "Y"'>
+            , #{aplyStrtDt}
+            , #{aplyEndDt}
+        </if>
+        <if test='firstYn == "N"'>
+            , TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI')
+            , TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI')
+        </if>
+        , TO_CHAR(TO_DATE(#{absnStrtDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI')
+        , TO_CHAR(TO_DATE(#{absnEndDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI')
+        , TO_CHAR(TO_DATE(#{cmbkStrtDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI')
+        , TO_CHAR(TO_DATE(#{cmbkEndDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI')
+        , #{xtnsYn}
+        , #{xtnsRsnCn}
+        , 'N'
+        , #{frstRegstId}
+        , SYSTIMESTAMP
+        , #{lastChprId}
+        , SYSTIMESTAMP
+        )
+    </insert>
+
+    <!--
+     Modifier l'historique des statuts de l'employé !== 직원근무상태이력 수정 한다.==!
+    -->
+    <update id="updateBwrkSttsHistList" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmEmpBwrkSttsHistVo">
+        /** updateBwrkSttsHistList */
+        UPDATE TB_POTI_EMP_BWRK_STTS_HIST
+        SET
+        LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        , EMP_STTS_CD = #{empSttsCd}
+        , ABSN_RSN_CD = #{absnRsn}
+        , CMBK_RSN_CD = #{cmbkRsn}
+        , ATCH_FILE_ID = #{atchFileId}
+        <if test="aplyStrtDt != null and aplyStrtDt != ''">
+            , APLY_STRT_DT = TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI')
+        </if>
+        <if test="aplyEndDt != null and aplyEndDt != ''">
+            , APLY_END_DT = TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI')
+        </if>
+        <if test="absnStrtDt != null and absnStrtDt != ''">
+            , ABSN_STRT_DT = TO_CHAR(TO_DATE(#{absnStrtDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI')
+        </if>
+        <if test="absnEndDt != null and absnEndDt != ''">
+            , ABSN_END_DT = TO_CHAR(TO_DATE(#{absnEndDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI')
+        </if>
+        <if test="cmbkStrtDt != null and cmbkStrtDt != ''">
+            , CMBK_STRT_DT = TO_CHAR(TO_DATE(#{cmbkStrtDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI')
+        </if>
+        <if test="cmbkEndDt != null and cmbkEndDt != ''">
+            , CMBK_END_DT = TO_CHAR(TO_DATE(#{cmbkEndDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24:MI')
+        </if>
+        , EMP_STTS_CHG_RSN_CN = #{empSttsChgRsnCn}
+        , XTNS_YN = #{xtnsYn}
+        , XTNS_RSN_CN = #{xtnsRsnCn}
+        WHERE DEL_YN = 'N'
+        AND PBSR_NO = #{pbsrNo}
+        AND HIST_SRNO = #{histSrno}
+    </update>
+
+
+    <!--
+         Consulter l'historique d'absence des employés des services de la douane !==세관조직 직원 결근 이력을 조회한다.==!
+     -->
+    <select id="selectBwrkSttsHist" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmEmpBwrkSttsHistVo"
+            resultType="alpass.ipt.pot.pm.cstm.vo.PotPmEmpBwrkSttsHistVo">
+        /** selectBwrkSttsHist */
+        SELECT
+        PBSR_NO
+        , HIST_SRNO
+        , EMP_STTS_CD
+        , EMP_STTS_CHG_RSN_CN
+        , APLY_STRT_DT
+        , APLY_END_DT
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM
+        , FONC_CD
+        , GRD_CD
+        , ATCH_FILE_ID
+        , ABSN_RSN_CD
+        , CMBK_RSN_CD
+        , ABSN_STRT_DT
+        , ABSN_END_DT
+        , CMBK_STRT_DT
+        , CMBK_END_DT
+        , XTNS_RSN_CN
+        , XTNS_YN
+        FROM
+        TB_POTI_EMP_BWRK_STTS_HIST
+        WHERE
+        PBSR_NO = #{pbsrNo}
+        AND HIST_SRNO = (
+        SELECT MAX(HIST_SRNO) FROM TB_POTI_EMP_BWRK_STTS_HIST
+        WHERE PBSR_NO = #{pbsrNo}
+        <if test="empSttsCd != null and empSttsCd != ''">
+            AND EMP_STTS_CD = #{empSttsCd}
+        </if>
+        <if test="absnRsn != null and absnRsn != ''">
+            AND ABSN_RSN_CD = #{absnRsn}
+        </if>
+        )
+    </select>
+
+
+    <!--
+     Supprimer l'historique des statuts de l'employé !== 직원근무상태이력 삭제 한다.==!
+    -->
+    <update id="deleteBwrkSttsHistList" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmEmpBwrkSttsHistVo">
+        /** deleteBwrkSttsHistList */
+        UPDATE TB_POTI_EMP_BWRK_STTS_HIST
+        SET LAST_CHPR_ID  = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN        = 'Y'
+        WHERE PBSR_NO = #{pbsrNo}
+          AND HIST_SRNO = #{histSrno}
+    </update>
+
+    <!--
+     Consulter des absences déjà enregistrées !==이미 등록된 결근이 있는지 조회한다==!
+    -->
+    <select id="selectBwrkSttsHistDateDupCnt" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmEmpBwrkSttsHistVo"
+            resultType="int">
+        /** selectBwrkSttsHistDateDup */
+		<![CDATA[
+        SELECT COUNT(1)
+        FROM TB_POTI_EMP_BWRK_STTS_HIST
+        WHERE DEL_YN = 'N'
+          AND PBSR_NO = #{pbsrNo}
+          AND EMP_STTS_CD <> 'A'
+          AND HIST_SRNO <> #{histSrno}
+          AND (
+                (APLY_STRT_DT <= TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI') AND
+                 APLY_END_DT >= TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI')) OR
+                (APLY_STRT_DT <= TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI') AND
+                 APLY_END_DT >= TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI'))
+            )
+        ]]>
+    </select>
+
+    <!--
+     Modifier le verrouillage/suspension du compte utilisateur !==사용자 계정 잠금/정지를 수정한다==!
+    -->
+    <update id="updatePuseAcct" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmEmpBwrkSttsHistVo">
+        /** updatePuseAcct */
+        UPDATE TB_POTI_EMP_ACCT SET
+        LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        , ACCT_LCKED_YN = #{acctYn}
+        , ACCT_PUSE_YN = #{acctYn}
+        <if test='aplyEndDt != "" and aplyEndDt != null'>
+            , ACCT_PUSE_END_DT = TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI')
+            , ACCT_LCKED_RELE_DT = TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI')
+        </if>
+        <if test='aplyStrtDt != "" and aplyStrtDt != null'>
+            , ACCT_LCKED_DT = TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI')
+            , ACCT_PUSE_STRT_DT = TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDDHH24MI')
+        </if>
+        WHERE PBSR_NO = #{pbsrNo}
+    </update>
+
+    <!--
+     Modifier la date de départ du compte utilisateur !==사용자 계정 퇴직일을 수정한다==!
+    -->
+    <update id="updateEmpRtmnDt" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmEmpBwrkSttsHistVo">
+        /** updateEmpRtmnDt */
+        UPDATE TB_POTI_EMP
+        SET LAST_CHPR_ID  = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , RTMN_DT       = TO_CHAR(TO_DATE(#{absnStrtDt}, 'DD/MM/YYYY HH24:MI'), 'YYYYMMDD')
+    </update>
+
+    <!--
+         Modifier l'employé en raison d'un changement des services de la douane !==세관조직변경으로 인하여 직원을 수정 한다.==!
+     -->
+    <update id="updateEmpOrgnChr" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpVo">
+        /** updateEmpOrgnChr */
+        UPDATE TB_POTI_EMP
+        SET ORGN_MGMT_CD = #{orgnMgmtCd}
+          , SCTR_MGMT_CD = (select hsrk_orgn_mgmt_cd from TB_POTI_ORGN where orgn_mgmt_cd = #{orgnMgmtCd})
+          , CSTM_MGMT_CD = (select upr_orgn_mgmt_cd from TB_POTI_ORGN where orgn_mgmt_cd = #{orgnMgmtCd})
+          , DEPT_MGMT_CD =
+            (with a as (SELECT LEVEL AS LEV,
+                               ORGN_CD,
+                               ORGN_MGMT_CD,
+                               UPR_ORGN_MGMT_CD,
+                               HSRK_ORGN_MGMT_CD,
+                               ORGN_TP_CD,
+                               UP_CD
+                        FROM (SELECT ORGN_CD,
+                                     ORGN_MGMT_CD,
+                                     UPR_ORGN_MGMT_CD,
+                                     HSRK_ORGN_MGMT_CD,
+                                     ORGN_TP_CD,
+                                     (SELECT T.ORGN_MGMT_CD
+                                      FROM TB_POTI_ORGN T
+                                      WHERE T.ORGN_MGMT_CD = A.UPR_ORGN_MGMT_CD AND T.DEL_YN = 'N') AS UP_CD
+                              FROM TB_POTI_ORGN A
+                              WHERE A.DEL_YN = 'N')
+        CONNECT BY PRIOR ORGN_MGMT_CD = UP_CD
+        START WITH UPR_ORGN_MGMT_CD IS NULL)
+        select ORGN_MGMT_CD
+        from a
+        where orgn_mgmt_cd = #{orgnMgmtCd}
+          and lev > 4 )
+		, FONC_CD 					 = #{foncCd}
+            , LAST_CHPR_ID = #{lastChprId}
+            , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE PBSR_NO = #{pbsrNo}
+    </update>
+
+    <!--
+         Consulter le nom des libellés !==라벨명을 조회한다==!
+     -->
+    <select id="selectChgLblNmList" parameterType="java.util.Map" resultType="java.lang.String">
+        /** selectChgLblNmList */
+        SELECT LBL_NM
+        FROM TB_COM_LBL_LANG
+        WHERE DEL_YN = 'N'
+        AND LANG_CD = #{langCd}
+        AND LBL_ID IN
+        <foreach collection="chgLblList" item="item" index="idx" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <!--
+     Nombre de personnes envoyant des emails lors d'un changement du service !==세관변경시 메일 보내는 인원==!
+  -->
+    <select id="selectOrgnChgEmailAdmList" parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpVo"
+            resultType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpVo">
+        /** selectOrgnChgEmailAdmList */
+        SELECT A.PBSR_NO, A.EML
+        FROM TB_POTI_EMP A,
+             TB_POTI_EMP_AUTH B
+        WHERE A.PBSR_NO = B.PBSR_NO(+)
+          AND B.ROLE_ID = 'POT095'
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND ORGN_MGMT_CD IN
+              (WITH RECURSIVE T1 AS
+                                  (SELECT ORGN_MGMT_CD, UPR_ORGN_MGMT_CD
+                                   FROM TB_POTI_ORGN
+                                   WHERE ORGN_MGMT_CD = #{orgnMgmtCd}
+                                   UNION
+                                   SELECT EH.ORGN_MGMT_CD, EH.UPR_ORGN_MGMT_CD
+                                   FROM T1
+                                            INNER JOIN TB_POTI_ORGN EH ON T1.UPR_ORGN_MGMT_CD = EH.ORGN_MGMT_CD)
+               SELECT A.ORGN_MGMT_CD
+               FROM (SELECT ORGN_MGMT_CD
+                     FROM TB_POTI_ORGN A
+                     WHERE A.DEL_YN = 'N'
+                         START
+                     WITH ORGN_MGMT_CD = 'ORG0000001'
+                     CONNECT BY PRIOR A.ORGN_MGMT_CD = A.UPR_ORGN_MGMT_CD) A,
+                    T1
+               WHERE A.ORGN_MGMT_CD = T1.ORGN_MGMT_CD
+                 and a.orgn_mgmt_cd
+            != 'ORG0000001'
+			)
+        UNION ALL
+        SELECT A.PBSR_NO, A.EML
+        FROM TB_POTI_EMP A,
+             TB_POTI_EMP_AUTH B
+        WHERE A.PBSR_NO = B.PBSR_NO(+)
+          AND B.ROLE_ID = 'POT009'
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+    </select>
+
+    <!--
+     Personne à notifier par e-mail en cas de changement de situation d'un douanier !==세관변경시 메일 보내는 인원==!
+  -->
+    <select id="selectEmpBwrkChgEmailList" parameterType="java.lang.String"
+            resultType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpVo">
+        /** selectEmpBwrkChgEmailList */
+        SELECT EML, PBSR_NO
+        FROM TB_POTI_EMP
+        WHERE PBSR_NO = #{pbsrNo}
+        UNION ALL
+        SELECT EML, PBSR_NO
+        FROM TB_POTI_EMP
+        WHERE ORGN_MGMT_CD = (SELECT ORGN_MGMT_CD
+                              FROM TB_POTI_EMP
+                              WHERE PBSR_NO = #{pbsrNo})
+          AND FONC_CD = FN_GET_HSRK_FONC_CD((SELECT ORGN_MGMT_CD
+                                             FROM TB_POTI_EMP
+                                             WHERE PBSR_NO = #{pbsrNo}))
+        UNION ALL
+        SELECT EML, PBSR_NO
+        FROM TB_POTI_EMP
+        WHERE PBSR_NO IN (SELECT DISTINCT(PBSR_NO) FROM VW_POTI_ROLE_UNFC WHERE ROLE_ID = 'POT009')
+    </select>
+
+</mapper>

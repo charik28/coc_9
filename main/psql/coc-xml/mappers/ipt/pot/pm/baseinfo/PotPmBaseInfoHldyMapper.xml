@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.baseinfo.mapper.PotPmBaseInfoHldyMapper">
+
+    <!--
+       Consulter la liste des jours fériés !==공휴일 목록를 조회한다==!
+    -->
+    <select id="selectHldyList"
+            parameterType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoHldyVo"
+            resultType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoHldyVo">
+        /** selectHldyList */
+        <include refid="pagination.header"/>
+        SELECT
+        TO_CHAR(TO_DATE(A.BASE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS BASE_DT
+        , TO_CHAR(TO_DATE(A.BASE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS ORG_BASE_DT
+        , A.HLDY_TP_CD
+        , A.HLDY_TP_CD AS ORG_HLDY_TP_CD
+        , FN_GET_CD_VDVAL_NM('POT_0008', A.HLDY_TP_CD, #{langCd}) AS HLDY_TP_NM
+        , FN_GET_CD_VDVAL_NM('COM_0037', A.WKDY_CD, #{langCd}) AS WKDY_NM
+        , A.WKDY_CD
+        , A.HLDY_NM
+        , A.FRST_REGST_ID
+        , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM
+        , A.LAST_CHPR_ID
+        , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY') AS LAST_CHG_DTTM
+        FROM TB_COM_HLDY A
+        WHERE A.DEL_YN = 'N'
+        <if test="baseYy != null and baseYy != ''">
+            AND SUBSTR(A.BASE_DT, 0, 4) = #{baseYy}
+        </if>
+        <if test="hldyNm != null and hldyNm != ''">
+            AND UPPER(A.HLDY_NM) LIKE '%'||UPPER(#{hldyNm})||'%'
+        </if>
+        <if test="hldyTpCd != null and hldyTpCd != ''">
+            AND A.HLDY_TP_CD = #{hldyTpCd}
+        </if>
+        ORDER BY A.BASE_DT
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+       Enregistrer des jours fériés !==공휴일을 등록한다==!
+    -->
+    <select id="selectHldyRegYnCnt" parameterType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoHldyVo" resultType="java.lang.Integer">
+        /** selectHldyRegYnCnt */
+        SELECT
+            COUNT(1) AS CNT
+        FROM  TB_COM_HLDY
+        WHERE DEL_YN = 'N'
+          AND   BASE_DT = TO_CHAR(TO_DATE(#{baseDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+          AND   HLDY_TP_CD = #{hldyTpCd}
+    </select>
+
+    <!--
+       Enregistrer des jours fériés !==공휴일을 등록한다==!
+    -->
+    <insert id="insertHldy" parameterType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoHldyVo">
+        /** insertHldy */
+        with upsert as
+        (
+            UPDATE TB_COM_HLDY SET
+                    LAST_CHPR_ID = #{lastChprId}
+                    , LAST_CHG_DTTM = SYSTIMESTAMP
+                    , DEL_YN = 'N'
+                    , WKDY_CD = #{wkdyCd}
+                    , HLDY_NM = #{hldyNm}
+            WHERE BASE_DT = TO_CHAR(TO_DATE(#{baseDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                AND HLDY_TP_CD = #{hldyTpCd}
+                AND DEL_YN = 'Y'
+            returning *
+        )
+        INSERT INTO TB_COM_HLDY
+        (
+                BASE_DT
+                , HLDY_TP_CD
+                , WKDY_CD
+                , HLDY_NM
+                , DEL_YN
+                , FRST_REGST_ID
+                , FRST_RGSR_DTTM
+                , LAST_CHPR_ID
+                , LAST_CHG_DTTM
+        )
+        SELECT
+                TO_CHAR(TO_DATE(#{baseDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                , #{hldyTpCd}
+                , #{wkdyCd}
+                , #{hldyNm}
+                , #{delYn}
+                , #{frstRegstId}
+                , SYSTIMESTAMP
+                , #{lastChprId}
+                , SYSTIMESTAMP
+        WHERE NOT exists(select * from upsert)
+    </insert>
+
+    <!--
+       Modifier des jours fériés !==공휴일을 수정한다==!
+    -->
+    <update id="updateHldy" parameterType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoHldyVo">
+        /** updateHldy */
+        UPDATE TB_COM_HLDY
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , WKDY_CD = #{wkdyCd}
+          , HLDY_NM = #{hldyNm}
+          , DEL_YN = #{delYn}
+        WHERE BASE_DT = TO_CHAR(TO_DATE(#{baseDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+          AND   HLDY_TP_CD = #{hldyTpCd}
+    </update>
+
+    <!--
+       Supprimer des jours fériés !==공휴일을 삭제한다==!
+    -->
+    <delete id="deleteHldy" parameterType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoHldyVo">
+        /** deleteHldy */
+        UPDATE TB_COM_HLDY
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+        WHERE BASE_DT = TO_CHAR(TO_DATE(#{baseDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+          AND   HLDY_TP_CD = #{hldyTpCd}
+    </delete>
+
+</mapper>

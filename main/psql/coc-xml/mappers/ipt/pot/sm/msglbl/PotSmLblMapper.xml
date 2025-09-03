@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.sm.msglbl.mapper.PotSmLblMapper">
+							
+	<!-- 
+		 Consulter la liste des libellés !== 라벨 목록 조회 ==!
+	 -->
+	<select id="selectLblList" parameterType="alpass.ipt.pot.sm.msglbl.vo.PotSmLblVo" resultType="alpass.ipt.pot.sm.msglbl.vo.PotSmLblVo">
+		/** selectLblList */
+    	<include refid="pagination.header"/>
+		SELECT 
+		       A.USE_YN
+		     , A.LBL_ID
+		     , A.LBL_ID AS ORG_LBL_ID
+		     , A.BSOP_CLSF_CD
+		     , A.LBL_TPCD
+		     , (SELECT B.LBL_NM FROM TB_COM_LBL_LANG B WHERE B.LBL_ID = A.LBL_ID AND B.LANG_CD = #{langCd} AND ROWNUM = 1 ) AS LBL_NM
+             , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS frstRgsrDttm 
+             , A.FRST_REGST_ID 
+             , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY') AS lastChgDttm 
+             , A.LAST_CHPR_ID		     
+		FROM TB_COM_LBL A
+		WHERE A.DEL_YN = 'N'
+		<if test="searLblNm != null and searLblNm != ''">
+		AND   A.LBL_ID IN ( SELECT B.LBL_ID
+		                    FROM TB_COM_LBL_LANG B
+		                    WHERE UPPER(B.LBL_NM) LIKE '%'||UPPER(#{searLblNm})||'%'
+		                      AND B.DEL_YN = 'N'
+		                  )
+		</if>
+		<if test="searLblId != null and searLblId != ''">
+		AND   UPPER(A.LBL_ID) LIKE '%'||UPPER(#{searLblId})||'%'
+		</if>
+
+		<if test="searBsopClsfCd != null and searBsopClsfCd != ''">
+		AND   A.BSOP_CLSF_CD = #{searBsopClsfCd}
+		</if>
+
+		<if test="searLblTpcd != null and searLblTpcd != ''">
+		AND   A.LBL_TPCD = #{searLblTpcd}
+		</if>
+		order by LBL_ID ASC
+		<include refid="pagination.footer"/>
+	</select>
+
+	<!--
+		 Consulter le détail des libellés !== 라벨 상세 조회 ==!
+	 -->
+	<select id="selectLblDetailList" parameterType="alpass.ipt.pot.sm.msglbl.vo.PotSmLblVo" resultType="alpass.ipt.pot.sm.msglbl.vo.PotSmLblLangVo">
+		/** selectLblDetailList */
+		SELECT 
+		       B.LBL_ID AS KEY1
+		     , A.CD_VDVAL AS LANG_CD
+		     , B.LBL_NM AS LANG_CN 
+		FROM TB_COM_COMN_CD_D A, 
+		     TB_COM_LBL_LANG B
+		WHERE A.COMN_CD = 'COM_0057'
+		  AND B.DEL_YN(+) = 'N'
+          AND B.LBL_ID(+) = #{lblId}
+          AND A.CD_VDVAL  = B.LANG_CD(+)
+        ORDER BY TO_NUMBER(A.SORT_ORDR) ASC
+	</select>
+	
+	<!-- 
+		 Consulter le comptage d'enregistrement des libellés !== 라벨  등록 카운트 조회 ==!
+	 -->
+	<select id="selectLblIdCnt" parameterType="alpass.ipt.pot.sm.msglbl.vo.PotSmLblVo" resultType="java.lang.Integer">
+		/** selectLblIdCnt */
+		SELECT 
+		       COUNT(1) AS CNT
+		FROM   TB_COM_LBL
+		WHERE  LBL_ID = #{lblId}
+		AND    DEL_YN = 'N'
+	</select>
+
+	<!-- 
+		 Consulter le comptage du nom du libellé !== 라벨 명 카운트 조회 ==!
+	 -->
+	<select id="selectLblNmCnt" parameterType="alpass.ipt.pot.sm.msglbl.vo.PotSmLblVo" resultType="java.lang.Integer">
+		/** selectLblNmCnt */
+		SELECT 
+		       COUNT(1) AS CNT
+		FROM   TB_COM_LBL A, TB_COM_LBL_LANG B
+		WHERE  A.LBL_ID = B.LBL_ID
+		AND    B.LANG_CD = #{langCd}
+		AND    B.LBL_NM = #{lblNm}
+		AND    B.DEL_YN = 'N'
+		AND    A.LBL_TPCD = #{lblTpcd}
+		<if test='updTp != null and updTp.equals("Y")'>
+		<![CDATA[ AND B.LBL_ID <> #{orgLblId} ]]>
+		</if>
+	</select>
+									
+	<!-- 
+		 Enregistrer un libellé !== 라벨 등록 ==!
+	 -->
+	<insert id="insertLbl" parameterType="alpass.ipt.pot.sm.msglbl.vo.PotSmLblVo">
+		/** insertLbl */
+		with upsert as
+		(
+			UPDATE TB_COM_LBL SET
+					LAST_CHPR_ID = #{lastChprId}
+					, LAST_CHG_DTTM = SYSTIMESTAMP
+					, DEL_YN = 'N'
+					, BSOP_CLSF_CD = #{bsopClsfCd}
+					, LBL_TPCD = #{lblTpcd}
+					, USE_YN = #{useYn}
+			WHERE LBL_ID = UPPER(#{lblId})
+			returning *
+		)
+		INSERT INTO TB_COM_LBL
+		(
+				LBL_ID
+				, BSOP_CLSF_CD
+				, LBL_TPCD
+				, USE_YN
+				, DEL_YN
+				, FRST_REGST_ID
+				, FRST_RGSR_DTTM
+				, LAST_CHPR_ID
+				, LAST_CHG_DTTM
+		)
+		SELECT
+				UPPER(#{lblId})
+				, #{bsopClsfCd}
+				, #{lblTpcd}
+				, #{useYn}
+				, 'N'
+				, #{frstRegstId}
+				, SYSTIMESTAMP
+				, #{lastChprId}
+				, SYSTIMESTAMP
+		WHERE NOT exists(select * from upsert)
+	</insert>
+
+	<!--
+		 Enregistrer un message !== 메시지 등록 ==!
+	 -->
+	<insert id="insertLblLang" parameterType="alpass.ipt.pot.sm.msglbl.vo.PotSmLblLangVo">
+		/** insertLblLang */
+		with upsert as
+		(
+			UPDATE TB_COM_LBL_LANG SET
+					LAST_CHPR_ID = #{lastChprId}
+					, LAST_CHG_DTTM = SYSTIMESTAMP
+					, DEL_YN = 'N'
+					, LBL_NM = #{langCn}
+			WHERE LBL_ID = UPPER(#{key1})
+				AND LANG_CD = #{langCd}
+			returning *
+		)
+		INSERT INTO TB_COM_LBL_LANG
+		(
+				LBL_ID
+				, LANG_CD
+				, LBL_NM
+				, DEL_YN
+				, FRST_REGST_ID
+				, FRST_RGSR_DTTM
+				, LAST_CHPR_ID
+				, LAST_CHG_DTTM
+		)
+		SELECT
+				UPPER(#{key1})
+				, #{langCd}
+				, #{langCn}
+				, 'N'
+				, #{frstRegstId}
+				, SYSTIMESTAMP
+				, #{lastChprId}
+				, SYSTIMESTAMP
+		WHERE NOT exists(select * from upsert)
+	</insert>
+	
+	<!-- 
+		 Modifier un libellé !== 라벨 수정 ==!
+	 -->
+	<update id="updateLbl" parameterType="alpass.ipt.pot.sm.msglbl.vo.PotSmLblVo">
+		/** updateLbl */
+		UPDATE TB_COM_LBL
+		SET  
+		     LAST_CHPR_ID = #{lastChprId}
+		   , LAST_CHG_DTTM = SYSTIMESTAMP
+			 <if test="bsopClsfCd != null and bsopClsfCd != ''">
+			 , BSOP_CLSF_CD = #{bsopClsfCd}
+			 </if>
+			 <if test="lblTpcd != null and lblTpcd != ''">
+			 , LBL_TPCD = #{lblTpcd}
+			 </if>
+		   <if test="useYn != null and useYn != ''">
+		   , USE_YN = #{useYn}
+		   </if>
+		   <if test="lblId != null and lblId != ''">
+		   , LBL_ID = UPPER(#{lblId})
+		   </if>		   
+		WHERE LBL_ID = UPPER(#{orgLblId})
+		AND   DEL_YN = 'N'
+	</update>
+	
+	<!-- 
+		 Modifier le nom du libellé !== 라벨명 수정 ==!
+	 -->
+	<update id="updateLblLang" parameterType="alpass.ipt.pot.sm.msglbl.vo.PotSmLblLangVo">
+		/** updateLblLang */
+		UPDATE TB_COM_LBL_LANG
+		SET  
+		     LAST_CHPR_ID = #{lastChprId}
+		   , LAST_CHG_DTTM = SYSTIMESTAMP
+		   <if test="langCn != null and langCn != ''">
+		   , LBL_NM = #{langCn}
+		   </if>
+		   <if test="key2 != null and key2 != ''">
+		   , LBL_ID = UPPER(#{key2})
+		   </if>		
+		WHERE LBL_ID = UPPER(#{key1})
+		AND   LANG_CD = #{langCd}
+		AND   DEL_YN = 'N'
+	</update>
+							
+	<!-- 
+		 Supprimer un libellé !== 라벨 삭제 ==!
+	 -->
+	<update id="deleteLbl" parameterType="alpass.ipt.pot.sm.msglbl.vo.PotSmLblVo">
+		/** deleteLbl */
+		UPDATE TB_COM_LBL
+		SET  
+		     LAST_CHPR_ID = #{lastChprId}
+		   , LAST_CHG_DTTM = SYSTIMESTAMP
+		   , DEL_YN = 'Y' 
+		WHERE LBL_ID = UPPER(#{orgLblId})
+	</update>
+							
+	<!-- 
+		 Effacer le nom du libellé !== 라벨명 삭제 ==!
+	 -->
+	<update id="deleteLblLang" parameterType="alpass.ipt.pot.sm.msglbl.vo.PotSmLblVo">
+		/** deleteLblLang */
+		UPDATE TB_COM_LBL_LANG
+		SET  
+		     LAST_CHPR_ID = #{lastChprId}
+		   , LAST_CHG_DTTM = SYSTIMESTAMP
+		   , DEL_YN = 'Y' 
+		WHERE LBL_ID = UPPER(#{orgLblId})
+	</update>
+													
+</mapper>

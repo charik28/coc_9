@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.car.com.mapper.CarCntrRlbrApiMapper">
+
+	<!--Sauvegarder l'entrée/sortie !== 반출입 저장-->
+	<insert id="insertCareRlbr" parameterType="alpass.ipt.car.bnwrhs.cagbrng.vo.CarCagBrngRlbrVo">
+		/* alpass.ipt.car.com.mapper.CarCntrRlbrApiMapper.insertCareRlbr */
+		INSERT INTO ALPASSEXT.TB_CARE_RLBR
+		(
+			  RLBR_RQST_NO               /** 번역예정 !==반출입신청번호==! */
+			, RLBR_PRNG_NO
+			, RLBR_TP_CD                 /** Code De Catégorie D'Entrée		/Sortie !==반출입구분코드==! */
+			, RLBR_PT_CD                 /** Code De Type D'Entrée/Sortie !==반출입유형코드==! */
+			, JRSD_ORGN_CD               /** Code D'Unité Compétente  !==관할조직코드==! */
+			, RLBR_DTTM                  /** Date/Heure D'Entrée/Sortie !==반출입일시==! */
+			, IBOBZ_CD                   /** 번역예정 !==보세구역코드==! */
+			, CAG_MGMT_NO                /** Crn !==화물관리번호==! */
+			, BL_NO                      /** N° De Bl !==BL번호==! */
+			, PDLS_NM                    /** Nom De L'Article !==품목명==! */
+			, RLBR_PCKG_GCNT             /** N° De Colisage D'Entrée/Sortie !==반출입포장개수==! */
+			, RLBR_WGHT                  /** Poids D'Entrée/Sortie !==반출입중량==! */
+			, DIVD_TP_CD                 /** Code De Type D'Éclatement !==분할구분코드==! */
+			, BRNG_ACDN_PT_CD            /** Code De Type D'Accident De L'Entrée !==반입사고유형코드==! */
+			, BRNG_ACDN_GCNT             /** Nombre D'Accident D'Entrée !==반입사고개수==! */
+			, BRNG_ACDN_WGHT             /** Poids D'Accident D'Entrée !==반입사고중량==! */
+			, RELA_NO                    /** Numéro Concerné !==관련번호==! */
+			, PCKG_UT_CD					/**  Code De L'Unité De Colis  					!== 포장단위코드 ==!  */
+			, TRSF_PRNG_DT               /** 번역예정 !==양도예정일자==! */
+			, TRSN_DTTM                  /** Date Et Heure De Envoyé !==전송일시==! */
+			, TRSN_CO_CD                 /** Code De Compagnie De Envoyé !==전송업체코드==! */
+			, PRCS_DTTM
+			, PRCS_STTS_CD
+			, CO_RQST_NO 				/** N° de demande d'entreprise   !==업체신청번호==! */
+			, DEL_YN                     /** Suppression On !==삭제여부==! */
+			, FRST_REGST_ID              /** Id Du Premier Enregistrant  !==최초등록자ID==! */
+			, FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !==최초등록일시==! */
+			, LAST_CHPR_ID               /** Id Du Modificateur Final !==최종변경자ID==! */
+			, LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !==최종변경일시==! */
+		) VALUES (
+			  #{rlbrRqstNo}            /** 번역예정 !==반출입신청번호==! */
+			, #{rlbrPrngNo}
+			, #{rlbrTpCd}              /** Code De Catégorie D'Entrée/Sortie !==반출입구분코드==! */
+			, #{rlbrPtCd}                 /** Code De Type D'Entrée/Sortie !==반출입유형코드==! */
+			, #{jrsdOrgnCd}            /** Code D'Unité Compétente  !==관할조직코드==! */
+			, COALESCE(to_timestamp(to_char(to_date(#{rlbrDttm}),'YYYYMMDDHH24MISS'), 'YYYYMMDDHH24MISS'), SYSTIMESTAMP)                  /** Date/Heure D'Entrée/Sortie !==반출입일시==! */
+			, #{ibobzCd}                   /** 번역예정 !==보세구역코드==! */
+			, #{cagMgmtNo}                /** Crn !==화물관리번호==! */
+			, #{blNo}                      /** N° De Bl !==BL번호==! */
+			, #{pdlsNm}                    /** Nom De L'Article !==품목명==! */
+			, #{rlbrPckgGcnt}            /** N° De Colisage D'Entrée/Sortie !==반출입포장개수==! */
+			, #{rlbrWght}                 /** Poids D'Entrée/Sortie !==반출입중량==! */
+			, #{divdTpCd}                 /** Code De Type D'Éclatement !==분할구분코드==! */
+			, #{brngAcdnPtCd}            /** Code De Type D'Accident De L'Entrée !==반입사고유형코드==! */
+			, #{brngAcdnGcnt}                    /** Nombre D'Accident D'Entrée !==반입사고개수==! */
+			, #{brngAcdnWght}                     /** Poids D'Accident D'Entrée !==반입사고중량==! */
+			, #{relaNo}                    /** Numéro Concerné !==관련번호==! */
+			, #{pckgUtCd}					/**  Code De L'Unité De Colis  					!== 포장단위코드 ==!  */
+			, #{trsfPrngDt}               /** 번역예정 !==양도예정일자==! */
+			, COALESCE(to_timestamp(#{trsnDttm}, 'YYYYMMDDHH24MISS'), SYSTIMESTAMP)                  /** Date Et Heure De Envoyé !==전송일시==! */
+			, #{trsnCoCd}                 /** Code De Compagnie De Envoyé !==전송업체코드==! */
+			, COALESCE(to_timestamp(#{prcsDttm}, 'YYYYMMDDHH24MISS'), SYSTIMESTAMP)
+			, #{prcsSttsCd}
+			, #{coRqstNo} 				/** N° de demande d'entreprise   !==업체신청번호==! */
+			, 'N'                      /** Suppression On !==삭제여부==! */
+			, #{frstRegstId}           /** ID du premier enregistrant  != 최초등록자ID =! */
+			, SYSTIMESTAMP             /** Date et heure de premier enregistrement != 최초등록일시 =! */
+			, #{lastChprId}            /** ID du modificateur final != 최종변경자ID =! */
+			, SYSTIMESTAMP             /** Date et heure de modification finale != 최종변경일시 =! */
+		)
+	</insert>
+
+	<!--Sauvegarder l'entrée/sortie !== 반출입 저장-->
+	<insert id="insertCariRlbr" parameterType="alpass.ipt.car.bnwrhs.cagbrng.vo.CarCagBrngRlbrVo">
+		/* alpass.ipt.car.com.mapper.CarCntrRlbrApiMapper.insertCariRlbr */
+		INSERT INTO ALPASSINT.TB_CARI_RLBR
+		(
+			  RLBR_RQST_NO               /** 번역예정 !==반출입신청번호==! */
+			, RLBR_TP_CD                 /** Code De Catégorie D'Entrée		/Sortie !==반출입구분코드==! */
+			, CO_RQST_NO 				/** N° de demande d'entreprise   !==업체신청번호==! */
+			, JRSD_ORGN_CD               /** Code D'Unité Compétente  !==관할조직코드==! */
+			, RLBR_DTTM                  /** Date/Heure D'Entrée/Sortie !==반출입일시==! */
+			, IBOBZ_CD                   /** 번역예정 !==보세구역코드==! */
+			, RLBR_PT_CD                 /** Code De Type D'Entrée/Sortie !==반출입유형코드==! */
+			, CAG_MGMT_NO                /** Crn !==화물관리번호==! */
+			, BL_NO                      /** N° De Bl !==BL번호==! */
+			, RELA_NO                    /** Numéro Concerné !==관련번호==! */
+			, PDLS_NM                    /** Nom De L'Article !==품목명==! */
+			, RLBR_PCKG_GCNT             /** N° De Colisage D'Entrée/Sortie !==반출입포장개수==! */
+			, RLBR_WGHT                  /** Poids D'Entrée/Sortie !==반출입중량==! */
+			, PCKG_UT_CD					/**  Code De L'Unité De Colis  					!== 포장단위코드 ==!  */
+			, DIVD_TP_CD                 /** Code De Type D'Éclatement !==분할구분코드==! */
+			, BRNG_ACDN_PT_CD            /** Code De Type D'Accident De L'Entrée !==반입사고유형코드==! */
+			, BRNG_ACDN_GCNT             /** Nombre D'Accident D'Entrée !==반입사고개수==! */
+			, BRNG_ACDN_WGHT             /** Poids D'Accident D'Entrée !==반입사고중량==! */
+			, TRSN_DTTM                  /** Date Et Heure De Envoyé !==전송일시==! */
+			, TRSN_CO_CD                 /** Code De Compagnie De Envoyé !==전송업체코드==! */
+			, AUDT_EMP_ID                /** Id De La Personne Vérifiant !==심사직원ID==! */
+			, AUDT_DTTM                  /** Date De L'Étude !==심사일시==! */
+			, AUDT_PT_CD				 /**  Code De Type De Contrôle  !== 심사유형코드 ==!  */
+			, TRSF_PRNG_DT               /** 번역예정 !==양도예정일자==! */
+			, DEL_YN                     /** Suppression On !==삭제여부==! */
+			, FRST_REGST_ID              /** Id Du Premier Enregistrant  !==최초등록자ID==! */
+			, FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !==최초등록일시==! */
+			, LAST_CHPR_ID               /** Id Du Modificateur Final !==최종변경자ID==! */
+			, LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !==최종변경일시==! */
+		)
+		SELECT RLBR_RQST_NO               /** 번역예정 !==반출입신청번호==! */
+			 , RLBR_TP_CD                 /** Code De Catégorie D'Entrée		/Sortie !==반출입구분코드==! */
+			 , CO_RQST_NO 				/** N° de demande d'entreprise   !==업체신청번호==! */
+			 , JRSD_ORGN_CD               /** Code D'Unité Compétente  !==관할조직코드==! */
+			 , RLBR_DTTM                  /** Date/Heure D'Entrée/Sortie !==반출입일시==! */
+			 , IBOBZ_CD                   /** 번역예정 !==보세구역코드==! */
+			 , RLBR_PT_CD                 /** Code De Type D'Entrée/Sortie !==반출입유형코드==! */
+			 , CAG_MGMT_NO                /** Crn !==화물관리번호==! */
+			 , BL_NO                      /** N° De Bl !==BL번호==! */
+			 , RELA_NO                    /** Numéro Concerné !==관련번호==! */
+			 , PDLS_NM                    /** Nom De L'Article !==품목명==! */
+			 , RLBR_PCKG_GCNT             /** N° De Colisage D'Entrée/Sortie !==반출입포장개수==! */
+			 , RLBR_WGHT                  /** Poids D'Entrée/Sortie !==반출입중량==! */
+			 , PCKG_UT_CD					/**  Code De L'Unité De Colis  					!== 포장단위코드 ==!  */
+			 , DIVD_TP_CD                 /** Code De Type D'Éclatement !==분할구분코드==! */
+			 , BRNG_ACDN_PT_CD            /** Code De Type D'Accident De L'Entrée !==반입사고유형코드==! */
+			 , BRNG_ACDN_GCNT             /** Nombre D'Accident D'Entrée !==반입사고개수==! */
+			 , BRNG_ACDN_WGHT             /** Poids D'Accident D'Entrée !==반입사고중량==! */
+			 , TRSN_DTTM                  /** Date Et Heure De Envoyé !==전송일시==! */
+			 , TRSN_CO_CD                 /** Code De Compagnie De Envoyé !==전송업체코드==! */
+			 , #{audtEmpId}             /** Id De La Personne Vérifiant !==심사직원ID==! */
+			 , COALESCE(TO_DATE(#{audtDttm}, 'YYYYMMDDHH24MISS'), SYSTIMESTAMP) /** Date De L'Étude !==심사일시==! */
+		     , 'O'						/**  Code De Type De Contrôle  !== 심사유형코드 ==!  */
+			 , TRSF_PRNG_DT               /** 번역예정 !==양도예정일자==! */
+			 , 'N'                      /** Suppression On !==삭제여부==! */
+			 , #{frstRegstId}           /** ID du premier enregistrant  != 최초등록자ID =! */
+			 , SYSTIMESTAMP             /** Date et heure de premier enregistrement != 최초등록일시 =! */
+			 , #{lastChprId}            /** ID du modificateur final != 최종변경자ID =! */
+			 , SYSTIMESTAMP             /** Date et heure de modification finale != 최종변경일시 =! */
+		FROM ALPASSEXT.TB_CARE_RLBR
+	   WHERE RLBR_RQST_NO = #{rlbrRqstNo}
+	</insert>
+
+	<!--
+	Supprimer la  déclaration de d'introduction/sortie
+	!== 반출입 내역을 삭제처리 한다.==!
+	-->
+	<update id="deleteCareRlbr" parameterType="alpass.ipt.car.bnwrhs.cagbrng.vo.CarCagBrngRlbrVo">
+		/* alpass.ipt.car.com.mapper.CarCntrRlbrApiMapper.deleteCareRlbr */
+		UPDATE ALPASSEXT.TB_CARE_RLBR
+		   SET DEL_YN = 'Y'
+		     , LAST_CHPR_ID = #{lastChprId} /**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		     , LAST_CHG_DTTM = SYSTIMESTAMP /**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		WHERE RLBR_TP_CD = #{rlbrTpCd} /**  Code de catégorie d'introduction/sortie  !== 반출입구분코드 ==!  */
+		  AND IBOBZ_CD = #{ibobzCd}				/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+		  AND CAG_MGMT_NO = #{cagMgmtNo}			/**  Crn  !== 화물관리번호 ==!  */
+		  AND BL_NO = #{blNo}				/**  N° De Bl  !== BL번호 ==!  */
+	</update>
+
+	<!--
+	Supprimer la  déclaration de d'introduction/sortie
+	!== 반출입 내역을 삭제처리 한다.==!
+	-->
+	<update id="deleteCariRlbr" parameterType="alpass.ipt.car.bnwrhs.cagbrng.vo.CarCagBrngRlbrVo">
+		/* alpass.ipt.car.com.mapper.CarCntrRlbrApiMapper.deleteCariRlbr */
+		UPDATE ALPASSINT.TB_CARI_RLBR
+		   SET DEL_YN = 'Y'
+		     , LAST_CHPR_ID = #{lastChprId} /**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		     , LAST_CHG_DTTM = SYSTIMESTAMP /**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		WHERE RLBR_TP_CD = #{rlbrTpCd} /**  Code de catégorie d'introduction/sortie  !== 반출입구분코드 ==!  */
+		  AND IBOBZ_CD = #{ibobzCd}				/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+		  AND CAG_MGMT_NO = #{cagMgmtNo}			/**  Crn  !== 화물관리번호 ==!  */
+		  AND BL_NO = #{blNo}				/**  N° De Bl  !== BL번호 ==!  */
+	</update>
+
+	<!--
+	Consulter les détails d'introduction/sortie prévue.
+	!== 반출입 예정 상세내역을 조회한다 ==!
+	-->
+	<select id="selectRlbrPrngDetailInfo" parameterType="alpass.ipt.car.bnwrhs.cagbrng.vo.CarCagBrngRlbrVo" resultType="alpass.ipt.car.bnwrhs.cagbrng.vo.CarCagBrngRlbrVo">
+		/* alpass.ipt.car.com.mapper.CarCntrRlbrApiMapper.selectRlbrPrngDetailInfo */
+		SELECT RLBR_PRNG_NO
+		     , CAG_MGMT_NO
+						 , RLBR_PCKG_GCNT
+						 , RLBR_WGHT
+						 , BL_NO
+						 , IBOBZ_CD
+		 FROM ALPASSEXT.TB_CARE_RLBR_PRNG
+		WHERE DEL_YN = 'N'
+		<if test="rlbrPrngNo != null and rlbrPrngNo != ''">
+		  AND RLBR_PRNG_NO = #{rlbrPrngNo}
+		</if>
+		<if test="rlbrTpCd != null and rlbrTpCd != ''">
+		  AND RLBR_TP_CD = #{rlbrTpCd}
+		</if>
+		<if test="cagMgmtNo != null and cagMgmtNo != ''">
+		  AND CAG_MGMT_NO = #{cagMgmtNo}
+		</if>
+	</select>
+
+	<!--
+	modifier le stock/poids d'introduction/sortie dans la table de l'introduction/sortie prévue
+	!== 반출입예정테이블의 반출입 재고/중량을 수정한다. ==!
+	-->
+	<update id="updateRlbrPrng" parameterType="alpass.ipt.car.bnwrhs.cagbrng.vo.CarCagBrngRlbrVo">
+		/* alpass.ipt.car.com.mapper.CarCntrRlbrApiMapper.updateRlbrPrng */
+		UPDATE ALPASSEXT.TB_CARE_RLBR_PRNG
+		   SET RLBR_PCKG_GCNT = #{rlbrPckgGcnt}										/** Nombre de colis d'introduction/sortie    	!== 반출입포장개수 ==!*/
+			 , RLBR_WGHT  	  = #{rlbrWght}											/**Poids d'introduction/sortie  			    !== 반출입중량    ==!*/
+			 , RLBR_CMPL_YN   = /**  Fin d'introduction/sortie O/N  			!== 반출입완료여부 ==!*/
+			     CASE WHEN #{rlbrTpCd} = 'I' THEN CASE WHEN RLBR_PCKG_GCNT - TO_NUMBER(#{rlbrPckgGcnt}) <![CDATA[ <= ]]> 0 AND RLBR_WGHT - TO_NUMBER(#{rlbrWght}) <![CDATA[ <= ]]> 0 THEN 'Y' ELSE 'N' END
+					  ELSE CASE WHEN RLBR_PCKG_GCNT - TO_NUMBER(#{rlbrPckgGcnt}) <![CDATA[ >= ]]> PCKG_GCNT AND RLBR_WGHT - TO_NUMBER(#{rlbrWght}) <![CDATA[ >= ]]> WGHT THEN 'Y' ELSE 'N' END
+				 END
+			 , LAST_CHPR_ID = #{lastChprId} /**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			 , LAST_CHG_DTTM = SYSTIMESTAMP /**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		 WHERE RLBR_PRNG_NO = #{rlbrPrngNo}
+		<if test="rlbrTpCd != null and rlbrTpCd != ''">
+		   AND RLBR_TP_CD = #{rlbrTpCd}
+		</if>
+		<if test="cagMgmtNo != null and cagMgmtNo != ''">
+		   AND CAG_MGMT_NO = #{cagMgmtNo}
+		</if>
+	</update>
+
+</mapper>

@@ -1,0 +1,1523 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.pot.mp.elctaprv.mapper.PotMpElctaprvMapper">
+
+	<!--
+		Consulter la liste des demandes d'approbation en attente !==내결재 목록을 조회	(결재대기)==!
+	-->
+	<select id="selectAprvWtngList"
+		parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo"
+		resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** selectAprvWtngList **/
+		<if test="navbarYn == null or navbarYn == ''">
+			<include refid="pagination.header"/>
+		</if>
+		SELECT APRV_ID																								/** ID de l'approbation !==결재ID==! */
+		, APRV_SRNO																							/** N° série de l'approbation !==결재일련번호==! */
+		, APRV_EMP_PBSR_NO																					/** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+		, APRV_EMP_NM																							/** Approbateur !==결재직원명==! */
+		, CASE WHEN APRV_PRCS_STTS_CD = 'I03' AND AF_RSLT = 'J02' AND APRV_SRNO IS NOT NULL THEN 'J99'
+		ELSE NVL(APRV_RSLT_CD, 'J99') END AS APRV_RSLT_CD													/** Code de résultat d'apprboation !==결재결과코드==! */
+		, AF_EMP																								/** Approbateur postérieur !==이후결재직원==! */
+		, AF_RSLT																								/** Code de résultat de l'approbateur postérieur !==이후결재결과==! */
+		, BF_EMP																								/** Approbateur précédent !==이전결재직원==! */
+		, BF_RSLT																								/** Code de résultat de l'approbateur précédent !==이전결재결과==! */
+		, FIRST_YN																							/** Premier approbateur O/N !==첫번째결재여부==! */
+		, LAST_YN																								/** Dernier approbateur O/N !==마지막결재여부==! */
+		, DCAB_YN																								/** Décision arbitraire O/N !==전결여부==! */
+		, APRV_RQST_EMP_PBSR_NO																				/** N° matricule solde du demandeur d'approbation !==결재요청직원공무원번호==! */
+		, APRV_RQST_EMP_NM																					/** Nom du demandeur d'approbation !==결재요청직원명==! */
+		, APRV_PRCS_STTS_CD																					/** Code de statut d'approbation !==결재처리상태코드==! */
+		, BSOP_CLSF_CD																						/** Code de type de travail !==업무분류코드==! */
+		, APRV_BSOP_TP_CD																						/** Code de type d'approbation !==결재업무구분코드==! */
+		, APRV_RQST_CN																						/** Contenu de la demande d'approbation !==결재요청내용==! */
+		, APRV_REFF_NO																						/** N° de référence d'approbation !==결재참조번호==! */
+		, TO_CHAR(APRV_RQST_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS APRV_RQST_DTTM									/** Date de demande d'approbation !==결재요청일시==! */
+		, EMRG_APRV_RQST_YN																					/** Urgent O/N !==긴급결재신청여부==! */
+		, APRL_SRNO																							/** N° série du niveau d'approbation !==결재선일련번호==! */
+		, APRV_DTL_SCRN_URL																					/** URL écran des détails d'approbation !==결재상세화면URL==! */
+		, APRV_PSBL_YN																						/** Possible O/N pour l'approbation !==결재가능여부==! */
+		, APRV_RQST_DTTM AS APRV_RQST_DTTM2																	/** Date de demande d'approbation !==결재요청일시==! */
+		, ESNT_YN
+		, NEXT_ESNT_YN
+		FROM (
+		SELECT A.APRV_ID
+		, A.APRV_SRNO
+		, A.APRV_EMP_PBSR_NO
+		, C.EMP_NM AS APRV_EMP_NM
+		, A.APRV_RSLT_CD
+		, A.AF_EMP
+		, A.AF_RSLT
+		, A.BF_EMP
+		, A.BF_RSLT
+		, A.FIRST_YN
+		, A.LAST_YN
+		, NVL(A.DCAB_YN, 'N') AS DCAB_YN
+		, B.APRV_RQST_EMP_PBSR_NO
+		, CONCAT(D.EMP_FMNM, ' ', D.EMP_NM) AS APRV_RQST_EMP_NM
+		, B.APRV_PRCS_STTS_CD
+		, B.BSOP_CLSF_CD
+		, B.APRV_BSOP_TP_CD
+		, B.APRV_RQST_CN
+		, B.APRV_REFF_NO
+		, B.APRV_RQST_DTTM
+		, B.EMRG_APRV_RQST_YN
+		, B.APRL_SRNO
+		, B.APRV_DTL_SCRN_URL
+		, CASE WHEN B.APRV_PRCS_STTS_CD = 'I01' AND A.AF_RSLT IS NULL THEN 'Y'
+		WHEN B.APRV_PRCS_STTS_CD = 'I02' AND B.APRV_RQST_EMP_PBSR_NO = #{pbsrNo} THEN 'Y'
+		WHEN B.APRV_PRCS_STTS_CD = 'I03' AND A.APRV_RSLT_CD != 'J97' AND (A.BF_RSLT != 'J02' OR A.BF_RSLT IS NULL) AND ((A.APRV_RSLT_CD IS NULL OR A.APRV_RSLT_CD = 'J99') OR (A.AF_RSLT = 'J02' OR (A.AF_RSLT != 'J97' AND A.AF_RSLT = 'J97' AND A.APRV_RSLT_CD = 'J01'))) AND A.APRV_SRNO IS NOT NULL THEN 'Y'
+		WHEN B.APRV_PRCS_STTS_CD = 'I05' AND A.APRV_SRNO IS NULL THEN 'Y' ELSE 'N' END AS APRV_PSBL_YN
+		, ESNT_YN
+		, NEXT_ESNT_YN
+		FROM (
+		SELECT APRV_ID
+		, APRV_SRNO
+		, APRV_EMP_PBSR_NO
+		, APRV_RSLT_CD
+		, DCAB_YN
+		, LEAD(APRV_EMP_PBSR_NO) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) AS AF_EMP
+		, LEAD(DECODE(APRV_RSLT_CD, 'J99', NULL, APRV_RSLT_CD)) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) AS AF_RSLT
+		, LAG(APRV_EMP_PBSR_NO) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) AS BF_EMP
+		, LAG(DECODE(APRV_RSLT_CD, 'J99', NULL, APRV_RSLT_CD)) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) AS BF_RSLT
+		, LAG(DCAB_YN) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) AS BF_DCAB_YN
+		, CASE WHEN LAG(APRV_EMP_PBSR_NO) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) IS NULL THEN 'Y' END AS FIRST_YN
+		, CASE WHEN APRV_SRNO  = (SELECT MAX(APRV_SRNO) FROM TB_POTI_APRV_D WHERE APRV_ID = T.APRV_ID AND ESNT_YN = 'Y')  THEN 'Y' END AS LAST_YN
+		, ESNT_YN
+		, NVL((SELECT ESNT_YN FROM TB_POTI_APRV_D WHERE APRV_ID = T.APRV_ID AND APRV_SRNO = T.APRV_SRNO+1), 'Y') AS NEXT_ESNT_YN
+		FROM TB_POTI_APRV_D T
+		WHERE DEL_YN = 'N' AND APRV_RSLT_CD != 'J97') A
+		, TB_POTI_APRV B
+		, TB_POTI_EMP C
+		, TB_POTI_EMP D
+		WHERE A.APRV_ID = B.APRV_ID
+		AND A.APRV_EMP_PBSR_NO = C.PBSR_NO
+		AND B.APRV_RQST_EMP_PBSR_NO = D.PBSR_NO
+		AND A.APRV_EMP_PBSR_NO =  #{pbsrNo}
+		AND B.DEL_YN = 'N'
+		AND ('Y' = CASE WHEN B.APRV_PRCS_STTS_CD = 'I02' THEN 'N'
+		WHEN NVL(A.FIRST_YN, 'N') = 'Y' AND A.BF_RSLT IS NULL THEN 'Y'
+		WHEN NVL(A.FIRST_YN, 'N') != 'Y' AND A.BF_RSLT IS NOT NULL THEN CASE WHEN A.BF_DCAB_YN = 'Y' THEN 'N' ELSE 'Y' END ELSE 'N' END)
+		)
+		WHERE APRV_PSBL_YN = 'Y'
+		<if test="aprvId != null and aprvId != ''">
+			AND APRV_ID = #{aprvId}
+		</if>
+		<if test="aprvId == null or aprvId == ''">
+			<if test="bsopClsfCd != null and bsopClsfCd != ''">
+				AND BSOP_CLSF_CD = #{bsopClsfCd}
+			</if>
+			<if test="aprvBsopTpCd != null and aprvBsopTpCd != ''">
+				AND APRV_BSOP_TP_CD = #{aprvBsopTpCd}
+			</if>
+			<if test="aprvReffNo != null and aprvReffNo != ''">
+				AND UPPER(APRV_REFF_NO) LIKE '%'||UPPER(#{aprvReffNo})||'%'
+			</if>
+			<if test="aprvPrcsSttsCd != null and aprvPrcsSttsCd != ''">
+				AND APRV_PRCS_STTS_CD = #{aprvPrcsSttsCd}
+			</if>
+			<if test="aprvRqstEmpPbsrNo != null and aprvRqstEmpPbsrNo != ''">
+				AND APRV_RQST_EMP_PBSR_NO LIKE #{aprvRqstEmpPbsrNo}||'%'
+			</if>
+			<if test="aprvRqstEmpNm != null and aprvRqstEmpNm != ''">
+				AND UPPER(APRV_RQST_EMP_NM) LIKE '%'||UPPER(#{aprvRqstEmpNm})||'%'
+			</if>
+			<if test="searchKeywordFrom != null and searchKeywordFrom != '' and searchKeywordTo != null and searchKeywordTo != '' ">
+				AND TO_CHAR(APRV_RQST_DTTM,'YYYYMMDD')
+				BETWEEN TO_CHAR(TO_DATE( #{searchKeywordFrom} , 'DD/MM/YYYY'), 'YYYYMMDD')
+				AND TO_CHAR(TO_DATE( #{searchKeywordTo}   , 'DD/MM/YYYY'), 'YYYYMMDD')
+			</if>
+		</if>
+		ORDER BY DECODE(EMRG_APRV_RQST_YN, 'Y', 1, 2), APRV_RQST_DTTM2 DESC
+		<if test="navbarYn == null or navbarYn == ''">
+			<include refid="pagination.footer"/>
+		</if>
+	</select>
+
+	<!--
+		Consulter la liste des approbations en attente !==내결재 목록을 조회 (결재진행중)==!
+	-->
+	<select id="selectAprvPrgsList"
+		parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo"
+		resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		<include refid="pagination.header"/>
+		/** selectAprvPrgsList **/
+		SELECT A.APRV_ID																								/** ID de l'approbation !==결재ID==! */
+	         , A.APRV_SRNO																								/** N° série de l'approbation !==결재일련번호==! */
+	         , A.APRV_EMP_PBSR_NO																						/** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+	         , C.EMP_NM AS APRV_EMP_NM																					/** Approbateur !==결재직원명==! */
+	         , CASE WHEN B.APRV_PRCS_STTS_CD = 'I03' AND A.AF_RSLT = 'J02' AND A.APRV_SRNO IS NOT NULL THEN 'J99'
+	           ELSE NVL(A.APRV_RSLT_CD, 'J99') END AS APRV_RSLT_CD														/** Code de résultat d'apprboation !==결재결과코드==! */
+	         , A.AF_EMP																									/** Approbateur postérieur !==이후결재직원==! */
+	         , A.AF_RSLT																								/** Code de résultat de l'approbateur postérieur !==이후결재결과==! */
+	         , A.BF_EMP																									/** Approbateur précédent !==이전결재직원==! */
+	         , A.BF_RSLT																								/** Code de résultat de l'approbateur précédent !==이전결재결과==! */
+	         , A.FIRST_YN																								/** Premier approbateur O/N !==첫번째결재여부==! */
+	         , A.LAST_YN																								/** Dernier approbateur O/N !==마지막결재여부==! */
+	         , NVL(A.DCAB_YN, 'N') AS DCAB_YN																			/** Décision arbitraire O/N !==전결여부==! */
+	         , B.APRV_RQST_EMP_PBSR_NO																					/** N° matricule solde du demandeur d'approbation !==결재요청직원공무원번호==! */
+			 , CONCAT(D.EMP_FMNM, ' ', D.EMP_NM) AS APRV_RQST_EMP_NM																			/** Nom du demandeur d'approbation !==결재요청직원명==! */
+	         , B.APRV_PRCS_STTS_CD																						/** Code de statut d'approbation !==결재처리상태코드==! */
+	         , B.BSOP_CLSF_CD																							/** Code de type de travail !==업무분류코드==! */
+	         , B.APRV_BSOP_TP_CD																						/** Code de type d'approbation !==결재업무구분코드==! */
+	         , B.APRV_RQST_CN																							/** Contenu de la demande d'approbation !==결재요청내용==! */
+	         , B.APRV_REFF_NO																							/** N° de référence d'approbation !==결재참조번호==! */
+	         , TO_CHAR(B.APRV_RQST_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS APRV_RQST_DTTM										/** Date de demande d'approbation !==결재요청일시==! */
+	         , B.EMRG_APRV_RQST_YN																						/** Urgent O/N !==긴급결재신청여부==! */
+	         , B.APRL_SRNO																								/** N° série du niveau d'approbation !==결재선일련번호==! */
+	         , B.APRV_DTL_SCRN_URL																						/** URL écran des détails d'approbation !==결재상세화면URL==! */
+	         , 'N' AS APRV_PSBL_YN																						/** Possible O/N pour l'approbation !==결재가능여부==! */
+		FROM (
+	          SELECT APRV_ID
+	               , APRV_SRNO
+	               , APRV_EMP_PBSR_NO
+	               , APRV_RSLT_CD
+	               , DCAB_YN
+	               , LEAD(APRV_EMP_PBSR_NO) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) AS AF_EMP
+	               , LEAD(DECODE(APRV_RSLT_CD, 'J99', NULL, APRV_RSLT_CD)) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) AS AF_RSLT
+	               , LAG(APRV_EMP_PBSR_NO) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) AS BF_EMP
+	               , LAG(DECODE(APRV_RSLT_CD, 'J99', NULL, APRV_RSLT_CD)) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) AS BF_RSLT
+	               , LAG(DCAB_YN) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) AS BF_DCAB_YN
+	               , CASE WHEN LAG(APRV_EMP_PBSR_NO) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) IS NULL THEN 'Y' END AS FIRST_YN
+	               , CASE WHEN LEAD(APRV_EMP_PBSR_NO) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) IS NULL THEN 'Y' END AS LAST_YN
+	          FROM TB_POTI_APRV_D) A
+			     , TB_POTI_APRV B
+			     , TB_POTI_EMP C
+			     , TB_POTI_EMP D
+			WHERE A.APRV_ID = B.APRV_ID
+		    AND A.APRV_EMP_PBSR_NO = C.PBSR_NO
+		    AND B.APRV_RQST_EMP_PBSR_NO = D.PBSR_NO
+		    AND A.APRV_EMP_PBSR_NO = #{pbsrNo}
+            AND B.DEL_YN = 'N'
+		    AND B.APRV_PRCS_STTS_CD = 'I03'
+    		<if test="aprvId != null and aprvId != ''">
+			AND A.APRV_ID = #{aprvId}
+			</if>
+			<if test="aprvId == null or aprvId == ''">
+				<if test="bsopClsfCd != null and bsopClsfCd != ''">
+				AND B.BSOP_CLSF_CD = #{bsopClsfCd}
+				</if>
+				<if test="aprvBsopTpCd != null and aprvBsopTpCd != ''">
+				AND B.APRV_BSOP_TP_CD = #{aprvBsopTpCd}
+				</if>
+				<if test="aprvReffNo != null and aprvReffNo != ''">
+				AND UPPER(B.APRV_REFF_NO) LIKE '%'||UPPER(#{aprvReffNo})||'%'
+				</if>
+				<if test="aprvPrcsSttsCd != null and aprvPrcsSttsCd != ''">
+				AND B.APRV_PRCS_STTS_CD = #{aprvPrcsSttsCd}
+				</if>
+				<if test="aprvRqstEmpPbsrNo != null and aprvRqstEmpPbsrNo != ''">
+				AND B.APRV_RQST_EMP_PBSR_NO LIKE #{aprvRqstEmpPbsrNo}||'%'
+				</if>
+				<if test="aprvRqstEmpNm != null and aprvRqstEmpNm != ''">
+				AND UPPER(D.EMP_NM) LIKE '%'||UPPER(#{aprvRqstEmpNm})||'%'
+				</if>
+				<if test="searchKeywordFrom != null and searchKeywordFrom != '' and searchKeywordTo != null and searchKeywordTo != '' ">
+					AND TO_CHAR(APRV_RQST_DTTM,'YYYYMMDD')
+					BETWEEN TO_CHAR(TO_DATE( #{searchKeywordFrom} , 'DD/MM/YYYY'), 'YYYYMMDD')
+					AND TO_CHAR(TO_DATE( #{searchKeywordTo}   , 'DD/MM/YYYY'), 'YYYYMMDD')
+				</if>
+			</if>
+		ORDER BY DECODE(B.EMRG_APRV_RQST_YN, 'Y', 1, 2), B.APRV_RQST_DTTM DESC
+		<include refid="pagination.footer"/>
+	</select>
+
+	<!--
+		Consulter la liste des demandes d'approbation terminées !==내결재 목록을 조회 (결재완료)==!
+	-->
+	<select id="selectAprvDoneList"
+		parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo"
+		resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** selectAprvDoneList */
+		<include refid="pagination.header"/>
+		SELECT A.APRV_ID																		/** ID de l'approbation !==결재ID==! */
+	         , A.APRV_RQST_EMP_PBSR_NO															/** N° matricule solde du demandeur d'approbation !==결재요청직원공무원번호==! */
+			 , CONCAT(C.EMP_FMNM, ' ', C.EMP_NM) AS APRV_RQST_EMP_NM													/** Nom du demandeur d'approbation !==결재요청직원명==! */
+	         , A.APRV_PRCS_STTS_CD																/** Code de statut d'approbation !==결재처리상태코드==! */
+	         , A.BSOP_CLSF_CD																	/** Code de type de travail !==업무분류코드==! */
+	         , A.APRV_BSOP_TP_CD																/** Code de type d'approbation !==결재업무구분코드==! */
+	         , A.APRV_RQST_CN																	/** Contenu de la demande d'approbation !==결재요청내용==! */
+	         , A.APRV_REFF_NO																	/** N° de référence d'approbation !==결재참조번호==! */
+	         , TO_CHAR(A.APRV_RQST_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS APRV_RQST_DTTM				/** Date de demande d'approbation !==결재요청일시==! */
+	         , A.EMRG_APRV_RQST_YN																/** Urgent O/N !==긴급결재신청여부==! */
+	         , A.APRL_SRNO																		/** N° série du niveau d'approbation !==결재선일련번호==! */
+	         , A.APRV_DTL_SCRN_URL																/** URL écran des détails d'approbation !==결재상세화면URL==! */
+	         , 'N' AS APRV_PSBL_YN																/** Possible O/N pour l'approbation !==결재가능여부==! */
+		FROM TB_POTI_APRV A
+    	 	, (SELECT A.APRV_ID
+	          FROM TB_POTI_APRV A
+	             , TB_POTI_APRV_D_H B
+	          WHERE A.APRV_ID = B.APRV_ID
+              AND A.DEL_YN = 'N'
+              AND B.DEL_YN = 'N'
+	          AND A.APRV_PRCS_STTS_CD IN ('I04', 'I05', 'I06')
+	          AND (A.APRV_RQST_EMP_PBSR_NO = #{pbsrNo} OR B.APRV_EMP_PBSR_NO = #{pbsrNo})
+	          GROUP BY A.APRV_ID) B
+    	 	, TB_POTI_EMP C
+		WHERE A.APRV_ID = B.APRV_ID
+		AND A.APRV_RQST_EMP_PBSR_NO = C.PBSR_NO
+        AND A.DEL_YN = 'N'
+		<if test="aprvId != null and aprvId != ''">
+		AND A.APRV_ID = #{aprvId}
+		</if>
+		<if test="aprvId == null or aprvId == ''">
+			<if test="bsopClsfCd != null and bsopClsfCd != ''">
+			AND A.BSOP_CLSF_CD = #{bsopClsfCd}
+			</if>
+			<if test="aprvBsopTpCd != null and aprvBsopTpCd != ''">
+			AND A.APRV_BSOP_TP_CD = #{aprvBsopTpCd}
+			</if>
+			<if test="aprvReffNo != null and aprvReffNo != ''">
+			AND UPPER(A.APRV_REFF_NO) LIKE '%'||UPPER(#{aprvReffNo})||'%'
+			</if>
+			<if test="aprvPrcsSttsCd != null and aprvPrcsSttsCd != ''">
+			AND A.APRV_PRCS_STTS_CD = #{aprvPrcsSttsCd}
+			</if>
+			<if test="aprvRqstEmpPbsrNo != null and aprvRqstEmpPbsrNo != ''">
+			AND A.APRV_RQST_EMP_PBSR_NO LIKE #{aprvRqstEmpPbsrNo}||'%'
+			</if>
+			<if test="aprvRqstEmpNm != null and aprvRqstEmpNm != ''">
+			AND UPPER(C.EMP_NM) LIKE '%'||UPPER(#{aprvRqstEmpNm})||'%'
+			</if>
+			<if test="searchKeywordFrom != null and searchKeywordFrom != '' and searchKeywordTo != null and searchKeywordTo != '' ">
+				AND TO_CHAR(APRV_RQST_DTTM,'YYYYMMDD')
+				BETWEEN TO_CHAR(TO_DATE( #{searchKeywordFrom} , 'DD/MM/YYYY'), 'YYYYMMDD')
+				AND TO_CHAR(TO_DATE( #{searchKeywordTo}   , 'DD/MM/YYYY'), 'YYYYMMDD')
+			</if>
+		</if>
+		ORDER BY DECODE(A.EMRG_APRV_RQST_YN, 'Y', 1, 2), A.APRV_RQST_DTTM DESC
+		<include refid="pagination.footer"/>
+	</select>
+
+	<!--
+		Consulter la liste des demandes d'approbation !==내결재 목록을 조회 (결재요청)==!
+	-->
+	<select id="selectAprvRqstList"
+		parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo"
+		resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		<include refid="pagination.header"/>
+		/** selectAprvRqstList */
+		SELECT A.APRV_ID																	/** ID de l'approbation !==결재ID==! */
+	         , A.APRV_RQST_EMP_PBSR_NO														/** N° matricule solde du demandeur d'approbation !==결재요청직원공무원번호==! */
+			 , CONCAT(B.EMP_FMNM, ' ', B.EMP_NM) AS APRV_RQST_EMP_NM						/** Nom du demandeur d'approbation !==결재요청직원명==! */
+	         , A.APRV_PRCS_STTS_CD															/** Code de statut d'approbation !==결재처리상태코드==! */
+	         , A.BSOP_CLSF_CD																/** Code de type de travail !==업무분류코드==! */
+	         , A.APRV_BSOP_TP_CD															/** Code de type d'approbation !==결재업무구분코드==! */
+	         , A.APRV_RQST_CN																/** Contenu de la demande d'approbation !==결재요청내용==! */
+	         , A.APRV_REFF_NO																/** N° de référence d'approbation !==결재참조번호==! */
+	         , TO_CHAR(A.APRV_RQST_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS APRV_RQST_DTTM			/** Date de demande d'approbation !==결재요청일시==! */
+	         , A.EMRG_APRV_RQST_YN															/** Urgent O/N !==긴급결재신청여부==! */
+	         , A.APRL_SRNO																	/** N° série du niveau d'approbation !==결재선일련번호==! */
+	         , A.APRV_DTL_SCRN_URL															/** URL écran des détails d'approbation !==결재상세화면URL==! */
+	         , CASE WHEN A.APRV_PRCS_STTS_CD IN ('I01', 'I02', 'I05') THEN 'Y'
+        	 		ELSE 'N' END AS APRV_PSBL_YN											/** Possible O/N pour l'approbation !==결재가능여부==! */
+		FROM TB_POTI_APRV A
+		   , TB_POTI_EMP B
+		WHERE A.APRV_RQST_EMP_PBSR_NO = B.PBSR_NO
+	    AND A.DEL_YN = 'N'
+	    AND A.APRV_RQST_EMP_PBSR_NO = #{pbsrNo}
+	    AND A.APRV_PRCS_STTS_CD IN ('I01', 'I02', 'I03', 'I05')
+	    <if test="aprvId != null and aprvId != ''">
+				AND A.APRV_ID = #{aprvId}
+			</if>
+			<if test="aprvId == null or aprvId == ''">
+				<if test="bsopClsfCd != null and bsopClsfCd != ''">
+					AND A.BSOP_CLSF_CD = #{bsopClsfCd}
+				</if>
+				<if test="aprvBsopTpCd != null and aprvBsopTpCd != ''">
+					AND A.APRV_BSOP_TP_CD = #{aprvBsopTpCd}
+				</if>
+				<if test="aprvReffNo != null and aprvReffNo != ''">
+					AND UPPER(A.APRV_REFF_NO) LIKE '%'||UPPER(#{aprvReffNo})||'%'
+				</if>
+				<if test="aprvPrcsSttsCd != null and aprvPrcsSttsCd != ''">
+					AND A.APRV_PRCS_STTS_CD = #{aprvPrcsSttsCd}
+				</if>
+				<if test="aprvRqstEmpPbsrNo != null and aprvRqstEmpPbsrNo != ''">
+					AND A.APRV_RQST_EMP_PBSR_NO LIKE #{aprvRqstEmpPbsrNo}||'%'
+				</if>
+				<if test="aprvRqstEmpNm != null and aprvRqstEmpNm != ''">
+					AND UPPER(B.EMP_NM) LIKE '%'||UPPER(#{aprvRqstEmpNm})||'%'
+				</if>
+				<if test="searchKeywordFrom != null and searchKeywordFrom != '' and searchKeywordTo != null and searchKeywordTo != '' ">
+					AND TO_CHAR(APRV_RQST_DTTM,'YYYYMMDD')
+					BETWEEN TO_CHAR(TO_DATE( #{searchKeywordFrom} , 'DD/MM/YYYY'), 'YYYYMMDD')
+					AND TO_CHAR(TO_DATE( #{searchKeywordTo}   , 'DD/MM/YYYY'), 'YYYYMMDD')
+				</if>
+			</if>
+		ORDER BY DECODE(A.EMRG_APRV_RQST_YN, 'Y', 1, 2), A.APRV_RQST_DTTM DESC
+		<include refid="pagination.footer"/>
+	</select>
+
+	<!-- 
+		Consulter la liste des niveaux d'approbation enregistrés !==등록한 결재선 목록을 조회한다==!
+	-->
+	<select id="selectAplnList"
+		parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo"
+		resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo">
+		/** selectAplnList */
+		<include refid="pagination.header"/>
+		SELECT PBSR_NO			/** N˚ matricule solde !==공무원번호==! */
+			, APRL_SRNO			/** N° série du niveau d'approbation !==결재선일련번호==! */
+			, APRL_NM			/** Nom du niveau d'approbation !==결재선명==! */
+			, APRL_DESC			/** Description du niveau d'approbation !==결재선설명==! */
+			, BSCS_APRL_YN		/** Par défaut O/N !==기본결재선여부==! */
+		FROM TB_POTI_APRL
+		WHERE PBSR_NO = #{pbsrNo}
+		AND DEL_YN = 'N'
+		<if test="aprlNm != null and aprlNm != ''">
+			AND UPPER(APRL_NM) LIKE '%'||UPPER(#{aprlNm})||'%'
+		</if>
+		<if test="aprvEmpPbsrNo != null and aprvEmpPbsrNo != ''">
+			AND APRL_SRNO IN (SELECT APRL_SRNO FROM TB_POTI_APRL_D WHERE PBSR_NO = #{pbsrNo} AND APRV_EMP_PBSR_NO = #{aprvEmpPbsrNo} AND DEL_YN = 'N')
+		</if>
+		<if test="aprlSrno != null and aprlSrno != ''">
+			AND APRL_SRNO = #{aprlSrno}
+		</if>
+    ORDER BY APRL_SRNO
+		<include refid="pagination.footer"/>
+	</select>
+
+	<!-- 
+		Consulter la liste des employés satisfaisant aux critères de recherche !==조회조건에 맞는 직원리스트를 조회한다==!
+	-->
+	<select id="selectEmpList"
+		parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvOrgnVo"
+		resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvOrgnVo">
+		/** selectEmpList */
+		<include refid="pagination.header"/>
+		SELECT 'false' AS CHK_SEL													/** Choisir une cellule de la grille !==체크박스 선택==! */
+			, A.PBSR_NO																/** N˚ matricule solde !==공무원번호==! */
+			, A.EMP_NM																/** Nom !==직원명==! */
+			, A.FONC_CD AS CLPS_CD										/** Code de poste actuel !==직급코드==! */
+			, (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE DEL_YN = 'N' AND FONC_CD = A.FONC_CD AND LANG_CD = #{langCd}) AS CLPS_NM		/** Nom de poste actuel !==직급명==! */
+			, A.ORGN_MGMT_CD														/** Code de gestion d'organisme !==조직관리코드==! */
+			, B.ORGN_CD																/** Code d'organisme !==조직코드==! */
+			, B.ORGN_NM																/** Nom de la structure !==조직명==! */
+			, A.EMP_FMNM
+		FROM TB_POTI_EMP A
+			, TB_POTI_ORGN B
+		WHERE A.ORGN_MGMT_CD = B.ORGN_MGMT_CD
+		AND A.DEL_YN = 'N'
+		<if test="cstmOrgnCd != null and cstmOrgnCd != ''">
+			AND A.CSTM_MGMT_CD = (SELECT ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{cstmOrgnCd} AND DEL_YN = 'N')
+		</if>
+		<if test="pbsrNo != null and pbsrNo != ''">
+			AND A.PBSR_NO LIKE #{pbsrNo}||'%'
+		</if>
+		<if test="empNm != null and empNm != ''">
+			AND UPPER(A.EMP_NM) LIKE '%'||UPPER(#{empNm})||'%'
+		</if>
+		ORDER BY A.FONC_CD, A.PBSR_NO
+		<include refid="pagination.footer"/>
+	</select>
+	
+	<!--
+		Consulter 'Par défaut O/N' du niveau d'approbation !==기본결재선 여부를 조회한다==!
+	-->
+	<select id="selectBscsAprlYn" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo" resultType="String">
+		/** selectBscsAprlYn */
+		SELECT CASE WHEN COUNT(*) > 0 THEN 'Y' ELSE 'N' END AS BSCS_APRL_YN		/** Niveau d'approbation par défaut O/N !==기본결재선여부==! */
+	    FROM TB_POTI_APRL
+			WHERE PBSR_NO = #{pbsrNo}
+			AND BSCS_APRL_YN = 'Y'
+	    AND DEL_YN = 'N'
+	    <if test="aprlSrno != null and aprlSrno != ''">
+				AND APRL_SRNO != #{aprlSrno}
+			</if>
+	</select>
+	
+	
+	<!--
+		Consulter le N° série pour l'enregistrement du niveau d'approbation !==결재선 등록을 위한 일련번호를 조회한다==!
+	-->
+	<select id="selectAprlSrno" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo" resultType="String">
+		/** selectAprlSrno */
+		SELECT NVL(MAX(APRL_SRNO)+1, 1) AS APRL_SRNO		/** N° série du niveau d'approbation !==결재선일련번호==! */
+		FROM TB_POTI_APRL
+		WHERE PBSR_NO = #{pbsrNo}
+	</select>
+	
+	<!--
+		Sauvegarder un niveau d'approbation !==결재선을 저장한다==!
+	-->
+	<insert id="insertApln" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo">
+		/** insertApln */
+		INSERT INTO TB_POTI_APRL
+		(
+		  PBSR_NO					/** N˚ matricule solde !==공무원번호==! */
+		, APRL_SRNO					/** N° série du niveau d'approbation !==결재선일련번호==! */
+		, APRL_NM					/** Nom du niveau d'approbation !==결재선명==! */
+		, APRL_DESC					/** Description sur le niveau d'approbation !==결재선설명==! */
+		, BSCS_APRL_YN				/** Niveau d'approbation par défaut O/N !==기본결재선여부==! */
+		, DEL_YN					/** Suppression O/N !== 삭제여부 ==! */
+		, FRST_REGST_ID				/** ID du premier enregistrant  !== 최초등록자ID ==! */
+        , FRST_RGSR_DTTM			/** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+        , LAST_CHPR_ID				/** ID du modificateur final !== 최종변경자ID ==! */
+        , LAST_CHG_DTTM 			/** Date et heure de modification finale !== 최종변경일시 ==! */
+    	)
+		VALUES (
+				#{pbsrNo}
+				, #{aprlSrno}
+				, #{aprlNm}
+				, #{aprlDesc}
+				, #{bscsAprlYn}
+				, 'N'
+				, #{pbsrNo}
+		        , SYSTIMESTAMP
+		        , #{pbsrNo}
+		        , SYSTIMESTAMP
+		)
+	</insert>
+	
+	<!--
+		Enregistrer les détails du niveau d'approbation  !==결재선 상세내역을 저장한다==!
+	-->
+	<insert id="insertAplnOrd" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnOrdVo">
+		/** insertAplnOrd */
+		with upsert as
+		(
+			UPDATE	TB_POTI_APRL_D SET
+					APRV_ORDR = #{aprvOrdr}						/** Ordre des approbations !==결재순서==! */
+					, APRV_EMP_PBSR_NO = #{aprvEmpPbsrNo}		/** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+					, DEL_YN = 'N'								/** Suppression O/N !== 삭제여부 ==! */
+					, LAST_CHPR_ID = #{pbsrNo}					/** ID du modificateur final !== 최종변경자ID ==! */
+					, LAST_CHG_DTTM = SYSTIMESTAMP				/** Date et heure de modification finale !== 최종변경일시 ==! */
+			WHERE PBSR_NO = #{pbsrNo}
+					AND APRL_SRNO = #{aprlSrno}
+					AND APRL_DTL_SRNO = #{aprlDtlSrno}
+			RETURNING *
+		)
+		INSERT INTO TB_POTI_APRL_D
+		(
+				PBSR_NO									/** N˚ matricule solde !==공무원번호==! */
+				, APRL_SRNO									/** N° série du niveau d'approbation !==결재선일련번호==! */
+				, APRL_DTL_SRNO								/** N° série des détails du niveau d'approbation !==결재선상세일련번호==! */
+				, APRV_ORDR									/** Ordre des approbations !==결재순서==! */
+				, APRV_EMP_PBSR_NO							/** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+				, DEL_YN									/** Suppression O/N !== 삭제여부 ==! */
+				, FRST_REGST_ID								/** ID du premier enregistrant  !== 최초등록자ID ==! */
+				, FRST_RGSR_DTTM							/** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+				, LAST_CHPR_ID								/** ID du modificateur final !== 최종변경자ID ==! */
+				, LAST_CHG_DTTM								/** Date et heure de modification finale !== 최종변경일시 ==! */
+		)
+		SELECT
+				#{pbsrNo}
+				, #{aprlSrno}
+				, #{aprlDtlSrno}
+				, #{aprvOrdr}
+				, #{aprvEmpPbsrNo}
+				, 'N'
+				, #{pbsrNo}
+				, SYSTIMESTAMP
+				, #{pbsrNo}
+				, SYSTIMESTAMP
+		WHERE NOT exists(select * from upsert)
+	</insert>
+
+	<!--
+		Consulter la liste des fonctions d'approbations !==해당화면의 결재선 직무 목록을 조회한다==!
+	-->
+	<select id="elctaprvAplnFoncList" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo" resultType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtAprlScrnFoncVo">
+		/** elctaprvAplnFoncList */
+		SELECT SCRN_ID, FONC_CD, APRV_SRNO, ORGN_CD, ESNT_YN
+		FROM TB_POTI_APRL_SCRN_FONC_REL
+		WHERE SCRN_REFF_NO = #{scrnReffNo}
+		ORDER BY APRV_SRNO
+	</select>
+
+	<!--
+		Consulter la liste de la structure organisationnelle !==해당화면의 결재상신자 조직구조 목록을 조회한다==!
+	-->
+	<select id="elctaprvAplnOrgnList" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo" resultType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmOrgnVo">
+		/** elctaprvAplnOrgnList */
+		WITH RECURSIVE T1(ORGN_MGMT_CD, ORGN_CD, UPR_ORGN_MGMT_CD, LEV) AS (
+			SELECT ORGN_MGMT_CD, ORGN_CD, UPR_ORGN_MGMT_CD, 1
+			FROM TB_POTI_ORGN
+			WHERE ORGN_MGMT_CD = #{orgnMgmtCd}
+			UNION
+			SELECT EH.ORGN_MGMT_CD, EH.ORGN_CD, EH.UPR_ORGN_MGMT_CD, T1.LEV+1
+			FROM T1
+			INNER JOIN TB_POTI_ORGN EH
+			ON T1.UPR_ORGN_MGMT_CD = EH.ORGN_MGMT_CD
+		) SELECT ORGN_MGMT_CD FROM T1
+	</select>
+
+	<!--
+		Conulter la liste des approbateurs du niveau d'approbation !==결재선에 해당하는 결재자리스트를 조회한다==!
+	-->
+	<select id="selectAplnDtl" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo" resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnOrdVo">
+		/** selectAplnDtl */
+		SELECT PBSR_NO      AS APRV_EMP_PBSR_NO
+				, EMP_NM       AS APRV_EMP_NM
+				, EMP_FMNM     AS APRV_EMP_FMNM
+				, (SELECT ORGN_NM||' ('||ORGN_MGMT_CD||')' FROM TB_POTI_ORGN WHERE DEL_YN = 'N' AND ORGN_MGMT_CD = A.ORGN_MGMT_CD) AS APRV_ORGN_MGMT_CD
+				, (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE LANG_CD = #{langCd} AND FONC_CD = A.FONC_CD) AS FONC_CD
+		FROM TB_POTI_EMP A
+		WHERE DEL_YN = 'N'
+		  AND FONC_CD = #{foncCd}
+			AND ORGN_MGMT_CD IN
+		<foreach collection="elctaprvAplnOrgnList" item="item"  open="(" close=")" separator=",">
+			#{item.orgnMgmtCd}
+		</foreach>
+	</select>
+
+
+	<!--
+		Conulter la liste des approbateurs du niveau d'approbation !==결재선에 해당하는 결재자리스트를 조회한다==!
+	-->
+	<select id="selectAplnDtlWithOrgnCd" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo" resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnOrdVo">
+		/** selectAplnDtl */
+		SELECT PBSR_NO      AS APRV_EMP_PBSR_NO
+		, EMP_NM       AS APRV_EMP_NM
+		, EMP_FMNM     AS APRV_EMP_FMNM
+		, (SELECT ORGN_NM||' ('||ORGN_MGMT_CD||')' FROM TB_POTI_ORGN WHERE DEL_YN = 'N' AND ORGN_MGMT_CD = A.ORGN_MGMT_CD) AS APRV_ORGN_MGMT_CD
+		, (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE LANG_CD = #{langCd} AND FONC_CD = A.FONC_CD) AS FONC_CD
+		FROM TB_POTI_EMP A
+		WHERE DEL_YN = 'N'
+		AND FONC_CD = #{foncCd}
+		AND ORGN_MGMT_CD = (SELECT ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE DEL_YN = 'N' AND ORGN_CD = #{orgnCd})
+	</select>
+
+	<!-- 
+		Supprimer un niveau d'approbation !==결재선을 삭제한다==!
+	-->
+	<update id="deleteApln" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo">
+		/** deleteApln */
+		UPDATE TB_POTI_APRL
+		SET DEL_YN = 'Y'					/** Suppression O/N !== 삭제여부 ==! */
+			, LAST_CHPR_ID = #{pbsrNo}		/** ID du modificateur final !== 최종변경자ID ==! */
+			, LAST_CHG_DTTM = SYSTIMESTAMP	/** Date et heure de modification finale !== 최종변경일시 ==! */
+		WHERE PBSR_NO = #{pbsrNo}
+		AND APRL_SRNO = #{aprlSrno}
+	</update>
+	
+	<!-- 
+		Supprimer tous les détails du niveau d'approbation après la suppression du niveau d'approbation  !==결재선 삭제로 인한 결재선 상세내역을 전체 삭제한다==!
+	-->
+	<update id="deleteAllAplnOrd" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo">
+		/** deleteAllAplnOrd */
+		UPDATE TB_POTI_APRL_D
+		SET	DEL_YN = 'Y'					/** Suppression O/N !== 삭제여부 ==! */
+			, LAST_CHPR_ID = #{pbsrNo}		/** ID du modificateur final !== 최종변경자ID ==! */
+			, LAST_CHG_DTTM = SYSTIMESTAMP	/** Date et heure de modification finale !== 최종변경일시 ==! */
+		WHERE PBSR_NO = #{pbsrNo}
+		AND   APRL_SRNO = #{aprlSrno}
+	</update>
+	
+	<!--
+		Modifier un niveau d'approbation !==결재선을 수정한다==!
+	-->
+	<update id="updateApln" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo">
+		/** updateApln */
+		UPDATE TB_POTI_APRL
+		SET APRL_NM = #{aprlNm}					/** Nom du niveau d'approbation !==결재선명==! */
+			, APRL_DESC = #{aprlDesc}			/** Description sur le niveau d'approbation !==결재선설명==! */
+			, BSCS_APRL_YN = #{bscsAprlYn}		/** Niveau d'approbation par défaut O/N !==기본결재선여부==! */
+			, LAST_CHPR_ID = #{pbsrNo}			/** ID du modificateur final !== 최종변경자ID ==! */
+			, LAST_CHG_DTTM = SYSTIMESTAMP		/** Date et heure de modification finale !== 최종변경일시 ==! */
+		WHERE PBSR_NO = #{pbsrNo}
+		AND APRL_SRNO = #{aprlSrno}
+	</update>
+	
+	<!-- 
+		Mettre à jour 'Suppression O/N' des approbateurs sur la table des détails d'approbation lors du changement des approbateurs !==결재자 변경 발생 시 결재상세 테이블의 결재자 삭제여부를 update한다==!
+	-->
+	<update id="updateAprvEmpReset" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo">
+		/** updateAprvEmpReset */
+		UPDATE TB_POTI_APRV_D
+		SET DEL_YN = 'Y'				/** Suppression O/N !== 삭제여부 ==! */
+		WHERE APRV_ID = #{aprvId}
+		AND (APRV_RSLT_CD IS NULL OR APRV_RSLT_CD = 'J99')
+		AND DEL_YN = 'N'
+	</update>
+	
+	<!--
+		Consulter la liste des approbateurs modifiée lors du changement des approbateurs pour la demande d'approbation en cours !==결재 중 결재자변경 발생 시 변경된 결재자 리스트를 조회한다==!
+	-->
+	<select id="selectAprvEmpList" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo" resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnOrdVo">
+		/** selectAprvEmpList */
+		SELECT APRL_SRNO			/** N° série du niveau d'approbation !==결재선일련번호==! */
+			, APRL_DTL_SRNO			/** N° série des détails du niveau d'approbation !==결재선상세일련번호==! */
+			, APRV_ORDR				/** Ordre des approbations !==결재순서==! */
+			, APRV_EMP_PBSR_NO		/** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+		FROM TB_POTI_APRL_D
+		WHERE PBSR_NO = #{pbsrNo}
+		AND APRL_SRNO = #{aprlSrno}
+		AND DEL_YN = 'N'
+	</select>
+	
+	<!--
+		Reconstituer la liste des approbateurs de la table de l'approbation détaillée lors du changement des approbateurs pour la demande d'approbation en cours !==결재 중 결재자변경 발생 시 결재상세 테이블의 결재자 목록을 재구성한다==!
+	-->
+	<update id="updateAprvEmpReCre" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** updateAprvEmpReCre */
+		with upsert as
+		(
+			UPDATE	TB_POTI_APRV_D SET
+					APRV_EMP_PBSR_NO = #{aprvEmpPbsrNo}		/** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+					, DEL_YN = 'N'							/** Suppression O/N !== 삭제여부 ==! */
+					, LAST_CHPR_ID = #{pbsrNo}				/** ID du modificateur final !== 최종변경자ID ==! */
+					, LAST_CHG_DTTM = SYSTIMESTAMP			/** Date et heure de modification finale !== 최종변경일시 ==! */
+			WHERE APRV_ID = #{aprvId}
+				  AND APRV_SRNO = #{aprvSrno}
+				  AND (APRV_RSLT_CD IS NULL OR APRV_RSLT_CD = 'J99')
+			RETURNING *
+		)
+		INSERT INTO TB_POTI_APRV_D
+		(
+				APRV_ID						/** ID de l'approbation !==결재ID==! */
+				, APRV_SRNO						/** N° série de l'approbation !==결재일련번호==! */
+				, APRV_EMP_PBSR_NO				/** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+				, APRV_RSLT_CD					/** Code de résultat d'apprboation !==결재결과코드==! */
+				, DEL_YN						/** Suppression O/N !== 삭제여부 ==! */
+				, FRST_REGST_ID					/** ID du premier enregistrant  !== 최초등록자ID ==! */
+				, FRST_RGSR_DTTM				/** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+				, LAST_CHPR_ID					/** ID du modificateur final !== 최종변경자ID ==! */
+				, LAST_CHG_DTTM					/** Date et heure de modification finale !== 최종변경일시 ==! */
+		)
+		SELECT
+				#{aprvId}
+				 , #{aprvSrno}
+				 , #{aprvEmpPbsrNo}
+				 , 'J99'
+				 , 'N'
+				 , #{pbsrNo}
+				 , SYSTIMESTAMP
+				 , #{pbsrNo}
+				 , SYSTIMESTAMP
+		WHERE NOT exists(select * from upsert)
+	</update>
+
+  <!--
+  	Consulter les informations de la demande d'approbation !==결재요청 정보를 조회한다==!
+  -->
+	<select id="selectAprvRqst" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo" resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** selectAprvRqst */
+		SELECT A.APRV_ID																		/** ID de l'approbation !==결재ID==! */
+			, A.APRV_PRCS_STTS_CD																/** Code de statut d'approbation !==결재처리상태코드==! */
+			, A.BSOP_CLSF_CD																	/** Code de type de travail !==업무분류코드==! */
+			, A.APRV_BSOP_TP_CD																	/** Code de type d'approbation !==결재업무구분코드==! */
+			, A.APRV_RQST_EMP_PBSR_NO															/** N° matricule solde du demandeur d'approbation !==결재요청직원공무원번호==! */
+			, CONCAT(B.EMP_FMNM, ' ', B.EMP_NM) AS APRV_RQST_EMP_NM						/** Nom du demandeur d'approbation !==결재요청직원명==! */
+			, A.APRV_RQST_CN																	/** Contenu de la demande d'approbation !==결재요청내용==! */
+			, A.APRV_REFF_NO																	/** N° de référence d'approbation !==결재참조번호==! */
+			, A.APRV_DTL_SCRN_URL																/** URL écran des détails d'approbation !==결재상세화면URL==! */	
+			, TO_CHAR(A.APRV_RQST_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS APRV_RQST_DTTM				/** Date de demande d'approbation !==결재요청일시==! */
+			, A.EMRG_APRV_RQST_YN																/** Urgent O/N !==긴급결재신청여부==! */
+			, A.APRV_PRCS_CMPL_DTTM																/** Date de demande d'approbation terminée !==결재처리완료일시==! */
+			, A.APRL_SRNO																		/** N° série du niveau d'approbation !==결재선일련번호==! */
+		FROM TB_POTI_APRV A
+		   , TB_POTI_EMP B
+	  	WHERE A.APRV_RQST_EMP_PBSR_NO = B.PBSR_NO
+	  	AND A.APRV_ID = #{aprvId}		
+		AND A.DEL_YN = 'N'
+	</select>
+	
+	
+	<!-- 
+		Consulter les détails de l'approbation  !==결재 상세정보를 조회한다==!
+	-->
+	<select id="selectAprv" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo" resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** selectAprv */
+		SELECT A.APRV_ID																				/** ID de l'approbation !==결재ID==! */
+	         , B.APRV_SRNO																				/** N° série de l'approbation !==결재일련번호==! */
+	         , B.APRV_EMP_PBSR_NO																		/** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+	         , C.EMP_NM AS APRV_EMP_NM																	/** Approbateur !==결재직원명==! */
+	         , CASE WHEN B.APRV_RSLT_CD = 'J99' THEN NULL ELSE B.APRV_RSLT_CD END AS APRV_RSLT_CD		/** Code de résultat d'apprboation !==결재결과코드==! */
+	         , B.APRV_OPIN_CN																			/** Avis sur l'approbation !==결재의견==! */
+	         , TO_CHAR(B.APRV_PRCS_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS APRV_PRCS_DTTM						/** Date de traitement d'approbation !==결재처리일시==! */
+	         , NVL(B.DCAB_YN, 'N') AS DCAB_YN															/** Décision arbitraire O/N !==전결여부==! */
+	         , A.APRV_RQST_EMP_PBSR_NO																	/** N° matricule solde du demandeur d'approbation !==결재요청직원공무원번호==! */
+			 , CONCAT(D.EMP_FMNM, ' ', D.EMP_NM) AS APRV_RQST_EMP_NM						/** Nom du demandeur d'approbation !==결재요청직원명==! */
+	         , A.APRL_SRNO																				/** N° série du niveau d'approbation !==결재선일련번호==! */
+	         , A.APRV_BSOP_TP_CD																		/** Code de type d'approbation !== 결재업무구분코드 ==! */
+	         , A.BSOP_CLSF_CD																			/** Code de type de travail !== 업무분류코드 ==! */
+	         , A.APRV_REFF_NO																			/** N° de référence d'approbation !==결재참조번호==! */
+	         , A.APRV_DTL_SCRN_URL																		/** URL écran des détails d'approbation !==결재상세화면URL==! */
+	         , A.APRV_PRCS_STTS_CD																		/** Code de statut d'approbation !==결재처리상태코드==! */
+	         , E.ORGN_CD AS APRV_ORGN_CD																/** Code d'organisme de l'approbateur !==결재직원조직코드==! */
+	         , E.ORGN_NM AS APRV_ORGN_NM																/** Nom de l'organisme de l'approbateur !==결재직원조직명==! */
+	         , F.ORGN_CD AS APRV_RQST_ORGN_CD															/** Code de service du demandeur d'approbation  !==결재요청직원조직코드==! */
+	         , F.ORGN_NM AS APRV_RQST_ORGN_NM															/** Nom du service du demandeur d'approbation  !==결재요청직원조직명==! */
+		FROM TB_POTI_APRV A
+	       , TB_POTI_APRV_D B
+	       , TB_POTI_EMP C
+	       , TB_POTI_EMP D
+	       , TB_POTI_ORGN E
+	       , TB_POTI_ORGN F
+		WHERE A.APRV_ID = B.APRV_ID
+		AND B.APRV_EMP_PBSR_NO = C.PBSR_NO
+		AND A.APRV_RQST_EMP_PBSR_NO = D.PBSR_NO
+		AND C.ORGN_MGMT_CD = E.ORGN_MGMT_CD
+		AND D.ORGN_MGMT_CD = F.ORGN_MGMT_CD
+		AND A.APRV_ID = #{aprvId}
+		AND B.APRV_SRNO = #{aprvSrno}
+		AND A.DEL_YN = 'N'
+	</select>
+	
+	<!--
+		Consulter la liste des approbateurs de l'historique de l'approbation choisi !==선택한 결재내역의 결재자 리스트 조회한다==!
+	-->
+	<select id="selectAprvOrdList" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo" resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** selectAprvOrdList */
+		SELECT A.APRV_ID																/** ID de l'approbation !==결재ID==! */
+	         , A.APRV_SRNO																/** N° série de l'approbation !==결재일련번호==! */
+	         , A.APRV_SRNO AS APRV_ORDR										/** Ordre des approbations !==결재순서==! */
+	         , A.APRV_EMP_PBSR_NO													/** N° matricule de l'approbateur !==결재자 공무원번호==! */
+	         , B.EMP_NM AS APRV_EMP_NM										/** Prénom de l'approbateur !==결재자 이름==! */
+					 , B.EMP_FMNM AS APRV_EMP_FMNM								/** Nom de l'approbateur !==결재자 성==! */
+	         , C.ORGN_CD AS APRV_ORGN_CD									/** Code d'organisme de l'approbateur !==결재직원조직코드==! */
+	         , C.ORGN_NM AS APRV_ORGN_NM									/** Nom de l'organisme de l'approbateur !==결재직원조직명==! */
+	         , A.APRV_RSLT_CD															/** Code de résultat d'apprboation !==결재결과코드==! */
+	         , A.APRV_OPIN_CN															/** Avis sur l'approbation !==결재의견==! */
+	         , TO_CHAR(A.APRV_PRCS_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS APRV_PRCS_DTTM		/** Date de traitement d'approbation !==결재처리일시==! */
+	         , A.DCAB_YN																/** Décision arbitraire O/N !==전결여부==! */
+		     	 , A.ESNT_YN																/** 번역필요 !==필수여부==! */
+	         , (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE DEL_YN = 'N' AND FONC_CD = B.FONC_CD AND LANG_CD = #{langCd}) AS FONC_CD		/** Nom du grade de l'approbateur !==결재직원직급명==! */
+					 , (SELECT ORGN_NM||' ('||ORGN_MGMT_CD||')' FROM TB_POTI_ORGN WHERE DEL_YN = 'N' AND ORGN_MGMT_CD = B.ORGN_MGMT_CD) AS APRV_ORGN_MGMT_CD		/** Code d'organisme du gestion de l'approbateur !==결재직원조직관리코드==! */
+	     FROM TB_POTI_APRV_D A
+	        , TB_POTI_EMP B
+	        , TB_POTI_ORGN C
+	     WHERE A.APRV_ID = #{aprvId}
+	     AND A.APRV_EMP_PBSR_NO = B.PBSR_NO
+	     AND B.ORGN_MGMT_CD = C.ORGN_MGMT_CD    
+	     AND A.DEL_YN = 'N'
+	</select>
+	
+	<!--
+		Consulter l'historique de l'approbation !==결재이력을 조회한다==!
+	-->
+	<select id="selectAprvHistoryList" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo" resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** selectAprvHistoryList */
+		SELECT A.APRV_ID
+				 , 0 AS APRV_SRNO
+				 , 0 AS APRV_DTL_HIST_SRNO
+				 , A.APRV_RQST_EMP_PBSR_NO AS APRV_EMP_PBSR_NO
+				 , 'J00' AS APRV_RSLT_CD
+				 , A.APRV_RQST_CN AS APRV_OPIN_CN
+				 , TO_CHAR(A.APRV_RQST_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS APRV_PRCS_DTTM
+				 , B.EMP_NM AS APRV_EMP_NM
+				 , B.EMP_FMNM AS APRV_EMP_FMNM
+				 , B.ORGN_MGMT_CD
+				 , C.ORGN_CD AS APRV_ORGN_CD
+				 , C.ORGN_NM AS APRV_ORGN_NM
+				 , 1 AS APRV_ORDR
+		FROM TB_POTI_APRV A
+			 , TB_POTI_EMP B
+			 , TB_POTI_ORGN C
+		WHERE A.APRV_ID = #{aprvId}
+			AND A.DEL_YN = 'N'
+			AND B.DEL_YN = 'N'
+			AND C.DEL_YN = 'N'
+			AND A.APRV_RQST_EMP_PBSR_NO = B.PBSR_NO
+			AND B.ORGN_MGMT_CD = C.ORGN_MGMT_CD
+		UNION ALL
+		SELECT A.APRV_ID																		/** ID de l'approbation !==결재ID==! */
+					, A.APRV_SRNO																/** N° série de l'approbation !==결재일련번호==! */
+					, A.APRV_DTL_HIST_SRNO														/** N° série de l'historique des détails des approbations !==결재상세이력일련번호==! */
+					, A.APRV_EMP_PBSR_NO														/** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+					, A.APRV_RSLT_CD															/** Code de résultat d'apprboation !==결재결과코드==! */
+					, A.APRV_OPIN_CN															/** Avis sur l'approbation !==결재의견==! */
+					, TO_CHAR(A.APRV_PRCS_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS APRV_PRCS_DTTM		/** Date de traitement d'approbation !==결재처리일시==! */
+					, B.EMP_NM AS APRV_EMP_NM													/** Approbateur !==결재직원명==! */
+					, B.EMP_FMNM AS APRV_EMP_FMNM								/** Nom de l'approbateur !==결재자 성==! */
+					, B.ORGN_MGMT_CD															/** Code de gestion d'organisme !==조직관리코드==! */
+					, C.ORGN_CD AS APRV_ORGN_CD													/** Code d'organisme de l'approbateur !==결재직원조직코드==! */
+					, C.ORGN_NM AS APRV_ORGN_NM													/** Nom de l'organisme de l'approbateur !==결재직원조직명==! */
+					, (ROW_NUMBER() OVER(ORDER BY A.APRV_PRCS_DTTM))+1 AS APRV_ORDR					/** Ordre des approbations !==결재순서==! */
+		FROM TB_POTI_APRV_D_H A
+				, TB_POTI_EMP B
+				, TB_POTI_ORGN C
+		WHERE A.APRV_ID = #{aprvId}
+		AND A.DEL_YN = 'N'
+		AND B.DEL_YN = 'N'
+		AND C.DEL_YN = 'N'
+		AND A.APRV_EMP_PBSR_NO = B.PBSR_NO
+		AND B.ORGN_MGMT_CD = C.ORGN_MGMT_CD
+		ORDER BY APRV_PRCS_DTTM ASC
+	</select>
+	
+	<!--
+		Vérifier s'il y a des demandes d'approbation à traiter !==완료되지 않은 결재건이 있는지 조회한다==!
+	-->
+	<select id="selectAprvRslt" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo" resultType="String">
+		/** selectAprvRslt */
+		SELECT CASE WHEN COUNT(*) > 0 THEN 'Y' ELSE 'N' END AS RSLT		/** Résultat !==결과==! */
+        FROM TB_POTI_APRV
+        WHERE BSOP_CLSF_CD = #{bsopClsfCd}
+        AND APRV_BSOP_TP_CD = #{aprvBsopTpCd}
+        AND APRV_REFF_NO = #{aprvReffNo}
+        AND APRV_PRCS_STTS_CD NOT IN ('I02', 'I04', 'I05', 'I06')
+        AND DEL_YN = 'N'
+	</select>
+	
+	<!--
+		Enregistrer une demande d'approbation !==결재요청을 저장한다==!
+	-->
+	<insert id="insertAprvRqst" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** insertAprvRqst */
+		INSERT INTO TB_POTI_APRV
+		(		
+		  APRV_ID					/** ID de l'approbation !==결재ID==! */
+		, APRV_PRCS_STTS_CD			/** Code de statut d'approbation !==결재처리상태코드==! */
+		, BSOP_CLSF_CD				/** Code de type de travail !==업무분류코드==! */
+		, APRV_BSOP_TP_CD			/** Code de type d'approbation !==결재업무구분코드==! */
+		, APRV_RQST_EMP_PBSR_NO		/** N° matricule solde du demandeur d'approbation !==결재요청직원공무원번호==! */
+		, APRL_SRNO					/** N° série du niveau d'approbation !==결재선일련번호==! */
+		, APRV_RQST_CN				/** Contenu de la demande d'approbation !==결재요청내용==! */
+		, APRV_REFF_NO				/** N° de référence d'approbation !==결재참조번호==! */
+		, APRV_DTL_SCRN_URL			/** URL écran des détails d'approbation !==결재상세화면URL==! */	
+		, APRV_RQST_DTTM			/** Date de demande d'approbation !==결재요청일시==! */
+		, EMRG_APRV_RQST_YN			/** Urgent O/N !==긴급결재신청여부==! */
+		, DEL_YN					/** Suppression O/N !== 삭제여부 ==! */
+        , FRST_REGST_ID				/** ID du premier enregistrant  !== 최초등록자ID ==! */
+        , FRST_RGSR_DTTM			/** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+        , LAST_CHPR_ID				/** ID du modificateur final !== 최종변경자ID ==! */
+        , LAST_CHG_DTTM 			/** Date et heure de modification finale !== 최종변경일시 ==! */
+	    )
+	    VALUES (
+	    		  #{aprvId}
+	    		, #{aprvPrcsSttsCd}
+	    		, #{bsopClsfCd}
+	    		, #{aprvBsopTpCd}
+	    		, #{aprvRqstEmpPbsrNo}
+	    		, #{aprlSrno}
+	    		, #{aprvRqstCn}
+	    		, #{aprvReffNo}
+	    		, #{aprvDtlScrnUrl}
+	    		, SYSDATE
+	    		, #{emrgAprvRqstYn}
+	    		, 'N'
+	    		, #{pbsrNo}
+	    		, SYSTIMESTAMP
+	    		, #{pbsrNo}
+	    		, SYSTIMESTAMP
+	    )
+	</insert>
+
+	<!-- 
+		Enregistrer la liste des approbateurs de l'historique des demandes d'approbation !==결재요청 내역의 결재자 리스트를 저장한다==!
+	-->
+	<insert id="insertAprvRqstEmp" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** insertAprvRqstEmp */
+		INSERT INTO TB_POTI_APRV_D
+			( 
+				APRV_ID				/** ID de l'approbation !==결재ID==! */
+			  , APRV_SRNO			/** N° série de l'approbation !==결재일련번호==! */
+			  , APRV_EMP_PBSR_NO	/** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+			  , APRV_RSLT_CD		/** Code de résultat d'apprboation !==결재결과코드==! */
+			  , DEL_YN				/** Suppression O/N !== 삭제여부 ==! */
+			  , FRST_REGST_ID		/** ID du premier enregistrant  !== 최초등록자ID ==! */
+			  , FRST_RGSR_DTTM		/** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+			  , LAST_CHPR_ID		/** ID du modificateur final !== 최종변경자ID ==! */
+			  , LAST_CHG_DTTM		/** Date et heure de modification finale !== 최종변경일시 ==! */
+			  , ESNT_YN
+			)
+		VALUES (#{aprvId}, (SELECT NVL(MAX(APRV_SRNO)+1, 1) FROM TB_POTI_APRV_D WHERE APRV_ID = #{aprvId}), #{aprvEmpPbsrNo}
+				, 'J99', 'N', #{pbsrNo}, SYSTIMESTAMP, #{pbsrNo}, SYSTIMESTAMP, #{esntYn})
+	</insert>
+
+	<!-- 
+		Consulter la valeur du statut actuel lors de la redemande de l'approbation !==결재요청 재상신인 경우 현재의 상태값을 조회한다==!
+	-->
+	<select id="selectReAprvRqstStts" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo" resultType="String">
+		/** selectReAprvRqstStts */
+		SELECT APRV_PRCS_STTS_CD		/** Code de statut d'approbation !==결재처리상태코드==! */
+		FROM TB_POTI_APRV
+		WHERE APRV_ID = #{aprvId}
+	</select>
+
+	<!-- 
+		Réinitialiser les informations de la demande d'approbation initiale  lors de la redemande de la demande d'approbation !==결재요청 재요청 시 기존 결재요청 정보를 초기화한다==!
+	-->
+	<update id="updateAprvRqst" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** updateAprvRqst */
+		UPDATE TB_POTI_APRV
+		SET APRV_PRCS_STTS_CD = #{aprvPrcsSttsCd}			/** Code de statut d'approbation !==결재처리상태코드==! */
+			, APRL_SRNO = #{aprlSrno}						/** N° série du niveau d'approbation !==결재선일련번호==! */
+		  , APRV_RQST_EMP_PBSR_NO = #{aprvRqstEmpPbsrNo}
+			, APRV_RQST_CN = #{aprvRqstCn}					/** Contenu de la demande d'approbation !==결재요청내용==! */
+			, APRV_RQST_DTTM = SYSDATE						/** Date de demande d'approbation !==결재요청일시==! */
+			, EMRG_APRV_RQST_YN = #{emrgAprvRqstYn}			/** Urgent O/N !==긴급결재신청여부==! */
+			, APRV_PRCS_CMPL_DTTM	=	NULL				/** Date de demande d'approbation terminée !== 결재처리완료일시 ==! */
+			, DEL_YN = 'N'									/** Suppression O/N !== 삭제여부 ==! */
+      		, LAST_CHPR_ID = #{pbsrNo}						/** ID du modificateur final !== 최종변경자ID ==! */
+      		, LAST_CHG_DTTM = SYSTIMESTAMP					/** Date et heure de modification finale !== 최종변경일시 ==! */
+		WHERE APRV_ID = #{aprvId} 
+	</update>
+
+	<!-- 
+		Réinitialiser les informations des approbateurs pour la demande d'approbation initiale lors de la redemande de la demande d'approbation !==결재요청 재요청 시 기존 결재요청 결재자의 정보를 초기화한다==!
+	-->
+	<update id="updateReAprvRqstEmpReset" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** updateReAprvRqstEmpReset */
+		UPDATE TB_POTI_APRV_D
+		SET DEL_YN = 'Y'				/** Suppression O/N !== 삭제여부 ==! */
+    	WHERE APRV_ID = #{aprvId} 
+	</update>
+
+	<!-- 
+		Reconstituer la liste des approbateurs lors de la redemande de l'approbation !==결재요청 재요청 시 결재자 목록을 재구성한다==!
+	-->
+	<update id="updateReAprvRqstEmpReCre" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** updateReAprvRqstEmpReCre */
+		with upsert as
+		(
+			UPDATE	TB_POTI_APRV_D SET
+					APRV_EMP_PBSR_NO = #{aprvEmpPbsrNo}			/** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+					, APRV_RSLT_CD = 'J99'						/** Code de résultat d'apprboation !==결재결과코드==! */
+					, APRV_OPIN_CN = NULL						/** Avis sur l'approbation !==결재의견==! */
+					, APRV_PRCS_DTTM = NULL						/** Date de traitement d'approbation !==결재처리일시==! */
+					, DCAB_YN = NULL							/** Décision arbitraire O/N !==전결여부==! */
+					, DEL_YN = 'N'								/** Suppression O/N !== 삭제여부 ==! */
+					, LAST_CHPR_ID = #{pbsrNo}					/** ID du modificateur final !== 최종변경자ID ==! */
+					, LAST_CHG_DTTM = SYSTIMESTAMP				/** Date et heure de modification finale !== 최종변경일시 ==! */
+			WHERE APRV_ID = #{aprvId} AND APRV_SRNO = #{aprvSrno}
+			RETURNING *
+		)
+		INSERT INTO TB_POTI_APRV_D
+		(
+				APRV_ID							/** ID de l'approbation !==결재ID==! */
+				, APRV_SRNO							/** N° série de l'approbation !==결재일련번호==! */
+				, APRV_EMP_PBSR_NO					/** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+				, APRV_RSLT_CD						/** Code de résultat d'apprboation !==결재결과코드==! */
+				, DEL_YN							/** Suppression O/N !== 삭제여부 ==! */
+				, FRST_REGST_ID						/** ID du premier enregistrant  !== 최초등록자ID ==! */
+				, FRST_RGSR_DTTM					/** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+				, LAST_CHPR_ID						/** ID du modificateur final !== 최종변경자ID ==! */
+				, LAST_CHG_DTTM						/** Date et heure de modification finale !== 최종변경일시 ==! */
+		)
+		SELECT
+				 #{aprvId}
+				 , #{aprvSrno}
+				 , #{aprvEmpPbsrNo}
+				 , 'J99'
+				 , 'N'
+				 , #{pbsrNo}
+				 , SYSTIMESTAMP
+				 , #{pbsrNo}
+				 , SYSTIMESTAMP
+		WHERE NOT exists(select * from upsert)
+	</update>
+
+	<!--
+		Consulter 'Traitement O/N' de l'approbation !==결재처리 여부 확인을 조회한다==!
+	-->
+	<select id="selectAprvStts" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo" resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** selectAprvStts */
+		SELECT APRV_PRCS_STTS_CD						/** Code de statut d'approbation !==결재처리상태코드==! */
+			 , (SELECT CASE WHEN COUNT(*) > 0 THEN 'Y' ELSE 'N' END 
+			 	FROM TB_POTI_APRV_D 
+			 	WHERE APRV_ID = #{aprvId} 
+			 	AND APRV_EMP_PBSR_NO = #{aprvEmpPbsrNo} 
+			 	AND DEL_YN = 'N') AS APRV_PSBL_YN		/** Possible O/N pour l'approbation !==결재가능여부==! */
+		FROM TB_POTI_APRV
+		WHERE APRV_ID = #{aprvId}
+		AND DEL_YN = 'N'
+	</select>
+
+	<!-- 
+		Mettre à jour le statut d'approbation actuel !==현재 결재상태를 업데이트한다.==!
+	-->
+	<update id="updateAprvPrcsStts" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** updateAprvPrcsStts */
+		UPDATE TB_POTI_APRV
+		SET APRV_PRCS_STTS_CD = #{aprvPrcsSttsCd}		/** Code de statut d'approbation !==결재처리상태코드==! */
+		  , LAST_CHPR_ID = #{pbsrNo}					/** ID du modificateur final !== 최종변경자ID ==! */
+		  , LAST_CHG_DTTM = SYSTIMESTAMP				/** Date et heure de modification finale !== 최종변경일시 ==! */
+		WHERE APRV_ID = #{aprvId}
+	</update>
+	
+	<!--
+		Mettre à jour le code de résultat sur la liste des approbateurs comme 'NULL' lors de l'annulation de l'approbation de l'historique des demandes d'approbation !==결재요청 내역 결재취소 시 결재자리스트의 결과코드를 NULL로 업데이트한다==!
+	-->
+	<update id="cancelAprvRqstDtl" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** cancelAprvRqstDtl */
+		UPDATE TB_POTI_APRV_D
+		SET APRV_RSLT_CD = NULL					/** Code de résultat d'apprboation !==결재결과코드==! */
+		  , LAST_CHPR_ID = #{pbsrNo}			/** ID du modificateur final !== 최종변경자ID ==! */
+		  , LAST_CHG_DTTM = SYSTIMESTAMP		/** Date et heure de modification finale !== 최종변경일시 ==! */
+		WHERE APRV_ID = #{aprvId}
+		AND DEL_YN = 'N'
+	</update>
+	
+	<!--
+		Enregistre le traitement d'approbation !==결재 처리를 등록한다==!
+	-->
+	<insert id="insertAprv" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** insertAprv */
+		with upsert as
+		(
+			UPDATE	TB_POTI_APRV_D SET
+					APRV_EMP_PBSR_NO = #{aprvEmpPbsrNo}			/** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+					, APRV_RSLT_CD = #{aprvRsltCd}				/** Code de résultat d'apprboation !==결재결과코드==! */
+					, APRV_OPIN_CN = #{aprvOpinCn}				/** Avis sur l'approbation !==결재의견==! */
+					, APRV_PRCS_DTTM = SYSDATE					/** Date de traitement d'approbation !==결재처리일시==! */
+					, DCAB_YN = #{dcabYn}						/** Décision arbitraire O/N !==전결여부==! */
+					, DEL_YN = 'N'								/** Suppression O/N !== 삭제여부 ==! */
+					, LAST_CHPR_ID = #{pbsrNo}					/** ID du modificateur final !== 최종변경자ID ==! */
+					, LAST_CHG_DTTM = SYSTIMESTAMP				/** Date et heure de modification finale !== 최종변경일시 ==! */
+			WHERE APRV_ID = #{aprvId} AND APRV_SRNO = #{aprvSrno}
+			RETURNING *
+		)
+		INSERT INTO TB_POTI_APRV_D
+		(
+				APRV_ID						/** ID de l'approbation !==결재ID==! */
+				, APRV_SRNO					/** N° série de l'approbation !==결재일련번호==! */
+				, APRV_EMP_PBSR_NO			/** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+				, APRV_RSLT_CD				/** Code de résultat d'apprboation !==결재결과코드==! */
+				, APRV_OPIN_CN				/** Avis sur l'approbation !==결재의견==! */
+				, APRV_PRCS_DTTM			/** Date de traitement d'approbation !==결재처리일시==! */
+				, DCAB_YN					/** Décision arbitraire O/N !==전결여부==! */
+				, DEL_YN					/** Suppression O/N !== 삭제여부 ==! */
+				, FRST_REGST_ID				/** ID du premier enregistrant  !== 최초등록자ID ==! */
+				, FRST_RGSR_DTTM			/** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+				, LAST_CHPR_ID				/** ID du modificateur final !== 최종변경자ID ==! */
+				, LAST_CHG_DTTM				/** Date et heure de modification finale !== 최종변경일시 ==! */
+		)
+		SELECT
+				#{aprvId}
+		     	, (SELECT NVL(MAX(APRV_SRNO)+1, 1) FROM TB_POTI_APRV_D WHERE APRV_ID = #{aprvId})
+				, #{aprvEmpPbsrNo}
+		     	, #{aprvRsltCd}
+		     	, #{aprvOpinCn}
+		     	, SYSDATE
+		     	, #{dcabYn}
+		     	, 'N'
+		     	, #{pbsrNo}
+		     	, SYSTIMESTAMP
+		     	, #{pbsrNo}
+		     	, SYSTIMESTAMP
+		WHERE NOT exists(select * from upsert)
+	</insert>
+
+	<!--
+		Vérifier 'demander réapprobation O/N'   !==재승인 요청 여부를 확인한다==!
+	-->
+	<select id="selectReAproval" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo" resultType="String">
+		/** selectReAproval */
+		SELECT CASE WHEN COUNT(*) > 0 THEN 'Y' ELSE 'N' END AS RE_APROV_YN	/** Re-approbation O/N !==재결재여부==! */
+		FROM TB_POTI_APRV_D_H
+		WHERE APRV_ID = #{aprvId}
+		AND APRV_SRNO = #{aprvSrno}
+	</select>
+	
+	<!--
+		Réinitialiser l'historique de l'approbation lors de la réapprobation !==결재 재승인인 경우 다음 결재자 결재내역을 초기화한다==!
+	-->
+	<update id="updateNextAprvEmpReset" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** updateNextAprvEmpReset */
+		UPDATE TB_POTI_APRV_D
+		SET APRV_RSLT_CD = 'J99'				/** Code de résultat d'apprboation !==결재결과코드==! */
+			, APRV_OPIN_CN = NULL				/** Avis sur l'approbation !==결재의견==! */
+			, APRV_PRCS_DTTM = NULL				/** Date de traitement d'approbation !==결재처리일시==! */
+			, DCAB_YN = NULL					/** Décision arbitraire O/N !==전결여부==! */
+			, LAST_CHPR_ID = #{pbsrNo}			/** ID du modificateur final !== 최종변경자ID ==! */
+			, LAST_CHG_DTTM = SYSTIMESTAMP		/** Date et heure de modification finale !== 최종변경일시 ==! */
+		WHERE APRV_ID = #{aprvId}
+		AND APRV_SRNO > #{aprvSrno}
+	</update>
+	
+	<!--
+		Enregistrer l'historique d'approbation sur la table d'historique !==결재내역을 이력테이블에 저장한다==!
+	-->
+	<insert id="insertAprvHist" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** insertAprvHist */
+		INSERT INTO TB_POTI_APRV_D_H (
+					 APRV_ID /** ID de l'approbation !==결재ID==! */
+				 , APRV_SRNO /** N° série de l'approbation !==결재일련번호==! */
+				 , APRV_DTL_HIST_SRNO /** N° série de l'historique des détails des approbations !==결재상세이력일련번호==! */
+				 , APRV_EMP_PBSR_NO /** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+				 , APRV_RSLT_CD /** Code de résultat d'apprboation !==결재결과코드==! */
+				 , APRV_OPIN_CN /** Avis sur l'approbation !==결재의견==! */
+				 , APRV_PRCS_DTTM /** Date de traitement d'approbation !==결재처리일시==! */
+				 , DCAB_YN /** Décision arbitraire O/N !==전결여부==! */
+				 , DEL_YN /** Suppression O/N !== 삭제여부 ==! */
+				 , FRST_REGST_ID /** ID du premier enregistrant  !== 최초등록자ID ==! */
+				 , FRST_RGSR_DTTM /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+				 , LAST_CHPR_ID /** ID du modificateur final !== 최종변경자ID ==! */
+				 , LAST_CHG_DTTM /** Date et heure de modification finale !== 최종변경일시 ==! */
+		)	VALUES (
+		    	 #{aprvId}
+				 , #{aprvSrno}
+				 , (SELECT NVL(MAX(APRV_DTL_HIST_SRNO) + 1, 1) FROM TB_POTI_APRV_D_H WHERE APRV_ID = #{aprvId})
+				 , #{aprvEmpPbsrNo}
+				 , #{aprvRsltCd}
+				 , #{aprvOpinCn}
+				 , SYSDATE
+				 , #{dcabYn}
+				 , 'N'
+				 , #{pbsrNo}
+				 , SYSTIMESTAMP
+				 , #{pbsrNo}
+				 , SYSTIMESTAMP
+		)
+	</insert>
+
+	<!--
+		Mettre à jour la date de fin du traitement d'approbatio lors de l'approbation terminée !==최종 결재완료 시 결재처리완료일시를 update한다==!
+	-->
+	<update id="updateAprvPrcsCmpl" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** updateAprvPrcsCmpl */
+		UPDATE TB_POTI_APRV
+		SET	APRV_PRCS_CMPL_DTTM	= SYSDATE		/** Date de demande d'approbation terminée !== 결재처리완료일시 ==! */
+		  , LAST_CHPR_ID = #{pbsrNo}			/** ID du modificateur final !== 최종변경자ID ==! */
+		  , LAST_CHG_DTTM = SYSTIMESTAMP		/** Date et heure de modification finale !== 최종변경일시 ==! */
+		WHERE APRV_ID = #{aprvId}
+	</update>
+	
+	<!--
+		Consulter les données d'approbation des demandes d'approbation en attente !==결재대기 중인 결재 데이터를 조회한다==!
+	-->
+	<select id="selectAprvPrevData" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo" resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** selectAprvPrevData */
+		SELECT APRV_ID																								/** ID de l'approbation !==결재ID==! */
+	          , APRV_SRNO																							/** N° série de l'approbation !==결재일련번호==! */
+	          , APRV_EMP_PBSR_NO																					/** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+	          , APRV_EMP_NM																							/** Approbateur !==결재직원명==! */
+	          , CASE WHEN APRV_PRCS_STTS_CD = 'I03' AND AF_RSLT = 'J02' AND APRV_SRNO IS NOT NULL THEN 'J99'
+	            ELSE NVL(APRV_RSLT_CD, 'J99') END AS APRV_RSLT_CD													/** Code de résultat d'apprboation !==결재결과코드==! */
+	          , AF_EMP																								/** Approbateur postérieur !==이후결재직원==! */
+	          , AF_RSLT																								/** Code de résultat de l'approbateur postérieur !==이후결재결과==! */
+	          , BF_EMP																								/** Approbateur précédent !==이전결재직원==! */
+	          , BF_RSLT																								/** Code de résultat de l'approbateur précédent !==이전결재결과==! */
+	          , FIRST_YN																							/** Premier approbateur O/N !==첫번째결재여부==! */
+	          , LAST_YN																								/** Dernier approbateur O/N !==마지막결재여부==! */
+	          , DCAB_YN																								/** Décision arbitraire O/N !==전결여부==! */
+	          , APRV_RQST_EMP_PBSR_NO																				/** N° matricule solde du demandeur d'approbation !==결재요청직원공무원번호==! */
+	          , APRV_RQST_EMP_NM																					/** Nom du demandeur d'approbation !==결재요청직원명==! */
+	          , APRV_PRCS_STTS_CD																					/** Code de statut d'approbation !==결재처리상태코드==! */
+	          , BSOP_CLSF_CD																						/** Code de type de travail !==업무분류코드==! */
+	          , APRV_BSOP_TP_CD																						/** Code de type d'approbation !==결재업무구분코드==! */
+	          , APRV_RQST_CN																						/** Contenu de la demande d'approbation !==결재요청내용==! */
+	          , APRV_REFF_NO																						/** N° de référence d'approbation !==결재참조번호==! */
+	          , TO_CHAR(APRV_RQST_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS APRV_RQST_DTTM									/** Date de demande d'approbation !==결재요청일시==! */
+	          , EMRG_APRV_RQST_YN																					/** Urgent O/N !==긴급결재신청여부==! */
+	          , APRL_SRNO																							/** N° série du niveau d'approbation !==결재선일련번호==! */
+	          , APRV_DTL_SCRN_URL																					/** URL écran des détails d'approbation !==결재상세화면URL==! */
+	          , APRV_PSBL_YN																						/** Possible O/N pour l'approbation !==결재가능여부==! */
+						, ESNT_YN
+						, NEXT_ESNT_YN
+	    FROM (
+	          SELECT A.APRV_ID
+	               , A.APRV_SRNO
+	               , A.APRV_EMP_PBSR_NO
+	               , C.EMP_NM AS APRV_EMP_NM
+	               , A.APRV_RSLT_CD
+	               , A.AF_EMP
+	               , A.AF_RSLT
+	               , A.BF_EMP
+	               , A.BF_RSLT
+	               , A.FIRST_YN
+	               , A.LAST_YN
+	               , NVL(A.DCAB_YN, 'N') AS DCAB_YN
+	               , B.APRV_RQST_EMP_PBSR_NO
+				   , CONCAT(D.EMP_FMNM, ' ', D.EMP_NM) AS APRV_RQST_EMP_NM						/** Nom du demandeur d'approbation !==결재요청직원명==! */
+	               , B.APRV_PRCS_STTS_CD
+	               , B.BSOP_CLSF_CD
+	               , B.APRV_BSOP_TP_CD
+	               , B.APRV_RQST_CN
+	               , B.APRV_REFF_NO
+	               , B.APRV_RQST_DTTM
+	               , B.EMRG_APRV_RQST_YN
+	               , B.APRL_SRNO
+	               , B.APRV_DTL_SCRN_URL
+	               , CASE WHEN B.APRV_PRCS_STTS_CD = 'I01' AND A.AF_RSLT IS NULL THEN 'Y'
+	                      WHEN B.APRV_PRCS_STTS_CD = 'I02' AND B.APRV_RQST_EMP_PBSR_NO = #{pbsrNo} THEN 'Y' 
+	                      WHEN B.APRV_PRCS_STTS_CD = 'I03' AND ((A.APRV_RSLT_CD IS NULL OR A.APRV_RSLT_CD = 'J99') OR A.AF_RSLT = 'J02') AND A.APRV_SRNO IS NOT NULL THEN 'Y'
+	                      WHEN B.APRV_PRCS_STTS_CD = 'I05' AND A.APRV_SRNO IS NULL THEN 'Y' ELSE 'N' END AS APRV_PSBL_YN
+								 , ESNT_YN
+								 , NEXT_ESNT_YN
+          	FROM (
+                	SELECT APRV_ID
+	                     , APRV_SRNO
+	                     , APRV_EMP_PBSR_NO
+	                     , APRV_RSLT_CD
+	                     , DCAB_YN 
+	                     , LEAD(APRV_EMP_PBSR_NO) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) AS AF_EMP
+	                     , LEAD(DECODE(APRV_RSLT_CD, 'J99', NULL, APRV_RSLT_CD)) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) AS AF_RSLT
+	                     , LAG(APRV_EMP_PBSR_NO) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) AS BF_EMP
+	                     , LAG(DECODE(APRV_RSLT_CD, 'J99', NULL, APRV_RSLT_CD)) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) AS BF_RSLT
+	                     , LAG(DCAB_YN) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) AS BF_DCAB_YN
+	                     , CASE WHEN LAG(APRV_EMP_PBSR_NO) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) IS NULL THEN 'Y' END AS FIRST_YN
+	                     , CASE WHEN LEAD(APRV_EMP_PBSR_NO) OVER (PARTITION BY APRV_ID ORDER BY APRV_SRNO) IS NULL THEN 'Y' END AS LAST_YN
+                			 , ESNT_YN
+											 , NVL((SELECT ESNT_YN FROM TB_POTI_APRV_D WHERE APRV_ID = T.APRV_ID AND APRV_SRNO = T.APRV_SRNO+1), 'Y') AS NEXT_ESNT_YN
+	                FROM TB_POTI_APRV_D T
+	                WHERE DEL_YN = 'N' ) A
+	                   , TB_POTI_APRV B
+	                   , TB_POTI_EMP C
+	                   , TB_POTI_EMP D
+	                WHERE A.APRV_ID = B.APRV_ID
+	                AND A.APRV_EMP_PBSR_NO = C.PBSR_NO
+	                AND B.APRV_RQST_EMP_PBSR_NO = D.PBSR_NO
+	                AND B.DEL_YN = 'N'
+	                AND A.APRV_EMP_PBSR_NO =  #{pbsrNo}
+	                AND ('Y' = CASE WHEN B.APRV_PRCS_STTS_CD = 'I02' THEN 'N' 
+	                                WHEN NVL(A.FIRST_YN, 'N') = 'Y' AND A.BF_RSLT IS NULL THEN 'Y'
+	                                WHEN NVL(A.FIRST_YN, 'N') != 'Y' AND A.BF_RSLT IS NOT NULL THEN CASE WHEN A.BF_DCAB_YN = 'Y' THEN 'N' ELSE 'Y' END ELSE 'N' END)
+       	  )
+		WHERE APRV_PSBL_YN = 'Y'
+		AND APRV_ID = #{aprvId}
+	</select>
+
+	<!-- 
+		Consulter les informations du niveau d'approbation à modifier !==변경할 결재선 정보를 조회한다==!
+	-->
+	<select id="selectApln" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo" resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo">
+		/** selectApln */
+		SELECT PBSR_NO			/** N˚ matricule solde !==공무원번호==! */
+			, APRL_SRNO			/** N° série du niveau d'approbation !==결재선일련번호==! */
+			, APRL_NM			/** Nom du niveau d'approbation !==결재선명==! */
+			, APRL_DESC			/** Description sur le niveau d'approbation !==결재선설명==! */
+			, BSCS_APRL_YN		/** Niveau d'approbation par défaut O/N !==기본결재선여부==! */
+		FROM TB_POTI_APRL
+		WHERE PBSR_NO = #{pbsrNo}
+		AND APRL_SRNO = #{aprlSrno} 
+		AND DEL_YN = 'N'
+	</select>
+	
+	<!--
+		Consulter les détails de connexion du niveau d'approbation à modifier !==변경할 결재선 상세내역을 조회한다==!
+	-->
+	<select id="selectAplnChgDtlList" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo" resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnOrdVo">
+		/** selectAplnChgDtlList */
+		SELECT 'false' AS CHK_SEL															/** Choisir une cellule de la grille !==체크박스 선택==! */
+	         , A.PBSR_NO																	/** N˚ matricule solde !==공무원번호==! */
+	         , A.APRL_SRNO																	/** N° série du niveau d'approbation !==결재선일련번호==! */
+	         , A.APRL_DTL_SRNO																/** N° série des détails du niveau d'approbation !==결재선상세일련번호==! */
+	         , A.APRV_ORDR																	/** Ordre des approbations !==결재순서==! */
+	         , A.APRV_EMP_PBSR_NO															/** N° matricule solde de l'approbateur !==결재직원공무원번호==! */
+	         , B.EMP_NM AS APRV_EMP_NM														/** Approbateur !==결재직원명==! */
+	         , B.ORGN_MGMT_CD AS APRV_ORGN_MGMT_CD											/** Code de gestion d'organisme de l'approbateur !==결재직원조직관리코드==! */
+	         , C.ORGN_CD AS APRV_ORGN_CD													/** Code d'organisme de l'approbateur !==결재직원조직코드==! */
+	         , C.ORGN_NM AS APRV_ORGN_NM													/** Nom de l'organisme de l'approbateur !==결재직원조직명==! */
+	         , B.FONC_CD AS APRV_CLPS_CD													/** Code de grade de l'approbation !==결재직원직급코드==! */
+	         , (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE DEL_YN = 'N' AND FONC_CD = B.FONC_CD AND LANG_CD = #{langCd}) AS APRV_CLPS_NM			/** Nom du grade de l'approbateur !==결재직원직급명==! */
+	         , D.APRV_ID																	/** ID de l'approbation !==결재ID==! */
+	         , CASE WHEN LEAD(E.APRV_RSLT_CD) OVER (PARTITION BY E.APRV_ID ORDER BY E.APRV_SRNO) = 'J02' THEN 'J99' 
+         		ELSE E.APRV_RSLT_CD END AS APRV_RSLT_CD										/** Code de résultat d'apprboation !==결재결과코드==! */
+		FROM TB_POTI_APRL_D A
+			, TB_POTI_EMP B
+			, TB_POTI_ORGN C
+	        , TB_POTI_APRV D
+	        , TB_POTI_APRV_D E
+		WHERE A.PBSR_NO = #{pbsrNo}
+		AND A.APRL_SRNO = #{aprlSrno}
+		AND D.APRV_ID = #{aprvId}
+		AND A.APRV_EMP_PBSR_NO = B.PBSR_NO
+		AND B.ORGN_MGMT_CD = C.ORGN_MGMT_CD
+	    AND D.APRV_ID = E.APRV_ID
+	    AND A.APRL_SRNO = D.APRL_SRNO
+	    AND A.APRL_DTL_SRNO = E.APRV_SRNO
+		AND A.DEL_YN = 'N'
+		ORDER BY A.APRV_ORDR
+	</select>
+	
+	<!--
+		Consulter l'organigramme d'approbation !==결재 조직도를 조회한다==!
+	-->
+	<select id="selectOrgnTreeList" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvOrgnVo" resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvOrgnVo">
+		/** selectOrgnTreeList */
+		SELECT LEVEL								/** Niveau !==Level==! */
+	         , ORGN_MGMT_CD							/** Code de gestion d'organisme !==조직관리코드==! */
+	         , ORGN_CD								/** Code d'organisme !==조직코드==! */
+	         , ORGN_NM								/** Nom de la structure !==조직명==! */
+	         , UPR_ORGN_MGMT_CD						/** Code de gestion de l'organisme supérieure !==상위조직관리코드==! */
+	         , HSRK_ORGN_MGMT_CD					/** Code de gestion de l'organisme de la catégorie supérieure !==최상위조직관리코드==! */
+	         , UPR_ORGN_MGMT_CD AS P_NODE			/** Code de gestion de l'organisme supérieure !==상위조직관리코드==! */
+	         , ORGN_MGMT_CD AS C_NODE				/** Code de gestion d'organisme !==조직관리코드==! */
+	         , '('||ORGN_CD||')'||ORGN_NM AS NAME	/** Nom de l'organisme !==조직명==! */
+		FROM TB_POTI_ORGN
+		WHERE DEL_YN = 'N'
+	    START WITH UPR_ORGN_MGMT_CD IS NULL
+	    CONNECT BY PRIOR ORGN_MGMT_CD = UPR_ORGN_MGMT_CD
+	    ORDER SIBLINGS BY ORGN_MGMT_CD
+	</select>
+	
+	<!--
+		Consulter les employés du service choisi !==선택한 조직의 소속 직원을 조회한다==!
+	-->
+	<select id="selectTreeEmpList" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvOrgnVo" resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvOrgnVo">
+		/** selectTreeEmpList */
+		SELECT 'false' AS CHK_SEL													/** Choisir une cellule de la grille !==체크박스 선택==! */
+			, A.PBSR_NO																/** N˚ matricule solde !==공무원번호==! */
+			, A.EMP_NM																/** Nom !==직원명==! */
+			, A.FONC_CD																/** Code de poste actuel !==직급코드==! */
+			, (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE DEL_YN = 'N' AND FONC_CD = A.FONC_CD AND LANG_CD = #{langCd}) AS CLPS_NM		/** Nom de poste actuel !==직급명==! */
+			, A.ORGN_MGMT_CD														/** Code de gestion d'organisme !==조직관리코드==! */
+			, B.ORGN_CD																/** Code d'organisme !==조직코드==! */
+			, B.ORGN_NM																/** Nom de la structure !==조직명==! */
+		FROM TB_POTI_EMP A
+			, TB_POTI_ORGN B
+		WHERE A.ORGN_MGMT_CD = B.ORGN_MGMT_CD
+			AND A.DEL_YN = 'N'
+			AND B.DEL_YN = 'N'
+		<if test="orgnCd != null and orgnCd != ''">
+			AND B.ORGN_CD = #{orgnCd}
+			<if test="uprOrgnMgmtCd != null and uprOrgnMgmtCd != ''">
+				AND B.UPR_ORGN_MGMT_CD = #{uprOrgnMgmtCd}
+			</if>
+		</if>
+		<if test="empNm != null and empNm != ''">
+			AND UPPER(A.EMP_NM) LIKE '%'||UPPER(#{empNm})||'%'
+		</if>
+	</select>
+	
+		
+	<!-- 
+		Consulter le nom du bureau indiquant SV comme catégorie de service !==조직구분이 SV인 부서명을 조회한다==!
+	-->
+	<select id="selectComDeptOrgnNm" parameterType="alpass.com.orgn.vo.ComOrgnInfoVo" resultType="String">
+		/** selectComDeptOrgnNm */
+		SELECT ORGN_NM			/** Nom de la structure !==조직명==! */
+		FROM TB_POTI_ORGN
+		WHERE DEL_YN = 'N'
+		AND ORGN_CD = #{orgnCd}
+		AND UPR_ORGN_MGMT_CD = (SELECT ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{uprOrgnMgmtCd} AND ROWNUM = 1)
+	</select>
+
+	<!--
+    Consulter le nom du bureau
+-->
+	<select id="selectOrgnNm" parameterType="alpass.com.orgn.vo.ComOrgnInfoVo" resultType="String">
+		/** selectOrgnNm */
+		SELECT
+		<if test="langCd == 'AR'">
+		  orgn_ar_nm  as orgn_nm /** Nom de la structure !==조직명==! */
+		 </if>
+		 <if test="langCd == 'FR'">
+		  orgn_nm  as orgn_nm /** Nom de la structure !==조직명==! */
+		 </if>
+		FROM TB_POTI_ORGN
+		WHERE DEL_YN = 'N'
+		AND ORGN_CD = #{orgnCd}
+	</select>
+
+	<!-- 
+		Consulter le grade =직급을 조회한다==!
+	-->
+	<select id="selectClpsList" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvOrgnVo" resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvOrgnVo">
+		/** selectClpsList */
+		<include refid="pagination.header"/>
+		 SELECT
+	            C.CD_VDVAL_NM AS CLPS_NM
+	          , C.CD_VDVAL AS CLPS_CD
+	     FROM TB_COM_COMN_CD A, TB_COM_COMN_CD_D B, TB_COM_COMN_CD_D_LANG C
+	    WHERE A.COMN_CD = B.COMN_CD
+	    AND   B.COMN_CD = C.COMN_CD
+	    AND   B.CD_VDVAL = C.CD_VDVAL
+	    AND   A.USE_YN = 'Y'
+	    AND   A.DEL_YN = 'N'
+	    AND   B.USE_YN = 'Y'
+	    AND   B.DEL_YN = 'N'
+	    AND   C.DEL_YN = 'N'
+	    AND   C.COMN_CD = 'COM_0064'
+	    AND   C.LANG_CD = UPPER(#{langCd})
+		<if test="clpsNm != null and clpsNm != ''">
+		AND TRIM(UPPER(C.CD_VDVAL_NM)) LIKE '%'|| TRIM(UPPER(#{clpsNm})) ||'%'
+		</if>
+		<include refid="pagination.footer"/>
+	</select>
+	
+	<!--
+		Consulter le nom du grade !=직급명을 조회한다==!
+	-->
+	<select id="selectClpsNm" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvOrgnVo" resultType="String">
+		/** selectClpsNm */
+		 SELECT
+	            C.CD_VDVAL_NM AS CLPS_NM
+	     FROM  TB_COM_COMN_CD_D B, TB_COM_COMN_CD_D_LANG C
+	    WHERE  
+	          B.COMN_CD = C.COMN_CD
+	    AND   B.CD_VDVAL = C.CD_VDVAL
+	    AND   B.USE_YN = 'Y'
+	    AND   B.DEL_YN = 'N'
+	    AND   C.DEL_YN = 'N'
+	    AND   C.COMN_CD = 'COM_0064'
+	    AND   C.LANG_CD = UPPER(#{langCd})
+		<if test="clpsCd != null and clpsCd != ''">
+		AND  C.CD_VDVAL = #{clpsCd}
+		</if>
+		AND   ROWNUM = 1
+	</select>
+
+	<!--
+		Consulter l'adresse e-mail !=이메일주소를 조회한다==!
+	-->
+	<select id="selectEmlByPbsrNo" parameterType="java.lang.String" resultType="java.lang.String">
+		/** selectEmlByPbsrNo */
+		SELECT EML
+		FROM TB_POTI_EMP
+		WHERE DEL_YN = 'N'
+			AND PBSR_NO = #{pbsrNo}
+	</select>
+
+	<!--
+		Consulter l'ordre d'approbation !=결재라인 순번을 조회한다==!
+	-->
+	<select id="selectReAprlSrno" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo" resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAplnVo">
+		/** selectReAprlSrno */
+		SELECT APRL_SRNO			/** N° série du niveau d'approbation !==결재선일련번호==! */
+		FROM TB_POTI_APRV
+		WHERE APRV_ID = #{aprvId}
+			AND DEL_YN = 'N'
+	</select>
+
+	<!--
+		Consulter la liste des prochaines approbations !=다음결재 목록을 조회한다==!
+	-->
+	<select id="selectNextAprvList" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo" resultType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** selectNextAprvList */
+		SELECT APRV_ID, APRV_SRNO, ESNT_YN, APRV_RSLT_CD, APRV_EMP_PBSR_NO
+		FROM TB_POTI_APRV_D
+		WHERE DEL_YN = 'N'
+		  AND APRV_ID = #{aprvId}
+			AND APRV_SRNO > #{aprvSrno}
+		ORDER BY APRV_SRNO
+	</select>
+
+	<!--
+		Vérifier s'il y a un approbateur obligatoire. !=다음 필수 결재자가 있는지 체크한다==!
+	-->
+	<select id="selectNextEsntCnt" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo" resultType="int">
+		/** selectNextEsntCnt */
+		SELECT COUNT(APRV_ID)
+		FROM TB_POTI_APRV_D
+		WHERE DEL_YN = 'N'
+			AND APRV_ID = #{aprvId}
+			AND APRV_SRNO > #{aprvSrno}
+		  AND ESNT_YN = 'Y'
+	</select>
+
+	<!--
+		Gérer le cas où l'approbateur saute l'approbation facultative !=결재자가 승인하여 선택사항 결재를 건너뛰는 경우를 처리한다==!
+	-->
+	<update id="updateAprvEsnt" parameterType="alpass.ipt.pot.mp.elctaprv.vo.PotMpElctaprvAprvPrcsVo">
+		/** updateAprvEsnt */
+		UPDATE TB_POTI_APRV_D
+		SET APRV_RSLT_CD   = 'J97'
+			, APRV_PRCS_DTTM = SYSDATE
+		WHERE DEL_YN = 'N'
+			AND APRV_ID = #{aprvId}
+			AND APRV_SRNO = #{aprvSrno}
+			AND APRV_EMP_PBSR_NO = #{aprvEmpPbsrNo}
+	</update>
+
+	<!--
+		Consulter la liste des gestionnaires du chemin d'approbation !=결재선 관리자 목록을 조회한다==!
+	-->
+	<select id="selectAprlAdmEmpList" resultType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpVo">
+		/** selectAprlAdmEmpList */
+		SELECT EMP.PBSR_NO
+				 , EMP.EML
+		FROM TB_POTI_EMP EMP,
+				 TB_POTI_EMP_AUTH AUTH
+		WHERE EMP.DEL_YN = 'N'
+			AND AUTH.DEL_YN = 'N'
+			AND EMP.PBSR_NO = AUTH.PBSR_NO
+			AND AUTH.ROLE_ID = 'POT106'
+	</select>
+
+</mapper>

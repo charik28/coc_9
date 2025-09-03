@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.psc.tpd.rgsr.mapper.PscTpdVhclImpHistMapper">
+
+  <!--
+ @TODO:번역필요 !== 중고차 수입이력 조회 ==!
+ -->
+  <select id="selectPscTpdVhclImpHist"
+    parameterType="alpass.ipt.psc.tpd.rgsr.vo.PscTpdVhclImpHistVo" resultType="alpass.ipt.psc.tpd.rgsr.vo.PscTpdVhclImpHistVo">
+    /* selectPscTpdVhclImpHist */
+    SELECT
+      A.VHCL_HIST_SRNO AS HIST_SRNO            
+    , A.TPD_MGMT_NO                
+    , A.BFCY_PSPR_NO                   
+    , A.BFCY_NAT_CD                
+    , A.REFF_NO                
+    , A.IMP_DCLR_DT              
+    , TO_CHAR(TO_DATE(A.XPIR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS XPIR_DT    
+    , A.SSIS_NO     
+    , A.FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+    , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+    FROM   ALPASSINT.TB_PSCI_VHCL_IMP_HIST A
+    WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+    AND A.XPIR_DT <![CDATA[ >= ]]>  TO_CHAR(SYSDATE,'YYYYMMDD')
+    AND A.VHCL_HIST_SRNO = (SELECT MAX(B.VHCL_HIST_SRNO) FROM ALPASSINT.TB_PSCI_VHCL_IMP_HIST B WHERE B.BFCY_PSPR_NO = #{bfcyPsprNo} AND B.BFCY_NAT_CD  = #{bfcyNatCd} )
+
+  </select>
+
+
+  <!--
+  @TODO:번역필요 !== 중고차 수입이력 등록 ==!
+  (deKim)
+  -->
+  <insert id="insertPscTpdVhclImpHist" parameterType="alpass.ipt.psc.tpd.rgsr.vo.PscTpdVhclImpHistVo">
+    /* insertPscTpdVhclImpHist */
+    <selectKey keyProperty="histSrno" order="BEFORE" resultType="java.math.BigDecimal">
+      SELECT NVL(MAX(VHCL_HIST_SRNO),0)+1 FROM ALPASSINT.TB_PSCI_VHCL_IMP_HIST 
+    </selectKey>
+
+    INSERT INTO ALPASSINT.TB_PSCI_VHCL_IMP_HIST
+    (
+      VHCL_HIST_SRNO                
+    , TPD_MGMT_NO                
+    , BFCY_PSPR_NO                   
+    , BFCY_NAT_CD                
+    , REFF_NO                
+    , IMP_DCLR_DT              
+    , XPIR_DT             
+    , SSIS_NO
+    , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+    , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+    , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+    , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+    , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    )
+    VALUES
+    (
+    #{histSrno}               
+    , #{tpdMgmtNo}               
+    , #{bfcyPsprNo}           
+    , #{bfcyNatCd}        
+    , #{reffNo}                    
+    , #{impDclrDt}              
+    , (SELECT TO_CHAR(SYSDATE + INTERVAL '3 years', 'YYYYMMDD') FROM DUAL)     
+    , #{ssisNo}                   
+    , 'N'                          /** Suppression On !== 삭제여부 ==! */
+    , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+    , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+    , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+    , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    )
+     
+
+  </insert>
+
+
+</mapper>

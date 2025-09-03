@@ -1,0 +1,887 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!--
+SQL de 'Suivi de cargaison' !== 화물추적 SQL. ==!
+(Roh Sideuk)
+-->
+<mapper namespace="alpass.ipt.car.com.mapper.CarCgtrBlMapper">
+
+	<!--
+	Sauvegarder les informations sur 'B/L suivi de cargaison'!== 화물추적 B/L정보를 등록한다 ==!
+	(Roh Sideuk)
+	-->
+	<insert id="insertCgtrBl" parameterType="alpass.ipt.car.com.vo.CarCgtrBlVo">
+		/* CarCgtrBlMapper.insertCgtrBl */
+		INSERT INTO TB_CARI_CGTR_BL
+		(
+			CAG_MGMT_NO
+			, MRN
+			, MSN
+			, HSN
+			, BL_NO
+			, TRNP_METH_NM
+			, TRNP_METH_IDFY_NO
+			, TRNP_RFER_NO
+			, ARVL_DTTM
+			, DPTR_PORT_CD
+			, LDUN_PORT_CD
+			, CARR_CD
+			, BL_TP_CD
+			, BL_PT_CD
+			, FRWR_CD
+			, CAG_TP_CD
+			, CAG_CHRC_CD
+			, LOAD_REGN_CD
+			, LDUN_REGN_CD
+			, PDLS_NM
+			, PCKG_GCNT
+			, TTWG
+			, NTWG
+			, CBM_VOL
+			, LIR_VOL
+			, CNSI_NIF
+			, CNSI_NM
+			, CNSI_ADDR_NM
+			, CNSI_TLPH_NO
+			, CNSI_EML
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+		)
+		SELECT
+            A.CAG_MGMT_NO           	/** CRN !===화물관리번호==! */
+            , A.MRN                 			/** MRN !===MRN==! */
+            , A.MSN                 			/** MSN !===MRN==! */
+            , A.HSN                 			/** HSN !===HSN==! */
+			, A.BL_NO		/** N° de BL !===BL번호==! */
+            , B.TRNP_METH_NM        	/** Nom de moyen de transport !===운송수단명==! */
+            , B.TRNP_METH_IDFY_NO  /** N° d'identification du moyen de transport !===운송수단식별번호==! */
+            , B.TRNP_RFER_NO        	/** N° de voyageN° de volN° d'itinéraire !===운송참고번호==! */
+            , B.ARVL_DTTM           		/** Date et heure d'arrivée !===도착일시==! */
+            , B.DPTR_PORT_CD        	/** Code de port de départ !===출발항구코드==! */
+            , B.LDUN_PORT_CD        	/** Code de port de déchargement !===하역항구코드==! */
+            , B.CARR_CD             		/** Code de société de transport !===운송사코드==! */
+            , A.BL_TP_CD            		/** Code de catégorie de B/L !===BL구분코드==! */
+            , A.BL_PT_CD            		/** Code de type de BL !===BL유형코드==! */
+            , A.FRWR_CD             		/** Code de groupeur !===포워더코드==! */
+            , A.CAG_TP_CD           		/** Code de catégorie de nature de cargaison !===화물구분코드==! */
+            , A.CAG_CHRC_CD         	/** Nature de cargaison !===화물특성코드==! */
+            , A.LOAD_REGN_CD        	/** Code de lieu de chargement !===적재지역코드==! */
+            , A.LDUN_REGN_CD        	/** Code de lieu de déchargement !===하역지역코드==! */
+            , A.PDLS_NM             		/** Nom de l'article !===품목명==! */
+            , A.PCKG_GCNT           		/** Nombre de colis !===포장개수==! */
+            , A.TTWG                		/** Poids brut !===총중량==! */
+			, A.NTWG
+            , A.CBM_VOL             		/** Volume (MTQ) !===입방미터용적==! */
+            , A.LIR_VOL             		/** Volume (Litre) !===리터용적==! */
+            , A.CNSI_TXPR_IDFY_NO
+			, A.CNSI_NM
+			, A.CNSI_ADDR_NM
+			, A.CNSI_TLPH_NO
+			, A.CNSI_EML
+			, A.DEL_YN              		/** Suppression ON !===삭제여부==! */
+			, A.FRST_REGST_ID      	/** ID du premier enregistrant !===최초등록자ID==! */
+			, A.FRST_RGSR_DTTM      	/** Date et heure de premier enregistrement !===최초등록일시==! */
+			, A.LAST_CHPR_ID			/** ID du modificateur final !===최종변경자ID==! */
+			, A.LAST_CHG_DTTM       	/** Date et heure de modification finale !===최종변경일시==! */
+			<!-- , A.CNSI_TXPR_IDFY_NO_NIN   /** NIN de déstinataire !== 수하인납세자식별번호(NIN) ==! */
+            , A.EXPPN_TXPR_IDFY_NO_NIN  /** NIN d'exportateur !== 수출자납세자식별번호(NIN) ==! */ -->
+        FROM TB_CARI_CAG_DCSH_BL A, TB_CARI_CAG_DCSH B
+        WHERE 
+        	A.MRN = B.MRN
+			AND A.MRN = #{mrn}
+			AND A.CAG_MGMT_NO = #{cagMgmtNo}
+			AND A.DEL_YN = 'N' 
+			AND B.DEL_YN = 'N' 
+	</insert>
+
+	<!--
+	Modifier les infos sur 'B/L suivi de cargaison'. !== 화물추적 B/L정보을 수정한다. ==!
+	(Roh Sideuk)
+	-->
+	<update id="updateCgtrBl" parameterType="alpass.ipt.car.com.vo.CarCgtrBlVo">
+		/* CarCgtrBlMapper.updateCgtrBl */
+		UPDATE TB_CARI_CGTR_BL 
+		SET
+			LAST_CHPR_ID = #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+			<if test="mrn != null and mrn != ''">
+				, MRN = #{mrn} /** Mrn !== MRN ==! */
+			</if>
+			<if test="msn != null and msn != ''">
+				, MSN = #{msn} /** Msn !== MSN ==! */
+			</if>
+			<if test="hsn != null and hsn != ''">
+				, HSN = #{hsn} /** Hsn !== HSN ==! */
+			</if>
+			<if test="blNo != null and blNo != ''">
+				, BL_NO = #{blNo} /** N° De Bl !== BL번호 ==! */
+			</if>
+			<if test="trnpMethNm != null and trnpMethNm != ''">
+				, TRNP_METH_NM = #{trnpMethNm} /** Nom De Moyen De Transport !== 운송수단명 ==! */
+			</if>
+			<if test="trnpMethIdfyNo != null and trnpMethIdfyNo != ''">
+				, TRNP_METH_IDFY_NO = #{trnpMethIdfyNo} /** N° D'Identification Du Moyen De Transport !== 운송수단식별번호 ==! */
+			</if>
+			<if test="trnpRferNo != null and trnpRferNo != ''">
+				, TRNP_RFER_NO = #{trnpRferNo} /** N° de référence de transport !== 운송참고번호 ==! */
+			</if>
+			<if test="arvlDttm != null and arvlDttm != ''">
+				, ARVL_DTTM = TO_DATE(#{arvlDttm},'DDMMYYYYHH24MISS') /** Date Et Heure D'Arrivée !== 도착일시 ==! */
+			</if>
+			<if test="dptrPortCd != null and dptrPortCd != ''">
+				, DPTR_PORT_CD = #{dptrPortCd} /** Code De Port De Départ !== 출발항구코드 ==! */
+			</if>
+			<if test="ldunPortCd != null and ldunPortCd != ''">
+				, LDUN_PORT_CD = #{ldunPortCd} /** Code De Port De Déchargement !== 하역항구코드 ==! */
+			</if>
+			<if test="carrCd != null and carrCd != ''">
+				, CARR_CD = #{carrCd} /** Code De Société De Transport !== 운송사코드 ==! */
+			</if>
+			<if test="blTpCd != null and blTpCd != ''">
+				, BL_TP_CD = #{blTpCd} /** Code De Catégorie De B/L !== BL구분코드 ==! */
+			</if>
+			<if test="blPtCd != null and blPtCd != ''">
+				, BL_PT_CD = #{blPtCd} /** Code De Type De Bl !== BL유형코드 ==! */
+			</if>
+			<if test="frwrCd != null and frwrCd != ''">
+				, FRWR_CD = #{frwrCd} /** Code De Groupeur !== 포워더코드 ==! */
+			</if>
+			<if test="cagTpCd != null and cagTpCd != ''">
+				, CAG_TP_CD = #{cagTpCd} /** Type de flux !== 화물구분코드 ==! */
+			</if>
+			<if test="cagChrcCd != null and cagChrcCd != ''">
+				, CAG_CHRC_CD = #{cagChrcCd} /** Nature De Cargaison !== 화물특성코드 ==! */
+			</if>
+			<if test="loadRegnCd != null and loadRegnCd != ''">
+				, LOAD_REGN_CD = #{loadRegnCd} /** Code De Lieu De Chargement !== 적재지역코드 ==! */
+			</if>
+			<if test="ldunRegnCd != null and ldunRegnCd != ''">
+				, LDUN_REGN_CD = #{ldunRegnCd} /** Code De Lieu De Déchargement !== 하역지역코드 ==! */
+			</if>
+			<if test="pdlsNm != null and pdlsNm != ''">
+				, PDLS_NM = #{pdlsNm} /** Nom De L'Article !== 품목명 ==! */
+			</if>
+			<if test="pckgGcnt != null and pckgGcnt != ''">
+				, PCKG_GCNT = #{pckgGcnt} /** Nombre De Colis !== 포장개수 ==! */
+			</if>
+			<if test="ttwg != null and ttwg != ''">
+				, TTWG = #{ttwg} /** Poids Brut !== 총중량 ==! */
+			</if>
+			<if test="cbmVol != null and cbmVol != ''">
+				, CBM_VOL = #{cbmVol} /** Volume (Mtq) !== 입방미터용적 ==! */
+			</if>
+			<if test="lirVol != null and lirVol != ''">
+				, LIR_VOL = #{lirVol} /** Volume (Litre) !== 리터용적 ==! */
+			</if>
+			<if test="cnsiNif != null and cnsiNif != ''">
+				, CNSI_NIF = #{cnsiNif} /** /** NIF du destinataire !== 수하인납세자식별번호 ==! */
+			</if>
+			<if test="cnsiNm != null and cnsiNm != ''">
+				, CNSI_NM = #{cnsiNm} /** Nom de destinataire !== 수하인명 ==! */
+			</if>
+			<if test="cnsiAddrNm != null and cnsiAddrNm != ''">
+				, CNSI_ADDR_NM = #{cnsiAddrNm} /** Adresse Du Destinataire !== 수하인주소명
+				==! */
+			</if>
+			<if test="cnsiTlphNo != null and cnsiTlphNo != ''">
+				, CNSI_TLPH_NO = #{cnsiTlphNo} /** N° de téléphone de destinataire !==
+				수하인전화번호 ==! */
+			</if>
+			<if test="cnsiEml != null and cnsiEml != ''">
+				, CNSI_EML = #{cnsiEml} /** E-mail de destinataire !== 수하인이메일 ==! */
+			</if>
+			<if test="delYn != null and delYn != ''">
+				, DEL_YN = #{delYn} /** Suppression On !== 삭제여부 ==! */
+			</if>
+		WHERE 1 = 1
+			AND CAG_MGMT_NO = #{cagMgmtNo}/** Crn !== 화물관리번호 ==! */
+	</update>
+
+	<!--
+	Modifier les infos sur 'B/L suivi de cargaison'. (Rapport de déchargement) !== 화물추적 B/L 정보을 수정한다. (양화 보고) ==!	
+	(Roh Sideuk)
+	-->
+	<update id="updateCgtrBlLdunRprt" parameterType="alpass.ipt.car.com.vo.CarCgtrBlVo">
+		/* CarCgtrBlMapper.updateCgtrBlLdunRprt */
+		UPDATE TB_CARI_CGTR_BL CB
+		SET 
+			CB.LAST_CHPR_ID  = E.LAST_CHPR_ID												/** ID DU MODIFICATEUR FINAL !===최종변경자ID==! */
+			, CB.LAST_CHG_DTTM = E.LAST_CHG_DTTM												/** DATE ET HEURE DE MODIFICATION FINALE !==최종변경일시==! */ 
+			, CB.PCKG_GCNT = E.PCKG_GCNT	/** NOMBRE DE COLIS !===포장개수==! */
+		     , CB.TTWG = E.TTWG 			/** POIDS BRUT !===총중량==! */
+		     , CB.LIR_VOL = E.LIR_VOL		/** VOLUME (LITRE) !===리터용적==! */
+		     , CB.CBM_VOL = E.CBM_VOL
+		FROM 
+		( SELECT CAG_MGMT_NO, PCKG_GCNT, TTWG, LIR_VOL, CBM_VOL, LAST_CHPR_ID, LAST_CHG_DTTM  
+			FROM TB_CARI_CAG_DCSH_BL A
+			WHERE A.BL_PT_CD = 'M'
+							AND A.DEL_YN = 'N'
+				AND EXISTS (
+					SELECT 1 FROM TB_CARI_LDUN_RPRT_BL LB, TB_CARI_LDUN_RPRT LM  
+					WHERE 
+						LB.LDUN_RPRT_NO = LM.LDUN_RPRT_NO 
+					AND A.MRN = LM.MRN
+					AND LB.LDUN_RPRT_NO = #{ rqstNo }
+					AND A.BL_NO = LB.BL_NO 
+					AND LB.DEL_YN = 'N'		
+					AND LM.DEL_YN = 'N'
+					UNION 
+					SELECT 1 FROM TB_CARI_LDUN_RPRT_CNTR LB, TB_CARI_LDUN_RPRT LM  
+					WHERE 
+						LB.LDUN_RPRT_NO = LM.LDUN_RPRT_NO 
+					AND A.MRN = LM.MRN
+					AND LB.LDUN_RPRT_NO = #{ rqstNo }
+					AND A.BL_NO = LB.BL_NO 
+					AND LB.DEL_YN = 'N'		
+					AND LM.DEL_YN = 'N'			
+				)
+			) AS E
+		WHERE CB.CAG_MGMT_NO = E.CAG_MGMT_NO
+	</update>
+
+	<!--
+	Modifier les infos sur 'B/L suivi de cargaison'. (rectification de Rapport de déchargement) !== 화물추적 B/L 정보을 수정한다. (양화 보고 정정) ==!	
+	(Roh Sideuk)
+	-->
+	<update id="updateCgtrBlLdunRprtMdfy" parameterType="alpass.ipt.car.com.vo.CarCgtrBlVo">
+		/* CarCgtrBlMapper.updateCgtrBlLdunRprtMdfy */
+		UPDATE TB_CARI_CGTR_BL CB
+		SET 
+			CB.LAST_CHPR_ID  = E.LAST_CHPR_ID												/** ID DU MODIFICATEUR FINAL !===최종변경자ID==! */
+			, CB.LAST_CHG_DTTM = E.LAST_CHG_DTTM												/** DATE ET HEURE DE MODIFICATION FINALE !==최종변경일시==! */ 
+			, CB.PCKG_GCNT = E.PCKG_GCNT	/** NOMBRE DE COLIS !===포장개수==! */
+		     , CB.TTWG = E.TTWG 			/** POIDS BRUT !===총중량==! */
+		     , CB.LIR_VOL = E.LIR_VOL		/** VOLUME (LITRE) !===리터용적==! */
+		     , CB.CBM_VOL = E.CBM_VOL
+		FROM 
+		( SELECT CAG_MGMT_NO, PCKG_GCNT, TTWG, LIR_VOL, CBM_VOL, LAST_CHPR_ID, LAST_CHG_DTTM  
+			FROM TB_CARI_CAG_DCSH_BL A
+			WHERE A.BL_PT_CD = 'M'
+							AND A.DEL_YN = 'N'
+				AND EXISTS (
+					SELECT 1 FROM tb_carI_ldun_rprt_BL_mdfy LB, tb_carI_ldun_rprt_mdfy LM  
+					WHERE 
+						LB.ldun_rprt_mdfy_no = LM.ldun_rprt_mdfy_no 
+					AND A.MRN = LM.MRN
+					AND LB.ldun_rprt_mdfy_no = #{ rqstNo }
+					AND A.BL_NO = LB.BL_NO 
+					AND LB.DEL_YN = 'N'		
+					AND LM.DEL_YN = 'N'
+					UNION 
+					SELECT 1 FROM tb_carI_ldun_rprt_cntr_mdfy LB, tb_carI_ldun_rprt_mdfy LM  
+					WHERE 
+						LB.ldun_rprt_mdfy_no = LM.ldun_rprt_mdfy_no 
+					AND A.MRN = LM.MRN
+					AND LB.ldun_rprt_mdfy_no = #{ rqstNo }
+					AND A.BL_NO = LB.BL_NO 
+					AND LB.DEL_YN = 'N'		
+					AND LM.DEL_YN = 'N'			
+				)
+			) AS E
+		WHERE CB.CAG_MGMT_NO = E.CAG_MGMT_NO
+	</update>
+
+	<!--
+	TODO 번역필요 !== 화물추적 B/L 정보를 등록한다 [화물 신청서]
+	(Roh Sideuk)
+	-->
+	<insert id="insertCgtrBlCagDcshRgsr" parameterType="alpass.ipt.car.com.vo.CarCgtrBlVo">
+		/* CarCgtrBlMapper.insertCgtrBlCagDcshRgsr */
+		INSERT INTO TB_CARI_CGTR_BL
+		(
+			CAG_MGMT_NO
+			, MRN
+			, MSN
+			, HSN
+			, BL_NO
+			, TRNP_METH_NM
+			, TRNP_METH_IDFY_NO
+			, TRNP_RFER_NO
+			, ARVL_DTTM
+			, DPTR_PORT_CD
+			, LDUN_PORT_CD
+			, CARR_CD
+			, BL_TP_CD
+			, BL_PT_CD
+			, FRWR_CD
+			, CAG_TP_CD
+			, CAG_CHRC_CD
+			, LOAD_REGN_CD
+			, LDUN_REGN_CD
+			, PDLS_NM
+			, PCKG_GCNT
+			, TTWG
+			, NTWG
+			, CBM_VOL
+			, LIR_VOL
+			, CNSI_NIF
+			, CNSI_NM
+			, CNSI_ADDR_NM
+			, CNSI_TLPH_NO
+			, CNSI_EML
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+		)
+		SELECT
+            A.CAG_MGMT_NO           	/** CRN !===화물관리번호==! */
+            , A.MRN                 			/** MRN !===MRN==! */
+            , A.MSN                 			/** MSN !===MRN==! */
+            , A.HSN                 			/** HSN !===HSN==! */
+			, A.BL_NO		/** N° de BL !===BL번호==! */
+            , B.TRNP_METH_NM        	/** Nom de moyen de transport !===운송수단명==! */
+            , B.TRNP_METH_IDFY_NO  /** N° d'identification du moyen de transport !===운송수단식별번호==! */
+            , B.TRNP_RFER_NO        	/** N° de voyageN° de volN° d'itinéraire !===운송참고번호==! */
+            , B.ARVL_DTTM           		/** Date et heure d'arrivée !===도착일시==! */
+            , B.DPTR_PORT_CD        	/** Code de port de départ !===출발항구코드==! */
+            , B.LDUN_PORT_CD        	/** Code de port de déchargement !===하역항구코드==! */
+            , B.CARR_CD             		/** Code de société de transport !===운송사코드==! */
+            , A.BL_TP_CD            		/** Code de catégorie de B/L !===BL구분코드==! */
+            , A.BL_PT_CD            		/** Code de type de BL !===BL유형코드==! */
+            , A.FRWR_CD             		/** Code de groupeur !===포워더코드==! */
+            , A.CAG_TP_CD           		/** Code de catégorie de nature de cargaison !===화물구분코드==! */
+            , A.CAG_CHRC_CD         	/** Nature de cargaison !===화물특성코드==! */
+            , A.LOAD_REGN_CD        	/** Code de lieu de chargement !===적재지역코드==! */
+            , A.LDUN_REGN_CD        	/** Code de lieu de déchargement !===하역지역코드==! */
+            , A.PDLS_NM             		/** Nom de l'article !===품목명==! */
+            , A.PCKG_GCNT           		/** Nombre de colis !===포장개수==! */
+            , A.TTWG                		/** Poids brut !===총중량==! */
+			, A.NTWG
+            , A.CBM_VOL             		/** Volume (MTQ) !===입방미터용적==! */
+            , A.LIR_VOL             		/** Volume (Litre) !===리터용적==! */
+            , A.CNSI_TXPR_IDFY_NO
+			, A.CNSI_NM
+			, A.CNSI_ADDR_NM
+			, A.CNSI_TLPH_NO
+			, A.CNSI_EML
+			, A.DEL_YN              		/** Suppression ON !===삭제여부==! */
+			, A.FRST_REGST_ID      	/** ID du premier enregistrant !===최초등록자ID==! */
+			, A.FRST_RGSR_DTTM      	/** Date et heure de premier enregistrement !===최초등록일시==! */
+			, A.LAST_CHPR_ID			/** ID du modificateur final !===최종변경자ID==! */
+			, A.LAST_CHG_DTTM       	/** Date et heure de modification finale !===최종변경일시==! */
+			, A.CNSI_TXPR_IDFY_NO_NIN   /** NIN de déstinataire !== 수하인납세자식별번호(NIN) ==! */
+            , A.EXPPN_TXPR_IDFY_NO_NIN  /** NIN d'exportateur !== 수출자납세자식별번호(NIN) ==! */
+        FROM TB_CARI_CAG_DCSH_BL A, TB_CARI_CAG_DCSH B
+        WHERE 
+        	A.MRN = B.MRN
+			AND A.MRN = #{mrn}
+			AND A.DEL_YN = 'N' 
+			AND B.DEL_YN = 'N' 
+	</insert>	
+	
+  <!-- !== 화물추적 B/L 처리  ==! -->
+	
+	<!--
+	TODO 번역필요 !== 화물추적 B/L 처리 정보를 등록한다
+	(Roh Sideuk)
+	-->
+	<insert id="insertCgtrBlPrcs" parameterType="alpass.ipt.car.com.vo.CarCgtrBlPrcsVo">
+		/* CarCgtrBlMapper.insertCgtrBlPrcs */
+		INSERT INTO TB_CARI_CGTR_BL_PRCS
+		(
+			CAG_MGMT_NO
+			, PRCS_SRNO           
+            , CAG_RQST_TP_CD
+            , PRCS_STTS_CD
+            , PRCS_DTTM
+            , RQST_NO
+            , RQST_RFER_NO
+            , IBOBZ_CD
+            , ARLC_IBOBZ_CD
+            , PRCS_PCKG_GCNT
+            , PRCS_TTWG
+            , BRNG_RLSE_TP_CD
+            , BRNG_RLSE_DT
+            , OTHS_CN
+            , XTRN_OFR_YN
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+		)VALUES(
+			#{cagMgmtNo}				/** CRN !==화물관리번호==! */
+			, (SELECT NVL(MAX(PRCS_SRNO + 1), 1) FROM TB_CARI_CGTR_BL_PRCS) /** N° de séquence de traitement !==처리일련번호==! */
+			, #{cagRqstTpCd}			/** N° de séquence de traitement !==화물신청구분코드==! */
+			, #{prcsSttsCd}				/** Code de statut de traitement !==처리상태코드==! */
+            , TO_DATE(#{prcsDttm},'DDMMYYYYHH24MISS')						/** Date et heure de traitement !==처리일시==! */
+            , #{rqstNo}                 /** N° de demande !==신청번호==! */
+			, #{rqstRferNo}             /** Numéro de référence de demande !==신청참고번호==! */
+			, #{ibobzCd}				/** Code de magasin !==창고코드==! */
+			, #{arlcIbobzCd}            /** Code de magasin de destination !==목적창고코드==! */
+            , #{prcsPckgGcnt}           /** Nombre de colis traité !==처리포장개수==! */
+			, #{prcsTtwg}               /** Poids brut de traité !==처리총중량==! */
+			, #{brngRlseTpCd}           /** Code de catégorie d'entrée et de sortie !==반입반출구분코드==! */
+			, #{brngRlseDt}             /** Date d'entrée et de sortie !==반입반출일자==! */
+			, #{othsCn}                 /** Remarque !==기타내용==! */
+			, #{xtrnOfrYn}              /** Offre externe ON !==외부제공여부==! */
+			, 'N'
+			, #{frstRegstId}            /** ID du premier enregistrant  !==최초등록자ID==! */
+			, SYSTIMESTAMP              /** Date et heure de premier enregistrement !==최초등록일시==! */
+			, #{lastChprId}             /** ID du modificateur final !==최종변경자ID==! */
+			, SYSTIMESTAMP              /** Date et heure de modification finale !==최종변경일시==! */ 											/** Date et heure de modification finale !==최종변경일시==! */
+		)
+	</insert>
+	
+	<!--
+	TODO 번역필요 !== 화물추적 B/L 처리 정보를 등록한다 [화물 신청서]
+	(Roh Sideuk)
+	-->
+	<insert id="insertCgtrBlPrcsCagDcshRgsr" parameterType="alpass.ipt.car.com.vo.CarCgtrBlPrcsVo">
+		/* CarCgtrBlMapper.insertCgtrBlPrcsCagDcshRgsr */
+		INSERT INTO TB_CARI_CGTR_BL_PRCS
+		(
+			CAG_MGMT_NO
+			, PRCS_SRNO           
+            , CAG_RQST_TP_CD
+            , PRCS_STTS_CD
+            , PRCS_DTTM
+            , RQST_NO
+            , RQST_RFER_NO
+            , IBOBZ_CD
+            , ARLC_IBOBZ_CD
+            , PRCS_PCKG_GCNT
+            , PRCS_TTWG
+            , BRNG_RLSE_TP_CD
+            , BRNG_RLSE_DT
+            , OTHS_CN
+            , XTRN_OFR_YN
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+            , PRCS_NTWG
+		)
+		SELECT
+            A.CAG_MGMT_NO       											/** CRN !==화물관리번호==! */
+            , (SELECT NVL(MAX(PRCS_SRNO + 1), 1) FROM TB_CARI_CGTR_BL_PRCS) AS PRCS_SRNO /** N° de séquence de traitement !==처리일련번호==! */
+            , #{cagRqstTpCd}      											/** N° de séquence de traitement !==화물신청구분코드==! */
+            , #{prcsSttsCd}       											/** Code de statut de traitement !==처리상태코드==! */
+            , TO_DATE(#{prcsDttm},'DDMMYYYYHH24MISS')						/** Date et heure de traitement !==처리일시==! */
+            , B.MRN AS RQST_NO           						/** N° de demande !==신청번호==! */
+            , NULL                											/** Numéro de référence de demande !==신청참고번호==! */
+            , IBOBZ_CD                											/** Code de magasin !==창고코드==! */
+            , NULL                											/** Code de magasin de destination !==목적창고코드==! */
+            , A.PCKG_GCNT AS PRCS_PCKG_GCNT    								/** Nombre de colis traité !==처리포장개수==! */
+            , DECODE(A.CAG_CHRC_CD, '9', A.LIR_VOL, A.TTWG) AS PRCS_TTWG	/** Poids brut de traité !==처리총중량==! */
+            , NULL                											/** Code de catégorie d'entrée et de sortie !==반입반출구분코드==! */
+            , NULL                											/** Date d'entrée et de sortie !==반입반출일자==! */
+            , ''                  											/** Remarque !==기타내용==! */
+            , #{xtrnOfrYn}                 									/** Offre externe ON !==외부제공여부==! */
+            , A.DEL_YN            											/** Suppression ON !==삭제여부==! */
+            , A.FRST_REGST_ID     											/** ID du premier enregistrant  !==최초등록자ID==! */
+            , A.FRST_RGSR_DTTM    											/** Date et heure de premier enregistrement !==최초등록일시==! */
+            , A.LAST_CHPR_ID      											/** ID du modificateur final !==최종변경자ID==! */
+            , A.LAST_CHG_DTTM     											/** Date et heure de modification finale !==최종변경일시==! */
+            , DECODE(A.CAG_CHRC_CD, '9', A.LIR_VOL, A.NTWG) AS PRCS_NTWG	/** Poids brut de traité !==처리총중량==! */
+		FROM 
+			TB_CARI_CAG_DCSH_BL A
+			, TB_CARI_CAG_DCSH B
+		WHERE 
+			A.MRN = B.MRN
+			AND A.MRN = #{mrn}
+			AND A.DEL_YN = 'N' 
+			AND B.DEL_YN = 'N' 
+	</insert>
+	
+	<!--
+	TODO 번역필요 !== 화물추적 B/L 처리 정보를 등록한다 [화물 신청서]
+	(Roh Sideuk)
+	-->
+	<insert id="insertCgtrBlPrcsCagDcshMdfyRgsr" parameterType="alpass.ipt.car.com.vo.CarCgtrBlPrcsVo">
+		/* CarCgtrBlMapper.insertCgtrBlPrcsCagDcshMdfyRgsr */
+		INSERT INTO TB_CARI_CGTR_BL_PRCS
+		(
+			  CAG_MGMT_NO
+			, PRCS_SRNO           
+            , CAG_RQST_TP_CD
+            , PRCS_STTS_CD
+            , PRCS_DTTM
+            , RQST_NO
+            , RQST_RFER_NO
+            , IBOBZ_CD
+            , ARLC_IBOBZ_CD
+            , PRCS_PCKG_GCNT
+            , PRCS_TTWG
+            , BRNG_RLSE_TP_CD
+            , BRNG_RLSE_DT
+            , OTHS_CN
+            , XTRN_OFR_YN
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+		)
+		SELECT
+              A.CAG_MGMT_NO       											/** CRN !==화물관리번호==! */
+            , (SELECT NVL(MAX(PRCS_SRNO + 1), 1) FROM TB_CARI_CGTR_BL_PRCS) AS PRCS_SRNO /** N° de séquence de traitement !==처리일련번호==! */
+            , #{cagRqstTpCd}      											/** N° de séquence de traitement !==화물신청구분코드==! */
+            , #{prcsSttsCd}       											/** Code de statut de traitement !==처리상태코드==! */
+            , TO_DATE(#{prcsDttm},'DDMMYYYYHH24MISS')						/** Date et heure de traitement !==처리일시==! */
+            , B.MRN AS RQST_NO           						/** N° de demande !==신청번호==! */
+            , NULL                											/** Numéro de référence de demande !==신청참고번호==! */
+            , IBOBZ_CD                											/** Code de magasin !==창고코드==! */
+            , NULL                											/** Code de magasin de destination !==목적창고코드==! */
+            , A.PCKG_GCNT AS PRCS_PCKG_GCNT    								/** Nombre de colis traité !==처리포장개수==! */
+            , DECODE(A.CAG_CHRC_CD, '9', A.LIR_VOL, A.TTWG) AS PRCS_TTWG	/** Poids brut de traité !==처리총중량==! */
+            , NULL                											/** Code de catégorie d'entrée et de sortie !==반입반출구분코드==! */
+            , NULL                											/** Date d'entrée et de sortie !==반입반출일자==! */
+            , ''                  											/** Remarque !==기타내용==! */
+            , #{xtrnOfrYn}                 									/** Offre externe ON !==외부제공여부==! */
+            , A.DEL_YN            											/** Suppression ON !==삭제여부==! */
+            , A.FRST_REGST_ID     											/** ID du premier enregistrant  !==최초등록자ID==! */
+            , A.FRST_RGSR_DTTM    											/** Date et heure de premier enregistrement !==최초등록일시==! */
+            , A.LAST_CHPR_ID      											/** ID du modificateur final !==최종변경자ID==! */
+            , A.LAST_CHG_DTTM     											/** Date et heure de modification finale !==최종변경일시==! */
+		FROM TB_CARI_CAG_DCSH_MDFY_BL A
+	    join TB_CARI_CAG_DCSH_MDFY B
+	      on a.cag_dcsh_mdfy_rqst_no = b.cag_dcsh_mdfy_rqst_no
+		WHERE 1=1 
+			AND a.cag_dcsh_mdfy_rqst_no = #{cagDcshMdfyRqstNo}
+			AND A.DEL_YN = 'N' 
+			AND B.DEL_YN = 'N' 
+	</insert>
+	
+	<!--
+	TODO 번역필요 !== 화물추적 B/L 처리 정보를 등록한다 [양하 신청]
+	(Roh Sideuk)
+	-->
+	<insert id="insertCgtrBlPrcsCagLdunRqst" parameterType="alpass.ipt.car.com.vo.CarCgtrBlPrcsVo">
+		/* CarCgtrBlMapper.insertCgtrBlPrcsCagLdunRqst */
+		INSERT INTO TB_CARI_CGTR_BL_PRCS
+		(
+			CAG_MGMT_NO
+			, PRCS_SRNO           
+            , CAG_RQST_TP_CD
+            , PRCS_STTS_CD
+            , PRCS_DTTM
+            , RQST_NO
+            , RQST_RFER_NO
+            , IBOBZ_CD
+            , ARLC_IBOBZ_CD
+            , PRCS_PCKG_GCNT
+            , PRCS_TTWG
+            , BRNG_RLSE_TP_CD
+            , BRNG_RLSE_DT
+            , OTHS_CN
+            , XTRN_OFR_YN
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+		)
+		SELECT
+            <if test="tpCd == 'cagMgmtNo'">
+            C.CAG_MGMT_NO       							/** CRN !==화물관리번호==! */
+            </if>
+            <if test="tpCd == 'bfCagMgmtNo'">
+            C.BF_CAG_MGMT_NO       						/** CRN précédent !==이전화물관리번호==! */
+            </if>
+            , (SELECT NVL(MAX(PRCS_SRNO + 1), 1) FROM TB_CARI_CGTR_BL_PRCS) AS PRCS_SRNO /** N° de séquence de traitement !==처리일련번호==! */
+			, #{cagRqstTpCd}      											/** N° de séquence de traitement !==화물신청구분코드==! */
+			, #{prcsSttsCd}       											/** Code de statut de traitement !==처리상태코드==! */
+			, TO_DATE(#{prcsDttm},'DDMMYYYYHH24MISS')	/** Date et heure de traitement !==처리일시==! */
+            , B.LDUN_RQST_NO AS RQST_NO           	/** N° de demande !==신청번호==! */
+            , NULL                											/** Numéro de référence de demande !==신청참고번호==! */
+            , A.IBOBZ_CD													/** Code de magasin !==창고코드==! */
+            , NULL                											
+            , C.PCKG_GCNT AS PRCS_PCKG_GCNT    				/** Nombre de colis traité !==처리포장개수==! */
+            , DECODE(C.CAG_CHRC_CD, '9', C.LIR_VOL, C.TTWG) AS PRCS_TTWG 	/** Poids brut de traité !==처리총중량==! */
+            , NULL                											/** Code de catégorie d'entrée et de sortie !==반입반출구분코드==! */
+            , NULL                											/** Date d'entrée et de sortie !==반입반출일자==! */
+            , ''                  											/** Remarque !==기타내용==! */
+            , #{xtrnOfrYn}                 									/** Offre externe ON !==외부제공여부==! */
+            , A.DEL_YN            											/** Suppression ON !==삭제여부==! */
+            , A.FRST_REGST_ID     											/** ID du premier enregistrant  !==최초등록자ID==! */
+            , A.FRST_RGSR_DTTM    											/** Date et heure de premier enregistrement !==최초등록일시==! */
+            , A.LAST_CHPR_ID      											/** ID du modificateur final !==최종변경자ID==! */
+            , A.LAST_CHG_DTTM     											/** Date et heure de modification finale !==최종변경일시==! */
+		FROM 
+			TB_CARI_LDUN_BL A
+          	, TB_CARI_LDUN B
+          	, TB_CARI_CAG_DCSH_BL C
+		WHERE A.LDUN_RQST_NO = B.LDUN_RQST_NO
+			AND B.MRN = C.MRN
+			AND A.BL_NO = C.BL_NO 
+			AND A.LDUN_RQST_NO = #{rqstNo}
+	</insert>
+	
+	<!--
+	Sauvegarder les informations sur 'Historique du traitement de B/L'. (rectification de demande de déchargement) !== 화물추적 BL 처리정보를 등록한다 (양화 신청 정정) ==!]
+	(Roh Sideuk)
+	-->
+	<insert id="insertCgtrBlPrcsCagLdunRqstMdfy" parameterType="alpass.ipt.car.com.vo.CarCgtrBlPrcsVo">
+		/* CarCgtrBlMapper.insertCgtrBlPrcsCagLdunRqstMdfy */
+		INSERT INTO TB_CARI_CGTR_BL_PRCS
+		(
+			CAG_MGMT_NO
+			, PRCS_SRNO           
+            , CAG_RQST_TP_CD
+            , PRCS_STTS_CD
+            , PRCS_DTTM
+            , RQST_NO
+            , RQST_RFER_NO
+            , IBOBZ_CD
+            , ARLC_IBOBZ_CD
+            , PRCS_PCKG_GCNT
+            , PRCS_TTWG
+            , BRNG_RLSE_TP_CD
+            , BRNG_RLSE_DT
+            , OTHS_CN
+            , XTRN_OFR_YN
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+		)
+		SELECT
+            <if test="tpCd == 'cagMgmtNo'">
+            C.CAG_MGMT_NO       							/** CRN !==화물관리번호==! */
+            </if>
+            <if test="tpCd == 'bfCagMgmtNo'">
+            C.BF_CAG_MGMT_NO       						/** CRN précédent !==이전화물관리번호==! */
+            </if>
+            , (SELECT NVL(MAX(PRCS_SRNO + 1), 1) FROM TB_CARI_CGTR_BL_PRCS) AS PRCS_SRNO /** N° de séquence de traitement !==처리일련번호==! */
+			, #{cagRqstTpCd}      											/** N° de séquence de traitement !==화물신청구분코드==! */
+			, #{prcsSttsCd}       											/** Code de statut de traitement !==처리상태코드==! */
+			, TO_DATE(#{prcsDttm},'DDMMYYYYHH24MISS')	/** Date et heure de traitement !==처리일시==! */
+            , B.LDUN_RQST_MDFY_NO AS RQST_NO           	/** N° de demande !==신청번호==! */
+            , NULL                											/** Numéro de référence de demande !==신청참고번호==! */
+            , A.IBOBZ_CD													/** Code de magasin !==창고코드==! */
+            , NULL                											
+            , C.PCKG_GCNT AS PRCS_PCKG_GCNT    				/** Nombre de colis traité !==처리포장개수==! */
+            , DECODE(C.CAG_CHRC_CD, '9', C.LIR_VOL, C.TTWG) AS PRCS_TTWG 	/** Poids brut de traité !==처리총중량==! */
+            , NULL                											/** Code de catégorie d'entrée et de sortie !==반입반출구분코드==! */
+            , NULL                											/** Date d'entrée et de sortie !==반입반출일자==! */
+            , ''                  											/** Remarque !==기타내용==! */
+            , #{xtrnOfrYn}                 									/** Offre externe ON !==외부제공여부==! */
+            , A.DEL_YN            											/** Suppression ON !==삭제여부==! */
+            , A.FRST_REGST_ID     											/** ID du premier enregistrant  !==최초등록자ID==! */
+            , A.FRST_RGSR_DTTM    											/** Date et heure de premier enregistrement !==최초등록일시==! */
+            , A.LAST_CHPR_ID      											/** ID du modificateur final !==최종변경자ID==! */
+            , A.LAST_CHG_DTTM     											/** Date et heure de modification finale !==최종변경일시==! */
+		FROM 
+			TB_CARI_LDUN_BL_MDFY A
+          	, TB_CARI_LDUN_MDFY B
+          	, TB_CARI_CAG_DCSH_BL C
+		WHERE A.LDUN_RQST_MDFY_NO = B.LDUN_RQST_MDFY_NO
+			AND B.MRN = C.MRN
+			AND A.BL_NO = C.BL_NO 
+			AND A.LDUN_RQST_MDFY_NO = #{rqstNo}
+	</insert>
+	
+	<!--
+	TODO 번역필요 !== 화물추적 B/L 처리 정보를 등록한다 [양하 보고]
+	(Roh Sideuk)
+	-->
+	<insert id="insertCgtrBlPrcsCagLdunRprt" parameterType="alpass.ipt.car.com.vo.CarCgtrBlPrcsVo">
+		/* CarCgtrBlMapper.insertCgtrBlPrcsCagLdunRprt */
+		INSERT INTO TB_CARI_CGTR_BL_PRCS
+		(
+			CAG_MGMT_NO
+			, PRCS_SRNO           
+            , CAG_RQST_TP_CD
+            , PRCS_STTS_CD
+            , PRCS_DTTM
+            , RQST_NO
+            , RQST_RFER_NO
+            , IBOBZ_CD
+            , ARLC_IBOBZ_CD
+            , PRCS_PCKG_GCNT
+            , PRCS_TTWG
+            , BRNG_RLSE_TP_CD
+            , BRNG_RLSE_DT
+            , OTHS_CN
+            , XTRN_OFR_YN
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+		)
+		SELECT
+			C.CAG_MGMT_NO       									/** CRN !==화물관리번호==! */
+            , rownum +  ( SELECT NVL(MAX(PRCS_SRNO), 1) 
+                        FROM TB_CARI_CGTR_BL_PRCS
+                        where CAG_MGMT_NO  = C.CAG_MGMT_NO 
+                       ) AS PRCS_SRNO /** N° de séquence de traitement !==처리일련번호==! */   
+			, #{cagRqstTpCd}      										/** N° de séquence de traitement !==화물신청구분코드==! */
+			, #{prcsSttsCd}       										/** Code de statut de traitement !==처리상태코드==! */
+			, TO_DATE(#{prcsDttm},'DDMMYYYYHH24MISS')	/** Date et heure de traitement !==처리일시==! */
+            , B.LDUN_RPRT_NO AS RQST_NO           		/** N° de demande !==신청번호==! */
+            , NULL                											/** Numéro de référence de demande !==신청참고번호==! */
+            , A.IBOBZ_CD AS WRHS_CD              					/** Code de magasin !==창고코드==! */
+            , NULL                									
+            , A.PCKG_GCNT AS PRCS_PCKG_GCNT    				/** Nombre de colis traité !==처리포장개수==! */
+            ,CASE
+              WHEN C.CAG_CHRC_CD = '9'
+                THEN A.LIR_VOL
+              ELSE A.TTWG
+            END AS PRCS_TTWG 									/** Poids brut de traité !==처리총중량==! */
+            , NULL
+            , NULL
+            , ''                  												/** Remarque !==기타내용==! */
+            , #{xtrnOfrYn}                 												/** Offre externe ON !==외부제공여부==! */
+            , B.DEL_YN            											/** Suppression ON !==삭제여부==! */
+            , B.FRST_REGST_ID     										/** ID du premier enregistrant  !==최초등록자ID==! */
+            , B.FRST_RGSR_DTTM    									/** Date et heure de premier enregistrement !==최초등록일시==! */
+            , B.LAST_CHPR_ID      										/** ID du modificateur final !==최종변경자ID==! */
+            , B.LAST_CHG_DTTM     									/** Date et heure de modification finale !==최종변경일시==! */
+		FROM
+			(SELECT
+	  			LDUN_RPRT_NO
+	  			, RPRT_DGCNT
+	  			, BL_NO
+	  			, IBOBZ_CD
+	  			, SUM(PCKG_GCNT) AS PCKG_GCNT
+	  			, SUM(TTWG) AS TTWG
+	  			, SUM(LIR_VOL) AS LIR_VOL
+			FROM TB_CARI_LDUN_RPRT_BL
+			WHERE LDUN_RPRT_NO = #{rqstNo}
+				AND RPRT_DGCNT = #{rqstDgcnt} 
+				AND DEL_YN = 'N'
+			GROUP BY LDUN_RPRT_NO, RPRT_DGCNT, BL_NO, IBOBZ_CD
+			UNION 
+			SELECT
+	  			LDUN_RPRT_NO
+	  			, RPRT_DGCNT
+	  			, BL_NO
+	  			, IBOBZ_CD
+	  			, SUM(PCKG_GCNT) AS PCKG_GCNT
+	  			, SUM(TTWG) AS TTWG
+	  			, 0 AS LIR_VOL
+			FROM TB_CARI_LDUN_RPRT_CNTR
+			WHERE LDUN_RPRT_NO = #{rqstNo}
+				AND RPRT_DGCNT = #{rqstDgcnt}  
+				AND DEL_YN = 'N'
+			GROUP BY LDUN_RPRT_NO, RPRT_DGCNT, BL_NO, IBOBZ_CD
+			) A
+			, TB_CARI_LDUN_RPRT B
+			, TB_CARI_CAG_DCSH_BL C
+		WHERE A.LDUN_RPRT_NO = B.LDUN_RPRT_NO
+    		AND A.RPRT_DGCNT = B.RPRT_DGCNT
+    		AND B.MRN = C.MRN
+    		AND (
+    			(C.BL_PT_CD = 'M' AND A.BL_NO = C.BL_NO)
+    			OR
+    			(C.BL_PT_CD = 'H' AND A.BL_NO = C.HBL_NO)
+    		)
+          	AND B.DEL_YN = 'N'
+          	AND C.DEL_YN = 'N'
+    		AND A.LDUN_RPRT_NO = #{rqstNo}
+    		AND A.RPRT_DGCNT = #{rqstDgcnt}
+	</insert>
+	
+	<!--
+	Sauvegarder les informations sur 'Historique du traitement de B/L'. (rectification de Rapport de déchargement) !== 화물추적 BL 처리정보를 등록한다 (양화 보고 정정) ==!
+	-->
+	<insert id="insertCgtrBlPrcsCagLdunRprtMdfy" parameterType="alpass.ipt.car.com.vo.CarCgtrBlPrcsVo">
+		/* CarCgtrBlMapper.insertCgtrBlPrcsCagLdunRprtMdfy */
+		INSERT INTO TB_CARI_CGTR_BL_PRCS
+		(
+			CAG_MGMT_NO
+			, PRCS_SRNO           
+            , CAG_RQST_TP_CD
+            , PRCS_STTS_CD
+            , PRCS_DTTM
+            , RQST_NO
+            , RQST_RFER_NO
+            , IBOBZ_CD
+            , ARLC_IBOBZ_CD
+            , PRCS_PCKG_GCNT
+            , PRCS_TTWG
+            , BRNG_RLSE_TP_CD
+            , BRNG_RLSE_DT
+            , OTHS_CN
+            , XTRN_OFR_YN
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+		)
+		SELECT
+			C.CAG_MGMT_NO       									/** CRN !==화물관리번호==! */
+            , rownum +  ( SELECT NVL(MAX(PRCS_SRNO), 1) 
+                        FROM TB_CARI_CGTR_BL_PRCS
+                        where CAG_MGMT_NO  = C.CAG_MGMT_NO 
+                       ) AS PRCS_SRNO /** N° de séquence de traitement !==처리일련번호==! */   
+			, #{cagRqstTpCd}      										/** N° de séquence de traitement !==화물신청구분코드==! */
+			, #{prcsSttsCd}       										/** Code de statut de traitement !==처리상태코드==! */
+			, TO_DATE(#{prcsDttm},'DDMMYYYYHH24MISS')	/** Date et heure de traitement !==처리일시==! */
+            , B.ldun_rprt_mdfy_no AS RQST_NO           		/** N° de demande !==신청번호==! */
+            , NULL                											/** Numéro de référence de demande !==신청참고번호==! */
+            , A.IBOBZ_CD AS WRHS_CD              					/** Code de magasin !==창고코드==! */
+            , NULL                									
+            , A.PCKG_GCNT AS PRCS_PCKG_GCNT    				/** Nombre de colis traité !==처리포장개수==! */
+            ,CASE
+              WHEN C.CAG_CHRC_CD = '9'
+                THEN A.LIR_VOL
+              ELSE A.TTWG
+            END AS PRCS_TTWG 									/** Poids brut de traité !==처리총중량==! */
+            , NULL
+            , NULL
+            , ''                  												/** Remarque !==기타내용==! */
+            , #{xtrnOfrYn}                 												/** Offre externe ON !==외부제공여부==! */
+            , B.DEL_YN            											/** Suppression ON !==삭제여부==! */
+            , B.FRST_REGST_ID     										/** ID du premier enregistrant  !==최초등록자ID==! */
+            , B.FRST_RGSR_DTTM    									/** Date et heure de premier enregistrement !==최초등록일시==! */
+            , B.LAST_CHPR_ID      										/** ID du modificateur final !==최종변경자ID==! */
+            , B.LAST_CHG_DTTM     									/** Date et heure de modification finale !==최종변경일시==! */
+		FROM
+			(SELECT
+	  			ldun_rprt_mdfy_no
+	  			, RPRT_DGCNT
+	  			, BL_NO
+	  			, HBL_NO
+	  			, IBOBZ_CD
+	  			, SUM(PCKG_GCNT) AS PCKG_GCNT
+	  			, SUM(TTWG) AS TTWG
+	  			, SUM(LIR_VOL) AS LIR_VOL
+			FROM tb_cari_ldun_rprt_bl_mdfy
+			WHERE ldun_rprt_mdfy_no = #{rqstNo}
+				AND RPRT_DGCNT = #{rqstDgcnt} 
+				AND DEL_YN = 'N'
+			GROUP BY ldun_rprt_mdfy_no, RPRT_DGCNT, BL_NO, IBOBZ_CD, HBL_NO
+			UNION 
+			SELECT
+	  			ldun_rprt_mdfy_no
+	  			, RPRT_DGCNT
+	  			, BL_NO
+	  			, '' as HBL_NO
+	  			, IBOBZ_CD
+	  			, SUM(PCKG_GCNT) AS PCKG_GCNT
+	  			, SUM(TTWG) AS TTWG
+	  			, 0 AS LIR_VOL
+			FROM tb_cari_ldun_rprt_cntr_mdfy
+			WHERE ldun_rprt_mdfy_no = #{rqstNo}
+				AND RPRT_DGCNT = #{rqstDgcnt}  
+				AND DEL_YN = 'N'
+			GROUP BY ldun_rprt_mdfy_no, RPRT_DGCNT, BL_NO, IBOBZ_CD
+			) A
+			, tb_carI_ldun_rprt_mdfy B
+			, TB_CARI_CAG_DCSH_BL C
+		WHERE A.ldun_rprt_mdfy_no = B.ldun_rprt_mdfy_no
+    		AND A.RPRT_DGCNT = B.RPRT_DGCNT
+    		AND B.MRN = C.MRN
+    		AND (
+       	 (C.BL_PT_CD = 'M' AND A.BL_NO = C.BL_NO AND nvl(a.hbl_no, '') = '')
+             OR
+           (C.BL_PT_CD = 'H' AND A.HBL_NO  = C.HBL_NO AND nvl(a.hbl_no, '') != '')
+    	    )
+          	AND B.DEL_YN = 'N'
+          	AND C.DEL_YN = 'N'
+    		AND A.ldun_rprt_mdfy_no = #{rqstNo}
+    		AND A.RPRT_DGCNT = #{rqstDgcnt}
+	</insert>
+    
+</mapper>

@@ -1,0 +1,1564 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper">
+
+    <select id="selectHdcbRprtBaseList" resultType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.selectHdcbRprtBaseList */
+        <include refid="pagination.header" ></include>
+        SELECT A.IBOBZ_CD
+             , A.HDCB_BSOP_PT_CD
+             , A.HDCB_TP_CD
+             , B.HDCB_CO_CD           /** Code d'entreprise hydrocarbon !== 탄화수소업체코드 ==! */
+             , B.CVNT_NO              /** N° du contrat !== 계약번호 ==! */
+             , TO_CHAR(TO_DATE(B.CVNT_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY')  AS CVNT_STRT_DT /** Date de début du contrat !== 계약시작일자 ==! */
+             , TO_CHAR(TO_DATE(B.CVNT_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS CVNT_END_DT /** Date de fin du contrat !== 계약종료일자 ==! */
+             , B.PRAB_VAL             /** Capacité de la production !== 생산능력값 ==! */
+             , B.MG_NO                /** N° de caution !== 담보번호 ==! */
+             , TO_CHAR(TO_DATE(B.MG_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY')  AS MG_STRT_DT /** Date début garantie !== 담보시작일자 ==! */
+             , C.JRSD_ORGN_CD                AS JRSD_CSTM_CD
+             , D.CO_NM                                                  AS HDCB_CO_NM/** Nom et raison sociale !== 업체명 ==! */
+             , D.CO_ADDR              /** Adresse !== 업체주소 ==! */
+             , D.NIF                  /** NIF !== 납세자식별번호 ==! */
+             , D.CMRC_REGS_NO         /** N° RC !== 상업등기번호 ==! */
+          FROM TB_CARI_HDCB_RPRT_BASE A
+          LEFT OUTER JOIN TB_CARI_HDCB_IBOBZ_CO B
+            ON A.IBOBZ_CD = B.IBOBZ_CD
+           AND B.DEL_YN = 'N'
+          LEFT OUTER JOIN TB_CARI_IBOBZ C
+            ON B.IBOBZ_CD = C.IBOBZ_CD
+          LEFT OUTER JOIN (SELECT A.NIF, A.CO_ADDR, A.CO_NM, A.CMRC_REGS_NO, B.CO_DCLR_CD
+                             FROM TB_COM_CO A, TB_COM_CO_DCLR_CD B
+                            WHERE A.DEL_YN = 'N' AND B.DEL_YN = 'N'
+                              AND A.NIF = B.NIF
+                              AND B.RQST_TP_CD IN ('01','02') /* 신규나/수정 상태*/
+                              AND B.PRCS_STTS_CD = 'O' /* 업체  승인상태 */
+                              AND B.USE_YN = 'Y' /* 사용여부 */
+          ) D
+            ON B.HDCB_CO_CD = D.CO_DCLR_CD
+         WHERE A.DEL_YN = 'N'
+        <if test="ibobzCd != null and ibobzCd != ''">
+           AND A.IBOBZ_CD = #{ibobzCd}
+        </if>
+        <if test="hdcbBsopPtCd != null and hdcbBsopPtCd != ''">
+            AND A.HDCB_BSOP_PT_CD = #{hdcbBsopPtCd}
+        </if>
+        <if test="hdcbTpCd != null and hdcbTpCd != ''">
+            AND A.HDCB_TP_CD = #{hdcbTpCd}
+        </if>
+         ORDER BY A.IBOBZ_CD, A.HDCB_BSOP_PT_CD, A.HDCB_TP_CD
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <select id="selectHdcbRprtMakeList" resultType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.selectHdcbRprtMakeList */
+        <include refid="pagination.header" ></include>
+        SELECT A.HDCB_BSOP_RPRT_NO                                      AS HDCB_BSOP_RPRT_NO   /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+             , TO_CHAR(TO_DATE(A.RPRT_DT),'DD/MM/YYYY')                 AS RPRT_DT             /** Date De Rapport !== 보고일자 ==! */
+             , A.RPRT_DGCNT                                             AS RPRT_DGCNT          /** N° ordre de rapport !== 보고차수 ==! */
+             , A.HDCB_BSOP_PT_CD                                        AS HDCB_BSOP_PT_CD     /** Type d’activité !== 탄화수소업무유형코드 ==! */
+             , A.HDCB_TP_CD                                             AS HDCB_TP_CD          /** Code de type d'hydrocarbure !== 탄화수소구분코드 ==! */
+             , A.JRSD_ORGN_CD                                           AS JRSD_ORGN_CD        /** Code D'Unité Compétente !== 관할조직코드 ==! */
+             , A.NIF                                                    AS NIF                 /** Numéro d’identification fiscale !== 납세식별번호 ==! */
+             , A.IBOBZ_CD                                               AS IBOBZ_CD            /** Code de zone sous douane !== 보세구역코드 ==! */
+             , TO_CHAR(A.PRCS_DTTM,'DD/MM/YYYY HH24:MI:SS')             AS PRCS_DTTM           /** Date Et Heure De Traitement !== 처리일시 ==! */
+             , A.PRCS_STTS_CD                                           AS PRCS_STTS_CD        /** Code De Statut De Traitement !== 처리상태코드 ==! */
+             , TO_CHAR(A.TRSN_DTTM,'DD/MM/YYYY HH24:MI:SS')             AS TRSN_DTTM           /** Date et heure de transmission !== 전송일시 ==! */
+             , A.TRSN_CO_CD                                             AS TRSN_CO_CD          /** Code d'entreprise transmettrice !== 전송업체코드 ==! */
+             , D.CO_NM                                                  AS HDCB_CO_NM
+             , A.DEL_YN                                                 AS DEL_YN              /** Suppression On !== 삭제여부 ==! */
+             , A.FRST_REGST_ID                                          AS FRST_REGST_ID       /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+             , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS')        AS FRST_RGSR_DTTM      /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+             , A.LAST_CHPR_ID                                           AS LAST_CHPR_ID        /** Id Du Modificateur Final !== 최종변경자id ==! */
+             , TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS')         AS LAST_CHG_DTTM       /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+          FROM TB_CARI_HDCB_RPRT_MAKE A
+          LEFT OUTER JOIN TB_CARI_HDCB_IBOBZ_CO B
+            ON A.IBOBZ_CD = B.IBOBZ_CD
+           AND B.DEL_YN = 'N'
+          LEFT OUTER JOIN TB_CARI_IBOBZ C
+            ON B.IBOBZ_CD = C.IBOBZ_CD
+          LEFT OUTER JOIN (SELECT A.NIF, A.CO_ADDR, A.CO_NM, A.CMRC_REGS_NO, B.CO_DCLR_CD
+                             FROM TB_COM_CO A, TB_COM_CO_DCLR_CD B
+                            WHERE A.DEL_YN = 'N'
+                              AND B.DEL_YN = 'N'
+                              AND A.NIF = B.NIF
+                              AND B.RQST_TP_CD IN ('01','02') /* 신규나/수정 상태*/
+                              AND B.PRCS_STTS_CD = 'O' /* 업체  승인상태 */
+                              AND B.USE_YN = 'Y' /* 사용여부 */
+          ) D
+            ON B.HDCB_CO_CD = D.CO_DCLR_CD
+         WHERE A.DEL_YN = 'N'                                         /** Suppression ON !== 삭제여부 ==! */
+           AND C.JRSD_ORGN_CD LIKE SUBSTR(#{jrsdOrgnCd}, 1, 5) || '%'
+        <if test="hdcbBsopPtCd != null and hdcbBsopPtCd != ''">
+            AND A.HDCB_BSOP_PT_CD = #{hdcbBsopPtCd}
+        </if>
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND A.HDCB_BSOP_RPRT_NO LIKE '%' || #{hdcbBsopRprtNo} || '%'  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+        <if test="hdcbCoCd != null and hdcbCoCd != ''">
+            AND D.CO_DCLR_CD LIKE '%' || #{hdcbCoCd} || '%'
+        </if>
+        <if test="hdcbCoNm != null and hdcbCoNm != ''">
+            AND D.CO_NM LIKE '%' || #{hdcbCoNm} || '%'
+        </if>
+        <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(rprtDtFrom)">
+            AND A.RPRT_DT  BETWEEN TO_CHAR(TO_DATE(#{rprtDtFrom}, 'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{rprtDtTo}, 'DD/MM/YYYY') +1,'YYYYMMDD' )
+        </if>
+        <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(prcsSttsCd)">
+            AND A.PRCS_STTS_CD = #{prcsSttsCd}                        /** Code de statut de traitement !==처리상태코드==! */
+        </if>
+        <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(ibobzCd)">
+            AND A.IBOBZ_CD = #{ibobzCd}
+        </if>
+        <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(hdcbTpCd)">
+            AND A.HDCB_TP_CD = #{hdcbTpCd}
+        </if>
+        ORDER BY A.FRST_RGSR_DTTM DESC
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <select id="selectHdcbRprtMake" resultType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.selectHdcbRprtMake */
+        SELECT A.HDCB_BSOP_RPRT_NO                                      AS HDCB_BSOP_RPRT_NO   /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+             , TO_CHAR(TO_DATE(A.RPRT_DT),'DD/MM/YYYY')                 AS RPRT_DT             /** Date De Rapport !== 보고일자 ==! */
+             , A.RPRT_DGCNT                                             AS RPRT_DGCNT          /** N° ordre de rapport !== 보고차수 ==! */
+             , A.HDCB_BSOP_PT_CD                                        AS HDCB_BSOP_PT_CD     /** Type d’activité !== 탄화수소업무유형코드 ==! */
+             , A.HDCB_TP_CD                                             AS HDCB_TP_CD          /** Code de type d'hydrocarbure !== 탄화수소구분코드 ==! */
+             , Z.JRSD_CSTM_CD                                           AS JRSD_CSTM_CD
+             , A.JRSD_ORGN_CD                                           AS JRSD_ORGN_CD        /** Code D'Unité Compétente !== 관할조직코드 ==! */
+             , NVL(A.NIF,D.NIF)                                         AS NIF                 /** Numéro d’identification fiscale !== 납세식별번호 ==! */
+             , A.IBOBZ_CD                                               AS IBOBZ_CD            /** Code de zone sous douane !== 보세구역코드 ==! */
+             , TO_CHAR(A.PRCS_DTTM,'DD/MM/YYYY HH24:MI:SS')             AS PRCS_DTTM           /** Date Et Heure De Traitement !== 처리일시 ==! */
+             , A.PRCS_STTS_CD                                           AS PRCS_STTS_CD        /** Code De Statut De Traitement !== 처리상태코드 ==! */
+             , TO_CHAR(A.TRSN_DTTM,'DD/MM/YYYY HH24:MI:SS')             AS TRSN_DTTM           /** Date et heure de transmission !== 전송일시 ==! */
+             , A.TRSN_CO_CD                                             AS TRSN_CO_CD          /** Code d'entreprise transmettrice !== 전송업체코드 ==! */
+             , B.HDCB_CO_CD           /** Code d'entreprise hydrocarbon !== 탄화수소업체코드 ==! */
+             , B.CVNT_NO              /** N° du contrat !== 계약번호 ==! */
+             , TO_CHAR(TO_DATE(B.CVNT_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY')  AS CVNT_STRT_DT /** Date de début du contrat !== 계약시작일자 ==! */
+             , TO_CHAR(TO_DATE(B.CVNT_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS CVNT_END_DT /** Date de fin du contrat !== 계약종료일자 ==! */
+             , B.PRAB_VAL             /** Capacité de la production !== 생산능력값 ==! */
+             , B.MG_NO                /** N° de caution !== 담보번호 ==! */
+             , TO_CHAR(TO_DATE(B.MG_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY')  AS MG_STRT_DT  /** Date début garantie !== 담보시작일자 ==! */
+             , D.CO_NM                                                  AS HDCB_CO_NM   /** Nom et raison sociale !== 업체명 ==! */
+             , D.CO_ADDR              /** Adresse !== 업체주소 ==! */
+             , D.CMRC_REGS_NO         /** N° RC !== 상업등기번호 ==! */
+             , A.DEL_YN                                                 AS DEL_YN              /** Suppression On !== 삭제여부 ==! */
+             , A.FRST_REGST_ID                                          AS FRST_REGST_ID       /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+             , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS')        AS FRST_RGSR_DTTM      /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+             , A.LAST_CHPR_ID                                           AS LAST_CHPR_ID        /** Id Du Modificateur Final !== 최종변경자id ==! */
+             , TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS')         AS LAST_CHG_DTTM       /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+             , (SELECT COUNT(*) FROM TB_CARI_HDCB_RPRT_MAKE_BRNG B WHERE B.DEL_YN = 'N' AND A.HDCB_BSOP_RPRT_NO = B.HDCB_BSOP_RPRT_NO) AS BRNG_CNT
+             , (SELECT COUNT(*) FROM TB_CARI_HDCB_RPRT_MAKE_RLSE B WHERE B.DEL_YN = 'N' AND A.HDCB_BSOP_RPRT_NO = B.HDCB_BSOP_RPRT_NO) AS RLSE_CNT
+             , (SELECT COUNT(*) FROM TB_CARI_HDCB_RPRT_MAKE_WSH B WHERE B.DEL_YN = 'N' AND A.HDCB_BSOP_RPRT_NO = B.HDCB_BSOP_RPRT_NO) AS WSH_CNT
+             , (SELECT COUNT(*) FROM TB_CARI_HDCB_RPRT_MAKE_PICK B WHERE B.DEL_YN = 'N' AND A.HDCB_BSOP_RPRT_NO = B.HDCB_BSOP_RPRT_NO) AS PICK_CNT
+          FROM TB_CARI_HDCB_RPRT_MAKE A
+          LEFT OUTER JOIN TB_CARI_HDCB_IBOBZ_CO B
+            ON A.IBOBZ_CD = B.IBOBZ_CD
+           AND B.DEL_YN = 'N'
+          LEFT OUTER JOIN TB_CARI_IBOBZ C
+            ON B.IBOBZ_CD = C.IBOBZ_CD
+          LEFT OUTER JOIN (SELECT A.NIF, A.CO_ADDR, A.CO_NM, A.CMRC_REGS_NO, B.CO_DCLR_CD
+                             FROM TB_COM_CO A, TB_COM_CO_DCLR_CD B
+                            WHERE A.DEL_YN = 'N'
+                              AND B.DEL_YN = 'N'
+                              AND A.NIF = B.NIF
+                              AND B.RQST_TP_CD IN ('01','02') /* 신규나/수정 상태*/
+                              AND B.PRCS_STTS_CD = 'O' /* 업체  승인상태 */
+                              AND B.USE_YN = 'Y' /* 사용여부 */
+          ) D
+            ON B.HDCB_CO_CD = D.CO_DCLR_CD
+          LEFT JOIN ( SELECT C1.ORGN_CD
+                           , C2.ORGN_CD JRSD_CSTM_CD
+                        FROM TB_POTI_ORGN C1
+                        LEFT JOIN TB_POTI_ORGN C2
+                          ON C1.UPR_ORGN_MGMT_CD = C2.ORGN_MGMT_CD
+                       WHERE C1.DEL_YN = 'N'
+          ) Z
+            ON A.JRSD_ORGN_CD = Z.ORGN_CD
+         WHERE A.DEL_YN = 'N'                                         /** Suppression ON !== 삭제여부 ==! */
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND A.HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+    </select>
+
+    <select id="selectHdcbRprtMakeYn" resultType="Boolean">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.selectHdcbRprtMakeYn */
+        SELECT CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END RPRT_MAKE_YN
+          FROM TB_CARI_HDCB_RPRT_MAKE
+         WHERE DEL_YN = 'N'
+           AND RPRT_DT = TO_CHAR(TO_DATE( #{rprtDt}, 'DD/MM/YYYY'),'YYYYMMDD')
+           AND HDCB_BSOP_PT_CD = #{hdcbBsopPtCd}
+           AND HDCB_TP_CD = #{hdcbTpCd}
+           AND IBOBZ_CD = #{ibobzCd}
+           AND JRSD_ORGN_CD = #{jrsdOrgnCd}
+           AND PRCS_STTS_CD IN ('D01','D08')
+    </select>
+
+    <insert id="insertHdcbRprtMake" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.insertHdcbRprtMake */
+        INSERT INTO TB_CARI_HDCB_RPRT_MAKE
+        (
+              HDCB_BSOP_RPRT_NO             /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+            , RPRT_DT                       /** Date De Rapport !== 보고일자 ==! */
+            , RPRT_DGCNT                    /** N° ordre de rapport !== 보고차수 ==! */
+            , HDCB_BSOP_PT_CD               /** Type d’activité !== 탄화수소업무유형코드 ==! */
+            , HDCB_TP_CD                    /** Code de type d'hydrocarbure !== 탄화수소구분코드 ==! */
+            , JRSD_ORGN_CD                  /** Code D'Unité Compétente !== 관할조직코드 ==! */
+            , NIF                           /** Numéro d’identification fiscale !== 납세식별번호 ==! */
+            , IBOBZ_CD                      /** Code de zone sous douane !== 보세구역코드 ==! */
+            , PRCS_DTTM                     /** Date Et Heure De Traitement !== 처리일시 ==! */
+            , PRCS_STTS_CD                  /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , TRSN_DTTM                     /** Date et heure de transmission !== 전송일시 ==! */
+            , TRSN_CO_CD                    /** Code d'entreprise transmettrice !== 전송업체코드 ==! */
+            , DEL_YN                        /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                 /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+            , FRST_RGSR_DTTM                /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                  /** Id Du Modificateur Final !== 최종변경자id ==! */
+            , LAST_CHG_DTTM                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        VALUES
+        (
+              #{hdcbBsopRprtNo}             /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+            , TO_CHAR(TO_DATE( #{rprtDt} , 'DD/MM/YYYY'),'YYYYMMDD')  /** Date De Rapport !== 보고일자 ==! */
+            , #{rprtDgcnt}                  /** N° ordre de rapport !== 보고차수 ==! */
+            , #{hdcbBsopPtCd}               /** Type d’activité !== 탄화수소업무유형코드 ==! */
+            , #{hdcbTpCd}                   /** Code de type d'hydrocarbure !== 탄화수소구분코드 ==! */
+            , #{jrsdOrgnCd}                 /** Code D'Unité Compétente !== 관할조직코드 ==! */
+            , #{nif}                        /** Numéro d’identification fiscale !== 납세식별번호 ==! */
+            , #{ibobzCd}                    /** Code de zone sous douane !== 보세구역코드 ==! */
+            , SYSTIMESTAMP                  /** Date Et Heure De Traitement !== 처리일시 ==! */
+            , #{prcsSttsCd}                 /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , SYSTIMESTAMP                  /** Date Et Heure De Traitement !== 처리일시 ==! */
+            , #{trsnCoCd} 		/**  Code d'entreprise transmettrice  !== 전송업체코드 ==!  */
+            , 'N'                           /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}                /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+            , SYSTIMESTAMP                  /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                 /** Id Du Modificateur Final !== 최종변경자id ==! */
+            , SYSTIMESTAMP                  /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <update id="updateHdcbRprtMake" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.updateHdcbRprtMake */
+        UPDATE TB_CARI_HDCB_RPRT_MAKE SET
+              DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        <if test="rprtDt != null">
+            , RPRT_DT = TO_CHAR(TO_DATE( #{rprtDt}, 'DD/MM/YYYY'),'YYYYMMDD')  /** Date De Rapport !== 보고일자 ==! */
+        </if>
+        <if test="hdcbBsopPtCd != null">
+            , HDCB_BSOP_PT_CD = #{hdcbBsopPtCd}              /** Type d’activité !== 탄화수소업무유형코드 ==! */
+        </if>
+        <if test="hdcbTpCd != null">
+            , HDCB_TP_CD = #{hdcbTpCd}                       /** Code de type d'hydrocarbure !== 탄화수소구분코드 ==! */
+        </if>
+        <if test="jrsdOrgnCd != null">
+            , JRSD_ORGN_CD = #{jrsdOrgnCd}                   /** Code D'Unité Compétente !== 관할조직코드 ==! */
+        </if>
+        <if test="nif != null">
+            , NIF = #{nif}                                   /** Numéro d’identification fiscale !== 납세식별번호 ==! */
+        </if>
+        <if test="ibobzCd != null">
+            , IBOBZ_CD = #{ibobzCd}                          /** Code de zone sous douane !== 보세구역코드 ==! */
+        </if>
+        WHERE 1=1
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+    </update>
+
+    <update id="deleteHdcbRprtMake" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.deleteHdcbRprtMake */
+        UPDATE TB_CARI_HDCB_RPRT_MAKE SET
+              DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE 1=1
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+    </update>
+
+    <update id="updateMakePrcsSttsCd" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.updateMakePrcsSttsCd */
+        UPDATE TB_CARI_HDCB_RPRT_MAKE SET
+              PRCS_STTS_CD = #{prcsSttsCd} /**  Code De Statut De Traitement  !== 처리상태코드 ==!  */
+            , PRCS_DTTM = SYSTIMESTAMP
+            , LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE 1=1
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+    </update>
+
+    <insert id="insertBrngBaseInfoBrngMake" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.insertBrngBaseInfoBrngMake */
+        INSERT INTO TB_CARI_HDCB_RPRT_MAKE_BRNG
+        (
+              HDCB_BSOP_RPRT_NO
+            , BRNG_SRNO
+            , MNFU_NM
+            , HS_CD
+            , HDCB_BRNG_DTTM
+            , DPRP_JRSD_ORGN_CD
+            , DPRP_IBOBZ_CD
+            , IMP_QTY
+            , HDCB_SAVE_METH_PT_CD
+            , COMN_CUNT_NO_REFF_NM
+            , HDCB_SAVE_METH_ACPE_AQTY
+            , MSRM_UT_NM
+            , CHAR_DTTM
+            , CHAR_TPRT
+            , WL_HIGT_MT
+            , FRST_OWN_QTY
+            , VLM
+            , WGHT
+            , ISTA_DTTM
+            , TANKER_SSIS_NO
+            , VHCL_RGSR_NO
+            , DRVR_NM
+            , TRNP_LCNE_NO
+            , SHIP_REFF_NM
+            , CAPT_NM
+            , PILI_REFF_NM
+            , CUNT_REFF_NM
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+        )
+        SELECT #{hdcbBsopRprtNo}
+             , BRNG_SRNO
+             , MNFU_NM
+             , HS_CD
+             , HDCB_BRNG_DTTM
+             , DPRP_JRSD_ORGN_CD
+             , DPRP_IBOBZ_CD
+             , IMP_QTY
+             , HDCB_SAVE_METH_PT_CD
+             , COMN_CUNT_NO_REFF_NM
+             , HDCB_SAVE_METH_ACPE_AQTY
+             , MSRM_UT_NM
+             , CHAR_DTTM
+             , CHAR_TPRT
+             , WL_HIGT_MT
+             , FRST_OWN_QTY
+             , VLM
+             , WGHT
+             , ISTA_DTTM
+             , TANKER_SSIS_NO
+             , VHCL_RGSR_NO
+             , DRVR_NM
+             , TRNP_LCNE_NO
+             , SHIP_REFF_NM
+             , CAPT_NM
+             , PILI_REFF_NM
+             , CUNT_REFF_NM
+             , 'N'                           /** Suppression On !== 삭제여부 ==! */
+             , #{frstRegstId}                /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+             , SYSTIMESTAMP                  /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+             , #{lastChprId}                 /** Id Du Modificateur Final !== 최종변경자id ==! */
+             , SYSTIMESTAMP                  /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+         FROM TB_CARI_HDCB_RPRT_BASE_BRNG
+        WHERE DEL_YN = 'N'
+          AND IBOBZ_CD = #{ibobzCd}
+          AND HDCB_BSOP_PT_CD  = #{hdcbBsopPtCd}
+          AND HDCB_TP_CD = #{hdcbTpCd}
+    </insert>
+
+    <!--
+    Sur la base de la date du rapport à la date du jour de "introduction de l'état de l'activité des hydrocarbures", sauvegarder les dernières informations dans la nouvelle introduction de l'état de l'activité des hydrocarbures.
+    !== "탄화수소보고 반입"의 현재보고일자기준으로 마지막정보를 신규 탄화수소보고 반입에 저장한다. ==!
+    -->
+    <insert id="insertBrngMake" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.insertBrngMake */
+        INSERT INTO TB_CARI_HDCB_RPRT_MAKE_BRNG
+        ( HDCB_BSOP_RPRT_NO
+        , BRNG_SRNO
+        , MNFU_NM
+        , HS_CD
+        , HDCB_BRNG_DTTM
+        , DPRP_JRSD_ORGN_CD
+        , DPRP_IBOBZ_CD
+        , IMP_QTY
+        , HDCB_SAVE_METH_PT_CD
+        , COMN_CUNT_NO_REFF_NM
+        , HDCB_SAVE_METH_ACPE_AQTY
+        , MSRM_UT_NM
+        , CHAR_DTTM
+        , CHAR_TPRT
+        , WL_HIGT_MT
+        , FRST_OWN_QTY
+        , VLM
+        , WGHT
+        , ISTA_DTTM
+        , TANKER_SSIS_NO
+        , VHCL_RGSR_NO
+        , DRVR_NM
+        , TRNP_LCNE_NO
+        , SHIP_REFF_NM
+        , CAPT_NM
+        , PILI_REFF_NM
+        , CUNT_REFF_NM
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM)
+        SELECT #{hdcbBsopRprtNo}
+             , BRNG_SRNO
+             , MNFU_NM
+             , HS_CD
+             , HDCB_BRNG_DTTM
+             , DPRP_JRSD_ORGN_CD
+             , DPRP_IBOBZ_CD
+             , IMP_QTY
+             , HDCB_SAVE_METH_PT_CD
+             , COMN_CUNT_NO_REFF_NM
+             , HDCB_SAVE_METH_ACPE_AQTY
+             , MSRM_UT_NM
+             , CHAR_DTTM
+             , CHAR_TPRT
+             , WL_HIGT_MT
+             , FRST_OWN_QTY
+             , VLM
+             , WGHT
+             , ISTA_DTTM
+             , TANKER_SSIS_NO
+             , VHCL_RGSR_NO
+             , DRVR_NM
+             , TRNP_LCNE_NO
+             , SHIP_REFF_NM
+             , CAPT_NM
+             , PILI_REFF_NM
+             , CUNT_REFF_NM
+             , 'N' /** Suppression On !== 삭제여부 ==! */
+             , #{frstRegstId} /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+             , SYSTIMESTAMP /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+             , #{lastChprId} /** Id Du Modificateur Final !== 최종변경자id ==! */
+             , SYSTIMESTAMP /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        FROM TB_CARI_HDCB_RPRT_MAKE_BRNG
+        WHERE DEL_YN = 'N'
+          AND HDCB_BSOP_RPRT_NO = (SELECT MAX(HDCB_BSOP_RPRT_NO)
+                                   FROM TB_CARI_HDCB_RPRT_MAKE A
+                                   WHERE A.RPRT_DT = TO_CHAR(TO_DATE(#{rprtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                                     AND A.HDCB_BSOP_PT_CD = #{hdcbBsopPtCd}
+                                     AND A.HDCB_TP_CD = #{hdcbTpCd}
+                                     AND A.IBOBZ_CD = #{ibobzCd}
+                                     AND A.JRSD_ORGN_CD = #{jrsdOrgnCd}
+                                     AND A.PRCS_STTS_CD IN ('D01','D08')
+                                     AND A.RPRT_DGCNT = (SELECT MAX(B.RPRT_DGCNT)
+                                                         FROM TB_CARI_HDCB_RPRT_MAKE B
+                                                         WHERE A.RPRT_DT = B.RPRT_DT
+                                                           AND A.HDCB_BSOP_PT_CD = B.HDCB_BSOP_PT_CD
+                                                           AND A.HDCB_TP_CD = B.HDCB_TP_CD
+                                                           AND A.IBOBZ_CD = B.IBOBZ_CD
+                                                           AND A.JRSD_ORGN_CD = B.JRSD_ORGN_CD
+                                                           AND B.PRCS_STTS_CD IN ('D01','D08'))
+                                   )
+    </insert>
+
+    <insert id="insertRlseBaseInfoRlseMake" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.insertRlseBaseInfoRlseMake */
+        INSERT INTO TB_CARI_HDCB_RPRT_MAKE_RLSE
+        (
+              HDCB_BSOP_RPRT_NO
+            , RLSE_SRNO
+            , MNFU_NM
+            , HS_CD
+            , HDCB_RLSE_DTTM
+            , ARLC_JRSD_ORGN_CD
+            , ARLC_IBOBZ_CD
+            , HDCB_RLSE_PT_CD
+            , HDCB_RLSE_METH_CD
+            , RELA_NO
+            , HDCB_SEND_METH_ACPE_AQTY
+            , MSRM_UT_NM
+            , RLSE_DTTM
+            , RLSE_TPRT
+            , WL_HIGT_MT
+            , ISTA_DTTM
+            , SHPM_BF_QTY
+            , SHPM_AF_QTY
+            , RLSE_PT_QTY
+            , TANKER_SSIS_NO
+            , VHCL_RGSR_NO
+            , DRVR_NM
+            , TRNP_LCNE_NO
+            , SHIP_REFF_NM
+            , CAPT_NM
+            , PILI_REFF_NM
+            , CUNT_REFF_NM
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+        )
+        SELECT #{hdcbBsopRprtNo}
+             , RLSE_SRNO
+             , MNFU_NM
+             , HS_CD
+             , HDCB_RLSE_DTTM
+             , ARLC_JRSD_ORGN_CD
+             , ARLC_IBOBZ_CD
+             , HDCB_RLSE_PT_CD
+             , HDCB_RLSE_METH_CD
+             , RELA_NO
+             , HDCB_SEND_METH_ACPE_AQTY
+             , MSRM_UT_NM
+             , RLSE_DTTM
+             , RLSE_TPRT
+             , WL_HIGT_MT
+             , ISTA_DTTM
+             , SHPM_BF_QTY
+             , SHPM_AF_QTY
+             , RLSE_PT_QTY
+             , TANKER_SSIS_NO
+             , VHCL_RGSR_NO
+             , DRVR_NM
+             , TRNP_LCNE_NO
+             , SHIP_REFF_NM
+             , CAPT_NM
+             , PILI_REFF_NM
+             , CUNT_REFF_NM
+             , 'N'                           /** Suppression On !== 삭제여부 ==! */
+             , #{frstRegstId}                /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+             , SYSTIMESTAMP                  /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+             , #{lastChprId}                 /** Id Du Modificateur Final !== 최종변경자id ==! */
+             , SYSTIMESTAMP                  /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+          FROM TB_CARI_HDCB_RPRT_BASE_RLSE
+         WHERE DEL_YN = 'N'
+           AND IBOBZ_CD = #{ibobzCd}
+           AND HDCB_BSOP_PT_CD  = #{hdcbBsopPtCd}
+           AND HDCB_TP_CD = #{hdcbTpCd}
+    </insert>
+
+    <!--
+    Sur la base de la date du rapport à la date du jour de "sortie de l'état de l'activité des hydrocarbures", sauvegarder les dernières informations dans la nouvelle sortie de l'état de l'activité des hydrocarbures.
+    !== "탄화수소보고 반출"의 현재보고일자기준으로 마지막정보를 신규 탄화수소보고 반출에 저장한다. ==!
+    -->
+    <insert id="insertRlseMake" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.insertRlseMake */
+        INSERT INTO TB_CARI_HDCB_RPRT_MAKE_RLSE
+        (
+              HDCB_BSOP_RPRT_NO
+            , RLSE_SRNO
+            , MNFU_NM
+            , HS_CD
+            , HDCB_RLSE_DTTM
+            , ARLC_JRSD_ORGN_CD
+            , ARLC_IBOBZ_CD
+            , HDCB_RLSE_PT_CD
+            , HDCB_RLSE_METH_CD
+            , RELA_NO
+            , HDCB_SEND_METH_ACPE_AQTY
+            , MSRM_UT_NM
+            , RLSE_DTTM
+            , RLSE_TPRT
+            , WL_HIGT_MT
+            , ISTA_DTTM
+            , SHPM_BF_QTY
+            , SHPM_AF_QTY
+            , RLSE_PT_QTY
+            , TANKER_SSIS_NO
+            , VHCL_RGSR_NO
+            , DRVR_NM
+            , TRNP_LCNE_NO
+            , SHIP_REFF_NM
+            , CAPT_NM
+            , PILI_REFF_NM
+            , CUNT_REFF_NM
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+        )
+        SELECT #{hdcbBsopRprtNo}
+             , RLSE_SRNO
+             , MNFU_NM
+             , HS_CD
+             , HDCB_RLSE_DTTM
+             , ARLC_JRSD_ORGN_CD
+             , ARLC_IBOBZ_CD
+             , HDCB_RLSE_PT_CD
+             , HDCB_RLSE_METH_CD
+             , RELA_NO
+             , HDCB_SEND_METH_ACPE_AQTY
+             , MSRM_UT_NM
+             , RLSE_DTTM
+             , RLSE_TPRT
+             , WL_HIGT_MT
+             , ISTA_DTTM
+             , SHPM_BF_QTY
+             , SHPM_AF_QTY
+             , RLSE_PT_QTY
+             , TANKER_SSIS_NO
+             , VHCL_RGSR_NO
+             , DRVR_NM
+             , TRNP_LCNE_NO
+             , SHIP_REFF_NM
+             , CAPT_NM
+             , PILI_REFF_NM
+             , CUNT_REFF_NM
+             , 'N'                           /** Suppression On !== 삭제여부 ==! */
+             , #{frstRegstId}                /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+             , SYSTIMESTAMP                  /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+             , #{lastChprId}                 /** Id Du Modificateur Final !== 최종변경자id ==! */
+             , SYSTIMESTAMP                  /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+         FROM TB_CARI_HDCB_RPRT_MAKE_RLSE
+        WHERE DEL_YN = 'N'
+          AND HDCB_BSOP_RPRT_NO = (SELECT MAX(HDCB_BSOP_RPRT_NO)
+                                     FROM TB_CARI_HDCB_RPRT_MAKE A
+                                    WHERE A.RPRT_DT = TO_CHAR(TO_DATE( #{rprtDt}, 'DD/MM/YYYY'),'YYYYMMDD')
+                                      AND A.HDCB_BSOP_PT_CD = #{hdcbBsopPtCd}
+                                      AND A.HDCB_TP_CD = #{hdcbTpCd}
+                                      AND A.IBOBZ_CD = #{ibobzCd}
+                                      AND A.JRSD_ORGN_CD = #{jrsdOrgnCd}
+                                      AND A.PRCS_STTS_CD IN ('D01','D08')
+                                      AND A.RPRT_DGCNT = (SELECT MAX(B.RPRT_DGCNT)
+                                                            FROM TB_CARI_HDCB_RPRT_MAKE B
+                                                           WHERE A.RPRT_DT = B.RPRT_DT
+                                                             AND A.HDCB_BSOP_PT_CD = B.HDCB_BSOP_PT_CD
+                                                             AND A.HDCB_TP_CD = B.HDCB_TP_CD
+                                                             AND A.IBOBZ_CD = B.IBOBZ_CD
+                                                             AND A.JRSD_ORGN_CD = B.JRSD_ORGN_CD
+                                                             AND B.PRCS_STTS_CD IN ('D01','D08'))
+                                    )
+    </insert>
+
+    <sql id ="selectItemHdcbRprtMakeBrng">
+        SELECT A.HDCB_BSOP_RPRT_NO                                      AS HDCB_BSOP_RPRT_NO   /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+             , A.BRNG_SRNO                                              AS BRNG_SRNO           /** Numéro d'ordre !== 반입일련번호 ==! */
+             , A.MNFU_NM                                                AS BRNG_MNFU_NM             /** Nom du produit !== 제품명 ==! */
+             , A.HS_CD                                                  AS BRNG_HS_CD               /** Code Sh !== HS코드 ==! */
+             , TO_CHAR(A.HDCB_BRNG_DTTM,'DD/MM/YYYY HH24:MI:SS')        AS HDCB_BRNG_DTTM      /** Date d'introduction !== 탄화수소반입일시 ==! */
+             , A.DPRP_JRSD_ORGN_CD                                      AS DPRP_JRSD_ORGN_CD   /** Service compétent de départ !== 출발지관할조직코드 ==! */
+             , A.DPRP_IBOBZ_CD                                          AS DPRP_IBOBZ_CD       /** Code De Zone Sous Douane De Départ !== 출발지보세구역코드 ==! */
+             , A.IMP_QTY                                                AS IMP_QTY             /** Quantité Importée !== 수입수량 ==! */
+             , A.HDCB_SAVE_METH_PT_CD                                   AS HDCB_SAVE_METH_PT_CD/** Type de moyen de stockage !== 탄화수소저장수단유형코드 ==! */
+             , A.COMN_CUNT_NO_REFF_NM                                   AS COMN_CUNT_NO_REFF_NM/** Numéro/référence compteur !== 공통계량기번호참조명 ==! */
+             , A.HDCB_SAVE_METH_ACPE_AQTY                               AS HDCB_SAVE_METH_ACPE_AQTY/** Quantités !== 탄화수소저장수단수용량 ==! */
+             , A.MSRM_UT_NM                                             AS BRNG_MSRM_UT_NM          /** Unite de mesure !== 측정단위명 ==! */
+             , TO_CHAR(A.CHAR_DTTM,'DD/MM/YYYY HH24:MI:SS')             AS CHAR_DTTM           /** Date et heure de remplissage !== 충전일시 ==! */
+             , A.CHAR_TPRT                                              AS CHAR_TPRT           /** Température de remplissage !== 충전온도 ==! */
+             , A.WL_HIGT_MT                                             AS BRNG_WL_HIGT_MT          /** Pied d’eau !== 수위높이미터 ==! */
+             , A.FRST_OWN_QTY                                           AS FRST_OWN_QTY        /** Stock initial !== 최초소유수량 ==! */
+             , A.VLM                                                    AS VLM                 /** Volume !== 부피 ==! */
+             , A.WGHT                                                   AS WGHT                /** Poids !== 중량 ==! */
+             , TO_CHAR(A.ISTA_DTTM,'DD/MM/YYYY HH24:MI:SS')             AS BRNG_ISTA_DTTM           /** Date et heure de jaugeage !== 계측일시 ==! */
+             , A.TANKER_SSIS_NO                                         AS BRNG_TANKER_SSIS_NO      /** N° châssis !== 유조차샤시번호 ==! */
+             , A.VHCL_RGSR_NO                                           AS BRNG_VHCL_RGSR_NO        /** N° d'immatriculation du véhicule !== 챠량등록번호 ==! */
+             , A.DRVR_NM                                                AS BRNG_DRVR_NM             /** Nom de conducteur !== 운전자명 ==! */
+             , A.TRNP_LCNE_NO                                           AS BRNG_TRNP_LCNE_NO        /** N° permis de conduire pour transport !== 운송면허번호 ==! */
+             , A.SHIP_REFF_NM                                           AS BRNG_SHIP_REFF_NM        /** Référence du navire !== 선박참조 ==! */
+             , A.CAPT_NM                                                AS BRNG_CAPT_NM             /** Nom du capitaine du navire !== 선장명 ==! */
+             , A.PILI_REFF_NM                                           AS BRNG_PILI_REFF_NM        /** Référence du pipe-line !== 파이프라인참조명 ==! */
+             , A.CUNT_REFF_NM                                           AS BRNG_CUNT_REFF_NM        /** Référence du compteur !== 계량기참조명 ==! */
+             , A.ATCH_FILE_ID                                           AS ATCH_FILE_ID        /** Id Du Fichier Joint !== 첨부파일ID ==! */
+             , A.DEL_YN                                                 AS DEL_YN              /** Suppression On !== 삭제여부 ==! */
+             , A.FRST_REGST_ID                                          AS FRST_REGST_ID       /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+             , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS')        AS FRST_RGSR_DTTM      /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+             , A.LAST_CHPR_ID                                           AS LAST_CHPR_ID        /** Id Du Modificateur Final !== 최종변경자ID ==! */
+             , TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS')         AS LAST_CHG_DTTM       /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+         FROM TB_CARI_HDCB_RPRT_MAKE_BRNG A
+        WHERE A.DEL_YN = 'N'                                         /** Suppression ON !== 삭제여부 ==! */
+    </sql>
+
+    <select id="selectHdcbRprtMakeBrngList" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeBrngVo" resultType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeBrngVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.selectHdcbRprtMakeBrngList */
+        <include refid="pagination.header" ></include>
+        <include refid="selectItemHdcbRprtMakeBrng" ></include>
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND A.HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <select id="selectHdcbRprtMakeBrng" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeBrngVo" resultType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeBrngVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.selectHdcbRprtMakeBrng */
+        <include refid="selectItemHdcbRprtMakeBrng" ></include>
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND A.HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+        <if test="brngSrno != null and brngSrno != ''">
+            AND A.BRNG_SRNO = #{brngSrno}  /** Numéro d'ordre !== 반입일련번호 ==! */
+        </if>
+    </select>
+
+    <insert id="insertHdcbRprtMakeBrng" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeBrngVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.insertHdcbRprtMakeBrng */
+        INSERT INTO TB_CARI_HDCB_RPRT_MAKE_BRNG
+        (
+              HDCB_BSOP_RPRT_NO             /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+            , BRNG_SRNO                     /** Numéro d'ordre !== 반입일련번호 ==! */
+            , MNFU_NM                       /** Nom du produit !== 제품명 ==! */
+            , HS_CD                         /** Code Sh !== HS코드 ==! */
+            , HDCB_BRNG_DTTM                /** Date d'introduction !== 탄화수소반입일시 ==! */
+            , DPRP_JRSD_ORGN_CD             /** Service compétent de départ !== 출발지관할조직코드 ==! */
+            , DPRP_IBOBZ_CD                 /** Code De Zone Sous Douane De Départ !== 출발지보세구역코드 ==! */
+            , IMP_QTY                       /** Quantité Importée !== 수입수량 ==! */
+            , HDCB_SAVE_METH_PT_CD          /** Type de moyen de stockage !== 탄화수소저장수단유형코드 ==! */
+            , COMN_CUNT_NO_REFF_NM          /** Numéro/référence compteur !== 공통계량기번호참조명 ==! */
+            , HDCB_SAVE_METH_ACPE_AQTY      /** Quantités !== 탄화수소저장수단수용량 ==! */
+            , MSRM_UT_NM                    /** Unite de mesure !== 측정단위명 ==! */
+            , CHAR_DTTM                     /** Date et heure de remplissage !== 충전일시 ==! */
+            , CHAR_TPRT                     /** Température de remplissage !== 충전온도 ==! */
+            , WL_HIGT_MT                    /** Pied d’eau !== 수위높이미터 ==! */
+            , FRST_OWN_QTY                  /** Stock initial !== 최초소유수량 ==! */
+            , VLM                           /** Volume !== 부피 ==! */
+            , WGHT                          /** Poids !== 중량 ==! */
+            , ISTA_DTTM                     /** Date et heure de jaugeage !== 계측일시 ==! */
+            , TANKER_SSIS_NO                /** N° châssis !== 유조차샤시번호 ==! */
+            , VHCL_RGSR_NO                  /** N° d'immatriculation du véhicule !== 챠량등록번호 ==! */
+            , DRVR_NM                       /** Nom de conducteur !== 운전자명 ==! */
+            , TRNP_LCNE_NO                  /** N° permis de conduire pour transport !== 운송면허번호 ==! */
+            , SHIP_REFF_NM                  /** Référence du navire !== 선박참조 ==! */
+            , CAPT_NM                       /** Nom du capitaine du navire !== 선장명 ==! */
+            , PILI_REFF_NM                  /** Référence du pipe-line !== 파이프라인참조명 ==! */
+            , CUNT_REFF_NM                  /** Référence du compteur !== 계량기참조명 ==! */
+            , ATCH_FILE_ID                  /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , DEL_YN                        /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                 /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM                /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                  /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        VALUES
+        (
+              #{hdcbBsopRprtNo}             /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+            , (SELECT NVL(COUNT(BRNG_SRNO), 0) + 1 FROM TB_CARI_HDCB_RPRT_MAKE_BRNG WHERE HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo})            /** Numéro d'ordre !== 반입일련번호 ==! */
+            , #{brngMnfuNm}                     /** Nom du produit !== 제품명 ==! */
+            , #{brngHsCd}                       /** Code Sh !== HS코드 ==! */
+            , TO_TIMESTAMP( #{hdcbBrngDttm} , 'DD/MM/YYYY HH24:MI:SS')               /** Date d'introduction !== 탄화수소반입일시 ==! */
+            , #{dprpJrsdOrgnCd}             /** Service compétent de départ !== 출발지관할조직코드 ==! */
+            , #{dprpIbobzCd}                /** Code De Zone Sous Douane De Départ !== 출발지보세구역코드 ==! */
+            , #{impQty}                     /** Quantité Importée !== 수입수량 ==! */
+            , #{hdcbSaveMethPtCd}           /** Type de moyen de stockage !== 탄화수소저장수단유형코드 ==! */
+            , #{comnCuntNoReffNm}           /** Numéro/référence compteur !== 공통계량기번호참조명 ==! */
+            , #{hdcbSaveMethAcpeAqty}       /** Quantités !== 탄화수소저장수단수용량 ==! */
+            , #{brngMsrmUtNm}                   /** Unite de mesure !== 측정단위명 ==! */
+            , TO_TIMESTAMP( #{charDttm} , 'DD/MM/YYYY HH24:MI:SS')  /** Date et heure de remplissage !== 충전일시 ==! */
+            , #{charTprt}                   /** Température de remplissage !== 충전온도 ==! */
+            , #{brngWlHigtMt}                   /** Pied d’eau !== 수위높이미터 ==! */
+            , #{frstOwnQty}                 /** Stock initial !== 최초소유수량 ==! */
+            , #{vlm}                        /** Volume !== 부피 ==! */
+            , #{wght}                       /** Poids !== 중량 ==! */
+            , TO_TIMESTAMP( #{brngIstaDttm} , 'DD/MM/YYYY HH24:MI:SS')  /** Date et heure de jaugeage !== 계측일시 ==! */
+            , #{brngTankerSsisNo}               /** N° châssis !== 유조차샤시번호 ==! */
+            , #{brngVhclRgsrNo}                 /** N° d'immatriculation du véhicule !== 챠량등록번호 ==! */
+            , #{brngDrvrNm}                     /** Nom de conducteur !== 운전자명 ==! */
+            , #{brngTrnpLcneNo}                 /** N° permis de conduire pour transport !== 운송면허번호 ==! */
+            , #{brngShipReffNm}                 /** Référence du navire !== 선박참조 ==! */
+            , #{brngCaptNm}                     /** Nom du capitaine du navire !== 선장명 ==! */
+            , #{brngPiliReffNm}                 /** Référence du pipe-line !== 파이프라인참조명 ==! */
+            , #{brngCuntReffNm}                 /** Référence du compteur !== 계량기참조명 ==! */
+            , #{atchFileId}                 /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , 'N'                           /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                  /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                  /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <update id="updateHdcbRprtMakeBrng" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeBrngVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.updateHdcbRprtMakeBrng */
+        UPDATE TB_CARI_HDCB_RPRT_MAKE_BRNG SET
+              DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        <if test="brngMnfuNm != null">
+            , MNFU_NM = #{brngMnfuNm}                            /** Nom du produit !== 제품명 ==! */
+        </if>
+        <if test="brngHsCd != null">
+            , HS_CD = #{brngHsCd}                                /** Code Sh !== HS코드 ==! */
+        </if>
+        <if test="hdcbBrngDttm != null">
+            , HDCB_BRNG_DTTM = TO_TIMESTAMP( #{hdcbBrngDttm} , 'DD/MM/YYYY HH24:MI:SS')              /** Date d'introduction !== 탄화수소반입일시 ==! */
+        </if>
+        <if test="dprpJrsdOrgnCd != null">
+            , DPRP_JRSD_ORGN_CD = #{dprpJrsdOrgnCd}          /** Service compétent de départ !== 출발지관할조직코드 ==! */
+        </if>
+        <if test="dprpIbobzCd != null">
+            , DPRP_IBOBZ_CD = #{dprpIbobzCd}                 /** Code De Zone Sous Douane De Départ !== 출발지보세구역코드 ==! */
+        </if>
+        <if test="impQty != null">
+            , IMP_QTY = #{impQty}                            /** Quantité Importée !== 수입수량 ==! */
+        </if>
+        <if test="hdcbSaveMethPtCd != null">
+            , HDCB_SAVE_METH_PT_CD = #{hdcbSaveMethPtCd}     /** Type de moyen de stockage !== 탄화수소저장수단유형코드 ==! */
+        </if>
+        <if test="comnCuntNoReffNm != null">
+            , COMN_CUNT_NO_REFF_NM = #{comnCuntNoReffNm}     /** Numéro/référence compteur !== 공통계량기번호참조명 ==! */
+        </if>
+        <if test="hdcbSaveMethAcpeAqty != null">
+            , HDCB_SAVE_METH_ACPE_AQTY = #{hdcbSaveMethAcpeAqty}  /** Quantités !== 탄화수소저장수단수용량 ==! */
+        </if>
+        <if test="brngMsrmUtNm != null">
+            , MSRM_UT_NM = #{brngMsrmUtNm}                       /** Unite de mesure !== 측정단위명 ==! */
+        </if>
+        <if test="charDttm != null">
+            , CHAR_DTTM = TO_TIMESTAMP( #{charDttm}, 'DD/MM/YYYY HH24:MI:SS')  /** Date et heure de remplissage !== 충전일시 ==! */
+        </if>
+        <if test="charTprt != null">
+            , CHAR_TPRT = #{charTprt}                        /** Température de remplissage !== 충전온도 ==! */
+        </if>
+        <if test="brngWlHigtMt != null">
+            , WL_HIGT_MT = #{brngWlHigtMt}                       /** Pied d’eau !== 수위높이미터 ==! */
+        </if>
+        <if test="frstOwnQty != null">
+            , FRST_OWN_QTY = #{frstOwnQty}                   /** Stock initial !== 최초소유수량 ==! */
+        </if>
+        <if test="vlm != null">
+            , VLM = #{vlm}                                   /** Volume !== 부피 ==! */
+        </if>
+        <if test="wght != null">
+            , WGHT = #{wght}                                 /** Poids !== 중량 ==! */
+        </if>
+        <if test="brngIstaDttm != null">
+            , ISTA_DTTM = TO_TIMESTAMP( #{brngIstaDttm}, 'DD/MM/YYYY HH24:MI:SS')  /** Date et heure de jaugeage !== 계측일시 ==! */
+        </if>
+        <if test="brngTankerSsisNo != null">
+            , TANKER_SSIS_NO = #{brngTankerSsisNo}               /** N° châssis !== 유조차샤시번호 ==! */
+        </if>
+        <if test="brngVhclRgsrNo != null">
+            , VHCL_RGSR_NO = #{brngVhclRgsrNo}                   /** N° d'immatriculation du véhicule !== 챠량등록번호 ==! */
+        </if>
+        <if test="brngDrvrNm != null">
+            , DRVR_NM = #{brngDrvrNm}                            /** Nom de conducteur !== 운전자명 ==! */
+        </if>
+        <if test="brngTrnpLcneNo != null">
+            , TRNP_LCNE_NO = #{brngTrnpLcneNo}                   /** N° permis de conduire pour transport !== 운송면허번호 ==! */
+        </if>
+        <if test="brngShipReffNm != null">
+            , SHIP_REFF_NM = #{brngShipReffNm}                   /** Référence du navire !== 선박참조 ==! */
+        </if>
+        <if test="brngCaptNm != null">
+            , CAPT_NM = #{brngCaptNm}                            /** Nom du capitaine du navire !== 선장명 ==! */
+        </if>
+        <if test="brngPiliReffNm != null">
+            , PILI_REFF_NM = #{brngPiliReffNm}                   /** Référence du pipe-line !== 파이프라인참조명 ==! */
+        </if>
+        <if test="brngCuntReffNm != null">
+            , CUNT_REFF_NM = #{brngCuntReffNm}                   /** Référence du compteur !== 계량기참조명 ==! */
+        </if>
+        <if test="atchFileId != null">
+            , ATCH_FILE_ID = #{atchFileId}                   /** Id Du Fichier Joint !== 첨부파일ID ==! */
+        </if>
+        WHERE 1=1
+          AND HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+          AND BRNG_SRNO = #{brngSrno}  /** Numéro d'ordre !== 반입일련번호 ==! */
+    </update>
+
+    <update id="deleteHdcbRprtMakeBrng" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeBrngVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.deleteHdcbRprtMakeBrng */
+        UPDATE TB_CARI_HDCB_RPRT_MAKE_BRNG SET
+              DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE 1=1
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+        <if test="brngSrno != null and brngSrno != ''">
+            AND BRNG_SRNO = #{brngSrno}  /** Numéro d'ordre !== 반입일련번호 ==! */
+        </if>
+    </update>
+
+    <sql id ="selectItemHdcbRprtMakeRlse">
+        SELECT A.HDCB_BSOP_RPRT_NO                                      AS HDCB_BSOP_RPRT_NO   /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+             , A.RLSE_SRNO                                              AS RLSE_SRNO           /** Numéro d'ordre !== 반출일련번호 ==! */
+             , A.MNFU_NM                                                AS RLSE_MNFU_NM             /** Nom du produit !== 제품명 ==! */
+             , A.HS_CD                                                  AS RLSE_HS_CD               /** Code Sh !== hs코드 ==! */
+             , TO_CHAR(A.HDCB_RLSE_DTTM,'DD/MM/YYYY HH24:MI:SS')        AS HDCB_RLSE_DTTM      /** Dateheure De Sortie !== 탄화수소반출일시 ==! */
+             , A.ARLC_JRSD_ORGN_CD                                      AS ARLC_JRSD_ORGN_CD   /** Code de service compétent de destination !== 도착지관할조직코드 ==! */
+             , A.ARLC_IBOBZ_CD                                          AS ARLC_IBOBZ_CD       /** Code De Zone Sous Douane De Destination !== 도착지보세구역코드 ==! */
+             , A.HDCB_RLSE_PT_CD                                        AS HDCB_RLSE_PT_CD     /** Type de sortie !== 탄화수소반출유형코드 ==! */
+             , A.HDCB_RLSE_METH_CD                                      AS HDCB_RLSE_METH_CD   /** Type de moyen de stockage !== 탄화수소반출수단코드 ==! */
+             , A.RELA_NO                                                AS RELA_NO             /** Numéro Concerné !== 관련번호 ==! */
+             , A.HDCB_SEND_METH_ACPE_AQTY                               AS HDCB_SEND_METH_ACPE_AQTY/** Quantités !== 탄화수소발송수단수용량 ==! */
+             , A.MSRM_UT_NM                                             AS RLSE_MSRM_UT_NM          /** Unite de mesure !== 측정단위명 ==! */
+             , TO_CHAR(A.RLSE_DTTM,'DD/MM/YYYY HH24:MI:SS')             AS RLSE_DTTM           /** Dateheure De Sortie !== 반출일시 ==! */
+             , A.RLSE_TPRT                                              AS RLSE_TPRT           /** Température de sortie !== 반출온도 ==! */
+             , A.WL_HIGT_MT                                             AS RLSE_WL_HIGT_MT          /** Pied d’eau !== 수위높이미터 ==! */
+             , TO_CHAR(A.ISTA_DTTM,'DD/MM/YYYY HH24:MI:SS')             AS RLSE_ISTA_DTTM           /** Date et heure de jaugeage !== 계측일시 ==! */
+             , A.SHPM_BF_QTY                                            AS SHPM_BF_QTY         /** Quantité avant chargement !== 선적이전수량 ==! */
+             , A.SHPM_AF_QTY                                            AS SHPM_AF_QTY         /** Quantité après chargement !== 선적이후수량 ==! */
+             , A.RLSE_PT_QTY                                            AS RLSE_PT_QTY         /** Quantité par type de sortie !== 반출유형수량 ==! */
+             , A.TANKER_SSIS_NO                                         AS RLSE_TANKER_SSIS_NO      /** N° châssis !== 유조차샤시번호 ==! */
+             , A.VHCL_RGSR_NO                                           AS RLSE_VHCL_RGSR_NO        /** N° d'immatriculation du véhicule !== 챠량등록번호 ==! */
+             , A.DRVR_NM                                                AS RLSE_DRVR_NM             /** Nom de conducteur !== 운전자명 ==! */
+             , A.TRNP_LCNE_NO                                           AS RLSE_TRNP_LCNE_NO        /** N° permis de conduire pour transport !== 운전면허번호 ==! */
+             , A.SHIP_REFF_NM                                           AS RLSE_SHIP_REFF_NM        /** Référence du navire !== 선박참조 ==! */
+             , A.CAPT_NM                                                AS RLSE_CAPT_NM             /** Nom du capitaine du navire !== 선장명 ==! */
+             , A.PILI_REFF_NM                                           AS RLSE_PILI_REFF_NM        /** Référence du pipe-line !== 파이프라인참조명 ==! */
+             , A.CUNT_REFF_NM                                           AS RLSE_CUNT_REFF_NM        /** Référence du compteur !== 계량기참조 ==! */
+             , A.ATCH_FILE_ID                                           AS ATCH_FILE_ID        /** Id Du Fichier Joint !== 첨부파일id ==! */
+             , A.DEL_YN                                                 AS DEL_YN              /** Suppression On !== 삭제여부 ==! */
+             , A.FRST_REGST_ID                                          AS FRST_REGST_ID       /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+             , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS')        AS FRST_RGSR_DTTM      /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+             , A.LAST_CHPR_ID                                           AS LAST_CHPR_ID        /** Id Du Modificateur Final !== 최종변경자id ==! */
+             , TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS')         AS LAST_CHG_DTTM       /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+         FROM TB_CARI_HDCB_RPRT_MAKE_RLSE A
+        WHERE A.DEL_YN = 'N'                                         /** Suppression ON !== 삭제여부 ==! */
+    </sql>
+
+    <select id="selectHdcbRprtMakeRlseList" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeRlseVo" resultType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeRlseVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.selectHdcbRprtMakeRlseList */
+        <include refid="pagination.header" ></include>
+        <include refid="selectItemHdcbRprtMakeRlse" ></include>
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND A.HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <select id="selectHdcbRprtMakeRlse" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeRlseVo" resultType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeRlseVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.selectHdcbRprtMakeRlse */
+        <include refid="selectItemHdcbRprtMakeRlse" ></include>
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND A.HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+        <if test="rlseSrno != null and rlseSrno != ''">
+            AND A.RLSE_SRNO = #{rlseSrno}  /** Numéro d'ordre !== 반출일련번호 ==! */
+        </if>
+    </select>
+
+    <insert id="insertHdcbRprtMakeRlse" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeRlseVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.insertHdcbRprtMakeRlse */
+        INSERT INTO TB_CARI_HDCB_RPRT_MAKE_RLSE
+        (
+              HDCB_BSOP_RPRT_NO             /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+            , RLSE_SRNO                     /** Numéro d'ordre !== 반출일련번호 ==! */
+            , MNFU_NM                       /** Nom du produit !== 제품명 ==! */
+            , HS_CD                         /** Code Sh !== hs코드 ==! */
+            , HDCB_RLSE_DTTM                /** Dateheure De Sortie !== 탄화수소반출일시 ==! */
+            , ARLC_JRSD_ORGN_CD             /** Code de service compétent de destination !== 도착지관할조직코드 ==! */
+            , ARLC_IBOBZ_CD                 /** Code De Zone Sous Douane De Destination !== 도착지보세구역코드 ==! */
+            , HDCB_RLSE_PT_CD               /** Type de sortie !== 탄화수소반출유형코드 ==! */
+            , HDCB_RLSE_METH_CD             /** Type de moyen de stockage !== 탄화수소반출수단코드 ==! */
+            , RELA_NO                       /** Numéro Concerné !== 관련번호 ==! */
+            , HDCB_SEND_METH_ACPE_AQTY      /** Quantités !== 탄화수소발송수단수용량 ==! */
+            , MSRM_UT_NM                    /** Unite de mesure !== 측정단위명 ==! */
+            , RLSE_DTTM                     /** Dateheure De Sortie !== 반출일시 ==! */
+            , RLSE_TPRT                     /** Température de sortie !== 반출온도 ==! */
+            , WL_HIGT_MT                    /** Pied d’eau !== 수위높이미터 ==! */
+            , ISTA_DTTM                     /** Date et heure de jaugeage !== 계측일시 ==! */
+            , SHPM_BF_QTY                   /** Quantité avant chargement !== 선적이전수량 ==! */
+            , SHPM_AF_QTY                   /** Quantité après chargement !== 선적이후수량 ==! */
+            , RLSE_PT_QTY                   /** Quantité par type de sortie !== 반출유형수량 ==! */
+            , TANKER_SSIS_NO                /** N° châssis !== 유조차샤시번호 ==! */
+            , VHCL_RGSR_NO                  /** N° d'immatriculation du véhicule !== 챠량등록번호 ==! */
+            , DRVR_NM                       /** Nom de conducteur !== 운전자명 ==! */
+            , TRNP_LCNE_NO                  /** N° permis de conduire pour transport !== 운전면허번호 ==! */
+            , SHIP_REFF_NM                  /** Référence du navire !== 선박참조 ==! */
+            , CAPT_NM                       /** Nom du capitaine du navire !== 선장명 ==! */
+            , PILI_REFF_NM                  /** Référence du pipe-line !== 파이프라인참조명 ==! */
+            , CUNT_REFF_NM                  /** Référence du compteur !== 계량기참조 ==! */
+            , ATCH_FILE_ID                  /** Id Du Fichier Joint !== 첨부파일id ==! */
+            , DEL_YN                        /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                 /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+            , FRST_RGSR_DTTM                /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                  /** Id Du Modificateur Final !== 최종변경자id ==! */
+            , LAST_CHG_DTTM                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        VALUES
+        (
+              #{hdcbBsopRprtNo}             /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+            , (SELECT NVL(COUNT(RLSE_SRNO), 0) + 1 FROM TB_CARI_HDCB_RPRT_MAKE_RLSE WHERE HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo})            /** Numéro d'ordre !== 반출일련번호 ==! */
+            , #{rlseMnfuNm}                     /** Nom du produit !== 제품명 ==! */
+            , #{rlseHsCd}                       /** Code Sh !== hs코드 ==! */
+            , TO_TIMESTAMP( #{hdcbRlseDttm} , 'DD/MM/YYYY HH24:MI:SS')               /** Dateheure De Sortie !== 탄화수소반출일시 ==! */
+            , #{arlcJrsdOrgnCd}             /** Code de service compétent de destination !== 도착지관할조직코드 ==! */
+            , #{arlcIbobzCd}                /** Code De Zone Sous Douane De Destination !== 도착지보세구역코드 ==! */
+            , #{hdcbRlsePtCd}               /** Type de sortie !== 탄화수소반출유형코드 ==! */
+            , #{hdcbRlseMethCd}             /** Type de moyen de stockage !== 탄화수소반출수단코드 ==! */
+            , #{relaNo}                     /** Numéro Concerné !== 관련번호 ==! */
+            , #{hdcbSendMethAcpeAqty}       /** Quantités !== 탄화수소발송수단수용량 ==! */
+            , #{rlseMsrmUtNm}                   /** Unite de mesure !== 측정단위명 ==! */
+            , TO_TIMESTAMP( #{rlseDttm} , 'DD/MM/YYYY HH24:MI:SS')  /** Dateheure De Sortie !== 반출일시 ==! */
+            , #{rlseTprt}                   /** Température de sortie !== 반출온도 ==! */
+            , #{rlseWlHigtMt}                   /** Pied d’eau !== 수위높이미터 ==! */
+            , TO_TIMESTAMP( #{rlseIstaDttm} , 'DD/MM/YYYY HH24:MI:SS')  /** Date et heure de jaugeage !== 계측일시 ==! */
+            , #{shpmBfQty}                  /** Quantité avant chargement !== 선적이전수량 ==! */
+            , #{shpmAfQty}                  /** Quantité après chargement !== 선적이후수량 ==! */
+            , #{rlsePtQty}                  /** Quantité par type de sortie !== 반출유형수량 ==! */
+            , #{rlseTankerSsisNo}               /** N° châssis !== 유조차샤시번호 ==! */
+            , #{rlseVhclRgsrNo}                 /** N° d'immatriculation du véhicule !== 챠량등록번호 ==! */
+            , #{rlseDrvrNm}                     /** Nom de conducteur !== 운전자명 ==! */
+            , #{rlseTrnpLcneNo}                 /** N° permis de conduire pour transport !== 운전면허번호 ==! */
+            , #{rlseShipReffNm}                 /** Référence du navire !== 선박참조 ==! */
+            , #{rlseCaptNm}                     /** Nom du capitaine du navire !== 선장명 ==! */
+            , #{rlsePiliReffNm}                 /** Référence du pipe-line !== 파이프라인참조명 ==! */
+            , #{rlseCuntReffNm}                 /** Référence du compteur !== 계량기참조 ==! */
+            , #{atchFileId}                 /** Id Du Fichier Joint !== 첨부파일id ==! */
+            , 'N'                           /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}                /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+            , SYSTIMESTAMP                  /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                 /** Id Du Modificateur Final !== 최종변경자id ==! */
+            , SYSTIMESTAMP                  /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <update id="updateHdcbRprtMakeRlse" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeRlseVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.updateHdcbRprtMakeRlse */
+        UPDATE TB_CARI_HDCB_RPRT_MAKE_RLSE SET
+              DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        <if test="rlseMnfuNm != null">
+            , MNFU_NM = #{rlseMnfuNm}                            /** Nom du produit !== 제품명 ==! */
+        </if>
+        <if test="rlseHsCd != null">
+            , HS_CD = #{rlseHsCd}                                /** Code Sh !== hs코드 ==! */
+        </if>
+        <if test="hdcbRlseDttm != null">
+            , HDCB_RLSE_DTTM = TO_TIMESTAMP( #{hdcbRlseDttm} , 'DD/MM/YYYY HH24:MI:SS')  /** Dateheure De Sortie !== 탄화수소반출일시 ==! */
+        </if>
+        <if test="arlcJrsdOrgnCd != null">
+            , ARLC_JRSD_ORGN_CD = #{arlcJrsdOrgnCd}          /** Code de service compétent de destination !== 도착지관할조직코드 ==! */
+        </if>
+        <if test="arlcIbobzCd != null">
+            , ARLC_IBOBZ_CD = #{arlcIbobzCd}                 /** Code De Zone Sous Douane De Destination !== 도착지보세구역코드 ==! */
+        </if>
+        <if test="hdcbRlsePtCd != null">
+            , HDCB_RLSE_PT_CD = #{hdcbRlsePtCd}              /** Type de sortie !== 탄화수소반출유형코드 ==! */
+        </if>
+        <if test="hdcbRlseMethCd != null">
+            , HDCB_RLSE_METH_CD = #{hdcbRlseMethCd}          /** Type de moyen de stockage !== 탄화수소반출수단코드 ==! */
+        </if>
+        <if test="relaNo != null">
+            , RELA_NO = #{relaNo}                            /** Numéro Concerné !== 관련번호 ==! */
+        </if>
+        <if test="hdcbSendMethAcpeAqty != null">
+            , HDCB_SEND_METH_ACPE_AQTY = #{hdcbSendMethAcpeAqty}  /** Quantités !== 탄화수소발송수단수용량 ==! */
+        </if>
+        <if test="rlseMsrmUtNm != null">
+            , MSRM_UT_NM = #{rlseMsrmUtNm}                       /** Unite de mesure !== 측정단위명 ==! */
+        </if>
+        <if test="rlseDttm != null">
+            , RLSE_DTTM = TO_TIMESTAMP( #{rlseDttm}, 'DD/MM/YYYY HH24:MI:SS')  /** Dateheure De Sortie !== 반출일시 ==! */
+        </if>
+        <if test="rlseTprt != null">
+            , RLSE_TPRT = #{rlseTprt}                        /** Température de sortie !== 반출온도 ==! */
+        </if>
+        <if test="rlseWlHigtMt != null">
+            , WL_HIGT_MT = #{rlseWlHigtMt}                       /** Pied d’eau !== 수위높이미터 ==! */
+        </if>
+        <if test="rlseIstaDttm != null">
+            , ISTA_DTTM = TO_TIMESTAMP( #{rlseIstaDttm}, 'DD/MM/YYYY HH24:MI:SS')  /** Date et heure de jaugeage !== 계측일시 ==! */
+        </if>
+        <if test="shpmBfQty != null">
+            , SHPM_BF_QTY = #{shpmBfQty}                     /** Quantité avant chargement !== 선적이전수량 ==! */
+        </if>
+        <if test="shpmAfQty != null">
+            , SHPM_AF_QTY = #{shpmAfQty}                     /** Quantité après chargement !== 선적이후수량 ==! */
+        </if>
+        <if test="rlsePtQty != null">
+            , RLSE_PT_QTY = #{rlsePtQty}                     /** Quantité par type de sortie !== 반출유형수량 ==! */
+        </if>
+        <if test="rlseTankerSsisNo != null">
+            , TANKER_SSIS_NO = #{rlseTankerSsisNo}               /** N° châssis !== 유조차샤시번호 ==! */
+        </if>
+        <if test="rlseVhclRgsrNo != null">
+            , VHCL_RGSR_NO = #{rlseVhclRgsrNo}                   /** N° d'immatriculation du véhicule !== 챠량등록번호 ==! */
+        </if>
+        <if test="rlseDrvrNm != null">
+            , DRVR_NM = #{rlseDrvrNm}                            /** Nom de conducteur !== 운전자명 ==! */
+        </if>
+        <if test="rlseTrnpLcneNo != null">
+            , TRNP_LCNE_NO = #{rlseTrnpLcneNo}                   /** N° permis de conduire pour transport !== 운전면허번호 ==! */
+        </if>
+        <if test="rlseShipReffNm != null">
+            , SHIP_REFF_NM = #{rlseShipReffNm}                   /** Référence du navire !== 선박참조 ==! */
+        </if>
+        <if test="rlseCaptNm != null">
+            , CAPT_NM = #{rlseCaptNm}                            /** Nom du capitaine du navire !== 선장명 ==! */
+        </if>
+        <if test="rlsePiliReffNm != null">
+            , PILI_REFF_NM = #{rlsePiliReffNm}                   /** Référence du pipe-line !== 파이프라인참조명 ==! */
+        </if>
+        <if test="rlseCuntReffNm != null">
+            , CUNT_REFF_NM = #{rlseCuntReffNm}                   /** Référence du compteur !== 계량기참조 ==! */
+        </if>
+        <if test="atchFileId != null">
+            , ATCH_FILE_ID = #{atchFileId}                   /** Id Du Fichier Joint !== 첨부파일id ==! */
+        </if>
+        WHERE 1=1
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+        <if test="rlseSrno != null and rlseSrno != ''">
+            AND RLSE_SRNO = #{rlseSrno}  /** Numéro d'ordre !== 반출일련번호 ==! */
+        </if>
+    </update>
+
+    <update id="deleteHdcbRprtMakeRlse" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeRlseVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.deleteHdcbRprtMakeRlse */
+        UPDATE TB_CARI_HDCB_RPRT_MAKE_RLSE SET
+              DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE 1=1
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+        <if test="rlseSrno != null and rlseSrno != ''">
+            AND RLSE_SRNO = #{rlseSrno}  /** Numéro d'ordre !== 반출일련번호 ==! */
+        </if>
+    </update>
+
+    <sql id ="selectItemHdcbRprtMakeWsh">
+        SELECT A.HDCB_BSOP_RPRT_NO                                      AS HDCB_BSOP_RPRT_NO   /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+             , A.WSH_SRNO                                               AS WSH_SRNO            /** Numéro d'ordre !== 유실일련번호 ==! */
+             , TO_CHAR(A.WSH_DTTM,'DD/MM/YYYY HH24:MI:SS')              AS WSH_DTTM            /** Date et heure !== 유실일시 ==! */
+             , A.WSH_TP_CD                                              AS WSH_TP_CD           /** Les pertes !== 유실구분코드 ==! */
+             , A.WSH_QTY                                                AS WSH_QTY             /** Quantités !== 유실수량 ==! */
+             , A.MSRM_UT_NM                                             AS WSH_MSRM_UT_NM          /** Unite de mesure !== 측정단위명 ==! */
+             , A.ATCH_FILE_ID                                           AS ATCH_FILE_ID        /** Id Du Fichier Joint !== 첨부파일id ==! */
+             , A.DEL_YN                                                 AS DEL_YN              /** Suppression On !== 삭제여부 ==! */
+             , A.FRST_REGST_ID                                          AS FRST_REGST_ID       /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+             , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS')        AS FRST_RGSR_DTTM      /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+             , A.LAST_CHPR_ID                                           AS LAST_CHPR_ID        /** Id Du Modificateur Final !== 최종변경자id ==! */
+             , TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS')         AS LAST_CHG_DTTM       /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+         FROM TB_CARI_HDCB_RPRT_MAKE_WSH A
+        WHERE A.DEL_YN = 'N'                                         /** Suppression ON !== 삭제여부 ==! */
+    </sql>
+
+    <select id="selectHdcbRprtMakeWshList" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeWshVo" resultType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeWshVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.selectHdcbRprtMakeWshList */
+        <include refid="pagination.header" ></include>
+        <include refid="selectItemHdcbRprtMakeWsh" ></include>
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND A.HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <select id="selectHdcbRprtMakeWsh" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeWshVo" resultType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeWshVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.selectHdcbRprtMakeWsh */
+        <include refid="selectItemHdcbRprtMakeWsh" ></include>
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND A.HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+        <if test="wshSrno != null and wshSrno != ''">
+            AND A.WSH_SRNO = #{wshSrno}  /** Numéro d'ordre !== 유실일련번호 ==! */
+        </if>
+    </select>
+
+    <insert id="insertHdcbRprtMakeWsh" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeWshVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.insertHdcbRprtMakeWsh */
+        INSERT INTO TB_CARI_HDCB_RPRT_MAKE_WSH
+        (
+              HDCB_BSOP_RPRT_NO             /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+            , WSH_SRNO                      /** Numéro d'ordre !== 유실일련번호 ==! */
+            , WSH_DTTM                      /** Date et heure !== 유실일시 ==! */
+            , WSH_TP_CD                     /** Les pertes !== 유실구분코드 ==! */
+            , WSH_QTY                       /** Quantités !== 유실수량 ==! */
+            , MSRM_UT_NM                    /** Unite de mesure !== 측정단위명 ==! */
+            , ATCH_FILE_ID                  /** Id Du Fichier Joint !== 첨부파일id ==! */
+            , DEL_YN                        /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                 /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+            , FRST_RGSR_DTTM                /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                  /** Id Du Modificateur Final !== 최종변경자id ==! */
+            , LAST_CHG_DTTM                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        VALUES
+        (
+              #{hdcbBsopRprtNo}             /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+            , (SELECT NVL(COUNT(WSH_SRNO), 0) + 1 FROM TB_CARI_HDCB_RPRT_MAKE_WSH WHERE HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo})                    /** Numéro d'ordre !== 유실일련번호 ==! */
+            , TO_TIMESTAMP( #{wshDttm} , 'DD/MM/YYYY HH24:MI:SS')  /** Date et heure !== 유실일시 ==! */
+            , #{wshTpCd}                    /** Les pertes !== 유실구분코드 ==! */
+            , #{wshQty}                     /** Quantités !== 유실수량 ==! */
+            , #{wshMsrmUtNm}                   /** Unite de mesure !== 측정단위명 ==! */
+            , #{atchFileId}                 /** Id Du Fichier Joint !== 첨부파일id ==! */
+            , 'N'                           /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}                /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+            , SYSTIMESTAMP                  /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                 /** Id Du Modificateur Final !== 최종변경자id ==! */
+            , SYSTIMESTAMP                  /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <update id="updateHdcbRprtMakeWsh" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeWshVo">
+        /* alpass.ept.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.updateHdcbRprtMakeWsh */
+        UPDATE TB_CARI_HDCB_RPRT_MAKE_WSH SET
+              DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        <if test="wshDttm != null">
+            , WSH_DTTM = TO_TIMESTAMP( #{wshDttm}, 'DD/MM/YYYY HH24:MI:SS')  /** Date et heure !== 유실일시 ==! */
+        </if>
+        <if test="wshTpCd != null">
+            , WSH_TP_CD = #{wshTpCd}                         /** Les pertes !== 유실구분코드 ==! */
+        </if>
+        <if test="wshQty != null">
+            , WSH_QTY = #{wshQty}                            /** Quantités !== 유실수량 ==! */
+        </if>
+        <if test="wshMsrmUtNm != null">
+            , MSRM_UT_NM = #{wshMsrmUtNm}                       /** Unite de mesure !== 측정단위명 ==! */
+        </if>
+        <if test="atchFileId != null">
+            , ATCH_FILE_ID = #{atchFileId}                   /** Id Du Fichier Joint !== 첨부파일id ==! */
+        </if>
+        WHERE 1=1
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+        <if test="wshSrno != null and wshSrno != ''">
+            AND WSH_SRNO = #{wshSrno}  /** Numéro d'ordre !== 유실일련번호 ==! */
+        </if>
+    </update>
+
+    <update id="deleteHdcbRprtMakeWsh" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeWshVo">
+        /* alpass.ept.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.deleteHdcbRprtMakeWsh */
+        UPDATE TB_CARI_HDCB_RPRT_MAKE_WSH SET
+              DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE 1=1
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+        <if test="wshSrno != null and wshSrno != ''">
+            AND WSH_SRNO = #{wshSrno}  /** Numéro d'ordre !== 유실일련번호 ==! */
+        </if>
+    </update>
+
+    <sql id ="selectItemHdcbRprtMakePick">
+        SELECT A.HDCB_BSOP_RPRT_NO                                      AS HDCB_BSOP_RPRT_NO   /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+             , A.PICK_SRNO                                              AS PICK_SRNO           /** Numéro d'ordre !== 채취일련번호 ==! */
+             , TO_CHAR(A.PICK_DTTM,'DD/MM/YYYY HH24:MI:SS')             AS PICK_DTTM           /** Date et heure !== 채취일시 ==! */
+             , A.CTNR_NO                                                AS CTNR_NO             /** Numéro de bac !== 용기번호 ==! */
+             , A.PICK_QTY                                               AS PICK_QTY            /** Quantités !== 채취수량 ==! */
+             , A.MSRM_UT_NM                                             AS PICK_MSRM_UT_NM          /** Unite de mesure !== 측정단위명 ==! */
+             , A.ANST_NM                                                AS ANST_NM             /** Laboratoire !== 분석소명 ==! */
+             , A.ANST_EMP_NM                                            AS ANST_EMP_NM         /** Agent de laboratoire !== 분석소직원명 ==! */
+             , A.WDRW_PSBL_YN                                           AS WDRW_PSBL_YN        /** Récupérable/ Non récupérable !== 회수가능여부 ==! */
+             , A.ATCH_FILE_ID                                           AS ATCH_FILE_ID        /** Id Du Fichier Joint !== 첨부파일id ==! */
+             , A.DEL_YN                                                 AS DEL_YN              /** Suppression On !== 삭제여부 ==! */
+             , A.FRST_REGST_ID                                          AS FRST_REGST_ID       /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+             , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS')        AS FRST_RGSR_DTTM      /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+             , A.LAST_CHPR_ID                                           AS LAST_CHPR_ID        /** Id Du Modificateur Final !== 최종변경자id ==! */
+             , TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS')         AS LAST_CHG_DTTM       /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+         FROM TB_CARI_HDCB_RPRT_MAKE_PICK A
+        WHERE A.DEL_YN = 'N'                                         /** Suppression ON !== 삭제여부 ==! */
+    </sql>
+
+    <select id="selectHdcbRprtMakePickList" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakePickVo" resultType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakePickVo">
+        /* alpass.ept.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.selectHdcbRprtMakePickList */
+        <include refid="pagination.header" ></include>
+        <include refid="selectItemHdcbRprtMakePick" ></include>
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND A.HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+        <include refid="pagination.footer" ></include>
+    </select>
+    
+    <select id="selectHdcbRprtMakePick" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakePickVo" resultType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakePickVo">
+        /* alpass.ept.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.selectHdcbRprtMakePick */
+        <include refid="selectItemHdcbRprtMakePick" ></include>
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND A.HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+        <if test="pickSrno != null and pickSrno != ''">
+            AND A.PICK_SRNO = #{pickSrno}  /** Numéro d'ordre !== 채취일련번호 ==! */
+        </if>
+    </select>
+
+    <insert id="insertHdcbRprtMakePick" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakePickVo">
+        /* alpass.ept.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.insertHdcbRprtMakePick */
+        INSERT INTO TB_CARI_HDCB_RPRT_MAKE_PICK
+        ( 
+              HDCB_BSOP_RPRT_NO             /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+            , PICK_SRNO                     /** Numéro d'ordre !== 채취일련번호 ==! */
+            , PICK_DTTM                     /** Date et heure !== 채취일시 ==! */
+            , CTNR_NO                       /** Numéro de bac !== 용기번호 ==! */
+            , PICK_QTY                      /** Quantités !== 채취수량 ==! */
+            , MSRM_UT_NM                    /** Unite de mesure !== 측정단위명 ==! */
+            , ANST_NM                       /** Laboratoire !== 분석소명 ==! */
+            , ANST_EMP_NM                   /** Agent de laboratoire !== 분석소직원명 ==! */
+            , WDRW_PSBL_YN                  /** Récupérable/ Non récupérable !== 회수가능여부 ==! */
+            , ATCH_FILE_ID                  /** Id Du Fichier Joint !== 첨부파일id ==! */
+            , DEL_YN                        /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                 /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+            , FRST_RGSR_DTTM                /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                  /** Id Du Modificateur Final !== 최종변경자id ==! */
+            , LAST_CHG_DTTM                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )  
+        VALUES 
+        (
+              #{hdcbBsopRprtNo}             /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+            , (SELECT NVL(COUNT(PICK_SRNO), 0) + 1 FROM TB_CARI_HDCB_RPRT_MAKE_PICK WHERE HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo})                   /** Numéro d'ordre !== 채취일련번호 ==! */
+            , TO_TIMESTAMP( #{pickDttm} , 'DD/MM/YYYY HH24:MI:SS')  /** Date et heure !== 채취일시 ==! */
+            , #{ctnrNo}                     /** Numéro de bac !== 용기번호 ==! */
+            , #{pickQty}                    /** Quantités !== 채취수량 ==! */
+            , #{pickMsrmUtNm}                   /** Unite de mesure !== 측정단위명 ==! */
+            , #{anstNm}                     /** Laboratoire !== 분석소명 ==! */
+            , #{anstEmpNm}                  /** Agent de laboratoire !== 분석소직원명 ==! */
+            , #{wdrwPsblYn}                 /** Récupérable/ Non récupérable !== 회수가능여부 ==! */
+            , #{atchFileId}                 /** Id Du Fichier Joint !== 첨부파일id ==! */
+            , 'N'                           /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}                /** Id Du Premier Enregistrant  !== 최초등록자id ==! */
+            , SYSTIMESTAMP                  /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                 /** Id Du Modificateur Final !== 최종변경자id ==! */
+            , SYSTIMESTAMP                  /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <update id="updateHdcbRprtMakePick" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakePickVo">
+        /* alpass.ept.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.updateHdcbRprtMakePick */
+        UPDATE TB_CARI_HDCB_RPRT_MAKE_PICK SET
+              DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        <if test="pickDttm != null">
+            , PICK_DTTM = TO_TIMESTAMP( #{pickDttm}, 'DD/MM/YYYY HH24:MI:SS')  /** Date et heure !== 채취일시 ==! */
+        </if>
+        <if test="ctnrNo != null">
+            , CTNR_NO = #{ctnrNo}                            /** Numéro de bac !== 용기번호 ==! */
+        </if>
+        <if test="pickQty != null">
+            , PICK_QTY = #{pickQty}                          /** Quantités !== 채취수량 ==! */
+        </if>
+        <if test="pickMsrmUtNm != null">
+            , MSRM_UT_NM = #{pickMsrmUtNm}                       /** Unite de mesure !== 측정단위명 ==! */
+        </if>
+        <if test="anstNm != null">
+            , ANST_NM = #{anstNm}                            /** Laboratoire !== 분석소명 ==! */
+        </if>
+        <if test="anstEmpNm != null">
+            , ANST_EMP_NM = #{anstEmpNm}                     /** Agent de laboratoire !== 분석소직원명 ==! */
+        </if>
+        <if test="wdrwPsblYn != null">
+            , WDRW_PSBL_YN = #{wdrwPsblYn}                   /** Récupérable/ Non récupérable !== 회수가능여부 ==! */
+        </if>
+        <if test="atchFileId != null">
+            , ATCH_FILE_ID = #{atchFileId}                   /** Id Du Fichier Joint !== 첨부파일id ==! */
+        </if>
+        WHERE 1=1
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+        <if test="pickSrno != null and pickSrno != ''">
+            AND PICK_SRNO = #{pickSrno}  /** Numéro d'ordre !== 채취일련번호 ==! */
+        </if>
+    </update>
+    
+    <update id="deleteHdcbRprtMakePick" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakePickVo">
+        /* alpass.ept.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.deleteHdcbRprtMakePick */
+        UPDATE TB_CARI_HDCB_RPRT_MAKE_PICK SET
+              DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE 1=1
+        <if test="hdcbBsopRprtNo != null and hdcbBsopRprtNo != ''">
+            AND HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}  /** N° De Rapport !== 탄화수소업무보고번호 ==! */
+        </if>
+        <if test="pickSrno != null and pickSrno != ''">
+            AND PICK_SRNO = #{pickSrno}  /** Numéro d'ordre !== 채취일련번호 ==! */
+        </if>
+    </update>
+
+    <insert id="insertHdcbRprtAudt" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        INSERT INTO TB_CARI_HDCB_RPRT_AUDT
+        (
+              HDCB_BSOP_RPRT_NO
+            , RPRT_DT
+            , RPRT_DGCNT
+            , HDCB_BSOP_PT_CD
+            , HDCB_TP_CD
+            , JRSD_ORGN_CD
+            , NIF
+            , IBOBZ_CD
+            , TRSN_DTTM
+            , TRSN_CO_CD
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+        )
+        SELECT HDCB_BSOP_RPRT_NO
+             , RPRT_DT
+             , RPRT_DGCNT
+             , HDCB_BSOP_PT_CD
+             , HDCB_TP_CD
+             , JRSD_ORGN_CD
+             , NIF
+             , IBOBZ_CD
+             , TRSN_DTTM
+             , TRSN_CO_CD
+             , DEL_YN
+             , FRST_REGST_ID
+             , SYSTIMESTAMP
+             , LAST_CHPR_ID
+             , SYSTIMESTAMP
+         FROM TB_CARI_HDCB_RPRT_MAKE
+        WHERE DEL_YN = 'N'
+          AND HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}
+    </insert>
+
+    <insert id="insertHdcbRprtAudtBrng" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        INSERT INTO TB_CARI_HDCB_RPRT_AUDT_BRNG
+        SELECT HDCB_BSOP_RPRT_NO
+             , BRNG_SRNO
+             , MNFU_NM
+             , HS_CD
+             , HDCB_BRNG_DTTM
+             , DPRP_JRSD_ORGN_CD
+             , DPRP_IBOBZ_CD
+             , IMP_QTY
+             , HDCB_SAVE_METH_PT_CD
+             , COMN_CUNT_NO_REFF_NM
+             , HDCB_SAVE_METH_ACPE_AQTY
+             , MSRM_UT_NM
+             , CHAR_DTTM
+             , CHAR_TPRT
+             , WL_HIGT_MT
+             , FRST_OWN_QTY
+             , VLM
+             , WGHT
+             , ISTA_DTTM
+             , TANKER_SSIS_NO
+             , VHCL_RGSR_NO
+             , DRVR_NM
+             , TRNP_LCNE_NO
+             , SHIP_REFF_NM
+             , CAPT_NM
+             , PILI_REFF_NM
+             , CUNT_REFF_NM
+             , ATCH_FILE_ID
+             , DEL_YN
+             , FRST_REGST_ID
+             , SYSTIMESTAMP
+             , LAST_CHPR_ID
+             , SYSTIMESTAMP
+         FROM TB_CARI_HDCB_RPRT_MAKE_BRNG
+        WHERE DEL_YN = 'N'
+          AND HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}
+    </insert>
+
+    <insert id="insertHdcbRprtAudtRlse" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        INSERT INTO TB_CARI_HDCB_RPRT_AUDT_RLSE
+        SELECT HDCB_BSOP_RPRT_NO
+             , RLSE_SRNO
+             , MNFU_NM
+             , HS_CD
+             , HDCB_RLSE_DTTM
+             , ARLC_JRSD_ORGN_CD
+             , ARLC_IBOBZ_CD
+             , HDCB_RLSE_PT_CD
+             , HDCB_RLSE_METH_CD
+             , RELA_NO
+             , HDCB_SEND_METH_ACPE_AQTY
+             , MSRM_UT_NM
+             , RLSE_DTTM
+             , RLSE_TPRT
+             , WL_HIGT_MT
+             , ISTA_DTTM
+             , SHPM_BF_QTY
+             , SHPM_AF_QTY
+             , RLSE_PT_QTY
+             , TANKER_SSIS_NO
+             , VHCL_RGSR_NO
+             , DRVR_NM
+             , TRNP_LCNE_NO
+             , SHIP_REFF_NM
+             , CAPT_NM
+             , PILI_REFF_NM
+             , CUNT_REFF_NM
+             , ATCH_FILE_ID
+             , DEL_YN
+             , FRST_REGST_ID
+             , SYSTIMESTAMP
+             , LAST_CHPR_ID
+             , SYSTIMESTAMP
+         FROM TB_CARI_HDCB_RPRT_MAKE_RLSE
+        WHERE DEL_YN = 'N'
+          AND HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}
+    </insert>
+
+    <insert id="insertHdcbRprtAudtWsh" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        INSERT INTO TB_CARI_HDCB_RPRT_AUDT_WSH
+        SELECT HDCB_BSOP_RPRT_NO
+             , WSH_SRNO
+             , WSH_DTTM
+             , WSH_TP_CD
+             , WSH_QTY
+             , MSRM_UT_NM
+             , ATCH_FILE_ID
+             , DEL_YN
+             , FRST_REGST_ID
+             , SYSTIMESTAMP
+             , LAST_CHPR_ID
+             , SYSTIMESTAMP
+         FROM TB_CARI_HDCB_RPRT_MAKE_WSH
+        WHERE DEL_YN = 'N'
+          AND HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}
+    </insert>
+
+    <insert id="insertHdcbRprtAudtPick" parameterType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        INSERT INTO TB_CARI_HDCB_RPRT_AUDT_PICK
+        SELECT HDCB_BSOP_RPRT_NO
+             , PICK_SRNO
+             , PICK_DTTM
+             , CTNR_NO
+             , PICK_QTY
+             , MSRM_UT_NM
+             , ANST_NM
+             , ANST_EMP_NM
+             , WDRW_PSBL_YN
+             , ATCH_FILE_ID
+             , DEL_YN
+             , FRST_REGST_ID
+             , SYSTIMESTAMP
+             , LAST_CHPR_ID
+             , SYSTIMESTAMP
+         FROM TB_CARI_HDCB_RPRT_MAKE_PICK
+        WHERE DEL_YN = 'N'
+          AND HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}
+    </insert>
+
+    <!--
+    Vérifier les informations sur l'état de l'activité des hydrocarbures réceptionné dans le même numéro d'ordre.
+    !== 동일차수로 접수된 탄화수소보고정보를 확인. ==!
+    -->
+    <select id="selectRprtDgcntChk" resultType="Boolean">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.selectRprtDgcntChk */
+        SELECT CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END RPRT_DGCNT_CHK
+        FROM TB_CARI_HDCB_RPRT_MAKE
+        WHERE DEL_YN = 'N'
+          AND RPRT_DT = TO_CHAR(TO_DATE( #{rprtDt}, 'DD/MM/YYYY'),'YYYYMMDD')
+          AND HDCB_BSOP_PT_CD = #{hdcbBsopPtCd}
+          AND HDCB_TP_CD = #{hdcbTpCd}
+          AND IBOBZ_CD = #{ibobzCd}
+          AND JRSD_ORGN_CD = #{jrsdOrgnCd}
+          AND RPRT_DGCNT = #{rprtDgcnt}
+          AND PRCS_STTS_CD IN ('D01','D08')
+    </select>
+
+    <!--
+    Vérifier si l'état de l'activité des hydrocarbures est réceptionné ou non en interne/externe.
+    !== 내/외부 탄화수소보고 접수가 되었는지 확인.==!
+    -->
+    <select id="selectRprtAcapInfo" resultType="alpass.ipt.car.hdcb.rprt.vo.CarHdcbRprtMakeVo">
+        /* alpass.ipt.car.hdcb.rprt.mapper.CarHdcbRprtMakeMapper.selectRprtAcapInfo */
+        SELECT A.HDCB_BSOP_RPRT_NO AS IPT_HDCB_BSOP_RPRT_NO
+             , B.HDCB_BSOP_RPRT_NO AS EPT_HDCB_BSOP_RPRT_NO
+          FROM TB_CARI_HDCB_RPRT_MAKE A
+          LEFT OUTER JOIN TB_CARE_HDCB_RPRT_MAKE B
+            ON A.RPRT_DT = B.RPRT_DT
+           AND A.HDCB_BSOP_PT_CD = B.HDCB_BSOP_PT_CD
+           AND A.HDCB_TP_CD = B.HDCB_TP_CD
+           AND A.IBOBZ_CD = B.IBOBZ_CD
+           AND A.RPRT_DGCNT = B.RPRT_DGCNT
+         WHERE A.HDCB_BSOP_RPRT_NO = #{hdcbBsopRprtNo}
+         AND A.DEL_YN = 'N' AND B.DEL_YN = 'N'
+    </select>
+
+</mapper>

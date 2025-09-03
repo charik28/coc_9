@@ -668,7 +668,7 @@ CREATE TABLE alpassint.tb_poti_impv_opin (
 	pbsr_no varchar(7) NULL,
 	CONSTRAINT tb_poti_impv_opin_pk PRIMARY KEY (impv_opin_srno)
 );
-
+alter TABLE alpassint.tb_poti_impv_opin add column impv_opin_lqty_cn varchar null;
 
 -- alpassint.tb_poti_emp_auth definition
 

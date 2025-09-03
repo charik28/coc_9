@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.car.com.mapper.CarComMapper">
+
+  <!--
+   Consulter la liste des codes d'article !==아이템코드 목록을 조회==!
+  -->
+  <select id="selectCarComItmCdList"
+          parameterType="alpass.ipt.car.dfsh.mgmt.vo.CarDfshItmCdVo"
+          resultType="alpass.ipt.car.dfsh.mgmt.vo.CarDfshItmCdVo">
+	/* alpass.ipt.car.com.mapper.CarComMapper.selectCarComItmCdList */
+	  <include refid="pagination.header"/>
+      SELECT TCIC.ITM_CD                                       /* Code D'Article !== 아이템코드 ==! */
+           , TCIC.DFSH_TP_CD                                   /* Code de type de magasin hors taxes !== 면세점구분코드 ==! */
+           , TCIC.ITM_NM                                       /* Nom D'Article !== 아이템명 ==! */
+           , TCIC.HS_CD                                        /* Code Sh !== HS코드 ==! */
+		   , (SELECT TCHC.HS_DESC
+				FROM TB_CLRI_HS_CD TCHC
+			   WHERE TCHC.DEL_YN = 'N'
+				 AND TCHC.HS_CD = TCIC.HS_CD
+				 AND TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD') BETWEEN TCHC.HS_APLY_STRT_DT AND TCHC.HS_APLY_END_DT) AS HS_CD_NM
+           , TCIC.RQST_TP_CD                                    /* Code De Type De Demande !== 신청구분코드 ==! */
+           , TCIC.UT_PRC                                        /* Prix Unitaire !== 단위가격 ==! */
+           , TCIC.CURR_CD                                       /* Code De Devise !== 통화코드 ==! */
+           , TCIC.MSRM_UT_CD                                    /* Code d'unité de mesure !== 측정단위코드 ==!  */
+        FROM TB_CARE_ITM_CD TCIC
+       WHERE 1=1
+         AND DEL_YN = 'N'
+         AND PRCS_STTS_CD = 'A02'
+         AND RQST_TP_CD = '01' /** Code de type de demande !==신청구분코드==! */
+	<if test="searDfshTpCd != '' and searDfshTpCd != null">
+         AND TCIC.DFSH_TP_CD = #{searDfshTpCd}
+    </if>
+    <if test="searItmCd != '' and searItmCd != null">
+         AND TCIC.ITM_CD LIKE '%' || #{searItmCd} || '%'
+    </if>
+    <if test="searItmNm != '' and searItmNm != null">
+         AND TCIC.ITM_NM LIKE '%' || #{searItmNm} || '%'
+    </if>
+    <if test="searHsCd != '' and searHsCd != null">
+         AND TCIC.HS_CD LIKE '%' || #{searHsCd} || '%'
+    </if>
+    <if test="searHsDesc != '' and searHsDesc != null">
+         AND EXISTS(SELECT 1
+                      FROM TB_CLRI_HS_CD)
+                     WHERE HS_DESC LIKE '%' || #{searHsDesc} || '%'
+    </if>
+	  <include refid="pagination.footer"/>
+  </select>
+
+
+  <select id="selectComCoDclrCdUserRel" parameterType="String" resultType="alpass.ipt.car.com.vo.CarComCoDclrVo">
+    SELECT A.TIN                        /** TODO : 번역필요 !== 사업자등록번호 ==! */
+         , A.CO_DCLR_CD                 /** Code De Déclaration De L'Entreprise !== 업체신고코드 ==! */
+         , A.USER_ID                    /** Id D'Utilisateur !== 사용자ID ==! */
+         , ( SELECT CO_DCLR_TP_CD
+               FROM TB_COM_CO_DCLR_CD C
+              WHERE C.CO_DCLR_CD = A.CO_DCLR_CD
+                AND C.TIN = A.TIN
+           ) AS CO_DCLR_TP_CD
+    FROM   TB_COM_CO_DCLR_CD_USER_REL A
+    WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+      AND  A.USER_ID = #{userId}                       /** Id D'Utilisateur !== 사용자ID ==! */
+  </select>
+
+  <select id="selectGsnTpValues" parameterType="alpass.ipt.car.com.vo.CarComSrnoMakeVo" resultType="string">
+        /* CareCom_selectGsnTpValues : 문서 일련번호를 채번하기 위한 채번 구분값을 생성처리 한다 (업체코드 +  년도 + 문서구분코드) */
+      SELECT (CASE WHEN #{yearsUseAt,jdbcType=VARCHAR} = 'Y' THEN TRIM(CONCAT(TO_CHAR(SYSDATE,'YYYY'),#{aplcCd,jdbcType=VARCHAR},#{docClsfCd,jdbcType=VARCHAR}))
+                   WHEN #{yearsUseAt,jdbcType=VARCHAR} = 'Y2' THEN TRIM(CONCAT(TO_CHAR(SYSDATE,'YY'),#{aplcCd,jdbcType=VARCHAR},#{docClsfCd,jdbcType=VARCHAR}))
+                   ELSE TRIM(#{aplcCd,jdbcType=VARCHAR} || #{docClsfCd,jdbcType=VARCHAR})
+                   END) AS GSN_TP_VAL
+	      FROM DUAL
+  </select>
+
+  <select id="selectDbDateTime" parameterType="java.lang.String" resultType="java.lang.String">
+        /** CarCom_selectDbDateTime */
+        SELECT TO_CHAR(SYSTIMESTAMP, #{dateType}) FROM DUAL
+  </select>
+
+	<select id="selectPrmtValue" parameterType="java.lang.String" resultType="java.lang.String">
+        /** CarComMapper.selectPrmtValue */
+        SELECT PRMT_VAL_CN
+		  FROM TB_COM_PRMT
+		 WHERE 1=1
+		   AND PRMT_ID = #{prmtId}
+		   AND DEL_YN = 'N'
+		   AND ROWNUM = 1
+  </select>
+
+  <!--
+    Voir les détails de la  Id Du Libellé
+    (Lee KyoungSung)
+    -->
+	<select id="selectComLblNm" parameterType="alpass.ipt.car.com.vo.CarComLibVo" resultType="alpass.ipt.car.com.vo.CarComLibVo">
+	    /** CarCom_selectComLblNm */
+		SELECT LISTAGG(B.LANG_CD, '♪') WITHIN GROUP (ORDER BY B.LBL_NM)  AS LANG_DIV
+		     , LISTAGG(B.LBL_NM, '♪') WITHIN GROUP (ORDER BY B.LBL_NM)  AS NM_DIV
+		  FROM TB_COM_LBL A, TB_COM_LBL_LANG B
+		 WHERE A.LBL_ID = B.LBL_ID
+           AND A.USE_YN = 'Y'
+		   AND A.DEL_YN = 'N'
+		   AND B.DEL_YN = 'N'
+		   AND A.LBL_ID = #{lblId}
+		 GROUP BY B.LBL_ID
+	</select>
+
+    <select id="selectLoginCoDclrCdList" parameterType="alpass.ipt.car.com.vo.CarComVo" resultType="alpass.ipt.car.com.vo.CarComVo">
+        /** selectLoginCoDclrCdList : On voit les informations sur 'Code de déclaration de l'entreprise'. !==업체신고코드 정보를 조회한다.==! */
+    	<choose>
+	    	<when test="@alpass.ipt.car.com.util.CarMyBatisUtil@isEqualsStr(coDclrTpCd,'F')">
+			SELECT B.IBOBZ_CD   AS ITEM      ,
+			       B.IBOBZ_NM   AS ITEM_NM   ,
+			       'L_IBOBZ'    AS ITEM_LABEL
+			FROM   TB_COM_CO_DCLR_CD A,
+			       ALPASSINT.TB_CARI_IBOBZ B
+			WHERE  A.CO_DCLR_CD		= B.IBOBZ_CO_CD
+			AND	   A.DEL_YN			= 'N'
+			AND	   B.DEL_YN			= 'N'
+			AND    B.OPRN_CESE_YN   = 'N'
+			AND    B.ATPM_WDRL_YN   = 'N'
+			AND    A.CO_DCLR_TP_CD	IN ('F', 'G')
+			AND    A.NIF			= #{nif}
+			</when>
+	    	<when test="@alpass.ipt.car.com.util.CarMyBatisUtil@isEqualsStr(coDclrTpCd,'F2')">
+			SELECT A.CO_DCLR_CD AS ITEM      ,
+			       B.CO_NM      AS ITEM_NM   ,
+			       ''           AS ITEM_LABEL
+			FROM   TB_COM_CO_DCLR_CD A,
+				   TB_COM_CO         B
+			WHERE  A.NIF			= B.NIF
+			AND	   A.DEL_YN			= 'N'
+			AND    A.CO_DCLR_TP_CD	IN ('F', 'G', 'H')
+			AND    A.NIF			= #{nif}
+			</when>
+			<otherwise>
+			SELECT A.CO_DCLR_CD AS ITEM      ,
+			       A.CO_DCLR_CD AS ITEM_NM   ,
+			       ''           AS ITEM_LABEL
+			FROM   TB_COM_CO_DCLR_CD A
+			WHERE  A.DEL_YN         = 'N'
+			AND    A.NIF			= #{nif}
+			AND    A.CO_DCLR_TP_CD	= #{coDclrTpCd}
+			</otherwise>
+		</choose>
+    </select>
+
+    <select id="selectJrsdOrgnCdListWithIbobzCd" parameterType="alpass.ipt.car.com.vo.CarComVo" resultType="alpass.ipt.car.com.vo.CarComVo">
+        /** selectJrsdOrgnCdListWithIbobzCd */
+        SELECT J.ORGN_CD AS ITEM   ,
+               J.ORGN_NM AS ITEM_NM
+          FROM TB_POTI_ORGN J
+         WHERE J.DEL_YN = 'N'
+           AND J.ORGN_CD IN (SELECT B.JRSD_ORGN_CD
+			                   FROM TB_COM_CO_DCLR_CD       A,
+			                        ALPASSINT.TB_CARI_IBOBZ B
+			                  WHERE A.CO_DCLR_CD		= B.IBOBZ_CO_CD
+			                    AND A.DEL_YN        = 'N'
+			                    AND B.DEL_YN        = 'N'
+			                    AND B.PRCS_STTS_CD  = '30'
+			                    AND A.CO_DCLR_TP_CD IN ('F', 'G')
+			                    AND B.IBOBZ_CD      = #{ibobzCd})
+    </select>
+
+    <select id="selectCarCagIbobzCdNm" parameterType="alpass.ipt.car.com.vo.CarComVo" resultType="alpass.ipt.car.com.vo.CarComVo">
+        /** selectCarCagIbobzCdNm */
+        SELECT K.IBOBZ_CD AS ITEM   ,
+               K.IBOBZ_NM AS ITEM_NM
+          FROM ALPASSINT.TB_CARI_IBOBZ K
+         WHERE K.OPRN_CESE_YN = 'N'
+           AND K.ATPM_WDRL_YN = 'N'
+           AND K.IBOBZ_CD     = #{ibobzCd}
+    </select>
+
+    <select id="selectIbobzNmWithJrsdOrgn" parameterType="alpass.ipt.car.com.vo.CarComVo" resultType="alpass.ipt.car.com.vo.CarComVo">
+        /** selectIbobzNmWithJrsdOrgn */
+        SELECT   K.IBOBZ_CD
+               , K.IBOBZ_NM
+               , K2.ORGN_CD AS JRSD_ORGN_CD
+               , K2.ORGN_NM AS JRSD_ORGN_NM
+          FROM TB_CARI_IBOBZ K,
+               TB_POTI_ORGN  K2
+         WHERE K.DEL_YN       = 'N'
+           AND K.OPRN_CESE_YN = 'N'
+           AND K.ATPM_WDRL_YN = 'N'
+           AND K2.DEL_YN      = 'N'
+           AND K.JRSD_ORGN_CD = K2.ORGN_CD
+           AND K.IBOBZ_CD     = #{ibobzCd}
+    </select>
+
+    <select id="selectCarCagIbobzCdList" parameterType="alpass.ipt.car.com.vo.CarComVo" resultType="alpass.ipt.car.com.vo.CarComVo">
+        /** selectCarCagIbobzCdNm */
+        SELECT K.IBOBZ_CD     AS ITEM        ,
+               K.IBOBZ_NM     AS ITEM_NM	 ,
+			   K.jrsd_orgn_cd
+          FROM TB_CARI_IBOBZ K,
+               TB_POTI_ORGN  K2
+         WHERE K.DEL_YN       = 'N'
+           AND K.OPRN_CESE_YN = 'N'
+           AND K.ATPM_WDRL_YN = 'N'
+           AND K2.DEL_YN      = 'N'
+           AND K.JRSD_ORGN_CD = K2.ORGN_CD
+           <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(ibobzCd)">
+           AND K.IBOBZ_CD     = #{ibobzCd}
+           </if>
+           <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(ibobzCd)">
+           AND K.IBOBZ_NM     LIKE '%' || #{ibobzCd} || '%'
+           </if>
+    </select>
+
+    <select id="selectCarJrsdOrgnCdList" parameterType="alpass.ipt.car.com.vo.CarComVo" resultType="alpass.ipt.car.com.vo.CarComVo">
+        /** selectCarJrsdOrgnCdList : Voir la liste de 'Code d'unité compétente' !==관할조직코드 목록을 조회한다.==! */
+          SELECT ORGN_CD AS ITEM   ,
+                 ORGN_NM As ITEM_NM
+            FROM TB_POTI_ORGN A
+           WHERE A.DEL_YN = 'N'
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(orgnTpCd)">
+             AND A.ORGN_TP_CD IN (#{orgnTpCd})
+             </if>
+        ORDER BY A.ORGN_CD
+    </select>
+
+    <select id="selectCarCagIbobzCdListWithPagenation" parameterType="alpass.ipt.car.com.vo.CarComVo" resultType="alpass.ipt.car.com.vo.CarComVo">
+        /** selectCarCagIbobzCdListWithPagenation */
+        <include refid="pagination.header" />
+        SELECT K.IBOBZ_CD     AS IBOBZ_CD
+             , K.IBOBZ_NM     AS IBOBZ_NM
+             , K.IBOBZ_TP_CD  AS IBOBZ_TP_CD
+             , K.JRSD_ORGN_CD AS JRSD_ORGN_CD
+             , K2.ORGN_NM     AS JRSD_ORGN_NM
+             , K.IBOBZ_CO_CD  AS CO_DCLR_CD
+		     , FN_GET_CD_VDVAL_NM('COM_0016',NVL(K.CAG_KND_RSK_YN,'N'), #{langCd}) AS CAG_KND_RSK_YN
+          FROM TB_CARI_IBOBZ K
+             , TB_POTI_ORGN  K2
+         WHERE K.DEL_YN       = 'N'
+           AND K.OPRN_CESE_YN = 'N'
+           AND K.ATPM_WDRL_YN = 'N'
+           AND K2.DEL_YN      = 'N'
+           AND K.JRSD_ORGN_CD = K2.ORGN_CD
+		   <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEqualsStr(cagRqstTpCd,'MCG') and @alpass.ipt.car.com.util.CarMyBatisUtil@isNotEqualsStr(cagRqstTpCd,'MCC')">
+		   AND K.IBOBZ_CO_CD != '00000'
+		   </if>
+           <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(ibobzCd)">
+           AND K.IBOBZ_CD     LIKE #{ibobzCd} || '%'
+           </if>
+           <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(ibobzNm)">
+           AND K.IBOBZ_NM     LIKE '%' || #{ibobzNm} || '%'
+           </if>
+           <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(coDclrCd)">
+           AND K.IBOBZ_CO_CD  LIKE '%' || #{coDclrCd} || '%'
+           </if>
+		   <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(uprJrsdOrgnCd)">
+		   AND K.JRSD_ORGN_CD LIKE SUBSTR(#{uprJrsdOrgnCd},0,3) || '%'
+		   </if>
+           <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(jrsdOrgnCd)">
+           AND K.JRSD_ORGN_CD LIKE #{jrsdOrgnCd} || '%'
+           </if>
+           <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(ibobzTpCd)">
+           AND K.IBOBZ_TP_CD LIKE #{ibobzTpCd} || '%'
+           </if>
+  		   <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(cagKndRskYn)">
+			AND NVL(K.CAG_KND_RSK_YN,'N') = #{cagKndRskYn}
+		   </if>
+		 ORDER BY K.IBOBZ_CD, K.JRSD_ORGN_CD
+        <include refid="pagination.footer" />
+    </select>
+
+    <select id="selectEmpByAuthList" parameterType="java.util.Map" resultType="alpass.ipt.car.com.vo.CarComVo">
+      /** selectEmpByAuthList */
+			SELECT
+				  DISTINCT T1.PBSR_NO AS ITEM
+			   , LTRIM(CONCAT(T3.EMP_FMNM,' ',T3.EMP_NM)) AS ITEM_NM
+			FROM VW_POTI_ROLE_UNFC T1
+			   , TB_POTI_EMP T3
+			   , TB_POTI_ORGN T4
+			WHERE T3.DEL_YN = 'N'
+		    AND T4.DEL_YN = 'N'
+		    AND T1.PBSR_NO = T3.PBSR_NO
+		    AND T3.ORGN_MGMT_CD = T4.ORGN_MGMT_CD
+			  <if test="jrsdOrgnCd != null and jrsdOrgnCd != '' ">
+			    AND EXISTS (
+			          SELECT ORGN_MGMT_CD
+			          FROM TB_POTI_ORGN
+			          WHERE ACTV_CSTM_CD LIKE '%'||(SELECT ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{jrsdOrgnCd})||'%'
+			            AND (ORGN_MGMT_CD = T4.ORGN_MGMT_CD
+			                OR ORGN_MGMT_CD = T4.UPR_ORGN_MGMT_CD)
+			        )
+			    AND FN_GET_EMP_BWRK_STTS(T3.PBSR_NO, 'Y') = 'TRUE'
+			  </if>
+			  <if test="roleId != null and roleId != '' ">
+				  AND T1.ROLE_ID=#{roleId}
+			  </if>
+			  <if test="roleIdList != null and roleIdList != '' ">
+	        AND T1.ROLE_ID IN
+	        <foreach collection="roleIdList.split(',')" item="item" index="index" separator="," open="(" close=")">
+	          #{item}
+	        </foreach>
+	      </if>
+			ORDER BY T1.PBSR_NO
+    </select>
+
+    <!--
+	On sauvegarde les informations sur 'Historique de la modification des inspecteurs/préposés à la visite'. !==심사자/검사자 변경 이력 정보를 저장한다.==!
+	(Roh Sideuk)
+	-->
+	<insert id="insertHnotChgHist" parameterType="java.util.Map">
+		/* insertHnotChgHist */
+		INSERT INTO TB_CARI_HNOT_CHG_H (
+			CHG_HIST_SRNO                                               /** N° De Séquence De L'Historique De Changement !== 변경이력일련번호 ==! */
+	        , CAG_RQST_NO                                                 /** N° De Demande De Cargaison !== 화물신청번호 ==! */
+	        , CAG_RQST_TP_CD                                              /** Code de classement du suivi du fret !== 화물추적구분코드 ==! */
+	        , RQST_DGCNT                                                  /** N° ordre de la demande !== 신청차수 ==! */
+<!-- 	        , ORGN_TP_CD                                                  /** Code Distintif D'Unité !== 조직구분코드 ==! */ -->
+	        , EMP_TP_CD                                                   /** Code De Catégorie De Chargé !== 직원구분코드 ==! */
+	        , HNOT_EMP_ID                                                 /** ID du chargé de cotation !== 배부직원ID ==! */
+	        , BFCH_EMP_ID                                                 /** Id De L'Inspecteur Avant La Modification !== 변경전직원ID ==! */
+	        , AFCH_EMP_ID                                                 /** Id De L'Inspecteur Aprés La Modification !== 변경후직원ID ==! */
+	        , CHG_RSN_CN                                                  /** Motif De La Modification !== 변경사유내용 ==! */
+	        , DEL_YN                                                      /** Suppression On !== 삭제여부 ==! */
+	        , FRST_REGST_ID                                               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+	        , FRST_RGSR_DTTM                                              /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+	        , LAST_CHPR_ID                                                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+	        , LAST_CHG_DTTM                                               /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		)
+		SELECT
+			(SELECT NVL(MAX(TO_NUMBER(CHG_HIST_SRNO)) + 1, 0) FROM TB_CARI_HNOT_CHG_H)
+			, CAG_RQST_NO                      		/** N° de demande !==신청번호==! */
+			, CAG_RQST_TP_CD                    /** Code de type de demande de cargaison !==화물신청구분코드==! */
+			, RQST_DGCNT                      	/** Nombre de fois de la demande !==신청차수==! */
+<!-- 			, #{orgnTpCd} -->
+			, #{empTpCd}
+			, #{ hnotEmpId }                  	/** ID de distributeur !==배부직원ID==! */
+			<if test="audtEmpId != null and audtEmpId != '' ">
+				, NVL((SELECT AUDT_EMP_ID FROM TB_CARI_CAG_PRCS_BRKD WHERE CAG_RQST_NO = #{cagRqstNo} AND CAG_RQST_TP_CD = #{cagRqstTpCd} AND RQST_DGCNT = #{ rqstDgcnt }),'SYSTEM')			/** ID de l'inspecteur avant la modification !==변경전직원ID==! */
+				, #{audtEmpId}       			/** ID de l'inspecteur après la modification !==변경후직원ID==! */
+			</if>
+			<if test="inscEmpId != null and inscEmpId != '' ">
+				, NVL((SELECT INSC_EMP_ID FROM TB_CARI_CAG_PRCS_BRKD WHERE CAG_RQST_NO = #{cagRqstNo} AND CAG_RQST_TP_CD = #{cagRqstTpCd} AND RQST_DGCNT = #{ rqstDgcnt }),'SYSTEM')			/** ID de l'inspecteur avant la modification !==변경전직원ID==! */
+				, #{inscEmpId}       			/** ID de l'inspecteur après la modification !==변경후직원ID==! */
+			</if>
+			<if test="cvyEmpId != null and cvyEmpId != '' ">
+	      , NVL((SELECT CVY_EMP_ID FROM TB_CARI_CAG_PRCS_BRKD WHERE CAG_RQST_NO = #{cagRqstNo} AND CAG_RQST_TP_CD = #{cagRqstTpCd} AND RQST_DGCNT = #{ rqstDgcnt }),'SYSTEM')			/** ID de l'inspecteur avant la modification !==변경전직원ID==! */
+	      , #{cvyEmpId}       			/** ID de l'inspecteur après la modification !==변경후직원ID==! */
+	    </if>
+			, #{chgRsnCn}				/** 변경사유내용 */
+			,'N'						/** Suppression O/N !== 삭제여부 ==! */
+		  	, #{frstRegstId}			/** Identifiant du premier enregistrant  !== 최초등록자ID ==! */
+		  	, SYSTIMESTAMP				/** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+		  	, #{lastChprId}			/** Identifiant du modificateur final !== 최종변경자ID ==! */
+		  	, SYSTIMESTAMP             /** Date et heure de modification finale !== 최종변경일시 ==! */
+		FROM TB_CARI_CAG_PRCS_BRKD
+		WHERE
+			CAG_RQST_TP_CD = #{ cagRqstTpCd }		/** Code de type de demande de cargaison !==화물신청구분코드==! */
+			AND CAG_RQST_NO = #{ cagRqstNo }				/** N° de demande !==신청번호==! */
+			AND RQST_DGCNT = #{ rqstDgcnt }			/** Nombre de fois de la demande !==신청차수==! */
+	  	AND DEL_YN = 'N'
+	</insert>
+
+	<!--
+	Historique de la modification des inspecteurs/préposés à la visite !==심사자/검사자 변경 이력==!
+	(Kim Youngdae)
+	-->
+    <select id="selectCarHnotChghList"
+            parameterType="java.util.Map"
+            resultType="alpass.ipt.car.com.vo.CarHnotChgHVo">
+		/* selectCarHnotChghList*/
+		SELECT ROWNUM AS CHG_HIST_SRNO
+		     , A.CAG_RQST_NO                      		/** N° de demande !==신청번호==! */
+			 , A.CAG_RQST_TP_CD                    	/** Code de type de demande de cargaison !==화물신청구분코드==! */
+			 , A.RQST_DGCNT                      		/** Nombre de fois de la demande !==신청차수==! */
+			 , A.HNOT_EMP_ID                      	/** ID de distributeur !==배부직원ID==! */
+       		 , A.HNOT_EMP_NM
+			 , A.BFCH_EMP_ID                      	/** ID de l'inspecteur avant la modification !==변경전직원ID==! */
+       		 , A.BFCH_EMP_NM
+			 , A.AFCH_EMP_ID                      	/** ID de l'inspecteur après la modification !==변경후직원ID==! */
+       		 , A.AFCH_EMP_NM
+			 , A.CHG_RSN_CN							/** Motif de la modification !==변경사유내용==! */
+			 , A.PRCS_DTTM AS LAST_CHG_DTTM
+			 , A.PRCS_DT AS LAST_CHG_DT
+       		 , A.PRCS_TM AS LAST_CHG_TM
+		  FROM (
+				SELECT CHG_HIST_SRNO						/** N° de séquence de l'historique de changement !==변경이력일련번호==! */
+					 , CAG_RQST_NO                      		/** N° de demande !==신청번호==! */
+					 , CAG_RQST_TP_CD                    	/** Code de type de demande de cargaison !==화물신청구분코드==! */
+					 , RQST_DGCNT                      		/** Nombre de fois de la demande !==신청차수==! */
+					 , HNOT_EMP_ID                      	/** ID de distributeur !==배부직원ID==! */
+           			 , (SELECT EMP_NM FROM TB_POTI_EMP TT1 WHERE TT1.PBSR_NO = HNOT_EMP_ID) AS HNOT_EMP_NM
+					 , BFCH_EMP_ID                      	/** ID de l'inspecteur avant la modification !==변경전직원ID==! */
+           			 , (SELECT EMP_NM FROM TB_POTI_EMP TT1 WHERE TT1.PBSR_NO = BFCH_EMP_ID) AS BFCH_EMP_NM
+					 , AFCH_EMP_ID                      	/** ID de l'inspecteur après la modification !==변경후직원ID==! */
+           			 , (SELECT EMP_NM FROM TB_POTI_EMP TT1 WHERE TT1.PBSR_NO = AFCH_EMP_ID) AS AFCH_EMP_NM
+					 , CHG_RSN_CN							/** Motif de la modification !==변경사유내용==! */
+					 , TO_CHAR(LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI') AS PRCS_DTTM	/** Date et heure de traitement !==처리일시==! */
+					 , TO_CHAR(LAST_CHG_DTTM,'DD/MM/YYYY') AS PRCS_DT  /** Date et heure de traitement !==처리일시==! */
+           			 , TO_CHAR(LAST_CHG_DTTM,'HH24:MI') AS PRCS_TM  /** Date et heure de traitement !==처리일시==! */
+				  FROM TB_CARI_HNOT_CHG_H
+				 WHERE CAG_RQST_TP_CD = #{ cagRqstTpCd }		/** Code de type de demande de cargaison !==화물신청구분코드==! */
+				   AND CAG_RQST_NO = #{ cagRqstNo }				/** N° de demande !==신청번호==! */
+				   AND RQST_DGCNT = #{ rqstDgcnt }			/** Nombre de fois de la demande !==신청차수==! */
+				   <if test="empTpCd != null and empTpCd != '' ">
+						AND EMP_TP_CD = #{empTpCd} /**Code de catégorie d'inspecteur/préposé à l'écor !==직원구분코드==!*/
+				   </if>
+				 ORDER BY CHG_HIST_SRNO DESC
+		     ) A
+		 ORDER BY A.CHG_HIST_SRNO DESC
+	</select>
+
+	<select id="selectJrsdOrgnListByPbsrNo" parameterType="alpass.ipt.car.com.vo.CarComVo" resultType="alpass.ipt.car.com.vo.CarComVo">
+		<![CDATA[
+		/** selectJrsdOrgnListByPbsrNo */
+		SELECT S.ORGN_CD              AS ITEM
+				 , S.ORGN_TP_CD           AS ITEM_NM2
+				 , (SELECT CD_VDVAL_NM
+						FROM TB_COM_COMN_CD_D_LANG
+						WHERE COMN_CD = 'POT_0002' AND CD_VDVAL = S.ORGN_TP_CD AND LANG_CD = #{langCd}) AS ITEM_NM3
+				 , S.ORGN_NM              AS ITEM_NM
+		FROM (SELECT Y.ORGN_MGMT_CD
+							 , Y.ORGN_CD
+							 , Y.ORGN_TP_CD
+							 , Y.ORGN_NM
+					FROM TB_POTI_ORGN Y
+					WHERE Y.DEL_YN = 'N'
+						START WITH Y.ORGN_MGMT_CD = (SELECT CSTM_MGMT_CD FROM TB_POTI_EMP WHERE PBSR_NO = #{pbsrNo})
+					CONNECT BY PRIOR Y.ORGN_MGMT_CD = Y.UPR_ORGN_MGMT_CD) S
+		]]>
+	</select>
+	
+	<select id="selectActvCstmListByPbsrNo" parameterType="alpass.ipt.car.com.vo.CarComVo" resultType="alpass.ipt.car.com.vo.CarComVo">
+		<![CDATA[
+		/** selectActvCstmListByPbsrNo */
+		SELECT S.ORGN_CD AS ITEM
+			 , S.ORGN_TP_CD AS ITEM_NM2
+		  	 , (SELECT CD_VDVAL_NM
+				  FROM TB_COM_COMN_CD_D_LANG
+				 WHERE COMN_CD = 'POT_0002' AND CD_VDVAL = S.ORGN_TP_CD AND LANG_CD = #{langCd}) AS ITEM_NM3
+			 , S.ORGN_NM AS ITEM_NM
+		  FROM TB_POTI_ORGN S
+         INNER JOIN ( SELECT ORGN_CD, LEVEL AS LV
+  		                FROM TB_POTI_ORGN
+                       WHERE DEL_YN = 'N'
+		               START WITH ORGN_MGMT_CD = (SELECT ORGN_MGMT_CD FROM TB_POTI_EMP WHERE PBSR_NO = #{pbsrNo})
+		             CONNECT BY PRIOR ORGN_MGMT_CD = UPR_ORGN_MGMT_CD
+		       ) D
+		    ON S.ORGN_CD = D.ORGN_CD
+		 WHERE 1=1
+		   AND D.LV IN ( 1, 2)
+		ORDER BY S.ORGN_CD;
+		]]>
+	</select>
+	
+	<select id="selectCarCoDclrCdInfo" parameterType="alpass.com.co.vo.ComCoDclrCdVo" resultType="alpass.com.co.vo.ComCoDclrCdVo">
+        /** selectCarCoDclrCdInfo */
+        SELECT A.NIF           ,   
+               A.CO_NM         , /** Nom De L'Entreprise !==전송업체명==! */
+               A.CO_ADDR       ,
+               A.RPRS_TLPH_NO  ,
+               A.CMRC_REGS_NO  , /** Numéro de registre du commerce !== 상업등기번호 ==! */
+               A.PERM_NO         /** N° autorisation !== 허가번호 ==! */
+          FROM TB_COM_CO         A,
+               TB_COM_CO_DCLR_CD B
+        WHERE A.NIF        = B.NIF
+          AND A.DEL_YN     = 'N'
+          AND A.PRCS_STTS_CD = 'O'
+          AND B.DEL_YN     = 'N'
+          and B.USE_YN = 'Y'
+          AND B.CO_DCLR_CD = #{coDclrCd}
+    </select>
+    
+    <select id="selectCarCoDclrCdInfoCagMgmtNo" parameterType="string" resultType="alpass.com.co.vo.ComCoDclrCdVo">
+        /** selectCarCoDclrCdInfoCagMgmtNo */
+        SELECT A.NIF           ,   
+               A.CO_NM         , /** Nom De L'Entreprise !==전송업체명==! */
+               A.CO_ADDR       ,
+               A.RPRS_TLPH_NO  ,
+               A.CMRC_REGS_NO  , /** Numéro de registre du commerce !== 상업등기번호 ==! */
+               A.PERM_NO         /** N° autorisation !== 허가번호 ==! */
+          FROM TB_COM_CO         A
+    INNER JOIN TB_COM_CO_DCLR_CD B
+            ON A.NIF        = B.NIF
+     LEFT JOIN tb_cari_cag_dcsh_bl c
+            ON B.CO_DCLR_CD = C.FRWR_cD
+           AND C.DEL_YN = 'N'
+         WHERE A.DEL_YN     = 'N'
+           AND A.PRCS_STTS_CD = 'O'
+           AND B.DEL_YN     = 'N'
+           and B.USE_YN = 'Y'
+           AND C.CAG_MGMT_NO = SUBSTR(#{value},1,20)
+    </select>
+
+	<select id="selectOrgnCdLv1" resultType="alpass.com.comn.vo.ComItemVo">
+		/** selectOrgnCdLv1 */
+		SELECT ORGN_CD AS ITEM
+			 , ORGN_CD || ' | ' || ORGN_NM AS ITEM_NM
+		FROM TB_POTI_ORGN
+		WHERE UPR_ORGN_MGMT_CD = (SELECT ORGN_MGMT_CD
+								  FROM TB_POTI_ORGN
+								  WHERE ORGN_CD = '500000000')
+		  AND ORGN_TP_CD = 'DIR'
+		ORDER BY ADMN_CD
+	</select>
+
+	<select id="selectOrgnCdLv2" resultType="alpass.com.comn.vo.ComItemVo"
+			parameterType="alpass.ipt.car.com.vo.CarComVo">
+		/** selectOrgnCdLv2 */
+		SELECT ORGN_CD AS ITEM
+		     , ORGN_CD || ' | ' || ORGN_NM AS ITEM_NM
+		  FROM TB_POTI_ORGN
+		 WHERE ORGN_TP_CD = 'INS'
+		<if test="uprJrsdOrgnCd != null and uprJrsdOrgnCd != ''">
+		   AND UPR_ORGN_MGMT_CD = (SELECT ORGN_MGMT_CD
+			                         FROM TB_POTI_ORGN
+			                        WHERE ORGN_CD = #{uprJrsdOrgnCd})
+		</if>
+		 ORDER BY ADMN_CD
+	</select>
+	
+
+</mapper>

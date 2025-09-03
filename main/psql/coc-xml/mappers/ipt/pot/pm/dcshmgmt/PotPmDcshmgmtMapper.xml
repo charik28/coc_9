@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.dcshmgmt.mapper.PotPmDcshmgmtMapper">
+
+  <!-- 
+		 Consulter la liste des codes de document !==문서코드 목록을 조회한다.==!
+	 -->
+	<select id="selectComDocCdList" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotComDocCdVo" resultType="alpass.ipt.pot.pm.dcshmgmt.vo.PotComDocCdVo">
+        /* selectComDocCdList */
+        <include refid="pagination.header"/>
+            SELECT
+                  A.DOC_CD                   
+                , A.BSOP_CLSF_CD             
+                , (SELECT FN_GET_CD_VDVAL_NM('COM_0022', A.BSOP_CLSF_CD, #{langCd}) FROM DUAL) AS BSOP_CLSF_NM
+                , A.DOC_RPRS_CD
+                , A.DOC_DTL_CD
+                , A.DOC_PT_CD                
+                , (SELECT FN_GET_CD_VDVAL_NM('COM_0039', A.DOC_PT_CD, #{langCd}) FROM DUAL) AS DOC_PT_CD_NM
+                , (SELECT DOC_NM FROM TB_COM_DOC_CD_LANG WHERE A.DOC_CD = DOC_CD AND LANG_CD=#{langCd} AND DEL_YN='N') AS DOC_NM                 
+                , NVL(A.ELCT_DOC_YN , 'N')  ELCT_DOC_YN              /** Document electronique ON !== 전자문서여부 ==! */
+                , (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(A.ELCT_DOC_YN , 'N'), #{langCd}) FROM DUAL) AS ELCT_DOC_YN_NM
+                , A.ATCH_FILE_ID             
+                , NVL(A.USE_YN , 'N')  USE_YN                  
+                , (SELECT FN_GET_CD_VDVAL_NM('COM_0016',NVL(A.USE_YN , 'N'), #{langCd}) FROM DUAL) AS USE_YN_NM
+                , NVL(A.DCLR_PSBL_ORGN_VRFC_YN , 'N') DCLR_PSBL_ORGN_VRFC_YN
+                , A.DEL_YN                    
+                , B.BFHN_VRFC_PRGM_ID
+				, NVL(B.BFHN_VRFC_YN , 'N')  BFHN_VRFC_YN
+				, (SELECT FN_GET_CD_VDVAL_NM('COM_0016', NVL(B.BFHN_VRFC_YN , 'N'), #{langCd}) FROM DUAL) AS BFHN_VRFC_YN_NM
+				, DECODE(A.ATCH_FILE_ID,NULL,'N','0','N','Y') AS IS_ATCH_FILE_YN
+				, (SELECT FN_GET_CD_VDVAL_NM('COM_0016', DECODE(A.ATCH_FILE_ID,NULL,'N','0','N','Y'), #{langCd}) FROM DUAL) AS IS_ATCH_FILE_YN_NM
+				, DECODE(B.DOC_CD,NULL,'N','Y') IS_EXIST_VRFC
+				, (SELECT DECODE(COUNT(1),0,'N','Y') FROM TB_COM_VRFC_BASE_D WHERE B.DOC_CD = DOC_CD AND DEL_YN='N') VRFC_ITEM_YN
+				, A.CO_DCLR_PT
+            FROM   TB_COM_DOC_CD A, TB_COM_VRFC_BASE B
+            WHERE  A.DEL_YN    = 'N'                               
+	          AND  A.DOC_CD    = B.DOC_CD(+)
+	          AND  A.DEL_YN    = B.DEL_YN(+)
+            <if test='docRprsCd != null and !docRprsCd.equals("")'>		
+			  AND   A.DOC_CD LIKE '%' || UPPER(#{docRprsCd}) || '%'
+			</if>
+			<if test='docNm != null and !docNm.equals("")'>
+			  AND A.DOC_CD IN (SELECT C.DOC_CD
+			                   FROM TB_COM_DOC_CD_LANG C
+			                   WHERE UPPER(C.DOC_NM) LIKE '%'|| UPPER(#{docNm}) || '%'
+			                     AND C.DEL_YN = 'N'         
+			                  )	
+			</if>
+			<if test='bsopClsfCd != null and !bsopClsfCd.equals("")'>	
+			  AND   A.BSOP_CLSF_CD = #{bsopClsfCd}
+			</if>
+			<if test='coDclrPt != null and !coDclrPt.equals("")'>
+			  AND   INSTR(A.CO_DCLR_PT,#{coDclrPt}) &gt; 0
+			</if>
+			ORDER BY A.DOC_CD ASC
+        <include refid="pagination.footer"/>
+  </select>
+
+  <!--
+		 Consulter le code de document par langage !==문서코드를 언어별 조회한다.==!
+	 -->
+  <select id="selectComDocCdDtlLangList" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotComDocCdVo" resultType="alpass.ipt.pot.pm.dcshmgmt.vo.PotDocLangVo">
+		/** selectComDocCdDtlLangList */
+		SELECT 
+		       B.DOC_CD AS KEY1
+		     , A.CD_VDVAL AS LANG_CD
+		     , B.DOC_NM AS LANG_CN
+		FROM TB_COM_COMN_CD_D A, 
+		     TB_COM_DOC_CD_LANG B
+		WHERE A.COMN_CD = 'COM_0057'
+		  AND B.DEL_YN(+) = 'N'
+          AND B.DOC_CD(+) = #{docCd}
+          AND A.CD_VDVAL  = B.LANG_CD(+)
+        ORDER BY TO_NUMBER(A.SORT_ORDR) ASC
+	</select>
+	
+	<!-- 
+		 Consulter les détails du code de document !==문서코드 상세정보를 조회한다.==!
+	 -->
+  <select id="selectComDocCdDtlInfo" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotComDocCdVo" resultType="alpass.ipt.pot.pm.dcshmgmt.vo.PotComDocCdVo">
+      /* selectComDocCdDtlInfo */
+          SELECT
+                A.DOC_CD
+              , A.BSOP_CLSF_CD
+              , (SELECT FN_GET_CD_VDVAL_NM('COM_0022', A.BSOP_CLSF_CD, #{langCd}) FROM DUAL) AS BSOP_CLSF_NM
+              , A.DOC_RPRS_CD
+              , A.DOC_DTL_CD
+              , A.DOC_PT_CD
+              , (SELECT DOC_NM FROM TB_COM_DOC_CD_LANG WHERE A.DOC_CD = DOC_CD AND LANG_CD=#{langCd} AND DEL_YN='N') AS  DOC_NM
+              , NVL(A.ELCT_DOC_YN , 'N') ELCT_DOC_YN
+              , A.ATCH_FILE_ID
+              , NVL(A.DCLR_PSBL_ORGN_VRFC_YN , 'N') DCLR_PSBL_ORGN_VRFC_YN
+              , NVL(A.USE_YN , 'N') USE_YN
+              , A.DEL_YN
+              , B.BFHN_VRFC_PRGM_ID
+      , NVL(B.BFHN_VRFC_YN , 'N') BFHN_VRFC_YN
+      , A.CO_DCLR_PT
+          FROM   TB_COM_DOC_CD A, TB_COM_VRFC_BASE B
+          WHERE  A.DEL_YN = 'N'
+          AND  A.DEL_YN = 'N'
+          AND  A.DOC_CD = B.DOC_CD(+)
+    AND   A.DOC_CD = #{docCd}
+  </select>
+
+   <!--
+		  Modifier un code de document !==문서코드를 수정한다.==!
+	 -->
+  <insert id="insertComDocCdByMerge" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotComDocCdVo">
+	 /*insertComDocCdByMerge*/
+        with upsert as
+        (
+            UPDATE TB_COM_DOC_CD SET
+                    BSOP_CLSF_CD = #{bsopClsfCd}
+                    , DOC_PT_CD = #{docPtCd}
+                    , DOC_NM = #{docNm}
+                    , ELCT_DOC_YN = #{elctDocYn}
+                    , ATCH_FILE_ID = #{atchFileId}
+                    , CO_DCLR_PT = #{coDclrPt}
+                    , DCLR_PSBL_ORGN_VRFC_YN = #{dclrPsblOrgnVrfcYn}
+                    , USE_YN = #{useYn}
+                    , DEL_YN = #{delYn}
+                    , LAST_CHPR_ID = #{lastChprId}
+                    , LAST_CHG_DTTM = SYSTIMESTAMP
+            WHERE DOC_CD = #{docCd}
+            returning *
+        )
+        INSERT INTO TB_COM_DOC_CD
+        (
+                DOC_CD
+                , BSOP_CLSF_CD
+                , DOC_PT_CD
+                , DOC_NM
+                , DOC_RPRS_CD
+                , DOC_DTL_CD
+                , ELCT_DOC_YN
+                , ATCH_FILE_ID
+                , CO_DCLR_PT
+                , DCLR_PSBL_ORGN_VRFC_YN
+                , USE_YN
+                , DEL_YN
+                , FRST_REGST_ID
+                , FRST_RGSR_DTTM
+                , LAST_CHPR_ID
+                , LAST_CHG_DTTM
+        )
+        SELECT
+                #{docCd}
+                , #{bsopClsfCd}
+                , #{docPtCd}
+                , #{docNm}
+                , #{docRprsCd}
+                , NVL(#{docDtlCd},'ZZZ')
+                , #{elctDocYn}
+                , #{atchFileId}
+                <if test='coDclrPt != null and !coDclrPt.equals("")'>
+                    , #{coDclrPt}
+                </if>
+                <if test='coDclrPt == null or coDclrPt.equals("")'>
+                    , (SELECT LISTAGG(CD_VDVAL,'|')  WITHIN GROUP (ORDER BY CD_VDVAL) FROM TB_COM_COMN_CD_D WHERE COMN_CD ='COM_0030' AND DEL_YN = 'N')
+                </if>
+                , #{dclrPsblOrgnVrfcYn}
+                , #{useYn}
+                , 'N'
+                , #{frstRegstId}
+                , SYSTIMESTAMP
+                , #{lastChprId}
+                , SYSTIMESTAMP
+        WHERE NOT exists(select * from upsert)
+	</insert>
+
+  <!--
+     Enregistrer un code de document par langage !==언어별 문서코드를 등록한다==!
+  -->
+	<insert id="insertComDocCdLangByMerge" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotDocLangVo">
+		/*insertComDocCdLangByMerge*/
+        with upsert as
+        (
+            UPDATE TB_COM_DOC_CD_LANG SET
+                    DOC_NM        = #{langCn}
+                    , LAST_CHPR_ID  = #{lastChprId}
+                    , LAST_CHG_DTTM = SYSTIMESTAMP
+                    , DEL_YN        = 'N'
+            WHERE DOC_CD  = #{key1}
+            AND LANG_CD = #{langCd}
+            returning *
+        )
+        INSERT INTO TB_COM_DOC_CD_LANG
+        (
+                DOC_CD
+                , LANG_CD
+                , DOC_NM
+                , DEL_YN
+                , FRST_REGST_ID
+                , FRST_RGSR_DTTM
+                , LAST_CHPR_ID
+                , LAST_CHG_DTTM
+        )
+        SELECT
+                #{key1}
+                , #{langCd}
+                , #{langCn}
+                , 'N'
+                , #{frstRegstId}
+                , SYSTIMESTAMP
+                , #{lastChprId}
+                , SYSTIMESTAMP
+        WHERE NOT exists(select * from upsert)
+	</insert>
+
+	<!-- 
+		 Enregistrer les informations des références communes de vérification !==공통검증기준정보를 등록한다.==!
+	 -->
+  <insert id="insertComVrfcBaseByMerge" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotComDocCdVo">
+      <selectKey keyProperty="docNm" keyColumn="DOC_NM" resultType="java.lang.String" order="BEFORE">
+      SELECT A.DOC_NM
+      FROM TB_COM_DOC_CD_LANG A
+         , TB_COM_PRMT B
+      WHERE A.DEL_YN = 'N'
+        AND B.DEL_YN = 'N'
+        AND A.DOC_CD = #{docCd}
+        AND B.PRMT_ID = 'DMSC_LANG_CD'
+        AND A.LANG_CD = B.PRMT_VAL_CN  /* 자국어로 문서명 */
+      </selectKey>
+      /*insertComVrfcBaseByMerge*/
+        with upsert as
+        (
+            UPDATE TB_COM_VRFC_BASE SET
+                    BFHN_VRFC_PRGM_ID = #{bfhnVrfcPrgmId}
+                    , BSOP_CLSF_CD = #{bsopClsfCd}
+                    , DOC_NM = #{docNm}
+                    , BFHN_VRFC_YN = #{bfhnVrfcYn}
+                    , DEL_YN = #{delYn}
+                    , LAST_CHPR_ID = #{lastChprId}
+                    , LAST_CHG_DTTM = SYSTIMESTAMP
+            WHERE DOC_CD = #{docCd}
+            returning *
+        )
+        INSERT INTO TB_COM_VRFC_BASE
+        (
+                DOC_CD
+                , BFHN_VRFC_PRGM_ID
+                , BSOP_CLSF_CD
+                , DOC_NM
+                , BFHN_VRFC_YN
+                , DEL_YN
+                , FRST_REGST_ID
+                , FRST_RGSR_DTTM
+                , LAST_CHPR_ID
+                , LAST_CHG_DTTM
+        )
+        SELECT
+                #{docCd}
+                , #{bfhnVrfcPrgmId}
+                , #{bsopClsfCd}
+                , #{docNm}
+                , #{bfhnVrfcYn}
+                , 'N'
+                , #{frstRegstId}
+                , SYSTIMESTAMP
+                , #{lastChprId}
+                , SYSTIMESTAMP
+        WHERE NOT exists(select * from upsert)
+	</insert>
+
+	<!-- 
+		 Supprimer un code de document !==문서코드를 삭제한다.==!
+	 -->
+  <delete id="deleteComVrfcBaseDByDocCd" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotComDocCdVo">
+      /* deleteComVrfcBaseD */
+       DELETE FROM TB_COM_VRFC_BASE_D
+       WHERE  DEL_YN = 'N'
+        AND DOC_CD = #{docCd}
+  </delete>
+
+  <!--
+		 Supprimer des détails des références communes de vérification !==공통검증기준 상세 내용을 삭제한다.==!
+	 -->
+  <update id="deleteComVrfcBase" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotComDocCdVo">
+      /* deleteComVrfcBase */
+      UPDATE  TB_COM_VRFC_BASE SET
+              DEL_YN = 'Y'
+           ,  LAST_CHPR_ID = #{lastChprId}
+           ,  LAST_CHG_DTTM = SYSTIMESTAMP
+      WHERE  DEL_YN = 'N'
+      AND DOC_CD = #{docCd}
+  </update>
+
+  <!--
+		 Supprimer un code de document !==문서코드를 삭제한다.==!
+	 -->
+  <update id="deleteComDocCd" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotComDocCdVo">
+      /* deleteComDocCd */
+      UPDATE  TB_COM_DOC_CD SET
+                ATCH_FILE_ID = NULL
+              , DEL_YN = 'Y'
+              , LAST_CHPR_ID = #{lastChprId}
+              , LAST_CHG_DTTM = SYSTIMESTAMP
+      WHERE  DEL_YN = 'N'
+      AND DOC_CD = #{docCd}
+  </update>
+
+  <!--
+		 Supprimer un code de document par langage !==언어별 문서코드를 삭제한다.==!
+	 -->
+  <update id="deleteComDocCdLang" parameterType="alpass.ipt.pot.pm.dcshmgmt.vo.PotComDocCdVo">
+      /* deleteComDocCdLang */
+      UPDATE  TB_COM_DOC_CD_LANG
+         SET
+               DEL_YN = 'Y'
+              , LAST_CHPR_ID = #{lastChprId}
+              , LAST_CHG_DTTM = SYSTIMESTAMP
+      WHERE  DEL_YN = 'N'
+        AND DOC_CD = #{docCd}
+  </update>
+
+</mapper>

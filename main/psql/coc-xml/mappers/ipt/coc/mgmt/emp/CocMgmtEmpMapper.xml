@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+Mapper : management of algerian customs employees
+(GHEZALI Abdelhak)
+-->
+<mapper namespace="alpass.ipt.coc.mgmt.emp.mapper.CocMgmtEmpMapper">
+
+    <!--
+    * insert les douaniers
+    *
+    -->
+    <insert id="insertMgmtEmp" parameterType="alpass.ipt.coc.mgmt.emp.vo.CocMgmtEmpVo">
+        /** insertMgmtEmp */
+        with upsert as
+                     (
+        UPDATE TB_POTI_CO_EMP
+        SET pbsr_no          = #{pbsrNo},
+            emp_stts_cd      = #{empSttsCd},
+            inhb_rgsr_no     = #{inhbRgsrNo},
+            eml              = #{eml},
+            brdy             = TO_CHAR(TO_DATE(#{brdy}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            gndr_cd          = #{gndrCd},
+            mobl_no          = #{moblNo},
+            dept_tlph_no     = #{deptTlphNo},
+            emp_addr         = #{empAddr},
+            phto_imge_cn     = #{phtoImgeCn:BLOB},
+            wrkp_asn_dt      = TO_CHAR(TO_DATE(#{wrkpAsnDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            enco_dt          = TO_CHAR(TO_DATE(#{encoDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            emp_bwrk_stts_cd = #{empBwrkSttsCd},
+            bsop_clsf_cd     = #{bsopClsfCd},
+            emp_fmnm         = #{empFmnm},
+            emp_nm           = #{empNm},
+            far_nm           = #{farNm},
+            mor_fmnm         = #{morFmnm},
+            mor_nm           = #{morNm},
+            emp_post_cd      = #{empPostCd},
+            grd_cd           = #{grdCd},
+            fonc_cd          = #{foncCd},
+            atch_file_id     = #{atchFileId},
+            now_fonc_strt_dt = TO_CHAR(TO_DATE(#{nowFoncStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            temp_brdy        = #{tempBrdy},
+            bld_tp_cd        = #{bldTpCd},
+            orgn_cd          = #{orgnCd},
+            del_yn='N',
+            frst_regst_id=#{frstRegstId},
+            frst_rgsr_dttm=SYSTIMESTAMP,
+            last_chpr_id=#{lastChprId},
+            last_chg_dttm=SYSTIMESTAMP
+        WHERE PBSR_NO = #{pbsrNo} returning *
+		)
+        INSERT
+        INTO TB_POTI_CO_EMP
+        (pbsr_no,
+         emp_stts_cd,
+         inhb_rgsr_no,
+         eml,
+         brdy,
+         gndr_cd,
+         mobl_no,
+         dept_tlph_no,
+         emp_addr,
+         phto_imge_cn,
+         wrkp_asn_dt,
+         enco_dt,
+         emp_bwrk_stts_cd,
+         bsop_clsf_cd,
+         emp_fmnm,
+         emp_nm,
+         far_nm,
+         mor_fmnm,
+         mor_nm,
+         emp_post_cd,
+         grd_cd,
+         fonc_cd,
+         atch_file_id,
+         now_fonc_strt_dt,
+         temp_brdy,
+         bld_tp_cd,
+         orgn_cd,
+         del_yn,
+         frst_regst_id,
+         frst_rgsr_dttm,
+         last_chpr_id,
+         last_chg_dttm)
+        SELECT #{pbsrNo},
+               #{empSttsCd},
+               #{inhbRgsrNo},
+               #{eml},
+               TO_CHAR(TO_DATE(#{brdy}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+               #{gndrCd},
+               #{moblNo},
+               #{deptTlphNo},
+               #{empAddr},
+               #{phtoImgeCn:BLOB},
+               TO_CHAR(TO_DATE(#{wrkpAsnDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+               TO_CHAR(TO_DATE(#{encoDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+               #{empBwrkSttsCd},
+               #{bsopClsfCd},
+               #{empFmnm},
+               #{empNm},
+               #{farNm},
+               #{morFmnm},
+               #{morNm},
+               #{empPostCd},
+               #{grdCd},
+               #{foncCd},
+               #{atchFileId},
+               TO_CHAR(TO_DATE(#{nowFoncStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+               #{tempBrdy},
+               #{bldTpCd},
+               #{orgnCd},
+               'N',
+               #{frstRegstId},
+               SYSTIMESTAMP,
+               #{lastChprId},
+               SYSTIMESTAMP WHERE NOT exists (select * from upsert)
+    </insert>
+
+    <!--
+    * Modifier un douanier
+    *
+    -->
+    <update id="updateMgmtEmp" parameterType="alpass.ipt.coc.mgmt.emp.vo.CocMgmtEmpVo">
+        /** updateMgmtEmp */
+        UPDATE TB_POTI_CO_EMP
+        SET pbsr_no          = #{pbsrNo},
+            emp_stts_cd      = #{empSttsCd},
+            inhb_rgsr_no     = #{inhbRgsrNo},
+            eml              = #{eml},
+            brdy             = TO_CHAR(TO_DATE(#{brdy}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            gndr_cd          = #{gndrCd},
+            mobl_no          = #{moblNo},
+            dept_tlph_no     = #{deptTlphNo},
+            emp_addr         = #{empAddr},
+            <if test='phtoImgeCn != null'>
+            PHTO_IMGE_CN = #{phtoImgeCn:BLOB},
+            </if>
+            wrkp_asn_dt      = TO_CHAR(TO_DATE(#{wrkpAsnDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            enco_dt          = TO_CHAR(TO_DATE(#{encoDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            emp_bwrk_stts_cd = #{empBwrkSttsCd},
+            bsop_clsf_cd     = #{bsopClsfCd},
+            emp_fmnm         = #{empFmnm},
+            emp_nm           = #{empNm},
+            far_nm           = #{farNm},
+            mor_fmnm         = #{morFmnm},
+            mor_nm           = #{morNm},
+            emp_post_cd      = #{empPostCd},
+            grd_cd           = #{grdCd},
+            fonc_cd          = #{foncCd},
+            atch_file_id     = #{atchFileId},
+            now_fonc_strt_dt = TO_CHAR(TO_DATE(#{nowFoncStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            temp_brdy        = #{tempBrdy},
+            bld_tp_cd        = #{bldTpCd},
+            orgn_cd          = #{orgnCd},
+            del_yn='N',
+            frst_regst_id=#{frstRegstId},
+            frst_rgsr_dttm=SYSTIMESTAMP,
+            last_chpr_id=#{lastChprId},
+            last_chg_dttm=SYSTIMESTAMP
+        WHERE PBSR_NO = #{pbsrNo}
+          AND DEL_YN = 'N'
+
+    </update>
+
+    <!--
+    *  Supprimer un douanier
+    *
+    -->
+    <delete id="deleteMgmtEmp" parameterType="alpass.ipt.coc.mgmt.emp.vo.CocMgmtEmpVo">
+        /** deleteMgmtEmp */
+        UPDATE TB_POTI_CO_EMP
+        SET DEL_YN        = 'Y'
+          , LAST_CHPR_ID  = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE PBSR_NO = #{pbsrNo}
+          AND DEL_YN = 'N'
+    </delete>
+
+    <!--
+    * Vérifier le douanier déjà existant
+    *
+    -->
+    <select id="selectMgmtEmpPbsrNoDupChk" parameterType="alpass.ipt.coc.mgmt.emp.vo.CocMgmtEmpVo"
+            resultType="java.lang.Integer">
+        /** selectCstmEmpPbsrNoDupChk */
+        SELECT COUNT(1) AS CNT
+        FROM TB_POTI_CO_EMP
+        WHERE PBSR_NO = #{pbsrNo}
+          AND DEL_YN = 'N'
+    </select>
+
+    <!--
+    * Consulter la liste des douaniers
+    *
+    -->
+    <select id="selectMgmtEmpList" parameterType="alpass.ipt.coc.mgmt.emp.vo.CocMgmtEmpVo"
+            resultType="alpass.ipt.coc.mgmt.emp.vo.CocMgmtEmpVo">
+        <include refid="pagination.header"/>
+        /** selectMgmtEmpList */
+        SELECT
+        'false' AS chkSel,
+        B.pbsr_no ,
+        B.emp_nm ,
+        B.emp_stts_cd ,
+        B.inhb_rgsr_no ,
+        B.eml ,
+        TO_CHAR(TO_DATE(B.brdy,
+        'YYYYMMDD'),
+        'DD/MM/YYYY') AS brdy ,
+        B.gndr_cd ,
+        B.mobl_no ,
+        B.dept_tlph_no ,
+        B.emp_addr ,
+        B.phto_imge_cn ,
+        TO_CHAR(TO_DATE(B.wrkp_asn_dt,'YYYYMMDD'),'DD/MM/YYYY') AS wrkp_asn_dt ,
+        TO_CHAR(TO_DATE(B.enco_dt,'YYYYMMDD'),'DD/MM/YYYY') AS enco_dt ,
+        B.emp_bwrk_stts_cd ,
+        B.bsop_clsf_cd ,
+        B.emp_fmnm ,
+        B.emp_nm ,
+        B.far_nm ,
+        B.mor_fmnm ,
+        B.mor_nm ,
+        B.emp_post_cd ,
+        B.grd_cd ,
+        B.fonc_cd ,
+        B.atch_file_id ,
+        TO_CHAR(TO_DATE(B.now_fonc_strt_dt,'YYYYMMDD'),'DD/MM/YYYY') AS now_fonc_strt_dt ,
+        B.temp_brdy ,
+        B.bld_tp_cd ,
+        B.orgn_cd ,
+        <if test="langCd == 'AR'">
+        (select orgn_ar_nm from tb_poti_orgn C where C.orgn_cd= B.orgn_cd ) as orgn_nm
+        </if>
+        <if test="langCd == 'FR'">
+        (select orgn_nm from tb_poti_orgn C where C.orgn_cd= B.orgn_cd ) as orgn_nm
+        </if>
+        FROM tb_poti_co_emp B
+        JOIN TB_POTI_ORGN A ON A.ORGN_CD = B.ORGN_CD
+        WHERE B.DEL_YN = 'N'
+        AND (
+        #{orgnCd} IN ('000000000', '308000000')
+        OR A.ORGN_CD = #{orgnCd}
+        OR A.ORGN_MGMT_CD IN (
+        SELECT ORGN_MGMT_CD
+        FROM TB_POTI_ORGN
+        WHERE DEL_YN = 'N'
+        START WITH ORGN_CD = #{orgnCd}
+        CONNECT BY PRIOR ORGN_MGMT_CD = UPR_ORGN_MGMT_CD
+        )
+        )
+        <if test="srchPbsrNo != null and srchPbsrNo != ''">
+            AND UPPER(B.pbsr_no) LIKE '%' || UPPER(#{srchPbsrNo})||'%'
+        </if>
+        <if test="srchOrgnCd != null and srchOrgnCd != ''">
+            AND A.ORGN_MGMT_CD IN (
+            SELECT D.ORGN_MGMT_CD
+            FROM TB_POTI_ORGN D
+            WHERE D.DEL_YN = 'N'
+            START WITH D.ORGN_CD = #{srchOrgnCd}
+            CONNECT BY PRIOR D.ORGN_MGMT_CD = D.UPR_ORGN_MGMT_CD
+            )
+        </if>
+        <if test="srchEmpNm != null and srchEmpNm != ''">
+            AND UPPER(B.emp_nm) LIKE '%' || UPPER(#{srchEmpNm})||'%'
+        </if>
+        <if test="srchEmpFmnm != null and srchEmpFmnm != ''">
+            AND UPPER(B.emp_fmnm) LIKE '%' || UPPER(#{srchEmpFmnm})||'%'
+        </if>
+        <if test="srchFoncCd != null and srchFoncCd != ''">
+            AND UPPER(B.fonc_cd) = #{srchFoncCd}
+        </if>
+        <if test="srchEncoYy != null and srchEncoYy != ''">
+            AND SUBSTR(B.ENCO_DT,0,4) = #{srchEncoYy}
+        </if>
+        <if test="srchEmpBwrkSttsCd != null and srchEmpBwrkSttsCd != ''">
+            AND UPPER(B.emp_bwrk_stts_cd) = #{srchEmpBwrkSttsCd}
+        </if>
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+    * Consulter les douaniers
+    *
+    -->
+    <select id="selectMgmtEmp" parameterType="alpass.ipt.coc.mgmt.emp.vo.CocMgmtEmpVo"
+            resultType="alpass.ipt.coc.mgmt.emp.vo.CocMgmtEmpVo">
+        /** selectMgmtEmp */
+        SELECT B.pbsr_no
+        , B.emp_nm
+        , B.emp_stts_cd
+        , B.inhb_rgsr_no
+        , B.eml
+        , TO_CHAR(TO_DATE(B.brdy, 'YYYYMMDD'), 'DD/MM/YYYY') AS brdy
+        , B.gndr_cd
+        , B.mobl_no
+        , B.dept_tlph_no
+        , B.emp_addr
+        , B.phto_imge_cn
+        , TO_CHAR(TO_DATE(B.wrkp_asn_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS wrkp_asn_dt
+        , TO_CHAR(TO_DATE(B.enco_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS enco_dt
+        , B.emp_bwrk_stts_cd
+        , B.bsop_clsf_cd
+        , B.emp_fmnm
+        , B.emp_nm
+        , B.far_nm
+        , B.mor_fmnm
+        , B.mor_nm
+        , B.emp_post_cd
+        , B.grd_cd
+        , B.fonc_cd
+        , B.atch_file_id
+        , TO_CHAR(TO_DATE(B.now_fonc_strt_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS now_fonc_strt_dt
+        , B.temp_brdy
+        , B.bld_tp_cd
+        , B.orgn_cd
+        <if test="langCd == 'AR'">
+            , (select orgn_ar_nm from tb_poti_orgn A where A.orgn_cd= B.orgn_cd ) as orgn_nm
+        </if>
+        <if test="langCd == 'FR'">
+            , (select orgn_nm from tb_poti_orgn A where A.orgn_cd= B.orgn_cd ) as orgn_nm
+        </if>
+        FROM tb_poti_co_emp B
+        WHERE B.PBSR_NO = #{pbsrNo}
+        AND B.DEL_YN = 'N'
+    </select>
+
+    <!--
+    * Consulter l'information d'un utilisateur spécifique
+    *
+    -->
+    <select id="selectEmpTrgtDetail" parameterType="alpass.ipt.coc.mgmt.emp.vo.CocMgmtEmpVo"
+            resultType="alpass.ipt.coc.mgmt.emp.vo.CocMgmtEmpVo">
+        /** selectEmpTrgtDetail */
+        SELECT
+        C.pbsr_no ,
+        C.emp_nm ,
+        FN_GET_CD_VDVAL_NM('COM_0008', C.EMP_STTS_CD, 'AR') as EMP_STTS_CD,
+        C.inhb_rgsr_no ,
+        C.eml ,
+        TO_CHAR(TO_DATE(C.brdy,
+        'YYYYMMDD'),
+        'DD/MM/YYYY') AS brdy ,
+        FN_GET_CD_VDVAL_NM('COM_0027', C.GNDR_CD, 'AR') AS GNDR_CD,
+        C.mobl_no ,
+        C.dept_tlph_no ,
+        C.emp_addr ,
+        C.phto_imge_cn ,
+        TO_CHAR(TO_DATE(C.wrkp_asn_dt,'YYYYMMDD'),'DD/MM/YYYY') AS wrkp_asn_dt ,
+        TO_CHAR(TO_DATE(C.enco_dt,'YYYYMMDD'),'DD/MM/YYYY') AS enco_dt ,
+        FN_GET_CD_VDVAL_NM('POT_0098', C.emp_bwrk_stts_cd, 'AR') as emp_bwrk_stts_cd,
+        C.bsop_clsf_cd ,
+        C.emp_fmnm ,
+        C.emp_nm ,
+        C.far_nm ,
+        C.mor_fmnm ,
+        C.mor_nm ,
+        C.emp_post_cd ,
+        ('['||C.grd_cd||'] '||FN_GET_CD_VDVAL_NM('POT_0089', C.grd_cd, 'AR')) as GRD_CD ,
+        (SELECT ('['||FONC_CD||'] '||FONC_CD_NM) FROM TB_POTI_FONC_CD_LANG WHERE LANG_CD = 'AR' AND FONC_CD = C.fonc_cd) AS FONC_CD ,
+        C.atch_file_id ,
+        TO_CHAR(TO_DATE(C.now_fonc_strt_dt,'YYYYMMDD'),'DD/MM/YYYY') AS now_fonc_strt_dt ,
+        C.temp_brdy ,
+        FN_GET_CD_VDVAL_NM('COC_0006', C.bld_tp_cd, 'AR') as bld_tp_cd,
+        C.orgn_cd ,
+        (select orgn_ar_nm from tb_poti_orgn D where D.orgn_cd= C.orgn_cd ) as orgn_nm
+        FROM tb_poti_co_emp C
+        WHERE C.PBSR_NO = #{pbsrNo}
+        AND C.DEL_YN = 'N'
+    </select>
+
+
+</mapper>

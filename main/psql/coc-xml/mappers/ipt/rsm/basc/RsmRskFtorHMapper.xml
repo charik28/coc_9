@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  Mapper : Historique d'approbation des facteurs de risque !== 위험요소결재이력 Mapper ==!
+-->
+<mapper namespace="alpass.ipt.rsm.basc.mapper.RsmRskFtorHMapper">
+
+    <!--
+    Enregistrer : Historique d'approbation des facteurs de risque !== 위험요소결재이력 등록 ==!
+    -->
+    <insert id="insertRsmRskFtorAprvH" parameterType="alpass.ipt.rsm.com.vo.RsmRskFtorAprvHVo">
+        /* insertRsmRskFtorAprvH */
+        INSERT INTO TB_RSMI_RSK_FTOR_APRV_H (
+              RSK_FTOR_NO                  /** Numéro d'élément de risque !== 위험요소번호 ==! */
+            , HIST_SRNO                    /** N° de sequence de l'historique !== 이력일련번호 ==! */
+            , APRV_BSOP_TP_CD              /** Code De Catégorie De L'Opération D'Approbation !== 결재업무구분코드 ==! */
+            , APRV_ID                      /** Id D'Approbation  !== 결재ID ==! */
+            , PRCS_STTS_CD                 /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , PRCS_OPIN_CN                 /** Avis Du Chef !== 처리의견내용 ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        ) VALUES (
+              #{rskFtorNo}                 /** Numéro d'élément de risque !== 위험요소번호 ==! */
+            , ( SELECT NVL(MAX(HIST_SRNO),0) + 1
+                FROM   TB_RSMI_RSK_FTOR_APRV_H
+                WHERE  RSK_FTOR_NO = #{rskFtorNo} )  /** N° de sequence de l'historique !== 이력일련번호 ==! */
+            , #{aprvBsopTpCd}              /** Code De Catégorie De L'Opération D'Approbation !== 결재업무구분코드 ==! */
+            , #{aprvId}                    /** Id D'Approbation  !== 결재ID ==! */
+            , #{prcsSttsCd}                /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , #{prcsOpinCn}                /** Avis Du Chef !== 처리의견내용 ==! */
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+</mapper>

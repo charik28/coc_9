@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.menu.mapper.PotPmMenuSysMenuMapper">
+
+  <!--
+     Consulter la liste du menu de système !==시스템메뉴 목록를 조회한다==!
+  -->
+  <select id="selectSysMenuOrdrTreeList" parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtRoleScrnCnctVo" resultType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysMenuVo">
+    /** selectSysMenuOrdrTreeList */
+    SELECT
+      0 AS MENU_SRNO
+         , null AS UPR_MENU_NM
+         , #{searAppClsfCd} AS  NAME
+         ,  #{searAppClsfCd}  AS C_NODE
+         , '' AS P_NODE
+         , 1 AS MENU_INDC_ORDR
+         , 'N' AS OPPB_MENU_YN
+         , '0' AS ORDR
+         , #{searAppClsfCd} AS SCRN_NM
+         , '' AS SCRN_ID
+         , 0 AS MENU_SRNO_1
+         , #{searAppClsfCd} AS APP_CLSF_CD
+         , 'POT' AS BSOP_CLSF_CD
+         , 0 AS UPR_MENU_SRNO
+         , '' AS MENU_ICON_NM
+         , #{searAppClsfCd} AS MENU_DESC
+         , null AS MENU_INDC_ORDR_1
+         , '' AS USE_YN
+         , '' AS DEL_YN
+         , '' AS FRST_REGST_ID
+         , null AS FRST_RGSR_DTTM
+         , '' AS LAST_CHPR_ID
+         , null AS LAST_CHG_DTTM
+         , 'Y' AS HSRK_MENU_YN
+         , '' AS OPPB_MENU_YN_1
+    FROM DUAL
+    UNION ALL
+    SELECT
+      A.MENU_SRNO ,
+      A.UPR_MENU_NM ,
+      A.NAME ,
+      A.C_NODE ,
+      A.P_NODE ,
+      A.MENU_INDC_ORDR ,
+      A.OPPB_MENU_YN ,
+      A.ORDR ,
+      A.SCRN_NM ,
+      A.SCRN_ID ,
+      B.MENU_SRNO ,
+      B.APP_CLSF_CD ,
+      B.BSOP_CLSF_CD ,
+      B.UPR_MENU_SRNO ,
+      B.MENU_ICON_NM ,
+      B.MENU_DESC ,
+      B.MENU_INDC_ORDR ,
+      B.USE_YN ,
+      B.DEL_YN ,
+      B.FRST_REGST_ID ,
+      B.FRST_RGSR_DTTM ,
+      B.LAST_CHPR_ID ,
+      B.LAST_CHG_DTTM ,
+      B.HSRK_MENU_YN ,
+      B.OPPB_MENU_YN
+    FROM
+      (
+        SELECT * FROM
+                   (
+                     SELECT
+                       MENU_SRNO
+                          , (SELECT MENU_NM FROM TB_COM_SYS_MENU_LANG WHERE LANG_CD = #{langCd} AND MENU_SRNO = A.UPR_MENU_SRNO) AS UPR_MENU_NM
+                          , (SELECT MENU_NM FROM TB_COM_SYS_MENU_LANG WHERE LANG_CD = #{langCd} AND MENU_SRNO = A.MENU_SRNO) AS NAME
+                          , TO_CHAR(A.MENU_SRNO) AS C_NODE
+                          ,  DECODE(A.UPR_MENU_SRNO, NULL, #{searAppClsfCd}, A.UPR_MENU_SRNO) AS P_NODE
+                          , A.MENU_INDC_ORDR
+                          , A.OPPB_MENU_YN
+                          ,
+                       (
+                         SELECT
+                           NVL((LISTAGG(LPAD(MENU_INDC_ORDR, 2, '0'), '') WITHIN GROUP (ORDER BY LEVEL DESC)) , '0') AS ORDR
+                         FROM  TB_COM_SYS_MENU MENU
+                         WHERE  MENU.DEL_YN = 'N'
+                        START WITH MENU.HSRK_MENU_YN = 'N'
+		                 AND MENU.MENU_SRNO = A.MENU_SRNO
+                     CONNECT BY PRIOR MENU.UPR_MENU_SRNO = MENU.MENU_SRNO
+                   ) AS ORDR
+          ,
+                   (
+                     SELECT
+                       (SELECT MENU_NM FROM TB_COM_SYS_MENU_LANG WHERE LANG_CD =  #{langCd} AND MENU_SRNO = SCRN_REL.MENU_SRNO)
+                     FROM   TB_COM_MENU_SCRN_REL SCRN_REL, TB_COM_SYS_SCRN SCRN
+                     WHERE SCRN_REL.SCRN_ID = SCRN.SCRN_ID
+                       AND   SCRN_REL.DEL_YN = 'N'
+                       AND   SCRN.DEL_YN = 'N'
+                       AND   SCRN.USE_YN = 'Y'
+                       AND   SCRN_REL.MENU_SRNO = A.MENU_SRNO
+                   ) AS SCRN_NM
+          ,
+                   (
+                     SELECT
+                       SCRN_REL.SCRN_ID
+                     FROM   TB_COM_MENU_SCRN_REL SCRN_REL
+                     WHERE SCRN_REL.DEL_YN = 'N'
+                       AND   SCRN_REL.MENU_SRNO = A.MENU_SRNO
+                   ) AS SCRN_ID
+          FROM  TB_COM_SYS_MENU A
+        WHERE A.DEL_YN = 'N'
+          AND   A.APP_CLSF_CD = #{searAppClsfCd}
+        START WITH A.HSRK_MENU_YN  = 'Y'
+        CONNECT BY PRIOR A.MENU_SRNO = A.UPR_MENU_SRNO
+      ) ORDER BY TO_NUMBER(ORDR) , MENU_INDC_ORDR
+      ) A, TB_COM_SYS_MENU B
+    WHERE A.MENU_SRNO = B.MENU_SRNO
+  </select>
+
+  <!--
+     Consulter la liste du menu de système !==시스템메뉴 목록를 조회한다==!
+  -->
+  <select id="selectSysMenuNmList"
+          parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysMenuVo"
+          resultType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysMenuLangVo">
+      /** selectSysMenuNmList */
+      SELECT
+          B.MENU_SRNO AS KEY1
+           , A.CD_VDVAL AS LANG_CD
+           , B.MENU_NM AS LANG_CN
+      FROM TB_COM_COMN_CD_D A,
+           TB_COM_SYS_MENU_LANG B
+      WHERE A.COMN_CD = 'COM_0057'
+        AND B.DEL_YN(+) = 'N'
+        AND B.MENU_SRNO(+) = #{menuSrno}
+        AND A.CD_VDVAL  = B.LANG_CD(+)
+      ORDER BY TO_NUMBER(A.SORT_ORDR) ASC
+  </select>
+
+  <!--
+     Enregistrer un menu de système : consulter le numéro de séquence !==시스템메뉴를 등록한다:메뉴일련번호조회==!
+  -->
+  <select id="selectSysMenuSrNo" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysMenuVo" resultType="java.lang.String">
+      /** selectSysMenuSrNo */
+      SELECT
+          NVL((SELECT MAX(MENU_SRNO) FROM TB_COM_SYS_MENU), 0) + 1
+      FROM  DUAL
+  </select>
+
+  <!--
+     Enregistrer un menu de système : consulter le numéro de séquence !==시스템메뉴를 등록한다:메뉴일련번호조회==!
+  -->
+  <select id="selectSysMenuSrNoCnt" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysMenuVo" resultType="java.lang.Integer">
+      /** selectSysMenuSrNoCnt */
+      SELECT
+          COUNT(*) AS CNT
+      FROM TB_COM_SYS_MENU
+      WHERE DEL_YN = 'N'
+        <if test="uprMenuSrno == '' ">
+          AND  UPR_MENU_SRNO IS NULL
+        </if>
+        <if test="uprMenuSrno != null and uprMenuSrno != '' ">
+          AND  UPR_MENU_SRNO = #{uprMenuSrno}
+        </if>
+        AND  MENU_SRNO <![CDATA[ <> ]]> #{menuSrno}
+        AND  MENU_INDC_ORDR = #{menuIndcOrdr}
+  </select>
+
+  <!--
+     Enregistrer un menu de système !==시스템메뉴를 등록한다==!
+  -->
+  <update id="updateSysMenu" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysMenuVo">
+      /** updateSysMenu */
+      UPDATE TB_COM_SYS_MENU
+      SET
+          LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        , DEL_YN = 'N'
+        , APP_CLSF_CD = #{appClsfCd}
+        , BSOP_CLSF_CD = #{bsopClsfCd}
+        , UPR_MENU_SRNO = #{uprMenuSrno}
+        , MENU_ICON_NM = #{menuIconNm}
+        , MENU_DESC = #{menuDesc}
+        , MENU_INDC_ORDR = #{menuIndcOrdr}
+        , HSRK_MENU_YN = #{hsrkMenuYn}
+        , OPPB_MENU_YN = #{oppbMenuYn}
+        , USE_YN = #{useYn}
+      WHERE MENU_SRNO = #{menuSrno}
+        AND   DEL_YN = 'N'
+  </update>
+
+  <!--
+     Enregistrer un menu de système (multilingue) !==시스템메뉴(다국어)를 등록한다==!
+  -->
+  <update id="updateSysMenuLang" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysMenuLangVo">
+      /** updateSysMenuLang */
+      with upsert as
+      (
+          UPDATE TB_COM_SYS_MENU_LANG SET
+              LAST_CHPR_ID = #{lastChprId}
+              , LAST_CHG_DTTM = SYSTIMESTAMP
+              , MENU_NM = #{langCn}
+              , DEL_YN = 'N'
+          WHERE MENU_SRNO = #{key1}
+              AND LANG_CD = #{langCd}
+          returning *
+      )
+      INSERT INTO TB_COM_SYS_MENU_LANG
+      (
+              MENU_SRNO
+              , LANG_CD
+              , MENU_NM
+              , DEL_YN
+              , FRST_REGST_ID
+              , FRST_RGSR_DTTM
+              , LAST_CHPR_ID
+              , LAST_CHG_DTTM
+      )
+      SELECT
+              #{key1}
+              , #{langCd}
+              , #{langCn}
+              , 'N'
+              , #{frstRegstId}
+              , SYSTIMESTAMP
+              , #{lastChprId}
+              , SYSTIMESTAMP
+      WHERE NOT exists(select * from upsert)
+  </update>
+
+  <!--
+     Aligner tous les sous-menus avec l'utilisation du menu principal !==하위 메뉴 전체를 상위 메뉴 사용여부와 일치 시킨다==!
+  -->
+  <update id="updateSysMenuUseYn" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysMenuVo">
+      /** updateSysMenuUseYn */
+      UPDATE TB_COM_SYS_MENU
+      SET
+          LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        , USE_YN = #{useYn}
+      WHERE MENU_SRNO IN
+            (
+                SELECT
+                    MENU_SRNO
+                FROM  TB_COM_SYS_MENU MENU
+      START WITH MENU.MENU_SRNO = #{menuSrno}
+      CONNECT BY PRIOR MENU.MENU_SRNO = MENU.UPR_MENU_SRNO
+          )
+             AND   DEL_YN = 'N'
+  </update>
+
+  <!--
+     Supprimer la relation des écrans de menu (selon les menus) !==메뉴화면관계 삭제(메뉴기준)==!
+  -->
+  <delete id="deleteMenuScrnRelMenuBass" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysMenuVo">
+      /** deleteMenuScrnRelMenuBass */
+      DELETE FROM TB_COM_MENU_SCRN_REL
+      WHERE MENU_SRNO IN
+            (
+                SELECT
+                    MENU_SRNO
+                FROM  TB_COM_SYS_MENU MENU
+      START WITH MENU.MENU_SRNO = #{menuSrno}
+      CONNECT BY PRIOR MENU.MENU_SRNO = MENU.UPR_MENU_SRNO
+          )
+             AND    DEL_YN = 'N'
+  </delete>
+
+  <!--
+     upprimer un menu de système !==시스템메뉴를 삭제한다==!
+  -->
+  <update id="deleteSysMenu" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysMenuVo">
+      /** deleteSysMenu */
+      UPDATE TB_COM_SYS_MENU
+      SET
+          LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        , DEL_YN = 'Y'
+      WHERE MENU_SRNO IN
+            (
+                SELECT
+                    MENU_SRNO
+                FROM  TB_COM_SYS_MENU MENU
+      START WITH MENU.MENU_SRNO = #{menuSrno}
+      CONNECT BY PRIOR MENU.MENU_SRNO = MENU.UPR_MENU_SRNO
+          )
+             AND   DEL_YN = 'N'
+  </update>
+
+  <!--
+     Supprimer un menu de système (multilingue) !==시스템메뉴(다국어)를 삭제한다==!
+  -->
+  <update id="deleteSysMenuLang" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysMenuVo">
+      /** deleteSysMenuLang */
+      UPDATE TB_COM_SYS_MENU_LANG
+      SET
+          LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        , DEL_YN = 'Y'
+      WHERE MENU_SRNO IN
+            (
+                SELECT
+                    MENU_SRNO
+                FROM  TB_COM_SYS_MENU MENU
+      START WITH MENU.MENU_SRNO = #{menuSrno}
+      CONNECT BY PRIOR MENU.MENU_SRNO = MENU.UPR_MENU_SRNO
+          )
+             AND   DEL_YN = 'N'
+  </update>
+
+  <!--
+     Enregistrer un menu de système !==시스템메뉴를 등록한다==!
+  -->
+  <insert id="insertSysMenu" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysMenuVo">
+      /** insertSysMenu */
+      INSERT INTO TB_COM_SYS_MENU
+      (
+          MENU_SRNO
+      , APP_CLSF_CD
+      , BSOP_CLSF_CD
+      , UPR_MENU_SRNO
+      , MENU_ICON_NM
+      , MENU_DESC
+      , MENU_INDC_ORDR
+      , HSRK_MENU_YN
+      , OPPB_MENU_YN
+      , USE_YN
+      , DEL_YN
+      , FRST_REGST_ID
+      , FRST_RGSR_DTTM
+      , LAST_CHPR_ID
+      , LAST_CHG_DTTM
+      )
+      VALUES
+          (
+              #{menuSrno}
+          , #{appClsfCd}
+          , #{bsopClsfCd}
+          , decode(#{uprMenuSrno},'',null,#{uprMenuSrno})
+          , #{menuIconNm}
+          , #{menuDesc}
+          , #{menuIndcOrdr}
+          , #{hsrkMenuYn}
+          , #{oppbMenuYn}
+          , #{useYn}
+          , 'N'
+          , #{frstRegstId}
+          , SYSTIMESTAMP
+          , #{lastChprId}
+          , SYSTIMESTAMP
+          )
+  </insert>
+
+  <!--
+     Enregistrer un menu de système (multilingue) !==시스템메뉴(다국어)를 등록한다==!
+  -->
+  <insert id="insertSysMenuLang" parameterType="alpass.ipt.pot.pm.menu.vo.PotPmAuthMgmtSysMenuLangVo">
+      /** insertSysMenuLang */
+      INSERT INTO TB_COM_SYS_MENU_LANG
+      (
+          MENU_SRNO
+      , LANG_CD
+      , MENU_NM
+      , DEL_YN
+      , FRST_REGST_ID
+      , FRST_RGSR_DTTM
+      , LAST_CHPR_ID
+      , LAST_CHG_DTTM
+      )
+      VALUES
+          (
+              #{key1}
+          , #{langCd}
+          , #{langCn}
+          , 'N'
+          , #{frstRegstId}
+          , SYSTIMESTAMP
+          , #{lastChprId}
+          , SYSTIMESTAMP
+          )
+  </insert>
+
+</mapper>

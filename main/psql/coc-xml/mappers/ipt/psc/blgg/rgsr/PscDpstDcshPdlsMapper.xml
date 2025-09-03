@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.psc.blgg.rgsr.mapper.PscDpstDcshPdlsMapper">
+
+   <!--
+   @TODO:번역필요 !== GeneratorComments 목록 조회 ==!
+   -->
+   <select id="selectPscDpstDcshPdlsList"  
+     parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscDpstDcshPdlsVo" resultType="alpass.ipt.psc.blgg.rgsr.vo.PscDpstDcshPdlsVo">
+       /* selectPscDpstDcshPdlsList */
+       <include refid="pagination.header" ></include>
+			 SELECT
+			 A.DPST_TEMP_NO               /** Numéro provisoire de mise en dépôt !== 예치임시번호 ==! */
+			 , A.DPST_PDLS_SRNO             /** N° de série de l'article en dépôt !== 예치품목일련번호 ==! */
+			 , A.DPST_MGMT_NO               /** Numéro De Série De Transit/Correspondance !== 예치관리번호 ==! */
+			 , A.SCTR_CD                    /** Code De Secteur !== 섹터코드 ==! */
+			 , A.PDLS_NM                    /** Nom De L'Article !== 품목명 ==! */
+			 , A.QTY                        /** Quantité !== 수량 ==! */
+			 , A.QTY_UT_CD                  /** Code De L'Unité De Quantité !== 수량단위코드 ==! */
+			 , A.WGHT                       /** Poids !== 중량 ==! */
+			 , A.WGHT_UT_CD                 /** Unité De Poids !== 중량단위코드 ==! */
+			 , A.NWPR_YN                    /** Etat Neuf/D'Occasion !== 신상품여부 ==! */
+			 , A.AMT                        /** Montant !== 금액 ==! */
+			 , A.RPC_CD                     /** Marchandises Marchandise Code Tarif Code Nsh !== 가격코드 ==! */
+			 , A.RLSE_YN                    /** Enlevé On !== 반출여부 ==! */
+			 , A.BNDL_TX_TP_CD              /** Code de type de taxation forfaitaire !== 일괄과세구분코드 ==! */
+			 , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+			 , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+			 , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+			 , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+			 , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+			 , A.RLSE_QTY                   /** Quantité de sortie !==  ==! */
+			 , A.RLSE_WGHT                  /** Poids sorti !==  ==! */
+			 , A.CLT_NO                     /** N° bon à enlever !==  ==! */
+			 , A.RLSE_DT                    /** Date D'Enlèvement !==  ==! */
+			 , A.RLSE_APRE_EMP_ID           /** Identifiant Du Chargé D'Autorisation De Sortie !==  ==! */
+			 , A.TX_AMT                     /** @TODO : 번역필요 !==  ==! */
+		 		, A.BLGG_TP_CD                 /** Code de type des effets personnels !== 휴대품구분코드 ==! */
+		 		, A.DCLR_ACKW_AMT              /** @TODO : 번역필요 !== 신고인정금액 ==! */
+		 		, A.BLGG_END_TP_CD             /** @TODO : 번역필요 !== 휴대품종료구분코드	 ==! */
+		 		, A.BLGG_NWPR_SCAR_CD          /** @TODO : 번역필요 !== 휴대품신상품중고코드 ==! */
+		 		, A.DPST_RQST_YN               /** @TODO : 번역필요 !== 예치신청여부 ==! */
+			 FROM   ALPASSINT.TB_PSCI_PSNR_BLGG_DPST_PDLS A
+			 WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+			 AND  A.DPST_TEMP_NO = #{dpstTempNo}              /** Numéro provisoire de mise en dépôt !== 예치임시번호 ==! */
+		 <if test='dpstPdlsSrno != null and dpstPdlsSrno != ""'>
+			 AND  A.DPST_PDLS_SRNO = #{dpstPdlsSrno}          /** N° de série de l'article en dépôt !== 예치품목일련번호 ==! */
+		 </if>
+		 ORDER
+		 BY A.DPST_PDLS_SRNO
+		 	<include refid="pagination.footer" ></include>
+   </select>
+
+	<!--
+@TODO:번역필요 !== GeneratorComments 목록 조회 ==!
+-->
+	<select id="selectPscInscDcshBscsPdlsList"
+		parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscDpstDcshPdlsVo" resultType="alpass.ipt.psc.blgg.rgsr.vo.PscDpstDcshPdlsVo">
+		/* selectPscInscDcshBscsPdlsList */
+		<include refid="pagination.header" ></include>
+		SELECT
+		A.BLGG_MGMT_NO               /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+		, A.BLGG_SRNO                  /** Numéro De Série Du Contrôle Des Bagages !== 휴대품일련번호 ==! */
+		, A.PDLS_NM                    /** Nom De L'Article !== 품목명 ==! */
+		, A.QTY                        /** Quantité !== 수량 ==! */
+		, A.QTY_UT_CD                  /** Code De L'Unité De Quantité !== 수량단위코드 ==! */
+		, A.WGHT                       /** Poids !== 중량 ==! */
+		, A.WGHT_UT_CD                 /** Unité De Poids !== 중량단위코드 ==! */
+		, A.NWPR_YN                    /** Etat Neuf/D'Occasion !== 신상품여부 ==! */
+		, A.AMT                        /** Montant !== 금액 ==! */
+		, A.RPC_CD                     /** Marchandises Marchandise Code Tarif Code Nsh !== 가격코드 ==! */
+		, A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+		, A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+		, A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+		, A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+		, A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		, A.BNDL_TX_TP_CD              /** Code de type de taxation forfaitaire !==  ==! */
+		, A.BLGG_XAMT                  /** @TODO : 번역필요 !==  ==! */
+		, A.FRXCG_CURR_CD              /** Code de devise étrangère !==  ==! */
+		, A.FRXCG_DZD_AMT              /** Montant de DZD des devises !==  ==! */
+		, A.TX_AMT                     /** Montant de la taxe imposée !== 과세금액 ==! */
+		, A.BLGG_TP_CD                 /** Code de type des effets personnels !== 휴대품구분코드 ==! */
+		, A.DCLR_ACKW_AMT              /** valeur reconnue !== 신고인정금액 ==! */
+		, A.BLGG_END_TP_CD             /** Type d'apurement des effets personnels !== 휴대품종료구분코드	 ==! */
+		, A.RLSE_DT                    /** Date D'Enlèvement !==  ==! */
+		, A.RLSE_APRE_EMP_ID           /** Identifiant Du Chargé D'Autorisation De Sortie !==  ==! */
+		, A.BLGG_NWPR_SCAR_CD          /** @TODO : 번역필요 !== 휴대품신상품중고코드 ==! */
+		, A.DPST_RQST_YN               /** @TODO : 번역필요 !== 예치신청여부 ==! */
+		FROM   ALPASSINT.TB_PSCI_PSNR_BLGG_INSC_PDLS A
+		WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+		AND  A.BLGG_MGMT_NO = #{blggMgmtNo}              /** N° De La Gestion Des Bagages Accompagnés !== 휴대품관리번호 ==! */
+		ORDER BY A.BLGG_SRNO
+		<include refid="pagination.footer" ></include>
+	</select>
+
+
+   <!--
+   @TODO:번역필요 !== GeneratorComments 등록 ==!
+   (Generated)
+   -->
+   	<insert id="insertPscDpstDcshPdls" parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscDpstDcshPdlsVo">
+			/* insertPscDpstDcshPdls */
+			<selectKey keyProperty="dpstPdlsSrno" order="BEFORE" resultType="java.math.BigDecimal">
+				SELECT NVL(MAX(DPST_PDLS_SRNO),0)+1 FROM ALPASSINT.TB_PSCI_PSNR_BLGG_DPST_PDLS WHERE DPST_TEMP_NO = #{dpstTempNo}
+			</selectKey>
+		 INSERT INTO ALPASSINT.TB_PSCI_PSNR_BLGG_DPST_PDLS
+			(
+			DPST_TEMP_NO                 /** Numéro provisoire de mise en dépôt !== 예치임시번호 ==! */
+			, DPST_PDLS_SRNO               /** N° de série de l'article en dépôt !== 예치품목일련번호 ==! */
+			, DPST_MGMT_NO                 /** Numéro De Série De Transit/Correspondance !== 예치관리번호 ==! */
+			, SCTR_CD                      /** Code De Secteur !== 섹터코드 ==! */
+			, PDLS_NM                      /** Nom De L'Article !== 품목명 ==! */
+			, QTY                          /** Quantité !== 수량 ==! */
+			, QTY_UT_CD                    /** Code De L'Unité De Quantité !== 수량단위코드 ==! */
+			, WGHT                         /** Poids !== 중량 ==! */
+			, WGHT_UT_CD                   /** Unité De Poids !== 중량단위코드 ==! */
+			, NWPR_YN                      /** Etat Neuf/D'Occasion !== 신상품여부 ==! */
+			, AMT                          /** Montant !== 금액 ==! */
+			, RPC_CD                       /** Marchandises Marchandise Code Tarif Code Nsh !== 가격코드 ==! */
+			, RLSE_YN                      /** Enlevé On !== 반출여부 ==! */
+			, BNDL_TX_TP_CD                /** Code de type de taxation forfaitaire !== 일괄과세구분코드 ==! */
+			, DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+			, FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+			, FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+			, LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+			, LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+			, RLSE_QTY                     /** Quantité de sortie !==  ==! */
+			, RLSE_WGHT                    /** Poids sorti !==  ==! */
+			, CLT_NO                       /** N° bon à enlever !==  ==! */
+			, RLSE_DT                      /** Date D'Enlèvement !==  ==! */
+			, RLSE_APRE_EMP_ID             /** Identifiant Du Chargé D'Autorisation De Sortie !==  ==! */
+			, TX_AMT                       /** @TODO : 번역필요 !==  ==! */
+			, BLGG_TP_CD                 /** Code de type des effets personnels !== 휴대품구분코드 ==! */
+			, DCLR_ACKW_AMT              /** @TODO : 번역필요 !== 신고인정금액 ==! */
+			, BLGG_END_TP_CD             /** @TODO : 번역필요 !== 휴대품종료구분코드	 ==! */
+			, BLGG_NWPR_SCAR_CD            /** @TODO : 번역필요 !== 휴대품신상품중고코드 ==! */
+			, DPST_RQST_YN                 /** @TODO : 번역필요 !== 예치신청여부 ==! */
+			)
+			VALUES
+			(
+			#{dpstTempNo}                /** Numéro provisoire de mise en dépôt !== 예치임시번호 ==! */
+			, #{dpstPdlsSrno}              /** N° de série de l'article en dépôt !== 예치품목일련번호 ==! */
+			, #{dpstMgmtNo}                /** Numéro De Série De Transit/Correspondance !== 예치관리번호 ==! */
+			, #{sctrCd}                    /** Code De Secteur !== 섹터코드 ==! */
+			, #{pdlsNm}                    /** Nom De L'Article !== 품목명 ==! */
+			, #{qty}                       /** Quantité !== 수량 ==! */
+			, #{qtyUtCd}                   /** Code De L'Unité De Quantité !== 수량단위코드 ==! */
+			, #{wght}                      /** Poids !== 중량 ==! */
+			, #{wghtUtCd}                  /** Unité De Poids !== 중량단위코드 ==! */
+			, #{nwprYn}                    /** Etat Neuf/D'Occasion !== 신상품여부 ==! */
+			, #{amt}                       /** Montant !== 금액 ==! */
+			, #{rpcCd}                     /** Marchandises Marchandise Code Tarif Code Nsh !== 가격코드 ==! */
+			, #{rlseYn}                    /** Enlevé On !== 반출여부 ==! */
+			, #{bndlTxTpCd}                /** Code de type de taxation forfaitaire !== 일괄과세구분코드 ==! */
+			, 'N'                          /** Suppression On !== 삭제여부 ==! */
+			, #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+			, CURRENT_TIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+			, #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+			, CURRENT_TIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+			, #{rlseQty}                   /** Quantité de sortie !==  ==! */
+			, #{rlseWght}                  /** Poids sorti !==  ==! */
+			, #{cltNo}                     /** N° bon à enlever !==  ==! */
+			, #{rlseDt}                    /** Date D'Enlèvement !==  ==! */
+			, #{rlseApreEmpId}             /** Identifiant Du Chargé D'Autorisation De Sortie !==  ==! */
+			, #{txAmt}                     /** @TODO : 번역필요 !==  ==! */
+			, #{blggTpCd}                    /** Code de type des effets personnels !== 휴대품구분코드 ==! */
+			, #{dclrAckwAmt}             /** @TODO : 번역필요 !== 신고인정금액 ==! */
+			, #{blggEndTpCd}                     /** @TODO : 번역필요 !== 휴대품종료구분코드	 ==! */
+			, #{blggNwprScarCd}            /** @TODO : 번역필요 !== 휴대품신상품중고코드 ==! */
+			, #{dpstRqstYn}                /** @TODO : 번역필요 !== 예치신청여부 ==! */
+			)
+   </insert>
+
+
+   <!--
+   @TODO:번역필요 !== GeneratorComments 수정 ==!
+   (Generated)
+   -->
+   <update id="updatePscDpstDcshPdls" parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscDpstDcshPdlsVo">
+       /* updatePscDpstDcshPdls */
+			 UPDATE  ALPASSINT.TB_PSCI_PSNR_BLGG_DPST_PDLS SET
+			 DPST_MGMT_NO = #{dpstMgmtNo}                /** Numéro De Série De Transit/Correspondance !== 예치관리번호 ==! */
+			 , SCTR_CD = #{sctrCd}                         /** Code De Secteur !== 섹터코드 ==! */
+			 , PDLS_NM = #{pdlsNm}                         /** Nom De L'Article !== 품목명 ==! */
+			 , QTY = #{qty}                                /** Quantité !== 수량 ==! */
+			 , QTY_UT_CD = #{qtyUtCd}                      /** Code De L'Unité De Quantité !== 수량단위코드 ==! */
+			 , WGHT = #{wght}                              /** Poids !== 중량 ==! */
+			 , WGHT_UT_CD = #{wghtUtCd}                    /** Unité De Poids !== 중량단위코드 ==! */
+			 , NWPR_YN = #{nwprYn}                         /** Etat Neuf/D'Occasion !== 신상품여부 ==! */
+			 , AMT = #{amt}                                /** Montant !== 금액 ==! */
+			 , RPC_CD = #{rpcCd}                           /** Marchandises Marchandise Code Tarif Code Nsh !== 가격코드 ==! */
+			 , RLSE_YN = #{rlseYn}                         /** Enlevé On !== 반출여부 ==! */
+			 , BNDL_TX_TP_CD = #{bndlTxTpCd}               /** Code de type de taxation forfaitaire !== 일괄과세구분코드 ==! */
+			 , LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+			 , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+			 , RLSE_QTY = #{rlseQty}                       /** Quantité de sortie !==  ==! */
+			 , RLSE_WGHT = #{rlseWght}                     /** Poids sorti !==  ==! */
+			 , CLT_NO = #{cltNo}                           /** N° bon à enlever !==  ==! */
+			 , RLSE_DT = #{rlseDt}                         /** Date D'Enlèvement !==  ==! */
+			 , RLSE_APRE_EMP_ID = #{rlseApreEmpId}         /** Identifiant Du Chargé D'Autorisation De Sortie !==  ==! */
+			 , TX_AMT = #{txAmt}                           /** @TODO : 번역필요 !==  ==! */
+		 		, BLGG_TP_CD = #{blggTpCd}                    /** Code de type des effets personnels !== 휴대품구분코드 ==! */
+		 		, DCLR_ACKW_AMT = #{dclrAckwAmt}              /** @TODO : 번역필요 !== 신고인정금액 ==! */
+		 		, BLGG_END_TP_CD = #{blggEndTpCd}             /** @TODO : 번역필요 !== 휴대품종료구분코드	 ==! */
+		 		, BLGG_NWPR_SCAR_CD = #{blggNwprScarCd}       /** @TODO : 번역필요 !== 휴대품신상품중고코드 ==! */
+		 		, DPST_RQST_YN = #{dpstRqstYn}                /** @TODO : 번역필요 !== 예치신청여부 ==! */
+			WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+			AND  DPST_TEMP_NO = #{dpstTempNo}                /** Numéro provisoire de mise en dépôt !== 예치임시번호 ==! */
+			AND  DPST_PDLS_SRNO = #{dpstPdlsSrno}            /** N° de série de l'article en dépôt !== 예치품목일련번호 ==! */
+   </update>
+
+
+   <!--
+   @TODO:번역필요 !== GeneratorComments 삭제 ==!
+   (Generated)
+   -->
+   <update id="deletePscDpstDcshPdls" parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscDpstDcshPdlsVo">
+       /* deletePscDpstDcshPdls */
+       UPDATE  ALPASSINT.TB_PSCI_PSNR_BLGG_DPST_PDLS SET
+               DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+            ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+            ,  LAST_CHG_DTTM = CURRENT_TIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+		 		AND  DPST_TEMP_NO = #{dpstTempNo}                /** Numéro provisoire de mise en dépôt !== 예치임시번호 ==! */
+		 		AND  DPST_PDLS_SRNO = #{dpstPdlsSrno}            /** N° de série de l'article en dépôt !== 예치품목일련번호 ==! */
+   </update>
+   
+   <!--
+  @TODO:번역필요 !== 일괄과세금액 수정 ==!
+  -->
+  <update id="updatePscDpstDcshPdlsMgmt" parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscDpstDcshPdlsVo">
+	/* updatePscDpstDcshPdlsMgmt */
+    UPDATE  ALPASSINT.TB_PSCI_PSNR_BLGG_DPST_PDLS SET
+      LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+    , LAST_CHG_DTTM = CURRENT_TIMESTAMP           /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		<if test='dpstMgmtNo != null and dpstMgmtNo != ""'>
+			, DPST_MGMT_NO = #{dpstMgmtNo}                /** Numéro De Série De Transit/Correspondance !== 예치관리번호 ==! */
+		</if>
+    <if test='bndlTxTpCd != null and bndlTxTpCd != ""'>
+    , BNDL_TX_TP_CD = #{bndlTxTpCd}                /** Code de type de taxation forfaitaire !== 일괄과세구분코드 ==! */
+    </if>
+		<if test='txAmt != null and txAmt != ""'>
+			, TX_AMT = #{txAmt}                /** Code de type de taxation forfaitaire !== 일괄과세구분코드 ==! */
+		</if>
+		<if test='dclrAckwAmt != null and dclrAckwAmt != ""'>
+			, DCLR_ACKW_AMT = #{dclrAckwAmt}                /** Code de type de taxation forfaitaire !== 일괄과세구분코드 ==! */
+		</if>
+		WHERE  DEL_YN = 'N'                                	/** Suppression ON !== 삭제여부 ==! */
+		AND  DPST_TEMP_NO = #{dpstTempNo}                /** Numéro provisoire de mise en dépôt !== 예치임시번호 ==! */
+		<if test='dpstPdlsSrno != null and dpstPdlsSrno != ""'>
+		AND  DPST_PDLS_SRNO = #{dpstPdlsSrno}            /** N° de série de l'article en dépôt !== 예치품목일련번호 ==! */
+		</if>
+  </update>
+  
+  <!--
+   @TODO:번역필요 !== GeneratorComments 목록 조회 ==!
+   -->
+   <select id="selectPscDpstDcshPdlsSum" parameterType="alpass.ipt.psc.blgg.rgsr.vo.PscDpstDcshPdlsVo" resultType="alpass.ipt.psc.blgg.rgsr.vo.PscDpstDcshPdlsVo">
+	/* selectPscDpstDcshPdlsSum */
+	SELECT NVL(SUM(AMT),0) AS AMT
+	  FROM ALPASSINT.TB_PSCI_PSNR_BLGG_DPST_PDLS A
+	 WHERE DEL_YN = 'N'                                		/** Suppression ON !== 삭제여부 ==! */
+		 AND  DPST_TEMP_NO = #{dpstTempNo}                /** Numéro provisoire de mise en dépôt !== 예치임시번호 ==! */
+   </select>
+   
+	
+</mapper>
+

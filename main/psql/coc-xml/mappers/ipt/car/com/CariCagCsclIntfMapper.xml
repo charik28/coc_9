@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.car.com.mapper.CariCagCsclIntfMapper">
+
+    <!--
+    Consulter les détails de l'interface du fret et de dédouanement. / 'interface des marchandises dédouanées      !== 화물통관인터페이스 상세정보를 조회한다. ==!
+    -->
+    <sql id ="selectItemCariCagCsclIntf">
+        SELECT A.CAG_RQST_TP_CD                                         AS CAG_RQST_TP_CD      /** Code de classement du suivi du fret !== 화물신청구분코드 ==! */
+             , A.RQST_NO                                                AS RQST_NO             /** N° De Demande !== 신청번호 ==! */
+             , A.DTL_DCSH_NO                                            AS DTL_DCSH_NO         /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+             , TO_CHAR(TO_DATE(A.APRE_DT),'DD/MM/YYYY')                 AS APRE_DT             /** Date D'Autorisation !== 승인일자 ==! */
+             , A.PCKG_GCNT                                              AS PCKG_GCNT           /** Nombre De Colis !== 포장개수 ==! */
+             , A.TTWG                                                   AS TTWG                /** Poids Brut !== 총중량 ==! */
+             , A.NTWG                                                   AS NTWG                /** Poids Net !== 순중량 ==! */
+             , A.MDFY_RQST_YN                                           AS MDFY_RQST_YN        /** Demande de rectification O/N !== 정정신청여부 ==! */
+             , A.FFMN_TP_CD                                             AS FFMN_TP_CD          /** Code De Type D'Apurement !== 이행구분코드 ==! */
+             , A.PRCS_YN                                                AS PRCS_YN             /** Traitement On !== 처리여부 ==! */
+             , A.PRCS_RSLT_CD                                           AS PRCS_RSLT_CD        /** Code De Résultat Du Traitement !== 처리결과코드 ==! */
+             , A.PRCS_CN                                                AS PRCS_CN             /** Contenu Du Traitement !== 처리내용 ==! */
+             , A.DEL_YN                                                 AS DEL_YN              /** Suppression On !== 삭제여부 ==! */
+             , A.FRST_REGST_ID                                          AS FRST_REGST_ID       /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+             , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS')        AS FRST_RGSR_DTTM      /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+             , A.LAST_CHPR_ID                                           AS LAST_CHPR_ID        /** Id Du Modificateur Final !== 최종변경자ID ==! */
+             , TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS')         AS LAST_CHG_DTTM       /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+         FROM TB_CARI_CAG_CSCL_INTF A
+        WHERE A.DEL_YN = 'N'                                         /** Suppression ON !== 삭제여부 ==! */
+    </sql>
+
+    <!--
+    Consulter les détails de l'interface du fret et de dédouanement. / 'interface des marchandises dédouanées      !== 화물통관인터페이스 상세정보를 조회한다. ==!
+    -->
+    <select id="selectCariCagCsclIntfItem" parameterType="alpass.ipt.car.com.vo.CarCagCsclIntfVo" resultType="alpass.ipt.car.com.vo.CarCagCsclIntfVo">
+        /* CariCagCsclIntfMapper.selectCariCagCsclIntfItem */
+        <include refid="selectItemCariCagCsclIntf" ></include>
+             AND  A.CAG_RQST_TP_CD = #{cagRqstTpCd}  /** Code de classement du suivi du fret !== 화물신청구분코드 ==! */
+             AND  A.RQST_NO = #{rqstNo}  /** N° De Demande !== 신청번호 ==! */
+             AND  A.DTL_DCSH_NO = #{dtlDcshNo}  /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+    </select>
+
+    <!--
+    Consulter la liste de l'interface du fret et de dédouanement.      !== 화물통관인터페이스 목록을 조회한다. ==!
+    -->
+    <select id="selectCariCagCsclIntfList" parameterType="alpass.ipt.car.com.vo.CarCagCsclIntfVo" resultType="alpass.ipt.car.com.vo.CarCagCsclIntfVo">
+        /* CariCagCsclIntfMapper.selectCariCagCsclIntfList */
+        <if test="pagination != null and  pagination == true ">
+        <include refid="pagination.header" ></include>
+        </if>
+        <include refid="selectItemCariCagCsclIntf" ></include>
+             <if test="cagRqstTpCd != null and cagRqstTpCd != ''">
+             AND  A.CAG_RQST_TP_CD = #{cagRqstTpCd}  /** Code de classement du suivi du fret !== 화물신청구분코드 ==! */
+             </if>
+             <if test="rqstNo != null and rqstNo != ''">
+             AND  A.RQST_NO = #{rqstNo}  /** N° De Demande !== 신청번호 ==! */
+             </if>
+             <if test="dtlDcshNo != null and dtlDcshNo != ''">
+             AND  A.DTL_DCSH_NO = #{dtlDcshNo}  /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+             </if>
+             <if test='lastShpmYn != null and "Y".equals(lastShpmYn)'>
+             AND A.ffmn_tp_cd IN ('A','L')
+   			 AND A.prcs_yn = 'Y'
+             </if>
+        <if test="pagination != null and  pagination == true ">
+        <include refid="pagination.footer" ></include>
+        </if>
+    </select>
+
+    <!--
+    Enregistrer les infos de l'interface du fret et de dédouanement.      !== 화물통관인터페이스정보를 등록한다. ==!
+    -->
+    <insert id="insertCariCagCsclIntf" parameterType="alpass.ipt.car.com.vo.CarCagCsclIntfVo">
+        /* CariCagCsclIntfMapper.insertCariCagCsclIntf */
+        WITH UPSERT AS
+        (
+            UPDATE TB_CARI_CAG_CSCL_INTF
+            SET
+                  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+            <if test="apreDt != null">
+                , APRE_DT = TO_CHAR(TO_DATE( #{apreDt}, 'DD/MM/YYYY'),'YYYYMMDD')  /** Date D'Autorisation !== 승인일자 ==! */
+            </if>
+            <if test="pckgGcnt != null">
+                , PCKG_GCNT = #{pckgGcnt}                        /** Nombre De Colis !== 포장개수 ==! */
+            </if>
+            <if test="ttwg != null">
+                , TTWG = #{ttwg}                                 /** Poids Brut !== 총중량 ==! */
+            </if>
+            <if test="ntwg != null">
+                , NTWG = #{ntwg}                                 /** Poids Net !== 순중량 ==! */
+            </if>
+            <if test="mdfyRqstYn != null">
+                , MDFY_RQST_YN = #{mdfyRqstYn}                   /** Demande de rectification O/N !== 정정신청여부 ==! */
+            </if>
+            <if test="ffmnTpCd != null">
+                , FFMN_TP_CD = #{ffmnTpCd}                       /** Code De Type D'Apurement !== 이행구분코드 ==! */
+            </if>
+            <if test="prcsYn != null">
+                , PRCS_YN = #{prcsYn}                            /** Traitement On !== 처리여부 ==! */
+            </if>
+            <if test="prcsRsltCd != null">
+                , PRCS_RSLT_CD = #{prcsRsltCd}                   /** Code De Résultat Du Traitement !== 처리결과코드 ==! */
+            </if>
+            <if test="prcsCn != null">
+                , PRCS_CN = #{prcsCn}                            /** Contenu Du Traitement !== 처리내용 ==! */
+            </if>
+            WHERE 1=1
+              AND CAG_RQST_TP_CD = #{cagRqstTpCd}  /** Code de classement du suivi du fret !== 화물신청구분코드 ==! */
+              AND RQST_NO = #{rqstNo}  /** N° De Demande !== 신청번호 ==! */
+              AND DTL_DCSH_NO = #{dtlDcshNo}  /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+        RETURNING *
+        )
+        INSERT INTO TB_CARI_CAG_CSCL_INTF
+        (
+              CAG_RQST_TP_CD                /** Code de classement du suivi du fret !== 화물신청구분코드 ==! */
+            , RQST_NO                       /** N° De Demande !== 신청번호 ==! */
+            , DTL_DCSH_NO                   /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+            , APRE_DT                       /** Date D'Autorisation !== 승인일자 ==! */
+            , PCKG_GCNT                     /** Nombre De Colis !== 포장개수 ==! */
+            , TTWG                          /** Poids Brut !== 총중량 ==! */
+            , NTWG                          /** Poids Net !== 순중량 ==! */
+            , MDFY_RQST_YN                  /** Demande de rectification O/N !== 정정신청여부 ==! */
+            , FFMN_TP_CD                    /** Code De Type D'Apurement !== 이행구분코드 ==! */
+            , PRCS_YN                       /** Traitement On !== 처리여부 ==! */
+            , DEL_YN                        /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                 /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM                /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                  /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        SELECT
+            #{cagRqstTpCd}                /** Code de classement du suivi du fret !== 화물신청구분코드 ==! */
+            , #{rqstNo}                     /** N° De Demande !== 신청번호 ==! */
+            , #{dtlDcshNo}                  /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+            , CASE WHEN LENGTH(#{apreDt}) = 8
+                THEN TO_CHAR(TO_DATE( #{apreDt} , 'DD/MM/YYYY'),'YYYYMMDD')
+                ELSE  TO_CHAR(TO_DATE( LEFT(#{apreDt},8) , 'DD/MM/YYYY'),'YYYYMMDD')
+              END  /** Date D'Autorisation !== 승인일자 ==! */
+            , #{pckgGcnt}                   /** Nombre De Colis !== 포장개수 ==! */
+            , #{ttwg}                       /** Poids Brut !== 총중량 ==! */
+            , #{ntwg}                       /** Poids Net !== 순중량 ==! */
+            , #{mdfyRqstYn}                 /** Demande de rectification O/N !== 정정신청여부 ==! */
+            , #{ffmnTpCd}                   /** Code De Type D'Apurement !== 이행구분코드 ==! */
+            , 'N'                           /** Traitement On !== 처리여부 ==! */
+            , 'N'                           /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                  /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                  /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE NOT EXISTS(SELECT * FROM UPSERT)
+    </insert>
+
+    <!--
+    Enregistrer les infos de l'interface du fret et de dédouanement.(Déclaration de cargaison)      !== 화물통관인터페이스정보를 등록한다.(화물신고서) ==!
+    -->
+    <insert id="insertCariCagCsclIntfDcsh" parameterType="alpass.ipt.car.com.vo.CarCagCsclIntfVo">
+        /* CariCagCsclIntfMapper.insertCariCagCsclIntfDcsh */
+        WITH UPSERT AS
+        (
+            UPDATE TB_CARI_CAG_CSCL_INTF
+            SET
+                  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+            
+            <if test="cagRqstTpCd != null">
+                , CAG_RQST_TP_CD = #{cagRqstTpCd}
+            </if>
+            <if test="rqstNo != null">
+                , RQST_NO = #{rqstNo}
+            </if>
+            
+            <if test="apreDt != null">
+                , APRE_DT = CASE WHEN LENGTH(#{apreDt}) = 8 THEN TO_CHAR(TO_DATE( #{apreDt} , 'yyyy/MM/dd'),'YYYYMMDD')
+                                 ELSE  TO_CHAR(TO_DATE( LEFT(#{apreDt},8) , 'yyyy/MM/dd'),'YYYYMMDD') END  
+                                 /** Date D'Autorisation !== 승인일자 ==! */
+            </if>
+            <if test="pckgGcnt != null">
+                , PCKG_GCNT = #{pckgGcnt}                        /** Nombre De Colis !== 포장개수 ==! */
+            </if>
+            <if test="ttwg != null">
+                , TTWG = #{ttwg}                                 /** Poids Brut !== 총중량 ==! */
+            </if>
+            <if test="ntwg != null">
+                , NTWG = #{ntwg}                                 /** Poids Net !== 순중량 ==! */
+            </if>
+            <if test="mdfyRqstYn != null">
+                , MDFY_RQST_YN = #{mdfyRqstYn}                   /** Demande de rectification O/N !== 정정신청여부 ==! */
+            </if>
+            <if test="ffmnTpCd != null">
+                , FFMN_TP_CD = #{ffmnTpCd}                       /** Code De Type D'Apurement !== 이행구분코드 ==! */
+            </if>
+            <if test="prcsYn != null">
+                , PRCS_YN = #{prcsYn}                            /** Traitement On !== 처리여부 ==! */
+            </if>
+            <if test="prcsRsltCd != null">
+                , PRCS_RSLT_CD = #{prcsRsltCd}                   /** Code De Résultat Du Traitement !== 처리결과코드 ==! */
+            </if>
+            <if test="prcsCn != null">
+                , PRCS_CN = #{prcsCn}                            /** Contenu Du Traitement !== 처리내용 ==! */
+            </if>
+            WHERE 1=1
+              <!-- AND CAG_RQST_TP_CD = #{cagRqstTpCd}  /** Code de classement du suivi du fret !== 화물신청구분코드 ==! */
+              AND RQST_NO = #{rqstNo}  /** N° De Demande !== 신청번호 ==! */ -->
+              AND DTL_DCSH_NO = #{dtlDcshNo}  /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+        RETURNING *
+        )
+        INSERT INTO TB_CARI_CAG_CSCL_INTF
+        (
+              CAG_RQST_TP_CD                /** Code de classement du suivi du fret !== 화물신청구분코드 ==! */
+            , RQST_NO                       /** N° De Demande !== 신청번호 ==! */
+            , DTL_DCSH_NO                   /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+            , APRE_DT                       /** Date D'Autorisation !== 승인일자 ==! */
+            , PCKG_GCNT                     /** Nombre De Colis !== 포장개수 ==! */
+            , TTWG                          /** Poids Brut !== 총중량 ==! */
+            , NTWG                          /** Poids Net !== 순중량 ==! */
+            , MDFY_RQST_YN                  /** Demande de rectification O/N !== 정정신청여부 ==! */
+            , FFMN_TP_CD                    /** Code De Type D'Apurement !== 이행구분코드 ==! */
+            , PRCS_YN                       /** Traitement On !== 처리여부 ==! */
+            , DEL_YN                        /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                 /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM                /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                  /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        SELECT
+            #{cagRqstTpCd}                /** Code de classement du suivi du fret !== 화물신청구분코드 ==! */
+            , #{rqstNo}                     /** N° De Demande !== 신청번호 ==! */
+            , #{dtlDcshNo}                  /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+            , CASE WHEN LENGTH(#{apreDt}) = 8
+                THEN TO_CHAR(TO_DATE( #{apreDt} , 'yyyy/MM/dd'),'YYYYMMDD')
+                ELSE  TO_CHAR(TO_DATE( LEFT(#{apreDt},8) , 'yyyy/MM/dd'),'YYYYMMDD')
+              END  /** Date D'Autorisation !== 승인일자 ==! */
+            , #{pckgGcnt}                   /** Nombre De Colis !== 포장개수 ==! */
+            , #{ttwg}                       /** Poids Brut !== 총중량 ==! */
+            , #{ntwg}                       /** Poids Net !== 순중량 ==! */
+            , #{mdfyRqstYn}                 /** Demande de rectification O/N !== 정정신청여부 ==! */
+            , #{ffmnTpCd}                   /** Code De Type D'Apurement !== 이행구분코드 ==! */
+            , 'N'                           /** Traitement On !== 처리여부 ==! */
+            , 'N'                           /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                  /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                  /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE NOT EXISTS(SELECT * FROM UPSERT)
+    </insert>
+
+    <!--
+    Enregistrer les infos sur le conteneur de l'interface du fret et de dédouanement.      !== 화물통관인터페이스 컨테이너정보를 등록한다. ==!
+    -->
+    <insert id="insertCariCagCsclIntfCntr" parameterType="alpass.ipt.car.com.vo.CarCagCsclIntfCntrVo">
+		/* CariInfo_insertCariCagCsclIntfCntr */
+        WITH UPSERT AS
+        (
+            UPDATE TB_CARI_CAG_CSCL_INTF_CNTR
+            SET
+                  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+            <if test="cntrTpCd != null">
+                , CNTR_TP_CD = #{cntrTpCd}                       /** Code De Type De Conteneur !== 컨테이너구분코드 ==! */
+            </if>
+            WHERE 1=1
+              AND CNTR_NO = #{cntrNo}  /** N° De Conteneur !== 컨테이너번호 ==! */
+              AND CAG_RQST_TP_CD = #{cagRqstTpCd}  /** Code de classement du suivi du fret !== 화물신청구분코드 ==! */
+              AND RQST_NO = #{rqstNo}  /** N° De Demande !== 신청번호 ==! */
+              AND DTL_DCSH_NO = #{dtlDcshNo}  /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+        RETURNING *
+        )
+	    INSERT INTO TB_CARI_CAG_CSCL_INTF_CNTR
+	    (
+	          CAG_RQST_TP_CD                                              /** Code de type de demande !==신청구분코드==! */
+	        , RQST_NO                                                     /** N° de demande !==신청번호==! */
+	        , CNTR_NO                                                     /** N° de conteneur !== 컨테이너번호 ==! */
+	        , DTL_DCSH_NO                                                 /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+	        , CNTR_TP_CD                                                  /** Code de type de conteneur !==컨테이너구분코드==! */
+            , DEL_YN                                                      /** Suppression ON !== 삭제여부 ==! */
+	        , FRST_REGST_ID                                               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+	        , FRST_RGSR_DTTM                                              /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+	        , LAST_CHPR_ID                                                /** ID du modificateur final !== 최종변경자ID ==! */
+	        , LAST_CHG_DTTM                                               /** Date et heure de modification finale !== 최종변경일시 ==! */
+	    )
+        SELECT
+	         #{cagRqstTpCd}                                          	  /** Code de type de demande !==신청구분코드==! */
+	       , #{rqstNo}                                               	  /** N° de demande !==신청번호==! */
+	       , #{cntrNo}                                               	  /** N° de conteneur !== 컨테이너번호 ==! */
+	       , #{dtlDcshNo}                                                 /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+           , #{cntrTpCd}                                                  /** Code de type de conteneur !==컨테이너구분코드==! */
+	       , 'N'                                                     	  /** Suppression ON !== 삭제여부 ==! */
+	       , #{frstRegstId}                                          	  /** ID du premier enregistrant  !== 최초등록자ID ==! */
+	       , SYSTIMESTAMP                                                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+	       , #{lastChprId}                                           	  /** ID du modificateur final !== 최종변경자ID ==! */
+	       , SYSTIMESTAMP                                                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE NOT EXISTS(SELECT * FROM UPSERT)
+	</insert>
+
+</mapper>

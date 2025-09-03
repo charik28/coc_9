@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  Mapper : Niveau de conformité !== 법규준수도 Mapper ==!
+-->
+<mapper namespace="alpass.ipt.rsm.lwcs.mapper.RsmLwcsMapper">
+
+  <!--
+    [Consulter le facteur d'évaluation] Consulter la liste !== [평가요소조회] 목록조회 ==!
+  -->
+  <select id="selectLwcsEvFtorCdList"
+    parameterType="alpass.ipt.rsm.com.vo.RsmEvFtorCdVo"
+    resultType="alpass.ipt.rsm.com.vo.RsmEvFtorCdVo">
+    /* selectLwcsEvFtorCdList */
+    SELECT
+	      ROWNUM NO
+	    , EV_LRCL_CD         /* Code de catégorie d'évaluation !== 평가대분류코드 ==! */
+	    , EV_MDCL_CD         /* Code de sous-catégorie d'évaluation  !== 평가중분류코드 ==! */
+	    , EV_SMCL_CD         /* Code de facteurs d'évaluation !== 평가소분류코드 ==! */
+	    , SYS_CLCU_YN        /* Calcul par système O/N !== 시스템계산여부 ==! */
+	FROM TB_RSMI_EV_FTOR_CD
+	WHERE 1 = 1
+	AND DEL_YN = 'N'         /* Suppression ON !== 삭제여부 ==! */  
+    <if test="evCoTpCd != null and evCoTpCd != '' ">
+		AND EV_CO_TP_CD = #{evCoTpCd}     /* Code de type de contrat !== 평가업체구분코드 ==! */
+	</if>
+	<if test="evLrclCd != null and evLrclCd != '' ">
+		AND EV_LRCL_CD = #{evLrclCd}      /* Code de catégorie d'évaluation !== 평가대분류코드 ==! */
+	</if>
+	<if test="evMdclCd != null and evMdclCd != '' ">
+		AND EV_MDCL_CD = #{evMdclCd}      /* Code de sous-catégorie d'évaluation  !== 평가중분류코드 ==! */
+	</if>
+	<if test="evSmclCd != null and evSmclCd != '' ">
+		AND EV_SMCL_CD = #{evSmclCd}      /* Code de facteurs d'évaluation !== 평가소분류코드 ==! */
+	</if>
+	
+	ORDER BY EV_LRCL_CD, EV_MDCL_CD, TO_NUMBER(SUBSTR(EV_SMCL_CD,3,5))
+    
+  </select>
+  
+  <!--
+    [Gérer la note d'évaluation] Consulter la liste !== [평가점수설정] 목록조회 ==!
+  -->
+	<select id="selectLwcsEvFtorScrList" 
+		parameterType="alpass.ipt.rsm.com.vo.RsmEvFtorScrVo" 
+		resultType="alpass.ipt.rsm.com.vo.RsmEvFtorScrVo">
+		/* selectLwcsEvFtorScrList */
+		SELECT
+		      EV_QRT     		/* Trimestre D'Évaluation  !== 평가분기 ==! */
+		    , EV_CO_TP_CD       /* Code de type de contrat !== 평가업체구분코드 ==! */
+		    , EV_LRCL_CD        /* Code de catégorie d'évaluation !== 평가대분류코드 ==! */
+		    , EV_MDCL_CD        /* Code de sous-catégorie d'évaluation  !== 평가중분류코드 ==! */
+		    , EV_SMCL_CD        /* Code de facteurs d'évaluation !== 평가소분류코드 ==! */
+		    , EV_LRCL_SCR       /* Note de catégorie d'évaluation !== 평가대분류점수 ==! */
+		    , EV_MDCL_SCR       /* Note de sous-catégorie d'évaluation !== 평가중분류점수 ==! */
+		    , EV_SMCL_SCR       /* Note de facteurs d'évaluation  !== 평가소분류점수 ==! */
+		    , DEL_YN            /* Suppression ON !== 삭제여부 ==! */
+		    , FRST_REGST_ID     /* ID du premier enregistrant  !== 최초등록자ID ==! */
+		    , FRST_RGSR_DTTM    /* Date et heure de premier enregistrement !== 최초등록일시 ==! */
+		    , LAST_CHPR_ID      /* ID du modificateur final !== 최종변경자ID ==! */
+		    , LAST_CHG_DTTM     /* Date et heure de modification finale !== 최종변경일시 ==! */
+		FROM TB_RSMI_EV_FTOR_SCR
+		WHERE 1 = 1
+	
+		<if test="evCoTpCd != null and evCoTpCd != '' ">
+			AND EV_CO_TP_CD = #{evCoTpCd}   /* Code de type de contrat !== 평가업체구분코드 ==! */
+		</if>
+		<if test="evQrt != null and evQrt != '' ">
+			AND EV_QRT = #{evQrt} 			/* Trimestre D'Évaluation  !== 평가분기 ==! */
+		</if>
+		<if test='evLrclCd != null and !"".equals(evLrclCd) and !"D".equals(evLrclCd)'>
+			AND EV_LRCL_CD = #{evLrclCd}    /* Code de catégorie d'évaluation !== 평가대분류코드 ==! */
+		</if>
+		<if test='evMdclCd != null and !"".equals(evMdclCd)'>
+			AND EV_MDCL_CD = #{evMdclCd}    /* Code de sous-catégorie d'évaluation  !== 평가중분류코드 ==! */
+		</if>
+		<if test='evSmclCd != null and !"".equals(evSmclCd)'>
+			AND EV_SMCL_CD = #{evSmclCd}    /* Code de facteurs d'évaluation !== 평가소분류코드 ==! */
+		</if>
+		ORDER BY EV_LRCL_CD, EV_MDCL_CD, EV_SMCL_CD
+		
+	</select>
+
+	<!--
+      [Gérer la note d'évaluation] Consulter la liste (Critère de référence pour les facteurs d'évaluationc) !== [평가점수설정] 평가요소기준 목록조회 ==!
+  	-->
+	<select id="selectLwcsEvFtorBaseList"
+	  parameterType="alpass.ipt.rsm.lwcs.vo.RsmLwcsEvFtorVo"
+	  resultType="alpass.ipt.rsm.com.vo.RsmEvFtorBaseVo">
+		/* selectLwcsEvFtorBaseList */
+		SELECT
+                  A.EV_QRT                     /** Trimestre D'Évaluation  !== 평가분기 ==! */
+                , A.EV_CO_TP_CD                /** Code De Type De Contrat !== 평가업체구분코드 ==! */
+                , A.EV_PRID                    /** Période d'évaluation !== 평가기간 ==! */
+                , A.XAMT_MDFY_EV_BASE_VAL      /** Valeur de référence pour évaluer la modification des droits et taxes  !== 세액정정평가기준값 ==! */
+                , A.FINE_BASE_VAL              /** Valeur de référence pour la pénalité !== 벌금기준값 ==! */
+        FROM   TB_RSMI_EV_FTOR_BASE A
+        WHERE  DEL_YN = 'N'                    /** Suppression ON !== 삭제여부 ==! */
+        AND  A.EV_QRT = #{evQrt}               /** Trimestre D'Évaluation  !== 평가분기 ==! */
+        AND  A.EV_CO_TP_CD = #{evCoTpCd}       /** Code De Type De Contrat !== 평가업체구분코드 ==! */
+	</select>
+  
+  <!--
+    [Gérer la note d'évaluation.Note de catégorie d'évaluation] Modifier !== [평가점수설정.대분류점수] 수정 ==!
+  -->
+  <update id="updateLwcsEvLrclScr"
+    parameterType="alpass.ipt.rsm.com.vo.RsmEvFtorScrVo">
+    /* updateLwcsEvLrclScr */
+    UPDATE TB_RSMI_EV_FTOR_SCR SET
+	     EV_LRCL_SCR = #{evLrclScr}     	/* Note de catégorie d'évaluation !== 평가대분류점수 ==! */
+	   , DEL_YN = #{delYn}     				/* Suppression ON !== 삭제여부 ==! */
+	   , LAST_CHPR_ID = #{lastChprId}     	/* ID du modificateur final !== 최종변경자ID ==! */
+	   , LAST_CHG_DTTM = SYSTIMESTAMP     	/* Date et heure de modification finale !== 최종변경일시 ==! */
+	WHERE 1 = 1
+	AND EV_CO_TP_CD = #{evCoTpCd}           /* Code de type de contrat !== 평가업체구분코드 ==! */
+	AND EV_LRCL_CD = #{evLrclCd}            /* Code de catégorie d'évaluation !== 평가대분류코드 ==! */
+	AND EV_QRT = #{evQrt}
+  </update>
+  
+  <!--
+    [Gérer la note d'évaluation.Note de sous-catégorie d'évaluation] Modifier  !== [평가점수설정.중분류점수] 수정 ==!
+  -->
+  <update id="updateLwcsEvMdclScr"
+    parameterType="alpass.ipt.rsm.com.vo.RsmEvFtorScrVo">
+    /* updateLwcsEvMdclScr */
+	UPDATE TB_RSMI_EV_FTOR_SCR SET
+	     EV_MDCL_SCR = #{evMdclScr}     	/* Note de sous-catégorie d'évaluation !== 평가중분류점수 ==! */
+	   , DEL_YN = #{delYn}     				/* Suppression ON !== 삭제여부 ==! */
+	   , LAST_CHPR_ID = #{lastChprId}     	/* ID du modificateur final !== 최종변경자ID ==! */
+	   , LAST_CHG_DTTM = SYSTIMESTAMP     	/* Date et heure de modification finale !== 최종변경일시 ==! */
+	WHERE 1 = 1
+	AND EV_CO_TP_CD = #{evCoTpCd}           /* Code de type de contrat !== 평가업체구분코드 ==! */ 
+	AND EV_LRCL_CD = #{evLrclCd}            /* Code de catégorie d'évaluation !== 평가대분류코드 ==! */
+	AND EV_MDCL_CD = #{evMdclCd}            /* Code de sous-catégorie d'évaluation  !== 평가중분류코드 ==! */ 
+	AND EV_QRT = #{evQrt} 					/* Trimestre D'Évaluation  !== 평가분기 ==! */
+  </update>
+  
+  <!--
+    [Gérer la note d'évaluation.Note de facteurs d'évaluation] Modifier  !== [평가점수설정.소분류점수] 수정 ==!
+  -->
+  <update id="updateLwcsEvSmclScr"
+    parameterType="alpass.ipt.rsm.com.vo.RsmEvFtorScrVo">
+    /* updateLwcsEvSmclScr */
+    UPDATE TB_RSMI_EV_FTOR_SCR SET
+	     EV_SMCL_SCR = #{evSmclScr}     	/* Note de facteurs d'évaluation  !== 평가소분류점수 ==! */
+	   , DEL_YN = #{delYn}     				/* Suppression ON !== 삭제여부 ==! */
+	   , LAST_CHPR_ID = #{lastChprId}     	/* ID du modificateur final !== 최종변경자ID ==! */
+	   , LAST_CHG_DTTM = SYSTIMESTAMP     	/* Date et heure de modification finale !== 최종변경일시 ==! */
+	WHERE 1 = 1
+	AND EV_CO_TP_CD = #{evCoTpCd}           /* Code de type de contrat !== 평가업체구분코드 ==! */
+	AND EV_LRCL_CD = #{evLrclCd}            /* Code de catégorie d'évaluation !== 평가대분류코드 ==! */ 
+	AND EV_MDCL_CD = #{evMdclCd}            /* Code de sous-catégorie d'évaluation  !== 평가중분류코드 ==! */
+	AND EV_SMCL_CD = #{evSmclCd}            /* Code de facteurs d'évaluation !== 평가소분류코드 ==! */
+	AND EV_QRT = #{evQrt} 					/* Trimestre D'Évaluation  !== 평가분기 ==! */
+  </update>
+
+  <!--
+	[Critère de référence pour les facteurs d'évaluation] Modifier  !== [평가요소기준] 수정 ==!
+  -->
+  <update id="updateLwcsEvFtorBase"
+	parameterType="alpass.ipt.rsm.com.vo.RsmEvFtorBaseVo">
+	/* updateLwcsEvFtorBase */
+	UPDATE TB_RSMI_EV_FTOR_BASE SET
+	    EV_PRID = #{evPrid}                           /** Période d'évaluation !== 평가기간 ==! */
+	  , XAMT_MDFY_EV_BASE_VAL = #{xamtMdfyEvBaseVal}  /** Valeur de référence pour évaluer la modification des droits et taxes  !== 세액정정평가기준값 ==! */
+	  , FINE_BASE_VAL = #{fineBaseVal}                /** Valeur de référence pour la pénalité !== 벌금기준값 ==! */
+	  , LAST_CHPR_ID = #{lastChprId}     			  /** ID du modificateur final !== 최종변경자ID ==! */
+	  , LAST_CHG_DTTM = SYSTIMESTAMP     			  /** Date et heure de modification finale !== 최종변경일시 ==! */
+	WHERE DEL_YN = 'N'
+	AND   EV_QRT = #{evQrt}                           /** Trimestre D'Évaluation  !== 평가분기 ==! */
+	AND   EV_CO_TP_CD = #{evCoTpCd}                   /** Code De Type De Contrat !== 평가업체구분코드 ==! */
+
+
+  </update>
+  
+</mapper>  

@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  Mapper : Enregistrer la note d'evaluation manuelle !== 수작업평가점수등록 Mapper ==!
+-->
+<mapper namespace="alpass.ipt.rsm.lwcs.mapper.RsmLwcsHnwrEvScrMapper">
+
+  <!--
+    [Enregistrer la note d'évaluation manuelle] Consulter la liste !== [수작업평가점수등록] 목록조회 ==!
+  -->
+  <select id="selectHnwrEvScrList"
+    parameterType="alpass.ipt.rsm.lwcs.vo.RsmLwcsHnwrEvScrVo"
+    resultType="alpass.ipt.rsm.lwcs.vo.RsmLwcsHnwrEvScrVo">
+    /* selectHnwrEvScrList */
+    
+    <include refid="pagination.header"/>
+    SELECT
+          a.EV_CO_TP_CD                     /* Code de type de contrat !== 평가업체구분코드 ==!*/
+        , a.STRT_EV_QRT                     /* Debut du trimestre d'evaluation !== 시작평가분기 ==!*/
+        , a.NIF                             /* NIF !== 납세번호 ==! */
+        , NVL((SELECT CO_NM FROM TB_COM_CO WHERE NIF = A.NIF), (SELECT CONM FROM TB_POTE_NIF WHERE NIF = A.NIF)) AS NIF_NM
+        , a.EV_SMCL_CD                      /* Code de facteurs d'evaluation !== 평가소분류코드 ==!*/
+        , CASE WHEN LENGTH(A.EV_SMCL_CD) = 2
+            THEN (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'RSM_0013' AND LANG_CD = #{langCd} AND CD_VDVAL = a.EV_SMCL_CD)
+          ELSE
+            (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'RSM_0014' AND LANG_CD = #{langCd} AND CD_VDVAL = a.EV_SMCL_CD)
+          END AS EV_SMCL_CD_NM
+        , a.EV_SMCL_SCR                     /* Note de facteurs d'evaluation  !== 평가소분류점수 ==!*/
+        , a.HNWR_CO_EV_CN                   /* Evaluation manuelle !== 수작업업체평가내용 ==!*/
+        , a.APLY_YN                         /* En vigueur O/N !== 적용여부 ==!*/
+        , a.DEL_YN                          /* Suppression ON !== 삭제여부 ==!*/
+        , a.FRST_REGST_ID                   /* ID du premier enregistrant  !== 최초등록자ID ==!*/
+        , a.FRST_RGSR_DTTM                  /* Date et heure de premier enregistrement !== 최초등록일시 ==!*/
+        , a.LAST_CHPR_ID                    /* ID du modificateur final !== 최종변경자ID ==!*/
+        , a.LAST_CHG_DTTM                   /* Date et heure de modification finale !== 최종변경일시 ==!*/
+    FROM  TB_RSMI_HNWR_CO_EV_SCR a
+    WHERE a.DEL_YN = 'N'                    /* Suppression ON !== 삭제여부 ==!*/
+    <if test='evCoTpCd != null and !"".equals(evCoTpCd)'>
+    AND   a.EV_CO_TP_CD = #{evCoTpCd}       /* Code de type de contrat !== 평가업체구분코드 ==!*/
+    </if>
+      <if test='(strtEvQrt != null and !"".equals(strtEvQrt)) and (endEvQrt != null and !"".equals(endEvQrt))'>
+          AND   (
+          a.STRT_EV_QRT BETWEEN #{strtEvQrt} AND #{endEvQrt}                        /* Debut du trimestre d'evaluation !== 시작평가분기 ==!*/
+          )
+      </if>
+    <if test='nif != null and !"".equals(nif)'>
+    AND   a.NIF = #{nif}                    /* NIF !== 납세번호 ==! */
+    </if>
+    <if test='evSmclCd != null and !"".equals(evSmclCd)'>
+    AND   a.EV_SMCL_CD = #{evSmclCd}        /* Code De Facteurs D'Évaluation !== 평가소분류코드 ==! */
+    </if>
+    ORDER BY  STRT_EV_QRT                   /* Debut du trimestre d'evaluation !== 시작평가분기 ==!*/
+            , NIF                           /* NIF !== 납세번호 ==! */
+            , EV_SMCL_CD                    /* Code de facteurs d'evaluation !== 평가소분류코드 ==!*/
+    
+    <include refid="pagination.footer"/>
+    
+  </select>
+  
+  <!--
+    [Enregistrer la note d'évaluation manuelle] Consulter la liste des codes des facteurs d'évaluation !== [수작업평가점수등록]평가요소코드 목록조회 ==! 
+  -->
+  <select id="selectEvClsfCdList"
+    parameterType="alpass.ipt.rsm.lwcs.vo.RsmLwcsHnwrEvScrVo"
+    resultType="alpass.ipt.rsm.com.vo.RsmEvFtorCdVo">
+    /* selectEvClsfCdList */
+    SELECT
+          EV_LRCL_CD                        /* Code de categorie d'evaluation !== 평가대분류코드 ==! */
+        , EV_MDCL_CD                        /* Code de sous-categorie d'evaluation  !== 평가중분류코드 ==! */
+        , EV_SMCL_CD                        /* Code de facteurs d'evaluation !== 평가소분류코드 ==!*/
+    FROM  TB_RSMI_EV_FTOR_CD
+    WHERE DEL_YN = 'N'                      /* Suppression ON !== 삭제여부 ==!*/
+    AND   SYS_CLCU_YN = 'N'                 /* Calcul par systeme O/N !== 시스템계산여부 ==!*/
+    AND   EV_CO_TP_CD = #{evCoTpCd}         /* Code de type de contrat !== 평가업체구분코드 ==!*/
+  </select>     
+  
+  <!--
+    [Enregistrer la note d'évaluation manuelle] Modifier !== [수작업평가점수등록] 수정 ==!
+  -->
+  <update id="updateHnwrCoEvScr"
+    parameterType="alpass.ipt.rsm.com.vo.RsmHnwrCoEvScrVo">
+    /* updateHnwrCoEvScr */
+    UPDATE TB_RSMI_HNWR_CO_EV_SCR
+    SET    EV_SMCL_SCR      = #{evSmclScr}          /* Note de facteurs d'evaluation  !== 평가소분류점수 ==!*/
+         , HNWR_CO_EV_CN    = #{hnwrCoEvCn}         /* Evaluation manuelle !== 수작업업체평가내용 ==!*/
+         , APLY_YN          = #{aplyYn}             /* En vigueur O/N !== 적용여부 ==!*/
+         , DEL_YN           = #{delYn}              /* Suppression ON !== 삭제여부 ==!*/
+         , LAST_CHPR_ID     = #{lastChprId}         /* ID du premier enregistrant  !== 최초등록자ID ==!*/
+         , LAST_CHG_DTTM    = SYSTIMESTAMP          /* Date et heure de modification finale !== 최종변경일시 ==!*/
+    WHERE  NIF              = #{nif}                /* NIF !== 납세번호 ==! */
+    AND    EV_CO_TP_CD      = #{evCoTpCd}           /* Code de type de contrat !== 평가업체구분코드 ==!*/
+    AND    EV_SMCL_CD       = #{evSmclCd}           /* Code de facteurs d'evaluation !== 평가소분류코드 ==!*/
+    AND    STRT_EV_QRT      = #{strtEvQrt}          /* Debut du trimestre d'evaluation !== 시작평가분기 ==!*/
+  </update>
+  
+  <!--
+    [Enregistrer la note d'évaluation manuelle] Modifier !== [수작업평가점수등록] 수정 ==! 
+  -->
+  <update id="updateHnwrCoEvScrAndEvQrt"
+    parameterType="alpass.ipt.rsm.com.vo.RsmHnwrCoEvScrVo">
+    /* updateHnwrCoEvScrAndEvQrt */
+    UPDATE TB_RSMI_HNWR_CO_EV_SCR 
+    SET    EV_SMCL_SCR      = #{evSmclScr}          /* Note de facteurs d'evaluation  !== 평가소분류점수 ==!*/
+         , HNWR_CO_EV_CN    = #{hnwrCoEvCn}         /* Evaluation manuelle !== 수작업업체평가내용 ==!*/
+         , APLY_YN          = #{aplyYn}             /* En vigueur O/N !== 적용여부 ==!*/
+         , DEL_YN           = #{delYn}              /* Suppression ON !== 삭제여부 ==!*/
+         , LAST_CHPR_ID     = #{lastChprId}         /* ID du premier enregistrant  !== 최초등록자ID ==!*/
+         , LAST_CHG_DTTM    = SYSTIMESTAMP          /* Date et heure de modification finale !== 최종변경일시 ==!*/
+         , STRT_EV_QRT      = #{strtEvQrt}          /* Debut du trimestre d'evaluation !== 시작평가분기 ==!*/
+    WHERE  NIF              = #{nif}                /* NIF !== 납세번호 ==! */
+    AND    EV_CO_TP_CD      = #{evCoTpCd}           /* Code de type de contrat !== 평가업체구분코드 ==!*/
+    AND    EV_SMCL_CD       = #{evSmclCd}           /* Code de facteurs d'evaluation !== 평가소분류코드 ==!*/
+  </update>  
+  
+  <!--
+    [Enregistrer la note d'évaluation manuelle] Consulter la note maximale   !== [수작업평가점수등록] 최대점수 조회 ==! 
+  -->
+  <select id="selectEvQrtEvMaxScr"
+    parameterType="alpass.ipt.rsm.lwcs.vo.RsmLwcsHnwrEvScrVo"
+    resultType="alpass.ipt.rsm.com.vo.RsmEvFtorScrVo">
+      /* selectEvQrtEvMaxScr */
+      SELECT
+           EV_LRCL_SCR      /** Note De Catégorie D'Évaluation !== 평가대분류점수 ==! */
+         , EV_MDCL_SCR      /** Note De Sous-Catégorie D'Évaluation !== 평가중분류점수 ==! */
+         , EV_SMCL_SCR      /** Note De Facteurs D'Évaluation  !== 평가소분류점수 ==! */
+      FROM TB_RSMI_EV_FTOR_SCR
+      WHERE EV_QRT = #{evQrt}               /** Trimestre D'Évaluation  !== 평가분기 ==! */
+      AND   EV_LRCL_CD = 'C'                /** Code De Catégorie D'Évaluation !== 평가대분류코드 ==! */
+      AND   EV_CO_TP_CD = #{evCoTpCd}       /** Code De Type De Contrat !== 평가업체구분코드 ==! */
+       
+  </select>
+  
+  <!--
+    [Enregistrer la note d'évaluation manuelle] Vérifier si la note a été enregistrée !== [수작업평가점수등록] 등록여부 체크 ==!
+     -->
+    <select id="selectHnwrEvScrDuplicateCheckList" 
+      parameterType="alpass.ipt.rsm.lwcs.vo.RsmLwcsHnwrEvScrVo" 
+      resultType="alpass.ipt.rsm.com.vo.RsmHnwrCoEvScrVo">
+
+      /* selectHnwrEvScrDuplicateCheckList */
+        SELECT
+              EV_CO_TP_CD               /* Code de type de contrat !== 평가업체구분코드 ==! */
+            , STRT_EV_QRT               /* 1er trimestre d'evaluation  !== 시작평가분기 ==! */
+            , NIF                       /* NIF !== 납세번호 ==! */
+            , EV_SMCL_CD                /* Code de facteurs d'evaluation !== 평가소분류코드 ==! */
+            , EV_SMCL_SCR               /* Note de facteurs d'evaluation  !== 평가소분류점수 ==! */
+            , HNWR_CO_EV_CN             /* Evaluation manuelle !== 수작업업체평가내용 ==! */
+            , APLY_YN                   /* En vigueur O/N !== 적용여부 ==! */
+            , DEL_YN                    /* Suppression ON !== 삭제여부 ==! */
+            , FRST_REGST_ID             /* ID du premier enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM            /* Date et heure de premier enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID              /* ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM             /* Date et heure de modification finale !== 최종변경일시 ==! */
+        FROM  TB_RSMI_HNWR_CO_EV_SCR
+        WHERE DEL_YN        = 'N'               /** Suppression ON !== 삭제여부 ==! */
+        AND   EV_CO_TP_CD   = #{evCoTpCd}       /** Code De Type De Contrat !== 평가업체구분코드 ==! */
+        AND   NIF           = #{nif}            /* NIF !== 납세번호 ==! */
+        AND   EV_SMCL_CD    = #{evSmclCd}       /** Code De Facteurs D'Évaluation !== 평가소분류코드 ==! */
+        AND   STRT_EV_QRT   = #{strtEvQrt}      /** 1Er Trimestre D'Evaluation  !== 시작평가분기 ==! */
+
+    </select>
+    
+    <!--
+    [Enregistrer la note d'évaluation manuelle] Enregistrer !== [수작업평가점수등록] 등록 ==!
+    -->
+    <insert id="insertHnwrCoEvScr"
+        parameterType="alpass.ipt.rsm.com.vo.RsmHnwrCoEvScrVo">
+        /* insertHnwrCoEvScr */
+        INSERT INTO TB_RSMI_HNWR_CO_EV_SCR (
+                  EV_CO_TP_CD                  /** Code De Type De Contrat !== 평가업체구분코드 ==! */
+                , STRT_EV_QRT                  /** 1Er Trimestre D'Evaluation  !== 시작평가분기 ==! */
+                , NIF                          /** NIF !== 납세번호 ==! */
+                , EV_SMCL_CD                   /** Code De Facteurs D'Évaluation !== 평가소분류코드 ==! */
+                , EV_SMCL_SCR                  /** Note De Facteurs D'Évaluation  !== 평가소분류점수 ==! */
+                , HNWR_CO_EV_CN                /** Evaluation Manuelle !== 수작업업체평가내용 ==! */
+                , APLY_YN                      /** En Vigueur O/N !== 적용여부 ==! */
+                , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+                , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+      ) VALUES (
+                  #{evCoTpCd}                  /** Code De Type De Contrat !== 평가업체구분코드 ==! */
+                , #{strtEvQrt}                 /** 1Er Trimestre D'Evaluation  !== 시작평가분기 ==! */
+                , #{nif}                       /** NIF !== 납세번호 ==! */
+                , #{evSmclCd}                  /** Code De Facteurs D'Évaluation !== 평가소분류코드 ==! */
+                , #{evSmclScr}                 /** Note De Facteurs D'Évaluation  !== 평가소분류점수 ==! */
+                , #{hnwrCoEvCn}                /** Evaluation Manuelle !== 수작업업체평가내용 ==! */
+                , #{aplyYn}                    /** En Vigueur O/N !== 적용여부 ==! */
+                , 'N'                          /** Suppression On !== 삭제여부 ==! */
+                , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , #{frstRegstId}               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+      )
+    </insert>
+
+    <!--
+    Consulter le score maximum (Critère de référence pour les facteurs d'évaluation) !== 법규준수도 세액정정 평가요소 최대점수 조회 ==!
+    -->
+    <select id="selectLwcsXamtMdfyEvFtorMaxScr" parameterType="alpass.ipt.rsm.com.vo.RsmEvFtorScrVo" resultType="int">
+        /* selectLwcsXamtMdfyEvFtorMaxScr */
+        SELECT EV_SMCL_SCR                     /** Note De Facteurs D'Évaluation  !== 평가소분류점수 ==! */
+        FROM TB_RSMI_EV_FTOR_SCR
+        WHERE DEL_YN = 'N'                     /** Suppression On !== 삭제여부 ==! */
+        AND EV_QRT = #{evQrt}                  /** Trimestre D'Évaluation  !== 평가분기 ==! */
+        AND EV_CO_TP_CD = 'B'                  /** Code De Type De Contrat !== 평가업체구분코드 ==! */
+        AND EV_LRCL_CD = 'B'                   /** Code De Catégorie D'Évaluation !== 평가대분류코드 ==! */
+        AND EV_MDCL_CD = 'BA'                  /** Code De Sous-Catégorie D'Évaluation  !== 평가중분류코드 ==! */
+    </select>
+
+</mapper>

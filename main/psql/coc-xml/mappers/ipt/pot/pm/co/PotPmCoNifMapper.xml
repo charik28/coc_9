@@ -1,0 +1,796 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.co.mapper.PotPmCoNifMapper">
+
+	<!--
+     Consulter des NIF !==NIF 조회한다==!
+  -->
+	<select id="selectCoNif"
+		parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo"
+			resultType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo">
+		/** selectCoNif */
+		SELECT A.NIF
+		, A.CONM
+		, A.POST_CD
+		, A.CO_DTL_ADDR
+		, A.NIF_STTS_CD
+		, A.DEL_YN
+		, A.FRST_REGST_ID
+		, A.FRST_RGSR_DTTM
+		, A.LAST_CHPR_ID
+		, A.LAST_CHG_DTTM
+		, B.CMRC_REGS_NO
+		FROM TB_POTE_NIF A
+		, TB_POTE_CMRC_REGS B
+		WHERE A.NIF = B.NIF(+)
+		AND A.DEL_YN = 'N'
+		AND B.DEL_YN(+) = 'N'
+		AND A.NIF = #{srchNif}
+		<if test="srchCmrcRegsNo != null and srchCmrcRegsNo != ''">
+			AND B.CMRC_REGS_NO = #{srchCmrcRegsNo}
+		</if>
+	</select>
+
+	<!--
+     Consulter la liste des NIF !==NIF 목록 조회한다==!
+  -->
+	<select id="selectCoNifList"
+					parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo"
+					resultType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo">
+		/** selectCoNifList */
+		<include refid="pagination.header"/>
+		SELECT A.NIF
+		, A.CONM
+		, A.POST_CD
+		, A.CO_DTL_ADDR
+		, A.NIF_STTS_CD
+		, A.ACTV_STOP_TP_CD
+		, A.DEL_YN
+		, A.FRST_REGST_ID
+		, A.FRST_RGSR_DTTM
+		, A.LAST_CHPR_ID
+		, A.LAST_CHG_DTTM
+		FROM TB_POTE_NIF A
+		WHERE A.DEL_YN = 'N'
+		<if test="srchNif != null and srchNif != ''">
+			AND A.NIF LIKE '%'|| #{srchNif} ||'%'
+		</if>
+		<if test="srchConm != null and srchConm != ''">
+			AND UPPER(A.CONM) LIKE '%'|| UPPER(#{srchConm}) ||'%'
+		</if>
+		<if test="srchNifActvSttsCd != null and srchNifActvSttsCd != ''">
+			AND A.NIF_STTS_CD = #{srchNifActvSttsCd}
+		</if>
+		<if test="srchApvr != null and srchApvr != ''">
+			AND A.NIF IN (SELECT NIF FROM TB_COM_CO WHERE APRV LIKE '%'|| UPPER(#{srchApvr}) ||'%' )
+		</if>
+		<if test="srchPermNo != null and srchPermNo != ''">
+			AND A.NIF IN (SELECT NIF FROM TB_COM_CO WHERE APRV LIKE '%'|| UPPER(#{srchPermNo}) ||'%' )
+		</if>
+		<if test="srchCoAddr != null and srchCoAddr != ''">
+			AND (UPPER(A.CO_DTL_ADDR),' ','') LIKE '%'|| REPLACE(UPPER(#{srchCoAddr}),' ','') ||'%'
+		</if>
+		<if
+			test="srchActvStopDtFrom != null and srchActvStopDtFrom != '' and srchActvStopDtTo != null and srchActvStopDtTo != ''">
+			AND A.NIF IN (
+			SELECT NIF
+			FROM TB_POTI_FNID
+			WHERE ACTV_STOP_DT
+			BETWEEN TO_CHAR(TO_DATE(#{srchActvStopDtFrom}, 'DD/MM/YYYY'), 'YYYYMMDD') AND
+			TO_CHAR(TO_DATE(#{srchActvStopDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD')
+			)
+		</if>
+		<if test="srchCoDclrCd != null and srchCoDclrCd != ''">
+			AND A.NIF IN (SELECT NIF FROM TB_COM_CO_DCLR_CD WHERE DEL_YN = 'N' AND USE_YN = 'Y' AND
+			CO_DCLR_TP_CD = #{srchCoDclrCd})
+		</if>
+		<if test="fnidRegion == 'Y'.toString()">
+			AND A.NIF IN (SELECT DISTINCT NIF FROM TB_POTI_FNID )
+		</if>
+		<if test="srchAprvNo != null and srchAprvNo != ''">
+			AND A.NIF IN (SELECT NIF FROM TB_POTI_FNID WHERE DEL_YN = 'N' AND UPPER(APRV_NO) LIKE '%'||
+			UPPER(#{srchCoAddr}) ||'%' )
+		</if>
+		<if test="srchActvStopTpCd != null and srchActvStopTpCd != ''">
+			AND A.ACTV_STOP_TP_CD = #{srchActvStopTpCd}
+		</if>
+		<include refid="pagination.footer"/>
+	</select>
+
+	<!--
+     Consulter la maison mère de NIF !==NIF 모회사 목록 조회한다==!
+  -->
+	<select id="selectMainCoNifList"
+					parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo"
+					resultType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo">
+		/** selectMainCoNifList */
+		<include refid="pagination.header"/>
+		SELECT A.NIF
+		, A.CONM
+		, A.POST_CD
+		, A.CO_DTL_ADDR
+		, A.NIF_STTS_CD
+		, A.DEL_YN
+		, A.FRST_REGST_ID
+		, A.FRST_RGSR_DTTM
+		, A.LAST_CHPR_ID
+		, A.LAST_CHG_DTTM
+		, (SELECT CASE WHEN COUNT(B.NIF) > 0 THEN 'Y' ELSE 'N' END FROM TB_COM_CO B WHERE DEL_YN = 'N'
+		AND A.NIF = B.NIF) AS NIF_RGSR_YN
+		FROM TB_POTE_NIF A
+		WHERE A.DEL_YN = 'N'
+		AND
+		(((SUBSTRING(A.NIF, 1, 1) = '0' OR SUBSTRING(A.NIF, 1, 1) = '1' OR SUBSTRING(A.NIF, 1, 1) = '2')
+		AND SUBSTRING(A.NIF, 19, 20) ='00')
+		or (SUBSTRING(A.NIF,16,20) = '00000'))
+		<if test="srchNif != null and srchNif != ''">
+			AND A.NIF LIKE '%'|| #{srchNif} ||'%'
+		</if>
+		<if test="srchCoCtgy != null and srchCoCtgy != ''">
+			AND A.NIF LIKE #{srchCoCtgy} ||'%'
+		</if>
+		<if test="srchConm != null and srchConm != ''">
+			AND UPPER(A.CONM) LIKE '%'|| UPPER(#{srchConm}) ||'%'
+		</if>
+		<if test="srchNifSttsCd != null and srchNifSttsCd != ''">
+			AND A.NIF_STTS_CD = #{srchNifSttsCd}
+		</if>
+		<include refid="pagination.footer"/>
+	</select>
+
+	<!--
+     Consulter la filiale de NIF !==NIF 자회사 목록 조회한다==!
+  -->
+	<select id="selectSubCoNifList"
+					parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo"
+					resultType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo">
+		/** selectSubCoNifList */
+		<include refid="pagination.header"/>
+		SELECT RIGHT(A.NIF, 5) NIF
+		, A.CONM
+		, A.POST_CD
+		, A.CO_DTL_ADDR
+		, A.NIF_STTS_CD
+		, A.DEL_YN
+		, A.FRST_REGST_ID
+		, A.FRST_RGSR_DTTM
+		, A.LAST_CHPR_ID
+		, A.LAST_CHG_DTTM
+		, (SELECT CASE WHEN COUNT(B.NIF) > 0 THEN 'Y' ELSE 'N' END FROM TB_COM_CO B WHERE DEL_YN = 'N'
+		AND A.NIF = B.NIF) AS NIF_RGSR_YN
+		FROM TB_POTE_NIF A
+		WHERE A.DEL_YN = 'N'
+		AND (
+		<![CDATA[
+			((SUBSTRING(A.NIF, 1, 1) = '0' OR SUBSTRING(A.NIF, 1, 1) = '1' OR SUBSTRING(A.NIF, 1, 1) = '2') AND SUBSTRING(A.NIF, 19, 20) <> '00')
+			or (SUBSTRING(A.NIF, 16,20) <> '00000')
+		]]>
+		)
+		AND A.NIF LIKE '%'|| #{srchNif} ||'%'
+		<include refid="pagination.footer"/>
+	</select>
+
+	<!--
+     Consulter si le NIF est déjà enregistré !==이미 등록된 NIF인지 조회한다==!
+  -->
+	<select id="selectCoNifCnt"
+			parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo"
+			resultType="java.lang.Integer">
+		/** selectCoNifCnt */
+		SELECT COUNT(*)
+		FROM TB_POTE_NIF
+		WHERE NIF = #{nif}
+	</select>
+
+	<!--
+     Enregistrer un NIF !==NIF 등록한다==!
+  -->
+	<insert id="insertCoNif"
+			parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo">
+		/** insertCoNif */
+		INSERT INTO TB_POTE_NIF (
+				 NIF
+			 , CONM
+			 , NIF_STTS_CD
+			 , POST_CD
+			 , CO_DTL_ADDR
+			 , CO_NM
+			 , DEL_YN
+			 , FRST_REGST_ID
+			 , FRST_RGSR_DTTM
+			 , LAST_CHPR_ID
+			 , LAST_CHG_DTTM
+		) VALUES (
+				 #{nif}
+			 , #{coNm}
+			 , #{nifSttsCd}
+			 , #{postCd}
+			 , #{coDtlAddr}
+			 , #{coNm}
+			 , 'N'
+			 , #{frstRegstId}
+			 , SYSTIMESTAMP
+			 , #{lastChprId}
+			 , SYSTIMESTAMP
+		)
+	</insert>
+
+	<!--
+     Modifier un NIF !==NIF 수정한다==!
+  -->
+	<update id="updateCoNif"
+			parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo">
+		/** updateCoNif */
+		UPDATE TB_POTE_NIF
+		SET CONM        	= #{conm}
+			, NIF_STTS_CD 	= #{nifSttsCd}
+			, POST_CD 			= #{postCd}
+			, CO_DTL_ADDR 	= #{coDtlAddr}
+			, CO_NM					= #{conm}
+			, LAST_CHPR_ID 	= #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+		WHERE NIF = #{nif}
+	</update>
+
+	<!--
+     Supprimer un NIF !==NIF 삭제한다==!
+  -->
+	<update id="deleteCoNif"
+			parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo">
+		/** deleteCoNif */
+		UPDATE TB_POTE_NIF
+		SET DEL_YN				= 'Y'
+			, LAST_CHPR_ID 	= #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+		WHERE NIF = #{nif}
+	</update>
+
+	<!--
+     Consulter un RC !==RC 조회한다==!
+  -->
+	<select id="selectCoCmrcRegs"
+			parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCmrcRegsVo"
+			resultType="alpass.ipt.pot.pm.co.vo.PotPmCoCmrcRegsVo">
+		/** selectCoCmrcRegs */
+		SELECT NIF
+			 , NIF_SRNO
+			 , CMRC_REGS_STTS_CD
+			 , WLY_CD
+			 , CO_NM
+			 , POBS_ADDR
+			 , ADDR
+			 , POBS_OWR_NM
+			 , USED_STRT_DT
+			 , BEEX_DT
+			 , ATR_DT
+			 , RPPN_NM
+			 , BIRT_DT
+			 , RPPN_FNM
+			 , CMRC_REGS_NO
+			 , NAT_NM
+			 , BTHP_NM
+			 , CO_TP_CD
+			 , DEL_YN
+			 , FRST_REGST_ID
+			 , FRST_RGSR_DTTM
+			 , LAST_CHPR_ID
+			 , LAST_CHG_DTTM
+			 , FMNM_NM
+			 , GVNM_NM
+			 , COMMUNE_NM
+			 , TRSM_DT
+			 , INVG_DT
+			 , ENTS_CD
+		FROM TB_POTE_CMRC_REGS
+		WHERE NIF = #{srchNif}
+		AND DEL_YN = 'N'
+	</select>
+
+	<!--
+     Consulter la lister de RC !==RC 목록 조회한다==!
+  -->
+	<select id="selectCoCmrcRegsList"
+			parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCmrcRegsVo"
+			resultType="alpass.ipt.pot.pm.co.vo.PotPmCoCmrcRegsVo">
+		/** selectCoCmrcRegsList */
+		<include refid="pagination.header"/>
+		SELECT NIF
+		, NIF_SRNO
+		, CMRC_REGS_STTS_CD
+		, WLY_CD
+		, CO_NM
+		, POBS_ADDR
+		, ADDR
+		, POBS_OWR_NM
+		, TO_CHAR(TO_DATE(USED_STRT_DT,'DDMMYYYY'),'DD/MM/YYYY') AS USED_STRT_DT
+		, TO_CHAR(TO_DATE(BEEX_DT,'DDMMYYYY'),'DD/MM/YYYY') AS BEEX_DT
+		, TO_CHAR(TO_DATE(ATR_DT,'DDMMYYYY'),'DD/MM/YYYY') AS ATR_DT
+		, RPPN_NM
+		, TO_CHAR(TO_DATE(BIRT_DT,'DDMMYYYY'),'DD/MM/YYYY') AS BIRT_DT
+		, RPPN_FNM
+		, CMRC_REGS_NO
+		, NAT_NM
+		, BTHP_NM
+		, CO_TP_CD
+		, DEL_YN
+		, FRST_REGST_ID
+		, FRST_RGSR_DTTM
+		, LAST_CHPR_ID
+		, LAST_CHG_DTTM
+		, FMNM_NM
+		, GVNM_NM
+		, COMMUNE_NM
+		, TO_CHAR(TO_DATE(TRSM_DT,'DDMMYYYY'),'DD/MM/YYYY') AS TRSM_DT
+		, TO_CHAR(TO_DATE(INVG_DT,'DDMMYYYY'),'DD/MM/YYYY') AS INVG_DT
+		, ENTS_CD
+		FROM TB_POTE_CMRC_REGS
+		WHERE DEL_YN = 'N'
+		<if test="srchCmrcRegsNo != null and srchCmrcRegsNo != ''">
+			AND UPPER(CMRC_REGS_NO) LIKE '%'|| UPPER(#{srchCmrcRegsNo}) ||'%'
+		</if>
+		<if test="srchNif != null and srchNif != ''">
+			AND NIF LIKE '%'|| #{srchNif} ||'%'
+		</if>
+		<if test="srchCmrcRegsSttsCd != null and srchCmrcRegsSttsCd != ''">
+			AND CMRC_REGS_STTS_CD = #{srchCmrcRegsSttsCd}
+		</if>
+		<if test="srchCoTpCd != null and srchCoTpCd != ''">
+			AND CO_TP_CD = #{srchCoTpCd}
+		</if>
+		<if test="srchCoDclrTpCd != null and srchCoDclrTpCd != ''">
+			AND NIF IN(SELECT NIF FROM TB_COM_CO_DCLR_CD WHERE CO_DCLR_TP_CD = #{srchCoDclrTpCd} )
+		</if>
+		<include refid="pagination.footer"/>
+	</select>
+
+	<!--
+     Consulter si le RC est déjà enregistré !==이미 등록된 RC인지 조회한다==!
+  -->
+	<select id="selectCoCmrcRegsCnt"
+			parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCmrcRegsVo"
+			resultType="java.lang.Integer">
+		/** selectCoCmrcRegsCnt */
+		SELECT COUNT(*)
+		FROM TB_POTE_CMRC_REGS
+		WHERE CMRC_REGS_NO = #{cmrcRegsNo}
+	</select>
+
+	<!--
+     Enregistre un RC !==RC 등록한다==!
+  -->
+	<insert id="insertCoCmrcRegs"
+			parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCmrcRegsVo">
+		/** insertCoCmrcRegs */
+		INSERT INTO TB_POTE_CMRC_REGS (
+				CMRC_REGS_STTS_CD
+			, CO_NM
+			, POBS_ADDR
+			, ADDR
+			, POBS_OWR_NM
+			, USED_STRT_DT
+			, BEEX_DT
+			, ATR_DT
+			, RPPN_NM
+			, BIRT_DT
+			, RPPN_FNM
+			, CMRC_REGS_NO
+			, NAT_NM
+			, BTHP_NM
+			, CO_TP_CD
+			, FMNM_NM
+			, GVNM_NM
+			, TRSM_DT
+			, INVG_DT
+			, ENTS_CD
+			, COMMUNE_NM
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+		) VALUES (
+				#{cmrcRegsSttsCd}
+			, #{coNm}
+			, #{pobsAddr}
+			, #{addr}
+			, #{pobsOwrNm}
+			<choose>
+				<when test="usedStrtDt != null and usedStrtDt != ''">
+					, TO_CHAR(TO_DATE(#{usedStrtDt}), 'YYYYMMDD')
+				</when>
+				<otherwise>
+					, ''
+				</otherwise>
+			</choose>
+			<choose>
+				<when test="beexDt != null and beexDt != ''">
+					, TO_CHAR(TO_DATE(#{beexDt}), 'YYYYMMDD')
+				</when>
+				<otherwise>
+					, ''
+				</otherwise>
+			</choose>
+			<choose>
+				<when test="atrDt != null and atrDt != ''">
+					, TO_CHAR(TO_DATE(#{atrDt}), 'YYYYMMDD')
+				</when>
+				<otherwise>
+					, ''
+				</otherwise>
+			</choose>
+			, #{rppnNm}
+			<choose>
+				<when test="birtDt != null and birtDt != ''">
+					, TO_CHAR(TO_DATE(#{birtDt}), 'YYYYMMDD')
+				</when>
+				<otherwise>
+					, ''
+				</otherwise>
+			</choose>
+			, #{rppnFnm}
+			, #{cmrcRegsNo}
+			, #{natNm}
+			, #{bthpNm}
+			, #{coTpCd}
+			, #{fmnmNm}
+			, #{gvnmNm}
+			<choose>
+				<when test="trsmDt != null and trsmDt != ''">
+					, TO_CHAR(TO_DATE(#{trsmDt}), 'YYYYMMDD')
+				</when>
+				<otherwise>
+					, ''
+				</otherwise>
+			</choose>
+			<choose>
+				<when test="invgDt != null and invgDt != ''">
+					, TO_CHAR(TO_DATE(#{invgDt}), 'YYYYMMDD')
+				</when>
+				<otherwise>
+					, ''
+				</otherwise>
+			</choose>
+			, #{entsCd}
+			, #{communeNm}
+			, 'N'
+			, #{frstRegstId}
+			, SYSTIMESTAMP
+			, #{lastChprId}
+			, SYSTIMESTAMP
+			)
+	</insert>
+
+	<!--
+     Modifier un RC !==RC 수정한다==!
+  -->
+	<update id="updateCoCmrcRegs"
+			parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCmrcRegsVo">
+		/** updateCoCmrcRegs */
+		UPDATE TB_POTE_CMRC_REGS
+		SET CMRC_REGS_STTS_CD = #{cmrcRegsSttsCd}
+		, CO_NM = #{coNm}
+		, POBS_ADDR = #{pobsAddr}
+		, ADDR = #{addr}
+		, POBS_OWR_NM = #{pobsOwrNm}
+		, WLY_CD = #{wlyCd}
+		<choose>
+			<when test="usedStrtDt != null and usedStrtDt != ''">
+				, USED_STRT_DT = TO_CHAR(TO_DATE(#{usedStrtDt},'DD/MM/YYYY'), 'YYYYMMDD')
+			</when>
+			<otherwise>
+				, USED_STRT_DT		=	''
+			</otherwise>
+		</choose>
+		<choose>
+			<when test="beexDt != null and beexDt != ''">
+				, BEEX_DT = TO_CHAR(TO_DATE(#{beexDt},'DD/MM/YYYY'), 'YYYYMMDD')
+			</when>
+			<otherwise>
+				, BEEX_DT					=	''
+			</otherwise>
+		</choose>
+		<choose>
+			<when test="atrDt != null and atrDt != ''">
+				, ATR_DT = TO_CHAR(TO_DATE(#{atrDt},'DD/MM/YYYY'), 'YYYYMMDD')
+			</when>
+			<otherwise>
+				, ATR_DT					=	''
+			</otherwise>
+		</choose>
+			, RPPN_NM						= #{rppnNm}
+		<choose>
+			<when test="birtDt != null and birtDt != ''">
+				, BIRT_DT = TO_CHAR(TO_DATE(#{birtDt},'DD/MM/YYYY'), 'YYYYMMDD')
+			</when>
+			<otherwise>
+				, BIRT_DT					=	''
+			</otherwise>
+		</choose>
+			, RPPN_FNM					=	#{rppnFnm}
+			, NAT_NM						=	#{natNm}
+			, BTHP_NM						=	#{bthpNm}
+			, CO_TP_CD					=	#{coTpCd}
+			, FMNM_NM						=	#{fmnmNm}
+			, GVNM_NM						=	#{gvnmNm}
+		<choose>
+			<when test="trsmDt != null and trsmDt != ''">
+				, TRSM_DT = TO_CHAR(TO_DATE(#{trsmDt},'DD/MM/YYYY'), 'YYYYMMDD')
+			</when>
+			<otherwise>
+				, TRSM_DT					=	''
+			</otherwise>
+		</choose>
+		<choose>
+			<when test="invgDt != null and invgDt != ''">
+				, INVG_DT = TO_CHAR(TO_DATE(#{invgDt},'DD/MM/YYYY'), 'YYYYMMDD')
+			</when>
+			<otherwise>
+				, INVG_DT = ''
+			</otherwise>
+		</choose>
+		, ENTS_CD = #{entsCd}
+		, COMMUNE_NM = #{communeNm}
+		, LAST_CHPR_ID = #{lastChprId}
+		, LAST_CHG_DTTM = SYSTIMESTAMP
+		WHERE CMRC_REGS_NO = #{cmrcRegsNo}
+	</update>
+
+	<!--
+       Modification le nif de numéro de registre du commerce !==상업등기번호 Nif 값수정==!
+    -->
+	<update id="updateCoCmrcRegsNif"
+		parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCmrcRegsVo">
+		/** updateCoCmrcRegsNif */
+		UPDATE TB_POTE_CMRC_REGS
+		SET NIF = #{nif}
+		WHERE CMRC_REGS_NO = #{cmrcRegsNo}
+	</update>
+	<!--
+     Supprimer un RC !==RC 삭제한다==!
+  -->
+	<update id="deleteCoCmrcRegs"
+		parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCmrcRegsVo">
+		/** deleteCoCmrcRegs */
+		UPDATE TB_POTE_CMRC_REGS
+		SET DEL_YN        = 'Y'
+			, LAST_CHPR_ID  = #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+		WHERE CMRC_REGS_NO = #{cmrcRegsNo}
+	</update>
+
+	<!--
+     Consulter le code d'activité de RC !==RC 활동코드 조회한다==!
+  -->
+	<select id="selectCoCmrcRegsActvMtrList"
+		parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCmrcRegsActvMtrVo"
+		resultType="alpass.ipt.pot.pm.co.vo.PotPmCoCmrcRegsActvMtrVo">
+		/** selectCoCmrcRegsActvMtrList */
+		<include refid="pagination.header"/>
+		SELECT A.CMRC_REGS_NO
+		, A.ACTV_MTR_CD
+		, B.ACTV_MTR_CD_NM
+		FROM TB_POTE_CMRC_REGS_ACTV_MTR A,
+		TB_POTE_ACTV_MTR_CD B
+		WHERE A.CMRC_REGS_NO = #{srchCmrcRegsNo}
+		AND A.ACTV_MTR_CD = B.ACTV_MTR_CD
+		AND A.DEL_YN = 'N'
+		AND B.DEL_YN = 'N'
+		<include refid="pagination.footer"/>
+	</select>
+
+
+	<!--
+   Consulter la liste des codes d'activité de RC !== NIF 활동코드 목록 조회 ==!
+-->
+	<select id="selectNifActvList" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo"
+		resultType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo">
+		/** selectNifActvList */
+		<if test="pagingYn != 'N'.toString()">
+			<include refid="pagination.header"/>
+		</if>
+		SELECT
+		A.SRNO
+		, A.NIF
+		, A.ACTV_STOP_RSN
+		, A.NIF_ACTV_STTS_CD
+		, TO_CHAR(TO_DATE(A.ACTV_STOP_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS ACTV_STOP_DT
+		, TO_CHAR(TO_DATE(A.ACTV_STRT_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS ACTV_STRT_DT
+		, A.ATCH_FILE_ID
+		, B.CO_NM
+		, B.POST_CD
+		, B.CO_DTL_ADDR
+		, A.ACTV_STOP_RELE_RSN
+		, A.ACTV_STOP_RELE_ATDOC_ID
+		, A.APRV_NO
+		, TO_CHAR(TO_DATE(A.APPR_CRET_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS APPR_CRET_DT
+		, TO_CHAR(TO_DATE(A.APPR_XPIR_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS APPR_XPIR_DT
+		, TO_CHAR(TO_DATE(A.APPR_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS APPR_DT
+		, A.DEL_YN
+		, A.FRST_REGST_ID
+		, TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+		, A.LAST_CHPR_ID
+		, TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+		FROM
+		TB_POTI_FNID A ,
+		TB_POTE_NIF B
+		WHERE A.NIF = B.NIF
+		AND A.DEL_YN = 'N'
+		AND B.DEL_YN = 'N'
+		<if test="srchConm != null and srchConm != ''">
+			AND B.CO_NM = #{srchConm}
+		</if>
+		<if test="srchNif != null and srchNif != ''">
+			AND A.NIF = #{srchNif}
+		</if>
+		<if test="srchNifActvSttsCd != null and srchNifActvSttsCd != ''">
+			AND A.NIF_ACTV_STTS_CD = #{srchNifActvSttsCd}
+		</if>
+		<if test="pagingYn != 'N'.toString()">
+			<include refid="pagination.footer"/>
+		</if>
+	</select>
+
+	<!--
+    Enregistrer un code d'activité de NIF !== NIF 활동코드 등록 ==!
+ -->
+	<insert id="insertNifActv" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo">
+		/** insertNifActv */
+		WITH UPSERT AS
+						 (
+		UPDATE TB_POTI_FNID
+		SET NIF                     = #{nif}
+			, ACTV_STOP_RSN           = #{actvStopRsn}
+			, NIF_ACTV_STTS_CD        = #{nifActvSttsCd}
+			, ACTV_STOP_RELE_RSN      = #{actvStopReleRsn}
+			, ACTV_STOP_RELE_ATDOC_ID = #{actvStopReleAtDocId}
+			, ACTV_STOP_DT            = TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD')
+			, APRV_NO                 = #{aprvNo}
+			, APPR_CRET_DT            = TO_CHAR(TO_DATE(#{apprCretDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+			, APPR_XPIR_DT            = TO_CHAR(TO_DATE(#{apprXpirDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+			, APPR_DT                 = TO_CHAR(TO_DATE(#{apprDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+			, ATCH_FILE_ID            = #{atchFileId}
+			, LAST_CHPR_ID            = #{lastChprId}
+			, LAST_CHG_DTTM           = SYSTIMESTAMP
+		WHERE SRNO = #{srno} RETURNING *
+		)
+		INSERT
+		INTO TB_POTI_FNID
+		( SRNO
+		, NIF
+		, ACTV_STOP_RSN
+		, NIF_ACTV_STTS_CD
+		, ACTV_STOP_DT
+		, ATCH_FILE_ID
+		, ACTV_STOP_RELE_RSN
+		, ACTV_STOP_RELE_ATDOC_ID
+		, APRV_NO
+		, APPR_CRET_DT
+		, APPR_XPIR_DT
+		, APPR_DT
+		, DEL_YN
+		, FRST_REGST_ID
+		, FRST_RGSR_DTTM
+		, LAST_CHPR_ID
+		, LAST_CHG_DTTM)
+		SELECT (SELECT NVL(MAX(SRNO) + 1, 0) FROM TB_POTI_FNID)
+				 , #{nif}
+				 , #{actvStopRsn}
+				 , #{nifActvSttsCd}
+				 , TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD')
+				 , #{atchFileId}
+				 , #{actvStopReleRsn}
+				 , #{actvStopReleAtDocId}
+				 , #{aprvNo}
+				 , TO_CHAR(TO_DATE(#{apprCretDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+				 , TO_CHAR(TO_DATE(#{apprXpirDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+				 , TO_CHAR(TO_DATE(#{apprDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+				 , 'N'
+				 , #{frstRegstId}
+				 , SYSTIMESTAMP
+				 , #{lastChprId}
+				 , SYSTIMESTAMP WHERE NOT EXISTS(SELECT * FROM UPSERT)
+	</insert>
+
+	<!--
+   Supprimer un code d'activité de NIF !== NIF 활동코드 삭제 ==!
+ -->
+	<update id="deleteNifActv" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo">
+		/** deleteNifActv */
+		UPDATE TB_POTI_FNID
+		SET
+			LAST_CHPR_ID = #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+			, DEL_YN = 'Y'
+		WHERE SRNO = #{srno}
+	</update>
+
+	<!--
+   Déblocage de NIF !== NIF 활동정지해제  ==!
+ -->
+	<update id="updateNifActvStopRele" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo">
+		/** updateNifActvStopRele */
+		UPDATE TB_POTI_FNID
+		SET NIF_ACTV_STTS_CD        = '1'
+			, ACTV_STOP_RELE_RSN      = #{actvStopReleRsn}
+			, ACTV_STOP_RELE_ATDOC_ID = #{actvStopReleAtDocId}
+			, ACTV_STRT_DT            = TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD')
+			, LAST_CHPR_ID            = #{lastChprId}
+			, LAST_CHG_DTTM           = SYSTIMESTAMP
+		WHERE SRNO = #{srno}
+	</update>
+
+	<!--
+ Supprimer un code d'activité de NIF !== NIF 활동코드 삭제 ==!
+-->
+	<update id="updateNifSttsCd" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo">
+		/** updateNifSttsCd */
+		UPDATE TB_POTE_NIF
+		SET NIF_STTS_CD = #{nifSttsCd}
+		, LAST_CHPR_ID = #{lastChprId}
+		, LAST_CHG_DTTM = SYSTIMESTAMP
+		<choose>
+			<when test="nifSttsCd == '0'.toString()">
+				, ACTV_STOP_TP_CD = 'DGD'
+			</when>
+			<otherwise>
+				, ACTV_STOP_TP_CD = ''
+			</otherwise>
+		</choose>
+		WHERE NIF = #{nif}
+	</update>
+
+
+	<!--
+    Consultation de la liste d'exception de FNID !== FNID예외 목록 조회 ==!
+ -->
+	<select id="selectFnidExcpList" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo"
+		resultType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo">
+		/** selectFnidExcpList */
+		SELECT CAG_MGMT_NO
+		FROM TB_POTI_FNID_EXCP
+		WHERE NIF = #{nif}
+	</select>
+
+	<!--
+   Enregistrement de l'exception de FNID !== FNID예외 등록 ==!
+ -->
+	<update id="insertFnidExcp" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo">
+		/** insertFnidExcp */
+		with upsert as (
+		UPDATE TB_POTI_FNID_EXCP
+		SET DEL_YN        = 'N'
+			, LAST_CHPR_ID  = #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+		WHERE NIF = #{nif}
+			AND CAG_MGMT_NO = #{cagMgmtNo} returning *
+		)
+		INSERT
+		INTO TB_POTI_FNID_EXCP
+		( NIF
+		, CAG_MGMT_NO
+		, DEL_YN
+		, FRST_REGST_ID
+		, FRST_RGSR_DTTM
+		, LAST_CHPR_ID
+		, LAST_CHG_DTTM)
+		SELECT #{nif}
+				 , #{cagMgmtNo}
+				 , 'N'
+				 , #{frstRegstId}
+				 , SYSTIMESTAMP
+				 , #{lastChprId}
+				 , SYSTIMESTAMP WHERE NOT exists(select * from upsert)
+	</update>
+
+	<!--
+   Suppression de l'exception de FNID !== FNID예외 삭제 ==!
+ -->
+	<update id="deleteFnidExcp" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoNifRcVo">
+		/** deleteFnidExcp */
+		UPDATE TB_POTI_FNID_EXCP
+		SET LAST_CHPR_ID  = #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+			, DEL_YN        = 'Y'
+		WHERE NIF = #{nif}
+	</update>
+</mapper>

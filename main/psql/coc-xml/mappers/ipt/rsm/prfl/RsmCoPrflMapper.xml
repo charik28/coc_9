@@ -1,0 +1,1795 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.rsm.prfl.mapper.RsmCoPrflMapper">
+
+    <!--
+      [Profils d'opérateur] Consulter la liste !== [업체프로파일] 목록조회 ==!
+    -->
+    <select id="selectCoPrflList" parameterType="alpass.ipt.rsm.prfl.vo.RsmCoPrflVo" resultType="alpass.ipt.rsm.prfl.vo.RsmCoPrflVo">
+
+    /* selectCoPrflList */
+    <include refid="pagination.header" />
+        SELECT
+              DISTINCT
+              RSM.NIF             /** NIF !== 납세번호 ==! */
+		    , NVL((
+					SELECT 'Y'
+					FROM TB_AEOI_ATHR_CO
+					WHERE ATHR_STTS_CD = 'AS1'
+					AND NIF = RSM.NIF
+					ORDER BY ATHR_END_DT DESC
+					FETCH FIRST 1 ROWS ONLY
+				  ),'N') as AEO_CO_YN     /** OEA O/N !== AEO 업체 여부 ==! */
+            , POT.CO_NM           /** Entreprise !== 업체명 ==! */
+            , POT.CO_ADDR         /** Adresse de l'entreprise !== 업체주소 ==! */
+            , POT.RPRS_TLPH_NO    /** N° de telephone principale !== 대표전화번호 ==! */
+            , POT.RPRS_FAX_NO     /** N° de fax principal !== 대표팩스번호 ==! */
+            , ( SELECT CO_DCLR_CD
+				FROM TB_COM_CO_DCLR_CD
+				WHERE NIF = RSM.NIF
+				AND CO_DCLR_TP_CD = 'H'
+				AND ROWNUM = 1
+			  ) AS DECR_CD 		  /** Code De Déclaration De L'Entreprise !== 업체신고코드 ==! */
+        FROM  TB_RSMI_CO_PRFL_BSCS_INFO RSM
+            , (SELECT
+                      A.NIF AS NIF 				/** NIF !== 납세번호 ==! */
+                    , DECODE(B.CO_NM, NULL, A.CONM, B.CO_NM) AS CO_NM 				/** Entreprise !== 업체명 ==! */
+                    , A.MN_BIZ_NM 				/** Nom de l'activité principale !== 주요사업명 ==! */
+                    , B.RPRS_TLPH_NO 			/** N° De Téléphone Principale !== 대표전화번호 ==! */
+                    , B.CO_ADDR 				/** Adresse De L'Entreprise  !== 업체주소 ==! */
+                    , B.RPRS_EML 				/** Email Principal !== 대표이메일 ==! */
+                    , B.CO_TP_CD 				/** Code De Type D'Entreprise  !== 업체구분코드 ==! */
+                    , B.RPRS_FAX_NO 			/** N° De Fax Principal !== 대표팩스번호 ==! */
+                FROM  TB_POTE_NIF A
+                    , TB_COM_CO B
+                WHERE
+                       A.DEL_YN = 'N' 			/** Suppression On !== 삭제여부 ==! */
+                   AND B.DEL_YN(+) = 'N'
+                   AND A.NIF = B.NIF(+) 		/** NIF !== 납세번호 ==! */
+                   AND A.NIF_STTS_CD != '0' 	/** Statut NIF !== NIF 상태 ==! */
+                ) POT
+        WHERE RSM.DEL_YN = 'N' 					/** Suppression On !== 삭제여부 ==! */
+        <if test='nif != null and nif != ""'>
+            AND   RSM.NIF = #{nif} 				/** NIF !== 납세번호 ==! */
+        </if>
+        AND   RSM.NIF = POT.NIF
+		AND   RSM.PRFL_TP_CD = 'O' 				/** Code de type de profils !== 프로파일구분코드 ==! */
+        ORDER BY RSM.NIF
+    <include refid="pagination.footer" />
+    </select>
+
+    <!--
+      [Profils d'opérateur] Consulter les détails
+      !== [업체프로파일] 상세조회 ==!
+    -->
+    <select id="selectPrflCoDtlInfo"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+        resultType="alpass.ipt.rsm.prfl.vo.RsmCoPrflVo">
+        /* selectPrflCoDtlInfo */
+        SELECT
+              A.NIF AS NIF 			/** NIF !== 납세식별번호 ==! */
+            , DECODE(B.CO_NM, NULL, A.CONM, B.CO_NM) AS CO_NM 		/** Entreprise !== 업체명 ==! */
+            , A.MN_BIZ_NM 			/** Nom de l'activité principale !== 주요사업명 ==! */
+            , B.RPRS_TLPH_NO 		/** N° de telephone principale !== 대표전화번호 ==! */
+            , B.CO_ADDR 			/** Adresse de l'entreprise   !== 업체주소 ==! */
+            , B.RPRS_EML 			/** Email Principal !== 대표이메일 ==! */
+            , B.CO_TP_CD 			/** Code de type d'entreprise  !== 업체구분코드 ==! */
+            , B.RPRS_FAX_NO 		/** N° de fax principal !== 대표팩스번호 ==! */
+		    , ( SELECT AEO_ATHR_NO
+				FROM TB_AEOI_ATHR_CO
+				WHERE ATHR_STTS_CD = 'AS1'
+				AND NIF = A.NIF
+				ORDER BY ATHR_END_DT DESC
+				FETCH FIRST 1 ROWS ONLY
+		      ) AS AEO_ATHR_NO 			/** Numéro d'OEA !== AEO공인번호 ==! */
+        FROM  TB_POTE_NIF A
+            , TB_COM_CO B
+        WHERE
+            A.DEL_YN = 'N' 				/** Suppression On !== 삭제여부 ==! */
+        AND B.DEL_YN(+) = 'N'
+        AND A.NIF = B.NIF(+) 			/** NIF !== 납세식별번호 ==! */
+        AND A.NIF_STTS_CD != '0' 		/** Statut NIF !== NIF 상태 ==! */
+        AND A.NIF = #{nif}
+    </select>
+
+    <!--
+      [Profils d'opérateur] Consulter par trimestre
+      !== [업체프로파일] 분기조회 ==!
+    -->
+    <select id="selectCoPrflRcntYyqrt"
+        resultType="alpass.ipt.rsm.prfl.vo.RsmPrflImexGrdntVo">
+        /* selectCoPrflRcntYyqrt */
+        SELECT TO_CHAR(ADD_MONTHS(SYSDATE, -9), 'YYYY') || TO_CHAR(ADD_MONTHS(SYSDATE, -9), 'Q') AS BF_3_QRT 	/** 3ème trimestre précédent !== 이전 3분기 ==! */
+             , TO_CHAR(ADD_MONTHS(SYSDATE, -6), 'YYYY') || TO_CHAR(ADD_MONTHS(SYSDATE, -6), 'Q') AS BF_2_QRT 	/** 2 trimestres précédents !== 이전 2분기 ==! */
+             , TO_CHAR(ADD_MONTHS(SYSDATE, -3), 'YYYY') || TO_CHAR(ADD_MONTHS(SYSDATE, -3), 'Q') AS BF_QRT 		/** trimestre précédent !== 이전 분기 ==! */
+             , TO_CHAR(SYSDATE, 'YYYY') || TO_CHAR(SYSDATE, 'Q') as NOW_QRT 									/** trimestre en cours !== 현재 분기 ==! */
+        FROM DUAL
+    </select>
+
+    <!--
+      [Profils d'opérateur] Statistiques d’importation et d’exportation
+      !== [업체프로파일] 수출입증감율조회 ==!
+    -->
+    <select id="selectCoPrflImexGrdntList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+        resultType="alpass.ipt.rsm.prfl.vo.RsmPrflImexGrdntVo">
+        /* selectCoPrflImexGrdntList */
+        WITH RECENT_QUARTER AS
+        (
+            SELECT RCNT_QRT, ROWNUM AS RNUM
+            FROM
+            (
+                SELECT TO_CHAR(ADD_MONTHS(SYSDATE, -21), 'YYYY') || TO_CHAR(ADD_MONTHS(SYSDATE, -21), 'Q') AS RCNT_QRT FROM DUAL
+                UNION ALL
+                SELECT TO_CHAR(ADD_MONTHS(SYSDATE, -18), 'YYYY') || TO_CHAR(ADD_MONTHS(SYSDATE, -18), 'Q') AS RCNT_QRT FROM DUAL
+                UNION ALL
+                SELECT TO_CHAR(ADD_MONTHS(SYSDATE, -15), 'YYYY') || TO_CHAR(ADD_MONTHS(SYSDATE, -15), 'Q') AS RCNT_QRT FROM DUAL
+                UNION ALL
+                SELECT TO_CHAR(ADD_MONTHS(SYSDATE, -12), 'YYYY') || TO_CHAR(ADD_MONTHS(SYSDATE, -12), 'Q') AS RCNT_QRT FROM DUAL
+                UNION ALL
+                SELECT TO_CHAR(ADD_MONTHS(SYSDATE, -9), 'YYYY') || TO_CHAR(ADD_MONTHS(SYSDATE, -9), 'Q') AS RCNT_QRT FROM DUAL
+                UNION ALL
+                SELECT TO_CHAR(ADD_MONTHS(SYSDATE, -6), 'YYYY') || TO_CHAR(ADD_MONTHS(SYSDATE, -6), 'Q') AS RCNT_QRT FROM DUAL
+                UNION ALL
+                SELECT TO_CHAR(ADD_MONTHS(SYSDATE, -3), 'YYYY') || TO_CHAR(ADD_MONTHS(SYSDATE, -3), 'Q') AS RCNT_QRT FROM DUAL
+                UNION ALL
+                SELECT TO_CHAR(SYSDATE, 'YYYY') || TO_CHAR(SYSDATE, 'Q') AS RCNT_QRT FROM DUAL
+            )
+            ORDER BY 1
+        )
+		SELECT
+			'BF_YY_TXBS_PRC_DZD' AS TP_CD  	/** Code de catégorie !== 구분 ==! */
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 1) AND IMEX_TP_CD = 'IMP' THEN TTXBS_NCY_AMT END),0) AS IMP_CNT_1 		/** Nombre d'importations 1 !== 수입 건수 1 ==! */
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 2) AND IMEX_TP_CD = 'IMP' THEN TTXBS_NCY_AMT END),0) AS IMP_CNT_2 		/** Nombre d'importations 2 !== 수입 건수 2 ==! */
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 3) AND IMEX_TP_CD = 'IMP' THEN TTXBS_NCY_AMT END),0) AS IMP_CNT_3 		/** Nombre d'importations 3 !== 수입 건수 3 ==! */
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 4) AND IMEX_TP_CD = 'IMP' THEN TTXBS_NCY_AMT END),0) AS IMP_CNT_4 		/** Nombre d'importations 4 !== 수입 건수 4 ==! */
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 1) AND IMEX_TP_CD = 'EXP' THEN TTXBS_NCY_AMT END),0) AS EXP_CNT_1 		/** Nombre d'exportations 1 !== 수출 건수 1 ==! */
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 2) AND IMEX_TP_CD = 'EXP' THEN TTXBS_NCY_AMT END),0) AS EXP_CNT_2 		/** Nombre d'exportations 2 !== 수출 건수 2 ==! */
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 3) AND IMEX_TP_CD = 'EXP' THEN TTXBS_NCY_AMT END),0) AS EXP_CNT_3 		/** Nombre d'exportations 3 !== 수출 건수 3 ==! */
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 4) AND IMEX_TP_CD = 'EXP' THEN TTXBS_NCY_AMT END),0) AS EXP_CNT_4 		/** Nombre d'exportations 4 !== 수출 건수 4 ==! */
+		FROM TB_RSMI_LYY_CMP_IMEX_GRDNT
+		WHERE DEL_YN = 'N'
+		AND NIF = #{nif} 						/** NIF !== 납세번호 ==! */
+		AND PRFL_TP_CD = #{prflTpCd} 			/** Code de type de profils !== 프로파일구분코드 ==! */
+		GROUP BY NIF
+		UNION ALL
+		SELECT
+			'NOW_YY_TXBS_PRC_DZD' AS TP_CD
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 5) AND IMEX_TP_CD = 'IMP' THEN TTXBS_NCY_AMT END),0)
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 6) AND IMEX_TP_CD = 'IMP' THEN TTXBS_NCY_AMT END),0)
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 7) AND IMEX_TP_CD = 'IMP' THEN TTXBS_NCY_AMT END),0)
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 8) AND IMEX_TP_CD = 'IMP' THEN TTXBS_NCY_AMT END),0)
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 5) AND IMEX_TP_CD = 'EXP' THEN TTXBS_NCY_AMT END),0)
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 6) AND IMEX_TP_CD = 'EXP' THEN TTXBS_NCY_AMT END),0)
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 7) AND IMEX_TP_CD = 'EXP' THEN TTXBS_NCY_AMT END),0)
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 8) AND IMEX_TP_CD = 'EXP' THEN TTXBS_NCY_AMT END),0)
+		FROM TB_RSMI_LYY_CMP_IMEX_GRDNT
+		WHERE DEL_YN = 'N'
+		AND NIF = #{nif} 						/** NIF !== 납세번호 ==! */
+		AND PRFL_TP_CD = #{prflTpCd} 			/** Code de type de profils !== 프로파일구분코드 ==! */
+		GROUP BY NIF
+		UNION ALL
+		SELECT
+			'GRDNT' AS TP_CD
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 5) AND IMEX_TP_CD = 'IMP' THEN DCLR_AMT_INC_RT END),0)
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 6) AND IMEX_TP_CD = 'IMP' THEN DCLR_AMT_INC_RT END),0)
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 7) AND IMEX_TP_CD = 'IMP' THEN DCLR_AMT_INC_RT END),0)
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 8) AND IMEX_TP_CD = 'IMP' THEN DCLR_AMT_INC_RT END),0)
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 5) AND IMEX_TP_CD = 'EXP' THEN DCLR_AMT_INC_RT END),0)
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 6) AND IMEX_TP_CD = 'EXP' THEN DCLR_AMT_INC_RT END),0)
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 7) AND IMEX_TP_CD = 'EXP' THEN DCLR_AMT_INC_RT END),0)
+			, NVL(SUM(CASE WHEN DCLR_QRT = (SELECT RCNT_QRT FROM RECENT_QUARTER WHERE RNUM = 8) AND IMEX_TP_CD = 'EXP' THEN DCLR_AMT_INC_RT END),0)
+		FROM TB_RSMI_LYY_CMP_IMEX_GRDNT
+		WHERE DEL_YN = 'N'
+		AND NIF = #{nif} 						/** NIF !== 납세번호 ==! */
+		AND PRFL_TP_CD = #{prflTpCd} 			/** Code de type de profils !== 프로파일구분코드 ==! */
+		GROUP BY NIF
+    </select>
+
+	<!--
+      [Profils d'opérateur] Résultat par type de modification
+      !== [업체프로파일] 정정실적조회 ==!
+    -->
+	<select id="selectCoPrflMdfyAcrsList"
+		parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+		resultType="alpass.ipt.rsm.prfl.vo.RsmPrflMdfyAcrsVo">
+		/* selectCoPrflMdfyAcrsList */
+		WITH MDFY_INFO as (
+		   SELECT
+				  NIF
+			    , PRFL_TP_CD
+		        , MDFY_QRT
+		        , MDFY_RSN_CD
+		        , MDFY_CNT
+		   FROM TB_RSMI_PCO_MDFY_ACRS
+		   WHERE PRFL_TP_CD = #{prflTpCd} 		/** Code de type de profils !== 프로파일구분코드 ==! */
+		   AND  NIF = #{nif} 					/** NIF !== 납세번호 ==! */
+		)
+		SELECT A.DCLR_YY 					 /** Année de déclaration !== 신고년도 ==! */
+			 , A.HS_CD_MDFY_CNT              /** Résultat du contrôle !== HS코드 수정 건수 ==! */
+			 , A.QTY_MDFY_CNT                /** Résultat du contrôle !== 수량 수정 건수 ==! */
+			 , A.PDLS_TTWG_MDFY_CNT          /** Résultat du contrôle !== 총중량 수정 건수 ==! */
+			 , A.PDLS_INVC_AMT_MDFY_CNT      /** Résultat du contrôle !== 송장금액 수정 건수 ==! */
+			 , A.PDLS_CACH_NCY_AMT_MDFY_CNT  /** Résultat du contrôle !== 운임 수정 건수 ==! */
+			 , A.PDLS_INFEE_NCY_AMT_MDFY_CNT /** Résultat du contrôle !== 보험료 수정 건수 ==! */
+			 , A.ORCY_CNTY_CDMDFY_CNT        /** Résultat du contrôle !== 원산지 수정 건수 ==! */
+			 , A.TXRT_MDFY_CNT               /** Résultat du contrôle !== 세율 수정 건수 ==! */
+
+		FROM   (SELECT
+					   A.DCLR_YY
+					 , SUM(CASE WHEN B.DTL_DCSH_NO IS NULL THEN 0
+								WHEN NVL(A.HS_CD, 'X') = NVL(B.HS_CD, 'X') THEN 0
+								ELSE 1 END) AS HS_CD_MDFY_CNT
+					 , SUM(CASE WHEN B.DTL_DCSH_NO IS NULL THEN 0
+								WHEN NVL(A.QTY, 0) = NVL(B.QTY, 0) AND NVL(TRIM(A.QTY_UT_CD), 'X') = NVL(TRIM(B.QTY_UT_CD), 'X') THEN 0
+								ELSE 1 END) AS QTY_MDFY_CNT
+					 , SUM(CASE WHEN B.DTL_DCSH_NO IS NULL THEN 0
+								WHEN NVL(A.PDLS_TTWG, 0) = NVL(B.PDLS_TTWG, 0) THEN 0
+								ELSE 1 END) AS PDLS_TTWG_MDFY_CNT
+					 , SUM(CASE WHEN B.DTL_DCSH_NO IS NULL THEN 0
+								WHEN NVL(A.PDLS_INVC_AMT, 0) = NVL(B.PDLS_INVC_AMT, 0) THEN 0
+								ELSE 1 END) AS PDLS_INVC_AMT_MDFY_CNT
+					 , SUM(CASE WHEN B.DTL_DCSH_NO IS NULL THEN 0
+								WHEN NVL(A.PDLS_CACH_NCY_AMT, 0) = NVL(B.PDLS_CACH_NCY_AMT, 0) THEN 0
+								ELSE 1 END) AS PDLS_CACH_NCY_AMT_MDFY_CNT
+					 , SUM(CASE WHEN B.DTL_DCSH_NO IS NULL THEN 0
+								WHEN NVL(A.PDLS_INFEE_NCY_AMT, 0) = NVL(B.PDLS_INFEE_NCY_AMT, 0) THEN 0
+								ELSE 1 END) AS PDLS_INFEE_NCY_AMT_MDFY_CNT
+					 , SUM(CASE WHEN B.DTL_DCSH_NO IS NULL THEN 0
+								WHEN NVL(A.ORCY_CNTY_CD, 'X') = NVL(B.ORCY_CNTY_CD, 'X') THEN 0
+								ELSE 1 END) AS ORCY_CNTY_CDMDFY_CNT
+					 , SUM(CASE WHEN B.DTL_DCSH_NO IS NULL THEN 0
+								WHEN NVL(A.TXRT, 0) = NVL(B.TXRT, 0) THEN 0
+								ELSE 1 END) AS TXRT_MDFY_CNT
+
+				 FROM (
+						SELECT DISTINCT AA.*
+					    FROM
+						(
+						   SELECT A.DTL_DCSH_NO 			/* Numero du DED !== DED번호 ==! */
+								, TO_CHAR(TO_DATE(B.DCLR_DT, 'YYYYMMDD'), 'YYYY') AS DCLR_YY 		/** Année de déclaration !== 신고년도 ==! */
+								, B.HIST_SRNO 				/* N° de sequence de l'historique !== 이력일련번호 ==! */
+								, C.PDLS_NO 				/* N° D'Article !== 품목번호 ==! */
+								, C.HS_CD 					/* Code Sh !== HS코드 ==! */
+								, C.QTY 					/* Quantité !== 수량 ==! */
+								, C.QTY_UT_CD 				/* Code De L'Unité De Quantité !== 수량단위코드 ==! */
+								, C.PDLS_TTWG 				/* Poids Brut De L'Article !== 품목총중량 ==! */
+								, E.PDLS_INVC_CURR_CD 		/* Code De Devise De La Facture De L'Article !== 품목송장통화코드 ==! */
+								, E.PDLS_INVC_NCY_AMT AS PDLS_INVC_AMT 		/** Montant De La Facture De L'Article !== 품목송장금액 ==! */
+								, E.PDLS_CACH_NCY_AMT 		/* Montant Ncy Du Fret De L'Article !== 품목운임NCY금액 ==! */
+								, E.PDLS_INFEE_NCY_AMT 		/* Montant Ncy De L'Assurance De L'Article !== 품목보험료NCY금액 ==! */
+								, C.ORCY_CNTY_CD 			/* Code De Pays D'Origine !== 원산지국가코드 ==! */
+								, D.TXRT 					/* Taux d'imposition !== 세율 ==! */
+								, E.PDLS_TXBS_NCY_AMT AS TXBS_AMT 		/** Montant de la valeur statistique !== 과세기준금액 ==!*/
+
+						   FROM   TB_RSMI_DED_SELC        A
+								, TB_CLRI_DED_COMN_H      B
+								, TB_CLRI_DED_PDLS_H      C
+								, TB_CLRI_DED_TAX_H       D
+								, TB_CLRI_DED_VLUT_PDLS_H E
+								, MDFY_INFO               MDFY
+						   WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO 			/* Numero du DED !== DED번호 ==! */
+						   AND   A.DTL_DCSH_NO = C.DTL_DCSH_NO
+						   AND   B.HIST_SRNO   = C.HIST_SRNO 			/* N° de sequence de l'historique !== 이력일련번호 ==! */
+						   AND   A.DTL_DCSH_NO = D.DTL_DCSH_NO(+)
+						   AND   B.HIST_SRNO = D.HIST_SRNO
+						   AND   C.PDLS_NO = D.PDLS_NO 					/* N° D'Article !== 품목번호 ==! */
+						   AND   D.TAX_CD(+) = 'D.D' 					/** Code De Taxe !== 세금코드 ==! */
+						   AND   D.DEL_YN(+) = 'N' 						/* Suppression ON !== 삭제여부 ==! */
+						   AND   A.DTL_DCSH_NO = E.DTL_DCSH_NO(+)
+						   AND   C.PDLS_NO = E.PDLS_NO
+						   AND   B.HIST_SRNO = E.HIST_SRNO
+						   AND   E.DEL_YN(+) = 'N'
+						   AND   B.HIST_SRNO = 0
+						   <if test='prflTpCd == "O"'>
+						   AND   (B.IMPPN_IDFY_NO = MDFY.NIF OR B.EXPPN_IDFY_NO = MDFY.NIF) 			/** N° D'Identification De L'Importateur !== 수입자식별번호 ==! */
+						   </if>
+						   <if test='prflTpCd == "D"'>
+						   AND   B.DCER_CD = (SELECT CO_DCLR_CD FROM TB_COM_CO_DCLR_CD WHERE NIF = MDFY.NIF AND CO_DCLR_TP_CD = 'H' AND ROWNUM =1) 		/** Code Du Déclarant !== 신고인코드 ==! */
+						   </if>
+						   UNION ALL
+						   SELECT A.DTL_DCSH_NO
+								, TO_CHAR(TO_DATE(B.DCLR_DT, 'YYYYMMDD'), 'YYYY') AS DCLR_YY
+								, B.HIST_SRNO
+								, C.PDLS_NO
+								, C.HS_CD
+								, C.QTY
+								, C.QTY_UT_CD
+								, C.PDLS_TTWG
+								, E.PDLS_INVC_CURR_CD
+								, E.PDLS_INVC_NCY_AMT AS PDLS_INVC_AMT
+								, E.PDLS_CACH_NCY_AMT
+								, E.PDLS_INFEE_NCY_AMT
+								, C.ORCY_CNTY_CD
+								, D.TXRT
+								, E.PDLS_TXBS_NCY_AMT AS TXBS_AMT
+
+						   FROM   TB_RSMI_DED_SELC      A
+								, TB_CLRI_DED_COMN      B
+								, TB_CLRI_DED_PDLS      C
+								, TB_CLRI_DED_TAX       D
+								, TB_CLRI_DED_VLUT_PDLS E
+								, MDFY_INFO             MDFY
+						   WHERE  A.DTL_DCSH_NO = B.DTL_DCSH_NO 			/* Numero du DED !== DED번호 ==! */
+						   AND   A.DTL_DCSH_NO = C.DTL_DCSH_NO
+						   AND   A.DTL_DCSH_NO = D.DTL_DCSH_NO(+)
+						   AND   C.PDLS_NO = D.PDLS_NO 						/* N° D'Article !== 품목번호 ==! */
+						   AND   D.TAX_CD(+) = 'D.D' 						/* Code De Taxe !== 세금코드 ==! */
+						   AND   D.DEL_YN(+) = 'N'
+						   AND   A.DTL_DCSH_NO = E.DTL_DCSH_NO(+)
+						   AND   C.PDLS_NO = E.PDLS_NO
+						   AND   E.DEL_YN(+) = 'N'
+						   AND   B.HIST_SRNO = 0 							/* N° de sequence de l'historique !== 이력일련번호 ==! */
+						   <if test='prflTpCd == "O"'>
+						   AND   (B.IMPPN_IDFY_NO = MDFY.NIF OR B.EXPPN_IDFY_NO = MDFY.NIF) 			/** N° D'Identification De L'Importateur !== 수입자식별번호 ==! */
+						   </if>
+						   <if test='prflTpCd == "D"'>
+						   AND   B.DCER_CD = (SELECT CO_DCLR_CD FROM TB_COM_CO_DCLR_CD WHERE NIF = MDFY.NIF AND CO_DCLR_TP_CD = 'H' AND ROWNUM =1) 			/** Code Du Déclarant !== 신고인코드 ==! */
+						   </if>
+						) AA
+				 ) A
+			  , (
+					SELECT DISTINCT BB.*
+					FROM
+					(
+					  SELECT
+							A.DTL_DCSH_NO
+						  , TO_CHAR(TO_DATE(B.DCLR_DT, 'YYYYMMDD'), 'YYYY') AS DCLR_YY
+						  , C.PDLS_NO
+						  , C.HS_CD
+						  , C.QTY
+						  , C.QTY_UT_CD
+						  , C.PDLS_TTWG
+						  , E.PDLS_INVC_CURR_CD
+						  , E.PDLS_INVC_NCY_AMT AS PDLS_INVC_AMT
+						  , E.PDLS_CACH_NCY_AMT
+						  , E.PDLS_INFEE_NCY_AMT
+						  , C.ORCY_CNTY_CD
+						  , D.TXRT
+					 FROM   TB_RSMI_DED_SELC A
+						  , TB_CLRI_DED_COMN B
+						  , TB_CLRI_DED_PDLS C
+						  , TB_CLRI_DED_TAX D
+						  , TB_CLRI_DED_VLUT_PDLS E
+						  , MDFY_INFO             MDFY
+					 WHERE  A.DTL_DCSH_NO = B.DTL_DCSH_NO 				/* Numero du DED !== DED번호 ==! */
+					 AND    A.DTL_DCSH_NO = C.DTL_DCSH_NO
+					 AND    A.DTL_DCSH_NO = D.DTL_DCSH_NO(+)
+					 AND    C.PDLS_NO = D.PDLS_NO 						/* N° D'Article !== 품목번호 ==! */
+					 AND    D.TAX_CD(+) = 'D.D' 						/* Code De Taxe !== 세금코드 ==! */
+					 AND    D.DEL_YN(+) = 'N'
+					 AND    C.DTL_DCSH_NO = E.DTL_DCSH_NO(+)
+					 AND    C.PDLS_NO = E.PDLS_NO
+					 AND    E.DEL_YN(+) = 'N'
+					 AND    B.HIST_SRNO > 0 							/* N° de sequence de l'historique !== 이력일련번호 ==! */
+				     <if test='prflTpCd == "O"'>
+					 AND   (B.IMPPN_IDFY_NO = MDFY.NIF OR B.EXPPN_IDFY_NO = MDFY.NIF) 		/** N° D'Identification De L'Importateur !== 수입자식별번호 ==! */
+					 </if>
+					 <if test='prflTpCd == "D"'>
+					 AND   B.DCER_CD = (SELECT CO_DCLR_CD FROM TB_COM_CO_DCLR_CD WHERE NIF = MDFY.NIF AND CO_DCLR_TP_CD = 'H' AND ROWNUM =1) 		/** Code Du Déclarant !== 신고인코드 ==! */
+					 </if>
+
+					) BB
+				 ) B
+			  WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO(+) 		/* Numero du DED !== DED번호 ==! */
+			  AND   A.PDLS_NO = B.PDLS_NO(+) 				/* N° D'Article !== 품목번호 ==! */
+			  GROUP BY A.DCLR_YY
+			  ORDER BY A.DCLR_YY
+		  ) A
+		WHERE  1 = 1
+		AND    (   HS_CD_MDFY_CNT > 0
+		        OR QTY_MDFY_CNT > 0
+		        OR PDLS_TTWG_MDFY_CNT > 0
+		        OR PDLS_INVC_AMT_MDFY_CNT > 0
+		        OR PDLS_CACH_NCY_AMT_MDFY_CNT > 0
+		        OR PDLS_INFEE_NCY_AMT_MDFY_CNT > 0
+		        OR ORCY_CNTY_CDMDFY_CNT > 0
+		        OR TXRT_MDFY_CNT > 0
+		       )
+	</select>
+
+	<!--
+      [Profils de SH] Consultation des resultats par code SH(Importation-Détails)
+      !== [HS프로파일] HS코드별수입실적 상세 ==!
+    -->
+	<select id="selectHsCdPrImpAcrsDtlList"
+		parameterType="alpass.ipt.rsm.prfl.vo.RsmHsCdPrAcrsVo"
+		resultType="alpass.ipt.rsm.prfl.vo.RsmHsCdPrAcrsDtlVo">
+		/* selectHsCdPrImpAcrsDtlList */
+		SELECT DISTINCT A.DTL_DCSH_NO 		/** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+			 , B.PDLS_NO 					/** N° d'article !==품목번호==! */
+			 , TO_CHAR(TO_DATE(A.ACPT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS ACPT_DT 	/** Date de la validation !== 수리일자 ==! */
+			 , B.HS_CD 						/** Code Sh !== HS코드 ==! */
+			 , B.QTY 						/** Quantité !== 수량 ==! */
+             , ROUND(B.PDLS_TTWG / 1000, 2) AS PDLS_TTWG 	/** Poids Brut De L'Article !== 품목총중량 ==! */
+             , ROUND(B.PDLS_NTWG / 1000, 2) AS PDLS_NTWG 	/** Poids net de l'article !== 품목순중량 ==! */
+			 , C.PDLS_TXBS_NCY_AMT 			/** Montant NCY de la base taxable de l'article !== 품목과세기준NCY금액 ==! */
+		FROM TB_CLRI_DED_COMN      A
+		   , TB_CLRI_DED_PDLS      B
+		   , TB_CLRI_DED_VLUT_PDLS C
+		   , (  SELECT
+					B.CD_VDVAL         AS DCLR_PT_CD 		/* MODÈLE DE DÉCLARATION !== 신고유형코드 ==!   */
+				FROM  TB_COM_COMN_CD   A
+				    , TB_COM_COMN_CD_D B
+				WHERE  A.DEL_YN   ='N'
+				AND A.USE_YN ='Y'
+				AND  A.COMN_CD  = 'RSM_0052' 		/** Code Commun  !== 공통코드 ==! */
+				AND  B.DEL_YN   = 'N'
+				AND B.USE_YN ='Y' 					/** Utilisé On !== 사용여부 ==! */
+				AND  A.COMN_CD  = B.COMN_CD
+				AND  B.USER_DEFN_VDVAL1 = 'IMP' 	/** Valeurs valides définies par l'utilisateur !== 사용자정의유효값1 ==! */
+			 ) CD
+		<if test='prflTpCd == "O"'>
+		   , TB_RSMI_ITBIT_IMEX_ACRS_DTL D
+		</if>
+		<if test='prflTpCd == "H"'>
+		   , TB_RSMI_HS_IMEX_ACRS_DTL D
+		</if>
+		WHERE 1=1
+		<if test='nif != null and nif != ""'>
+		AND   D.NIF = #{nif} 						/** NIF !== 납세번호 ==! */
+		</if>
+		<if test='prflTpCd == "O"'> 
+		AND   D.DCLR_QRT LIKE #{dclrYy}||'%' 		/** Trimestre de déclaration !== 신고분기 ==! */
+		AND   D.PRFL_TP_CD ='O' 					/** Code de type de profils !== 프로파일구분코드 ==! */
+		</if>
+		<if test='prflTpCd == "H"'> 
+		AND   D.DCLR_YY = #{dclrYy} 				/** Année de déclaration !== 신고년도 ==! */
+		</if>
+		AND   D.IMEX_TP_CD ='IMP' 					/** Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+		AND   A.DTL_DCSH_NO = D.DTL_DCSH_NO 		/** Numéro du DED !== DED번호 ==! */
+		AND   A.DTL_DCSH_NO = B.DTL_DCSH_NO
+		AND   A.ACPT_YN      = 'Y' 					/** Validation ON !== 수리여부 ==! */
+		<if test='hsCd != null and hsCd != ""'>
+		AND  B.HS_CD = #{hsCd} 						/** Code Sh !== HS코드 ==! */
+		</if>
+		AND  B.DTL_DCSH_NO = C.DTL_DCSH_NO
+		AND  B.PDLS_NO = C.PDLS_NO 					/** N° d'article !==품목번호==! */
+		AND  A.DCLR_PT_CD = CD.DCLR_PT_CD 			/** Code De Type De Déclaration !== 신고유형코드 ==! */
+	</select>
+
+	<!--
+      [Profils de SH] Consultation des résultats par code SH(Exportation)
+      !== [HS프로파일] HS코드별수출실적 ==!
+    -->
+	<select id="selectHsCdPrExpAcrsList"
+			parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+			resultType="alpass.ipt.rsm.prfl.vo.RsmHsCdPrAcrsVo">
+		/* selectHsCdPrExpAcrsList */
+		WITH BF_YEAR_HS AS (
+			SELECT HS_CD
+				, (SELECT TO_CHAR(SYSDATE - 365, 'YYYY')) AS DCLR_YY 			/** Année de déclaration !== 신고년도 ==! */
+				, SUM(DCLR_CNT) AS DCLR_CNT 									/** Nombre de DeD !== 신고건수==!*/
+				, SUM(AL_TTWG) AS AL_TTWG 										/** Poids Brut Total !== 전체총중량 ==! */
+				, SUM(AL_NTWG) AS AL_NTWG 										/** Poids Net Total !== 전체순중량 ==! */
+				, SUM(TTXBS_NCY_AMT) AS TTXBS_NCY_AMT 							/** Montant Ncy Total De La Base Taxable !== 총과세기준NCY금액 ==! */
+			FROM TB_RSMI_ITBIT_IMEX_ACRS A
+			WHERE PRFL_TP_CD = #{prflTpCd} 										/** Code de type de profils !== 프로파일구분코드 ==! */
+			AND TO_CHAR(SYSDATE - 365, 'YYYY') = SUBSTRING(DCLR_QRT, 0, 5)
+			AND IMEX_TP_CD = 'EXP' 												/** Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+			AND NIF = #{nif} 													/** NIF !== 납세번호 ==! */
+			GROUP BY HS_CD
+		)
+		, CURR_YEAR_HS AS (
+			SELECT HS_CD
+				, TO_CHAR(SYSDATE, 'YYYY')  AS DCLR_YY
+				, SUM(DCLR_CNT) AS DCLR_CNT
+				, SUM(AL_TTWG) AS AL_TTWG
+				, SUM(AL_NTWG) AS AL_NTWG
+				, SUM(TTXBS_NCY_AMT) AS TTXBS_NCY_AMT
+			FROM TB_RSMI_ITBIT_IMEX_ACRS
+			WHERE PRFL_TP_CD = #{prflTpCd}
+			AND TO_CHAR(SYSDATE, 'YYYY') = SUBSTRING(DCLR_QRT, 0, 5)
+			AND IMEX_TP_CD = 'EXP'
+			AND NIF = #{nif}
+			GROUP BY HS_CD
+		)
+		SELECT
+			  NVL(A.HS_CD, B.HS_CD) AS HS_CD 				/** Code Sh !== HS코드 ==!*/
+			, (SELECT TO_CHAR(SYSDATE - 365, 'YYYY'))  AS BF_DCLR_YY 		/** Année de déclaration (l'année dernière) !== 이전 신고년도 ==! */
+			, NVL(A.DCLR_CNT, 0) AS BF_DCLR_CNT 			/** Nombre de déclarations (l'année dernière) !== 이전 신고건수 ==! */
+			, CASE WHEN NVL(A.AL_TTWG, 0) > 0
+				   THEN ROUND( NVL(A.AL_TTWG, 0) / 1000, 3)
+				   ELSE 0
+			  END AS BF_AL_TTWG 							/** Poids brut (l'année dernière) !== 이전 총중량 ==! */
+			, CASE WHEN NVL(A.AL_NTWG, 0) > 0
+				   THEN ROUND( NVL(A.AL_NTWG, 0) / 1000, 3)
+			  END AS BF_AL_NTWG 							/** Poids net (l'année dernière) !== 이전 순중량 ==! */
+			, NVL(A.TTXBS_NCY_AMT, 0) AS BF_TTXBS_NCY_AMT 	/** Montant Ncy Total De La Base Taxable (l'année dernière) !== 이전 총과세기준NCY금액 ==! */
+			, TO_CHAR(SYSDATE, 'YYYY') AS CURR_DCLR_YY 		/** Année de déclaration (Cette année) !== 현재 신고년도 ==! */
+			, NVL(B.DCLR_CNT, 0) AS CURR_DCLR_CNT 			/** Nombre de déclarations (Cette année) !== 현재 신고건수 ==! */
+			, CASE WHEN NVL(B.AL_TTWG, 0) > 0
+				   THEN ROUND(NVL(B.AL_TTWG, 0) / 1000, 3)
+				   ELSE 0
+			  END AS CURR_AL_TTWG 							/** Poids brut (Cette année) !== 현재 총중량 ==! */
+			, CASE WHEN NVL(B.AL_NTWG, 0) > 0
+				   THEN ROUND(NVL(B.AL_NTWG, 0) / 1000, 3)
+				   ELSE 0
+			  END AS CURR_AL_NTWG 							/** Poids net (Cette année) !== 현재 순중량 ==! */
+			, NVL(B.TTXBS_NCY_AMT, 0) AS CURR_TTXBS_NCY_AMT 	/** Montant Ncy Total De La Base Taxable (Cette année) !== 현재 총과세기준NCY금액 ==! */
+		FROM BF_YEAR_HS A
+		FULL OUTER JOIN CURR_YEAR_HS B ON A.HS_CD = B.HS_CD
+	</select>
+
+	<!--
+      [Profils de SH] Consultation des résultats par code SH(Exportation-Détails)
+      !== [HS프로파일] HS코드별수출실적 상세 ==!
+    -->
+	<select id="selectHsCdPrExpAcrsDtlList"
+		parameterType="alpass.ipt.rsm.prfl.vo.RsmHsCdPrAcrsVo"
+		resultType="alpass.ipt.rsm.prfl.vo.RsmHsCdPrAcrsDtlVo">
+		/* selectHsCdPrExpAcrsDtlList */
+		SELECT A.DTL_DCSH_NO 			/** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+			 , B.PDLS_NO 				/** N° d'article !== 품목번호 ==! */
+			 , TO_CHAR(TO_DATE(A.ACPT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS ACPT_DT 	/** Date de la validation !== 수리일자 ==! */
+			 , B.HS_CD 					/** Code Sh !== HS코드 ==!*/
+			 , B.QTY 					/** Quantité !== 수량 ==! */
+             , ROUND(B.PDLS_TTWG / 1000, 2) AS PDLS_TTWG 		/** Poids Brut De L'Article !== 품목총중량 ==! */
+             , ROUND(B.PDLS_NTWG / 1000, 2) AS PDLS_NTWG 		/** Poids net de l'article !== 품목순중량 ==! */
+			 , C.PDLS_TXBS_NCY_AMT 		/** Montant NCY de la base taxable de l'article !== 품목과세기준NCY금액 ==! */
+		FROM TB_CLRI_DED_COMN      A
+		   , TB_CLRI_DED_PDLS      B
+		   , TB_CLRI_DED_VLUT_PDLS C
+		   , (  SELECT
+					B.CD_VDVAL AS DCLR_PT_CD 		/* MODÈLE DE DÉCLARATION !== 신고유형코드 ==!   */
+				FROM  TB_COM_COMN_CD   A
+				    , TB_COM_COMN_CD_D B
+				WHERE  A.DEL_YN   ='N'
+				AND A.USE_YN ='Y'
+				AND  A.COMN_CD  = 'RSM_0052' 		/* Code Commun  !== 공통코드 ==! */
+				AND  B.DEL_YN   = 'N'
+				AND  B.USE_YN   = 'Y' 				/* Utilisé On !== 사용여부 ==! */
+				AND  A.COMN_CD  = B.COMN_CD
+				AND  B.USER_DEFN_VDVAL1 = 'EXP' 	/* Valeurs valides définies par l'utilisateur !== 사용자정의유효값1 ==! */
+			 ) CD
+		<if test='prflTpCd == "O"'>
+		   , TB_RSMI_ITBIT_IMEX_ACRS_DTL D
+		</if>
+		<if test='prflTpCd == "H"'>
+		   , TB_RSMI_HS_IMEX_ACRS_DTL D
+		</if>
+		WHERE 1=1
+		<if test='nif != null and nif != ""'>
+		AND   D.NIF = #{nif} 								/** NIF !== 납세번호 ==! */
+		</if>
+		<if test='prflTpCd == "O"'> 
+		AND   D.DCLR_QRT LIKE #{dclrYy}||'%' 				/** Trimestre de déclaration !== 신고분기 ==! */
+		AND   D.PRFL_TP_CD ='O' 							/** Code de type de profils !== 프로파일구분코드 ==! */
+		</if>
+		<if test='prflTpCd == "H"'> 
+		AND   D.DCLR_YY = #{dclrYy} 						/** Année de déclaration !== 신고년도 ==! */
+		</if>
+		AND   D.IMEX_TP_CD ='EXP' 							/** Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+		AND   A.DTL_DCSH_NO = D.DTL_DCSH_NO 				/** Numéro du DED !== DED번호 ==! */
+		AND   A.DTL_DCSH_NO = B.DTL_DCSH_NO
+		AND   A.ACPT_YN      = 'Y' 							/** Validation ON !== 수리여부 ==! */
+		<if test='hsCd != null and hsCd != ""'>
+		AND   B.HS_CD = #{hsCd} 							/** Code Sh !== HS코드 ==! */
+		</if>
+		AND   B.DTL_DCSH_NO = C.DTL_DCSH_NO 				/** Numero du DED !== DED번호 ==! */
+		AND   B.PDLS_NO = C.PDLS_NO 						/** N° d'article !==품목번호==! */
+		AND   A.DCLR_PT_CD = CD.DCLR_PT_CD 					/** Code De Type De Déclaration !== 신고유형코드 ==! */
+	</select>
+
+	<!--
+      Consulter la liste des enregistrements de détection
+      !== 프로파일 적발실적 목록 조회 ==!
+    -->
+	<select id="selectPrflDsclAcrsList"
+		parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+		resultType="alpass.ipt.rsm.prfl.vo.RsmPrflDsclAcrsVo">
+		/* selectPrflDsclAcrsList */
+		SELECT A.NIF 				/** NIF !== 납세번호 ==! */
+			 , A.DCLR_YY 			/** Année de déclaration !== 신고년도 ==! */
+			 , A.TOT_DCLR_CNT 		/** Nombre total de déclaration !== 총신고건수 ==! */
+			 , A.TOT_TAX_AMT 		/** Total Taxe !== 총 세금 ==! */
+			 , A.TOT_TTXBS_NCY_AMT 	/** Total Prix de base d’imposition !== 총 과세기준가격 ==! */
+			 , B.SELC_RSLT_CD 		/** Code de Résultat de la sélection !== 선별결과코드 ==! */
+			 , B.SELC_CNT 			/** Nombre de déclarations ciblées !== 선별건수 ==! */
+			 , B.SELC_TAX_AMT 		/** Taxe de sélection !== 선별 세금 ==! */
+			 , B.SELC_TTXBS_NCY_AMT 		/** Prix de base d’imposition de sélection !== 선별 과세기준가격 ==! */
+			 , (B.SELC_CNT/A.TOT_DCLR_CNT) * 100 AS SELC_RT 		/** Taux de ciblage !== 선별율 ==! */
+			 , CASE WHEN B.SELC_RSLT_CD = 'R' THEN (B.SELC_CNT/A.TOT_DCLR_CNT) * 100 ELSE 0 END  AS RED_SELC_RT 	/** Taux de ciblage (Rouge) !== Red 선별율 ==! */
+			 , CASE WHEN B.SELC_RSLT_CD = 'O' THEN (B.SELC_CNT/A.TOT_DCLR_CNT) * 100 ELSE 0 END  AS ORE_SELC_RT 	/** Taux de ciblage (Orange)!== Orange 선별율 ==! */
+			 , CASE WHEN B.SELC_RSLT_CD = 'B' THEN (B.SELC_CNT/A.TOT_DCLR_CNT) * 100 ELSE 0 END  AS BLU_SELC_RT 	/** Taux de ciblage (Bleu) !== Blue 선별율 ==! */
+			 , CASE WHEN B.SELC_RSLT_CD = 'G' THEN (B.SELC_CNT/A.TOT_DCLR_CNT) * 100 ELSE 0 END  AS GRN_SELC_RT 	/** Taux de ciblage (Vert) !== Green 선별율 ==! */
+			 , COALESCE(C.DSCL_CNT, 0) AS DSCL_CNT 				/** Detected(Number)  !== 적발건수 ==! */
+			 , COALESCE(C.DSCL_TAX_AMT, 0) AS DSCL_TAX_AMT 		/** Detected(Taxe) !== 적발 세금 ==! */
+			 , COALESCE(C.DSCL_TTXBS_NCY_AMT, 0) AS DSCL_TTXBS_NCY_AMT 	/** Prix de base d’imposition de Detected !== 적발 과세기준가격 ==! */
+			 , COALESCE((C.DSCL_CNT/B.SELC_CNT) * 100 , 0) AS DSCL_RT 	/** Taux de détection !== 적발율 ==! */
+			 , COALESCE(D.FINE_AMT, 0) AS FINE_AMT 				/** Montant d'amende !== 벌금금액 ==! */
+		FROM   (
+				   SELECT AA.NIF
+						, SUBSTR(AA.DCLR_QRT, 1, 4) AS DCLR_YY
+						, SUM(AA.DCLR_CNT) AS TOT_DCLR_CNT
+						, SUM(AA.TAX_AMT) AS TOT_TAX_AMT
+						, SUM(AA.TTXBS_NCY_AMT) AS TOT_TTXBS_NCY_AMT
+				   FROM   TB_RSMI_PCO_SELC_ACRS AA
+				   WHERE  AA.DEL_YN ='N'
+				   AND    AA.NIF = #{nif} 								/** NIF !== 납세번호 ==! */
+				   AND    AA.PRFL_TP_CD = #{prflTpCd} 					/** Code de type de profils !== 프로파일구분코드 ==! */
+				   GROUP BY AA.NIF, DCLR_YY
+			   ) A
+			 , (
+				   SELECT BB.NIF
+						, SUBSTR(BB.DCLR_QRT, 1, 4) AS DCLR_YY
+						, BB.SELC_RSLT_CD
+						, SUM(BB.DCLR_CNT) AS SELC_CNT
+						, SUM(BB.TAX_AMT) AS SELC_TAX_AMT
+						, SUM(BB.TTXBS_NCY_AMT) AS SELC_TTXBS_NCY_AMT
+				   FROM   TB_RSMI_PCO_SELC_ACRS BB
+				   WHERE  BB.DEL_YN ='N'
+				   AND    BB.NIF = #{nif} 								/** NIF !== 납세번호 ==! */
+				   AND    BB.PRFL_TP_CD = #{prflTpCd} 					/** Code de type de profils !== 프로파일구분코드 ==! */
+				   GROUP BY BB.NIF, DCLR_YY, BB.SELC_RSLT_CD
+			   ) B
+			 , (
+				   SELECT CC.NIF
+					    , SUBSTR(CC.DCLR_QRT, 1, 4) AS DCLR_YY
+					    , CC.SELC_RSLT_CD
+					    , SUM(CC.DCLR_CNT) AS DSCL_CNT
+					    , SUM(CC.TAX_AMT) AS DSCL_TAX_AMT
+					    , SUM(CC.TTXBS_NCY_AMT) AS DSCL_TTXBS_NCY_AMT
+				   FROM   TB_RSMI_PCO_DSCL_BSCS CC
+			       WHERE  CC.DEL_YN = 'N'
+				   AND    CC.NIF = #{nif} 								/** NIF !== 납세번호 ==! */
+				   AND    CC.PRFL_TP_CD = #{prflTpCd} 					/** Code de type de profils !== 프로파일구분코드 ==! */
+				   GROUP BY CC.NIF, DCLR_YY, CC.SELC_RSLT_CD
+			   ) C
+			 , (
+           		   SELECT FF.NIF
+               			,  FF.DCLR_YY
+               			,  DD.SELC_RSLT_CD
+               			,  NVL(SUM(EE.FINE_AMT), 0) AS FINE_AMT
+           		   FROM   TB_RSMI_DED_SELC DD
+                       ,  TB_COLI_NTFC EE
+                       ,  (
+                      		SELECT GG.NIF
+                                 , SUBSTR(GG.DCLR_QRT, 1, 4) AS DCLR_YY
+                                 , GG.DTL_DCSH_NO
+                            FROM   TB_RSMI_ITBIT_IMEX_ACRS_DTL GG
+                            WHERE  GG.DEL_YN = 'N'
+                            AND    GG.PRFL_TP_CD = #{prflTpCd} 				/** Code de type de profils !== 프로파일구분코드 ==! */
+                            AND    GG.NIF = #{nif} 						    /** NIF !== 납세번호 ==! */
+                            GROUP BY GG.NIF, SUBSTR(GG.DCLR_QRT, 1, 4), GG.DTL_DCSH_NO
+                          ) FF
+           		   WHERE  DD.DEL_YN ='N'
+				   AND    DD.DTL_DCSH_NO = FF.DTL_DCSH_NO 					/** Numero du DED !== DED번호 ==! */
+				   AND    SUBSTR(DD.SELC_DT, 1, 4) = FF.DCLR_YY 			/** Année de déclaration !== 신고년도 ==! */
+				   AND    EE.DEL_YN ='N' 									/** Suppression ON !== 삭제여부 ==! */
+				   AND    EE.NTFC_PT_CD = 'A' 								/** Code De Type D'Avis !== 고지유형코드 ==! */
+				   AND    EE.REFF_NO_PT_CD = '002' 							/** Code De Type De Numéro De Référence !== 참조번호유형코드 ==! */
+				   AND    EE.CNCL_YN = 'N' 									/** Annulé (On) !== 취소여부 ==! */
+				   AND    EE.REFF_NO= DD.DTL_DCSH_NO 						/** N° De Référence !== 참조번호 ==! */
+				   GROUP BY FF.NIF, FF.DCLR_YY, DD.SELC_RSLT_CD
+       		   ) D
+		WHERE  B.NIF = A.NIF
+		AND    B.DCLR_YY = A.DCLR_YY
+		AND    C.NIF(+) = B.NIF
+		AND    C.DCLR_YY(+) = B.DCLR_YY
+		AND    C.SELC_RSLT_CD(+) = B.SELC_RSLT_CD
+		AND    D.NIF(+) = B.NIF
+		AND    D.DCLR_YY(+) = B.DCLR_YY
+		AND    D.SELC_RSLT_CD(+) = B.SELC_RSLT_CD
+		ORDER BY A.DCLR_YY DESC, DECODE(B.SELC_RSLT_CD, 'R', 1, 'O', 2, 'B', 3, 'G', 4 ) ASC
+	</select>
+
+	<!--
+      [Profils] Consulter les détails des détections
+      !== [프로파일] 적발실적 상세조회 ==!
+    -->
+	<select id="selectPrflDsclAcrsDtlList"
+		parameterType="alpass.ipt.rsm.prfl.vo.RsmPrflDsclAcrsVo"
+		resultType="alpass.ipt.rsm.prfl.vo.RsmPrflDsclAcrsDtlVo">
+		/* selectPrflDsclAcrsDtlList */
+		SELECT
+			A.DTL_DCSH_NO 		/** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+		  , A.PDLS_NO 			/** N° D'Article !== 품목번호 ==! */
+		  , ( SELECT TO_CHAR(TO_DATE(ACPT_DT, 'YYYYMMDD'), 'DD/MM/YYYY')
+			  FROM TB_CLRI_DED_COMN
+			  WHERE DEL_YN = 'N'
+			  AND DTL_DCSH_NO = A.DTL_DCSH_NO
+			) AS ACPT_DT 		/** Date de la validation !== 수리일자 ==! */
+		  , A.HS_CD 			/** Code Sh !== HS코드 ==!*/
+		  , A.QTY 				/** Quantite !== 수량 ==! */
+		  , A.QTY_UT_CD 		/** Code De L'Unité De Quantité !== 수량단위코드 ==! */
+		  , ROUND(A.PDLS_NTWG / 1000 , 2) AS PDLS_NTWG 		/** Poids Net De L'Article !== 품목순중량 ==! */
+		  , ROUND(A.PDLS_TTWG / 1000 , 2) AS PDLS_TTWG 		/** Poids Brut De L'Article !== 품목총중량 ==! */
+		  , A.PDLS_TXBS_NCY_AMT 		/** Montant Nyc De La Base Taxable De L'Article !== 품목과세기준NCY금액 ==! */
+		  , A.TAX_AMT 			/** Montant De La Taxe !== 세금금액 ==! */
+		FROM TB_RSMI_PCO_DSCL_DTL A
+		   , TB_RSMI_PCO_DSCL_BSCS B
+		WHERE A.DEL_YN = 'N' 						/** Suppression On !== 삭제여부 ==! */
+		AND A.NIF = #{nif} 							/** NIF !== 납세번호 ==! */
+		AND A.NIF = B.NIF
+		AND A.PRFL_TP_CD = B.PRFL_TP_CD 			/** Code de type de profils !== 프로파일구분코드 ==! */
+		AND A.IMEX_TP_CD = B.IMEX_TP_CD 			/** Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+		AND SUBSTR(B.DCLR_QRT, 1, 4) = #{dclrYy} 	/** Année de déclaration !== 신고년도 ==! */
+		AND B.PRFL_TP_CD = #{prflTpCd} 				/** Code de type de profils !== 프로파일구분코드 ==! */
+
+
+	</select>
+
+	<!--
+      [Profils] Consulter les détails des amendes
+      !== [프로파일] 벌금실적 상세조회 ==!
+    -->
+	<select id="selectPrflFineAcrsDtlList"
+		parameterType="alpass.ipt.rsm.prfl.vo.RsmPrflDsclAcrsVo"
+		resultType="alpass.ipt.rsm.prfl.vo.RsmPrflFineAcrsDtlVo">
+		/* selectPrflFineAcrsDtlList */
+		SELECT D.DTL_DCSH_NO 		/** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+			, D.PDLS_NO 			/** N° D'Article !== 품목번호 ==! */
+			, ( SELECT TO_CHAR(TO_DATE(ACPT_DT, 'YYYYMMDD'), 'DD/MM/YYYY')
+				FROM TB_CLRI_DED_COMN
+				WHERE DEL_YN = 'N'
+				AND DTL_DCSH_NO = D.DTL_DCSH_NO
+			  ) AS ACPT_DT 			/** Date de la validation !== 수리일자 ==! */
+			, D.HS_CD 				/** Code Sh !== HS코드 ==!*/
+			, D.QTY 				/** Quantite !== 수량 ==! */
+			, D.PDLS_TTWG 			/** Poids Brut De L'Article !== 품목총중량 ==! */
+			, D.PDLS_TXBS_NCY_AMT 	/** Montant Nyc De La Base Taxable De L'Article !== 품목과세기준NCY금액 ==! */
+		FROM   TB_RSMI_PCO_DSCL_DTL D
+		     , TB_RSMI_PCO_DSCL_BSCS B
+	         , TB_COLI_NTFC N
+		WHERE  D.DEL_YN ='N' 				/** Suppression On !== 삭제여부 ==! */
+		AND    B.DEL_YN ='N'
+		AND    D.NIF = #{nif} 				/** NIF !== 납세번호 ==! */
+		AND    B.NIF = D.NIF
+		AND    SUBSTR(B.DCLR_QRT, 1, 4) = #{dclrYy} 	/** Année de déclaration !== 신고년도 ==! */
+		AND    B.SELC_RSLT_CD = D.SELC_RSLT_CD 			/** Code De Résultat De Ciblage !== 선별결과코드 ==! */
+		AND    D.PRFL_TP_CD = #{prflTpCd} 				/** Code de type de profils !== 프로파일구분코드 ==! */
+		AND    N.DEL_YN ='N'
+		AND    N.NTFC_PT_CD = 'A' 						/** Code De Type D'Avis !== 고지유형코드 ==! */
+		AND    N.REFF_NO_PT_CD = '002' 					/** Code De Type De Numéro De Référence !== 참조번호유형코드 ==! */
+		AND    N.CNCL_YN = 'N' 							/** Annulé (On) !== 취소여부 ==! */
+		AND    N.REFF_NO = D.DTL_DCSH_NO 				/** N° De Référence !== 참조번호 ==! */
+	</select>
+
+	<!--
+      [Profils d'opérateur] Déclarants
+      !== [업체프로파일] 신고인조회 ==!
+    -->
+	<select id="selectPrflPcoDcerList"
+		parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+		resultType="alpass.ipt.rsm.com.vo.RsmPcoDcerVo">
+		/* selectPrflPcoDcerList */
+		SELECT
+				  A.NIF 			/** NIF !== 납세번호 ==! */
+				, (SELECT  AA.CONM
+                   FROM    TB_POTE_NIF AA
+                   WHERE  AA.DEL_YN = 'N'
+                   AND AA.NIF = A.NIF
+                  ) AS CO_NM 		/** Nom De L'Entreprise !== 업체명 ==! */
+		        , A.DCER_CD 		/** Code Du Déclarant !== 신고인코드 ==! */
+				, A.DCER_NM 		/** Nom Du Déclarant !== 신고인명 ==! */
+				, A.DCLR_CNT 		/** Nombre De Déclarations !== 신고건수 ==! */
+				, A.AL_TTWG 		/** Poids Brut Total !== 전체총중량 ==! */
+				, A.AL_NTWG 		/** Poids Net Total !== 전체순중량 ==! */
+				, A.TTXBS_NCY_AMT   /** Montant Ncy Total De La Base Taxable !== 총과세기준NCY금액 ==! */
+				, A.TAX_AMT 		/** Montant De La Taxe !== 세금금액 ==! */
+				, ROUND(A.DCLR_CNT/A.TOT_DCLR_CNT*100) AS DCLR_AMT_INC_RT 		/** Taux d'augmentation de la valeur déclarée !== 신고금액증가율 ==! */
+		FROM (
+				SELECT
+				    A.NIF
+				   , A.DCER_CD
+                   , NVL(( SELECT
+                                 S1.CO_NM
+                            FROM TB_COM_CO         S1
+                               , TB_COM_CO_DCLR_CD S2
+                            WHERE S1.NIF = S2.NIF
+                            AND   S2.CO_DCLR_TP_CD = 'H'
+                            AND   S2.CO_DCLR_CD = A.DCER_CD
+                         ), ' ') AS DCER_NM
+				   , SUM(A.DCLR_CNT) AS DCLR_CNT
+				   , SUM(A.AL_TTWG) AS AL_TTWG
+				   , SUM(A.AL_NTWG) AS AL_NTWG
+				   , SUM(A.TTXBS_NCY_AMT) AS TTXBS_NCY_AMT
+				   , SUM(A.TAX_AMT) AS TAX_AMT
+				   , SUM(A.DCLR_AMT_INC_RT) AS DCLR_AMT_INC_RT
+				   <if test='nif != null and nif !="" and (dcerCd == null or "".equals(dcerCd) )'>
+				   , ( SELECT SUM(BB.DCLR_CNT) FROM TB_RSMI_PCO_DCER BB WHERE BB.DEL_YN='N' AND BB.PRFL_TP_CD = 'O' AND BB.NIF= A.NIF) AS TOT_DCLR_CNT
+				   </if>
+				   <if test='dcerCd != null and dcerCd !="" and (nif == null or "".equals(nif) ) '>
+				   , ( SELECT SUM(BB.DCLR_CNT) FROM TB_RSMI_PCO_DCER BB WHERE BB.DEL_YN='N' AND BB.PRFL_TP_CD = 'O' AND BB.DCER_CD= A.DCER_CD) AS TOT_DCLR_CNT
+				   </if>
+				   <if test ='nif != null and nif !="" and dcerCd != null and dcerCd !="" '>
+				   , ( SELECT SUM(BB.DCLR_CNT) FROM TB_RSMI_PCO_DCER BB WHERE BB.DEL_YN='N' AND BB.PRFL_TP_CD = 'O' AND BB.DCER_CD= A.DCER_CD) AS TOT_DCLR_CNT
+				   </if>
+				FROM TB_RSMI_PCO_DCER A
+				WHERE A.DEL_YN = 'N'
+				AND A.PRFL_TP_CD = 'O' 					/** Code de type de profils !== 프로파일구분코드 ==! */
+				<if test='dcerCd != null and dcerCd !=""'>
+					AND A.DCER_CD = #{dcerCd} 			/** Code Du Déclarant !== 신고인코드 ==! */
+				</if>
+				<if test='nif != null and nif !=""'>
+					AND A.NIF = #{nif} 					/** NIF !== 납세번호 ==! */
+				</if>
+				GROUP BY A.NIF
+				       , A.DCER_CD
+		) A
+		ORDER BY DCLR_CNT DESC
+	</select>
+
+	<!--
+      [Profils d'opérateur] Opérateur étranger(Importation)
+      !== [업체프로파일] 해외거래처(수입) ==!
+    -->
+	<select id="selectPrflOvbcImpList"
+		parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+		resultType="alpass.ipt.rsm.com.vo.RsmOvrsBucnBscsVo">
+		/* selectPrflOvbcImpList */
+		SELECT
+			  A.NIF 			/** NIF !== 납세번호 ==! */
+			, A.PRFL_TP_CD 		/** Code de type de profils !== 프로파일구분코드 ==! */
+			, A.IMEX_TP_CD 		/** Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+			, A.CNTY_CD 		/** Code De Pays !== 국가코드 ==! */
+			, A.CNTY_NM 		/** Nom De Pays !== 국가명 ==! */
+			, A.CO_NM 			/** Nom De L'Entreprise !== 업체명 ==! */
+			, A.DCLR_CNT 		/** Nombre De Déclarations !== 신고건수 ==! */
+			, A.TTXBS_NCY_AMT 	/** Montant Ncy Total De La Base Taxable !== 총과세기준NCY금액 ==! */
+			, A.TAX_AMT 		/** Montant De La Taxe !== 세금금액 ==! */
+			, ROUND( (A.DCLR_CNT / A.TOT_CNT) * 100,2) AS DCLR_RTO 	/** Taux de déclaration !== 신고비율 ==! */
+		FROM (
+			   SELECT A.NIF
+					, A.PRFL_TP_CD
+					, A.IMEX_TP_CD
+					, A.CNTY_CD
+					, ( SELECT B.CNTY_NM FROM TB_COM_CNTY_CD_LANG B
+						WHERE B.CNTY_CD = A.CNTY_CD
+						AND B.LANG_CD = #{langCd} ) AS CNTY_NM
+					, A.CO_NM
+					, SUM(A.DCLR_CNT) as DCLR_CNT
+					, SUM(A.TTXBS_NCY_AMT) as TTXBS_NCY_AMT
+					, SUM(A.TAX_AMT) as TAX_AMT
+					, (select SUM(DCLR_CNT)
+						 from TB_RSMI_OVRS_BUCN_BSCS
+						where NIF = A.NIF
+						  and PRFL_TP_CD = A.PRFL_TP_CD
+						  and IMEX_TP_CD = A.IMEX_TP_CD) as TOT_CNT
+				FROM TB_RSMI_OVRS_BUCN_BSCS A
+				WHERE A.DEL_YN = 'N' 								/* Suppression ON !== 삭제여부 ==!*/
+				AND A.NIF = #{nif} 									/* NIF !== 납세번호 ==! */
+				<if test='prflTpCd != null and prflTpCd !=""'>
+					AND A.PRFL_TP_CD = #{prflTpCd} 					/* Code de type de profils !== 프로파일구분코드 ==! */
+				</if>
+				AND A.IMEX_TP_CD = 'IMP' 							/* Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+				GROUP BY A.NIF
+					, A.PRFL_TP_CD
+					, A.IMEX_TP_CD
+					, A.CNTY_CD
+					, A.CO_NM
+		) A ORDER BY A.DCLR_CNT DESC
+	</select>
+
+	<!--
+      [Profils d'opérateur] Opérateur étranger(Exportation)
+      !== [업체프로파일] 해외거래처(수출) ==!
+    -->
+	<select id="selectPrflOvbcExpList"
+		parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+		resultType="alpass.ipt.rsm.com.vo.RsmOvrsBucnBscsVo">
+		/* selectPrflOvbcExpList */
+		SELECT
+			  A.NIF 			/** NIF !== 납세번호 ==! */
+			, A.PRFL_TP_CD 		/** Code de type de profils !== 프로파일구분코드 ==! */
+			, A.IMEX_TP_CD 		/** Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+			, A.CNTY_CD 		/** Code De Pays !== 국가코드 ==! */
+			, A.CNTY_NM 		/** Nom De Pays !== 국가명 ==! */
+			, A.CO_NM 			/** Nom De L'Entreprise !== 업체명 ==! */
+			, A.DCLR_CNT 		/** Nombre De Déclarations !== 신고건수 ==! */
+			, A.TTXBS_NCY_AMT 	/** Montant Ncy Total De La Base Taxable !== 총과세기준NCY금액 ==! */
+			, A.TAX_AMT 		/** Montant De La Taxe !== 세금금액 ==! */
+			, ROUND( (A.DCLR_CNT / A.TOT_CNT) * 100,2) AS DCLR_RTO 		/** Taux de déclaration !== 신고비율 ==! */
+		FROM (
+			   SELECT A.NIF
+					, A.PRFL_TP_CD
+					, A.IMEX_TP_CD
+					, A.CNTY_CD
+					, ( SELECT B.CNTY_NM FROM TB_COM_CNTY_CD_LANG B
+						WHERE B.CNTY_CD = A.CNTY_CD
+						AND B.LANG_CD = #{langCd}  ) AS CNTY_NM
+					, A.CO_NM
+					, SUM(A.DCLR_CNT) as DCLR_CNT
+					, SUM(A.TTXBS_NCY_AMT) as TTXBS_NCY_AMT
+					, SUM(A.TAX_AMT) as TAX_AMT
+					, (select SUM(DCLR_CNT)
+						 from TB_RSMI_OVRS_BUCN_BSCS
+						where NIF = A.NIF
+						  and PRFL_TP_CD = A.PRFL_TP_CD
+						  and IMEX_TP_CD = A.IMEX_TP_CD) as TOT_CNT
+				FROM TB_RSMI_OVRS_BUCN_BSCS A
+				WHERE A.DEL_YN = 'N' 								/* Suppression ON !== 삭제여부 ==!*/
+				AND A.NIF = #{nif} 									/* NIF !== 납세번호 ==! */
+				<if test='prflTpCd != null and prflTpCd !=""'>
+					AND A.PRFL_TP_CD = #{prflTpCd} 					/* Code de type de profils !== 프로파일구분코드 ==! */
+				</if>
+				AND A.IMEX_TP_CD = 'EXP' 							/* Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+				group by A.NIF
+					, A.PRFL_TP_CD
+					, A.IMEX_TP_CD
+					, A.CNTY_CD
+					, A.CO_NM
+		) A ORDER BY A.DCLR_CNT DESC
+	</select>
+
+	<!--
+      [Profils d'opérateur] Voir la performance par bureau(Importation)
+      !== [업체프로파일] 세관별실적(수입) ==!
+    -->
+	<select id="selectPrflCstmPrAcrsImpList"
+		parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+		resultType="alpass.ipt.rsm.prfl.vo.RsmPrflCstmPrAcrsVo">
+		/* selectPrflCstmPrAcrsImpList */
+		SELECT * FROM (
+				WITH CSTM_ACRS AS
+				(
+					SELECT D.NIF 				/** NIF !== 납세번호 ==! */
+						 , D.DCLR_CSTM_CD 		/** Code De Bureau De Déclaration !== 신고세관코드 ==! */
+						 , FN_GET_ORGN_NM( D.DCLR_CSTM_CD ) as DCLR_CSTM_NM 		/** Nom De Bureau De Déclaration !== 신고세관 ==! */
+						 , SUM(D.DCLR_CNT) AS DCLR_CNT 			/** Nombre De Déclarations !== 신고건수 ==! */
+						 , SUM(D.TAX_AMT) AS TAX_AMT 			/** Montant De La Taxe !== 세금금액 ==! */
+						 , SUM(D.TTXBS_NCY_AMT) AS TXBS_AMT 	/** Montant de base d'imposition !== 과세기준금액 ==! */
+						 , SUM(D.AL_NTWG) AS AL_NTWG 			/** Poids brut total !== 전체순중량 ==! */
+						 , D.PRFL_TP_CD 						/** Code de type de profils !== 프로파일구분코드 ==! */
+					FROM   TB_RSMI_DCLR_PT_PR_ACRS D
+					   , (
+							 SELECT
+								 B.USER_DEFN_VDVAL1 AS IMEX_TP_CD 	/* CODE DE TYPE DE L'IMPORTATION/EXPORTATION !== 수출입구분코드 ==! */
+							   , B.CD_VDVAL         AS DCLR_PT_CD 	/* Modèle de déclaration !== 신고유형코드 ==! */
+							 FROM  TB_COM_COMN_CD   A
+								 , TB_COM_COMN_CD_D B
+							 WHERE  A.DEL_YN   ='N' AND A.USE_YN ='Y'
+							 AND  A.COMN_CD  = 'RSM_0052'
+							 AND  B.DEL_YN   = 'N' AND B.USE_YN ='Y'
+							 AND  A.COMN_CD  = B.COMN_CD
+						 ) C
+					WHERE D.NIF = #{nif} 						/** NIF !== 납세번호 ==! */
+					AND C.IMEX_TP_CD = 'IMP' 					/** Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+					AND D.DCLR_PT_CD = C.DCLR_PT_CD 			/** Modèle de déclaration !== 신고유형코드 ==! */
+					AND D.PRFL_TP_CD = #{prflTpCd} 				/** Code de type de profils !== 프로파일구분코드 ==! */
+					GROUP BY D.NIF, D.DCLR_CSTM_CD, D.PRFL_TP_CD
+				)
+				,
+				TOT_ACRS AS
+				(
+					SELECT SUM(DCLR_CNT) AS T_CNT
+					FROM CSTM_ACRS
+				)
+				SELECT A.*
+					 , B.T_CNT
+					 , (( CAST(A.DCLR_CNT AS INTEGER) / CAST(B.T_CNT AS INTEGER) ) * 100) AS RTO
+				FROM CSTM_ACRS A
+				   , TOT_ACRS B
+		) ORDER BY RTO DESC
+	</select>
+
+	<!--
+      [Profils d'opérateur] Voir la performance par bureau(Exportation)
+      !== [업체프로파일] 세관별실적(수출) ==!
+    -->
+	<select id="selectPrflCstmPrAcrsExpList"
+		parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+		resultType="alpass.ipt.rsm.prfl.vo.RsmPrflCstmPrAcrsVo">
+		/* selectPrflCstmPrAcrsExpList */
+		SELECT * FROM (
+				WITH CSTM_ACRS AS
+				(
+					SELECT D.NIF 					/** NIF !== 납세번호 ==! */
+						 , D.DCLR_CSTM_CD 			/** Code De Bureau De Déclaration !== 신고세관코드 ==! */
+						 , FN_GET_ORGN_NM( D.DCLR_CSTM_CD ) as DCLR_CSTM_NM 		/** Nom De Bureau De Déclaration !== 신고세관 ==! */
+						 , SUM(D.DCLR_CNT) AS DCLR_CNT 			/** Nombre De Déclarations !== 신고건수 ==! */
+						 , SUM(D.TAX_AMT) AS TAX_AMT 			/** Montant De La Taxe !== 세금금액 ==! */
+						 , SUM(D.TTXBS_NCY_AMT) AS TXBS_AMT 	/** Montant de base d'imposition !== 과세기준금액 ==! */
+						 , SUM(D.AL_NTWG) AS AL_NTWG 			/** Poids brut total !== 전체순중량 ==! */
+						 , D.PRFL_TP_CD 						/** Code de type de profils !== 프로파일구분코드 ==! */
+					FROM   TB_RSMI_DCLR_PT_PR_ACRS D
+					   , (
+							 SELECT
+								 B.USER_DEFN_VDVAL1 AS IMEX_TP_CD 	/* CODE DE TYPE DE L'IMPORTATION/EXPORTATION !== 수출입구분코드 ==! */
+							   , B.CD_VDVAL         AS DCLR_PT_CD 	/* Modèle de déclaration !== 신고유형코드 ==! */
+							 FROM  TB_COM_COMN_CD   A
+								 , TB_COM_COMN_CD_D B
+							 WHERE  A.DEL_YN   ='N' AND A.USE_YN ='Y'
+							 AND  A.COMN_CD  = 'RSM_0052'
+							 AND  B.DEL_YN   = 'N' AND B.USE_YN ='Y'
+							 AND  A.COMN_CD  = B.COMN_CD
+						 ) C
+					WHERE D.NIF = #{nif} 								/** NIF !== 납세번호 ==! */
+					AND C.IMEX_TP_CD = 'EXP' 							/** Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+					AND D.DCLR_PT_CD = C.DCLR_PT_CD 					/* Modèle de déclaration !== 신고유형코드 ==! */
+					AND D.PRFL_TP_CD = #{prflTpCd} 						/** Code de type de profils !== 프로파일구분코드 ==! */
+					GROUP BY D.NIF, D.DCLR_CSTM_CD, D.PRFL_TP_CD
+				)
+				,
+				TOT_ACRS AS
+				(
+					SELECT SUM(DCLR_CNT) AS T_CNT
+					FROM CSTM_ACRS
+				)
+				SELECT A.*
+					 , B.T_CNT
+					 , (( CAST(A.DCLR_CNT AS INTEGER) / CAST(B.T_CNT AS INTEGER) ) * 100) AS RTO
+				FROM CSTM_ACRS A
+				   , TOT_ACRS B
+		) ORDER BY RTO DESC
+	</select>
+
+	<!--
+      [Profils d'opérateur] Résultat par bureau et par année (Importation)
+      !== [업체프로파일] 연도별세관별실적(수입) ==!
+    -->
+	<select id="selectYyPrCstmImpAcrsList"
+		parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+		resultType="alpass.ipt.rsm.prfl.vo.RsmPrflCstmPrAcrsVo">
+		/* selectYyPrCstmImpAcrsList */
+        SELECT * FROM (
+                WITH CSTM_ACRS AS
+                (
+                    SELECT D.NIF 									/** NIF !== 납세번호 ==! */
+                         , D.DCLR_CSTM_CD 							/** Code De Bureau De Déclaration !== 신고세관코드 ==! */
+                         , FN_GET_ORGN_NM( D.DCLR_CSTM_CD ) as DCLR_CSTM_NM 		/** Nom De Bureau De Déclaration !== 신고세관 ==! */
+                         , SUM(D.DCLR_CNT) AS DCLR_CNT 				/** Nombre De Déclarations !== 신고건수 ==! */
+                         , SUM(D.TAX_AMT) AS TAX_AMT 				/** Montant De La Taxe !== 세금금액 ==! */
+                         , SUM(D.TTXBS_NCY_AMT) AS TXBS_AMT 		/** Montant de base d'imposition !== 과세기준금액 ==! */
+                         , D.PRFL_TP_CD 							/** Code de type de profils !== 프로파일구분코드 ==! */
+                         , SUBSTRING(D.DCLR_QRT, 0,5) as DCLR_YY 	/** Année de déclaration !== 신고년도 ==! */
+                         , SUM(D.AL_NTWG) AS AL_NTWG 				/** Poids brut total !== 전체순중량 ==! */
+                    FROM   TB_RSMI_DCLR_PT_PR_ACRS D
+                       , (
+                             SELECT
+                                 B.USER_DEFN_VDVAL1 AS IMEX_TP_CD 	/* CODE DE TYPE DE L'IMPORTATION/EXPORTATION !== 수출입구분코드 ==! */
+                               , B.CD_VDVAL         AS DCLR_PT_CD 	/* Modèle de déclaration !== 신고유형코드 ==! */
+                             FROM  TB_COM_COMN_CD   A
+                                 , TB_COM_COMN_CD_D B
+                             WHERE  A.DEL_YN   ='N' AND A.USE_YN ='Y'
+                             AND  A.COMN_CD  = 'RSM_0052'
+                             AND  B.DEL_YN   = 'N' AND B.USE_YN ='Y'
+                             AND  A.COMN_CD  = B.COMN_CD
+                         ) C
+                    WHERE D.NIF = #{nif} 							/** NIF !== 납세번호 ==! */
+                    AND C.IMEX_TP_CD = 'IMP' 						/** Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+                    AND D.DCLR_PT_CD = C.DCLR_PT_CD 				/* Modèle de déclaration !== 신고유형코드 ==! */
+                    AND D.PRFL_TP_CD = #{prflTpCd} 					/** Code de type de profils !== 프로파일구분코드 ==! */
+                    GROUP BY D.NIF, D.DCLR_CSTM_CD, D.PRFL_TP_CD, SUBSTRING(D.DCLR_QRT, 0,5)
+                )
+                ,
+                TOT_ACRS AS
+                (
+                    SELECT SUM(DCLR_CNT) AS T_CNT
+                    FROM CSTM_ACRS
+                )
+                SELECT A.*
+                     , B.T_CNT
+                     , (( CAST(A.DCLR_CNT AS INTEGER) / CAST(B.T_CNT AS INTEGER) ) * 100) AS RTO
+                FROM CSTM_ACRS A
+                   , TOT_ACRS B
+        ) ORDER BY DCLR_YY DESC, RTO DESC
+	</select>
+
+	<!--
+      [Profils d'opérateur] Résultat par bureau et par année (Exportation)
+      !== [업체프로파일] 연도별세관별실적(수출) ==!
+    -->
+	<select id="selectYyPrCstmExpAcrsList"
+		parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+		resultType="alpass.ipt.rsm.prfl.vo.RsmPrflCstmPrAcrsVo">
+		/* selectYyPrCstmExpAcrsList */
+        SELECT * FROM (
+                WITH CSTM_ACRS AS
+                (
+                    SELECT D.NIF 									/** NIF !== 납세번호 ==! */
+                         , D.DCLR_CSTM_CD 							/** Code De Bureau De Déclaration !== 신고세관코드 ==! */
+                         , FN_GET_ORGN_NM( D.DCLR_CSTM_CD ) as DCLR_CSTM_NM 	/** Nom De Bureau De Déclaration !== 신고세관 ==! */
+                         , SUM(D.DCLR_CNT) AS DCLR_CNT 				/** Nombre De Déclarations !== 신고건수 ==! */
+                         , SUM(D.TAX_AMT) AS TAX_AMT 				/** Montant De La Taxe !== 세금금액 ==! */
+                         , SUM(D.TTXBS_NCY_AMT) AS TXBS_AMT 		/** Montant de base d'imposition !== 과세기준금액 ==! */
+                         , D.PRFL_TP_CD 							/** Code de type de profils !== 프로파일구분코드 ==! */
+                         , SUBSTRING(D.DCLR_QRT, 0,5) as DCLR_YY 	/** Année de déclaration !== 신고년도 ==! */
+                         , SUM(D.AL_NTWG) AS AL_NTWG 				/** Poids brut total !== 전체순중량 ==! */
+                    FROM   TB_RSMI_DCLR_PT_PR_ACRS D
+                       , (
+                             SELECT
+                                 B.USER_DEFN_VDVAL1 AS IMEX_TP_CD /*  CODE DE TYPE DE L'IMPORTATION/EXPORTATION !== 수출입구분코드 ==! */
+                               , B.CD_VDVAL         AS DCLR_PT_CD /* !== 신고유형코드 ==!   */
+                             FROM  TB_COM_COMN_CD   A
+                                 , TB_COM_COMN_CD_D B
+                             WHERE  A.DEL_YN   ='N' AND A.USE_YN ='Y'
+                             AND  A.COMN_CD  = 'RSM_0052'
+                             AND  B.DEL_YN   = 'N' AND B.USE_YN ='Y'
+                             AND  A.COMN_CD  = B.COMN_CD
+                         ) C
+                    WHERE D.NIF = #{nif} 									/** NIF !== 납세번호 ==! */
+                    AND C.IMEX_TP_CD = 'EXP' 								/** Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+                    AND D.DCLR_PT_CD = C.DCLR_PT_CD 						/** Modèle de déclaration !== 신고유형코드 ==! */
+                    AND D.PRFL_TP_CD = #{prflTpCd} 							/** Code de type de profils !== 프로파일구분코드 ==! */
+                    GROUP BY D.NIF, D.DCLR_CSTM_CD, D.PRFL_TP_CD, SUBSTRING(D.DCLR_QRT, 0,5)
+                )
+                ,
+                TOT_ACRS AS
+                (
+                    SELECT SUM(DCLR_CNT) AS T_CNT
+                    FROM CSTM_ACRS
+                )
+                SELECT A.*
+                     , B.T_CNT
+                     , (( CAST(A.DCLR_CNT AS INTEGER) / CAST(B.T_CNT AS INTEGER) ) * 100) AS RTO
+                FROM CSTM_ACRS A
+                   , TOT_ACRS B
+        ) ORDER BY DCLR_YY DESC, RTO DESC
+	</select>
+
+	<!--
+      [Profils d'opérateur] Consulter l'année récente
+      !== [업체프로파일] 연도조회  ==!
+    -->
+	<select id="selectCoPrflRcntYy"
+		resultType="alpass.ipt.rsm.prfl.vo.RsmPrflEpcPrAcrsVo">
+		/* selectCoPrflRcntYy */
+		SELECT TO_CHAR(ADD_MONTHS(SYSDATE, -24), 'YYYY') AS BF_2_YY 	/** l'année qui précède la dernière !== 이전 2년도(재작년) ==! */
+			,  TO_CHAR(ADD_MONTHS(SYSDATE, -12), 'YYYY') AS BF_1_YY 	/** l'année dernière !== 이전 1년도(작년) ==! */
+			,  TO_CHAR(SYSDATE, 'YYYY') AS NOW_YY 						/** année actuelle !== 현재 년도(올해) ==! */
+		FROM DUAL
+	</select>
+
+	<!--
+      [Profils d'opérateur] Résultat par régime
+      !== [업체프로파일] 레짐별실적 ==!
+    -->
+	<select id="selectCoPrflEpcPrAcrsList"
+		parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+		resultType="alpass.ipt.rsm.prfl.vo.RsmPrflEpcPrAcrsVo">
+		/* selectCoPrflEpcPrAcrsList */
+		WITH YEAR1 AS (
+				SELECT EPC_CD
+				     , SUM(DCLR_CNT) AS DCLR_CNT
+					 , SUM(TTXBS_NCY_AMT) AS TTXBS_NCY_AMT
+				  FROM TB_RSMI_DCLR_PT_PR_ACRS
+				 WHERE TO_CHAR(SYSDATE, 'YYYY') = SUBSTRING(DCLR_QRT, 0, 5)
+				   AND DEL_YN = 'N'
+				   AND PRFL_TP_CD = #{prflTpCd} 			/** Code de type de profils !== 프로파일구분코드 ==! */
+				   AND NIF = #{nif} 						/** NIF !== 납세번호 ==! */
+				 GROUP BY EPC_CD
+		)
+		,YEAR2 AS (
+				SELECT EPC_CD
+                     , SUM(DCLR_CNT) AS DCLR_CNT
+					 , SUM(TTXBS_NCY_AMT) AS TTXBS_NCY_AMT
+				  FROM TB_RSMI_DCLR_PT_PR_ACRS
+				 WHERE TO_CHAR(ADD_MONTHS(SYSDATE, -12), 'YYYY') = SUBSTRING(DCLR_QRT, 0, 5)
+				   AND DEL_YN = 'N'
+				   AND PRFL_TP_CD = #{prflTpCd} 			/** Code de type de profils !== 프로파일구분코드 ==! */
+				   AND NIF = #{nif} 						/** NIF !== 납세번호 ==! */
+				 GROUP BY EPC_CD
+		)
+		,YEAR3 AS (
+				SELECT EPC_CD
+				     , SUM(DCLR_CNT) AS DCLR_CNT
+					 , SUM(TTXBS_NCY_AMT) AS TTXBS_NCY_AMT
+				  FROM TB_RSMI_DCLR_PT_PR_ACRS
+				 WHERE TO_CHAR(ADD_MONTHS(SYSDATE, -24), 'YYYY') = SUBSTRING(DCLR_QRT, 0, 5)
+				   AND DEL_YN = 'N'
+				   AND PRFL_TP_CD = #{prflTpCd} 			/** Code de type de profils !== 프로파일구분코드 ==! */
+				   AND NIF = #{nif} 						/** NIF !== 납세번호 ==! */
+				 GROUP BY EPC_CD
+		)
+		SELECT
+		    EPC_CD 		/** Code EPC !== EPC코드 ==! */
+		  , CNT_1 		/** Nombre 1 (nombre de cas l'avant-dernière année) !== 건수 1 (2년전 건수) ==! */
+		  , CNT_2 		/** Nombre 2 (nombre de cas l'année dernière) !== 건수 2 (1년전 건수) ==! */
+		  , CNT_3 		/** Nombre 3 (nombre de cas cette année) !== 건수 3 (올해 건수) ==! */
+		FROM (
+			SELECT
+				   NVL(NVL(A.EPC_CD, B.EPC_CD), C.EPC_CD) AS EPC_CD
+				 , NVL(SUM(C.DCLR_CNT),0)||' ('|| REPLACE(TO_CHAR(NVL(SUM(C.TTXBS_NCY_AMT),0),'999,999,999,999,999,999'),' ','') || ')' AS CNT_1
+				 , NVL(SUM(B.DCLR_CNT),0)||' ('|| REPLACE(TO_CHAR(NVL(SUM(B.TTXBS_NCY_AMT),0),'999,999,999,999,999,999'),' ','') || ')' AS CNT_2
+				 , NVL(SUM(A.DCLR_CNT),0)||' ('|| REPLACE(TO_CHAR(NVL(SUM(A.TTXBS_NCY_AMT),0),'999,999,999,999,999,999'),' ','') || ')' AS CNT_3
+			  FROM YEAR1 A
+			  FULL OUTER JOIN YEAR2 B ON A.EPC_CD = B.EPC_CD
+			  FULL OUTER JOIN YEAR3 C ON B.EPC_CD = C.EPC_CD
+			 GROUP BY A.EPC_CD, B.EPC_CD, C.EPC_CD
+		)
+	</select>
+
+	<!--
+     [Profils d'opérateur] Détails de déclaration par regime
+     !== [업체프로파일] 레짐별신고상세 ==!
+    -->
+	<select id="selectPrflEpcPrAcrsDtlList"
+		parameterType="alpass.ipt.rsm.prfl.vo.RsmPrflEpcPrAcrsVo"
+		resultType="alpass.ipt.rsm.prfl.vo.RsmPrflEpcPrAcrsDtlVo">
+		/* selectPrflEpcPrAcrsDtlList */
+		SELECT DISTINCT
+		       B.DTL_DCSH_NO 			/** Numéro d’identification fiscale !== 납세식별번호 ==! */
+		     , B.PDLS_NO 				/** N° D'Article !== 품목번호 ==! */
+		     , B.ACPT_DT 				/** Date de la validation !== 수리일자 ==! */
+		     , B.HS_CD 					/** Code Sh !== HS코드 ==! */
+		     , B.QTY 					/** Quantité !== 수량 ==! */
+		     , B.QTY_UT_CD 				/** Code De L'Unité De Quantité !== 수량단위코드 ==! */
+		     , ROUND(B.PDLS_TTWG / 1000, 2) AS PDLS_TTWG 		/** Poids Brut De L'Article !== 품목총중량 ==! */
+		     , ROUND(B.PDLS_NTWG / 1000, 2) AS PDLS_NTWG 		/** Poids Net De L'Article !== 품목순중량 ==! */
+		     , B.PDLS_TXBS_NCY_AMT 		/** Montant Nyc De La Base Taxable De L'Article !== 품목과세기준NCY금액 ==! */
+		FROM   TB_RSMI_DCLR_PT_PR_ACRS A
+		     , (SELECT
+		               D.DTL_DCSH_NO
+		             , P.PDLS_NO
+		             , TO_CHAR(TO_DATE(D.ACPT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS ACPT_DT
+		             , P.HS_CD
+		             , P.QTY
+		             , P.QTY_UT_CD
+		             , P.PDLS_TTWG
+		             , P.PDLS_NTWG
+		             , V.PDLS_TXBS_NCY_AMT
+		             , D.EPC_CD
+		             <if test='prflTpCd != null and prflTpCd =="O"'>
+		             , CASE WHEN CD.IMEX_TP_CD = 'IMP' THEN D.IMPPN_IDFY_NO
+		                    WHEN CD.IMEX_TP_CD = 'EXP' THEN D.EXPPN_IDFY_NO
+		                    ELSE NULL
+		               END AS NIF
+		             </if>
+		             <if test='prflTpCd != null and prflTpCd =="D"'>
+		             , (SELECT NIF FROM TB_COM_CO_DCLR_CD WHERE CO_DCLR_CD = D.DCER_CD AND CO_DCLR_TP_CD = 'H') AS NIF
+		             </if>
+		        FROM
+		               TB_CLRI_DED_COMN D
+		             , TB_CLRI_DED_PDLS P
+		             , TB_CLRI_DED_VLUT_PDLS V
+		             , (
+		                  SELECT
+		                          B.USER_DEFN_VDVAL1 AS IMEX_TP_CD /*  Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+		                        , B.CD_VDVAL         AS DCLR_PT_CD /* !== 신고유형코드 ==!   */
+		                    FROM  TB_COM_COMN_CD   A
+		                        , TB_COM_COMN_CD_D B
+		                   WHERE  A.DEL_YN   = 'N' AND A.USE_YN ='Y'
+		                     AND  A.COMN_CD  = 'RSM_0052'
+		                     AND  B.DEL_YN   = 'N' AND B.USE_YN ='Y'
+		                     AND  A.COMN_CD  = B.COMN_CD
+		               ) CD
+		        WHERE
+		               D.DEL_YN = 'N' 								/** Suppression ON !== 삭제여부 ==! */
+		        <if test='prflTpCd != null and prflTpCd =="D"'>
+		        AND    LENGTH(D.DCER_CD) > 0
+		        </if>
+		        AND    P.DEL_YN = 'N'
+		        AND    V.DEL_YN = 'N'
+		        AND    D.EPC_CD = #{epcCd} 						/** Code EPC !== EPC코드 ==! */
+		        AND    SUBSTR(D.DCLR_DT, 0,4) = #{searchYy} 		/** Année de déclaration !== 신고년도 ==! */
+		        AND    D.ACPT_YN     = 'Y'  						/** Validation ON !== 수리여부 ==! */
+		        AND    D.DTL_DCSH_NO = P.DTL_DCSH_NO 				/** Numero du DED !== DED번호 ==! */
+		        AND    D.DTL_DCSH_NO = V.DTL_DCSH_NO
+		        AND    P.PDLS_NO = V.PDLS_NO 						/** N° D'Article !== 품목번호 ==! */
+		        AND    D.DCLR_PT_CD = CD.DCLR_PT_CD 				/* Modèle de déclaration !== 신고유형코드 ==! */
+		       ) B
+		WHERE  A.EPC_CD = #{epcCd} 							/** Code EPC !== EPC코드 ==! */
+		AND    A.EPC_CD = B.EPC_CD
+		AND    A.NIF = B.NIF 								/** NIF !== 납세번호 ==! */
+		AND    A.NIF = #{nif}
+		AND    A.PRFL_TP_CD = #{prflTpCd} 					/** Code de type de profils !== 프로파일구분코드 ==! */
+		AND    SUBSTR(A.DCLR_QRT, 0,4) = #{searchYy} 		/** Année de déclaration !== 신고년도 ==! */
+		ORDER  BY DTL_DCSH_NO, PDLS_NO
+	</select>
+
+	<!--
+     [Profils d'opérateur] Détection(Détails)
+     !== [업체프로파일] 적발실적상세 ==!
+    -->
+	<select id="selectPrflHsDsclAcrsList"
+		parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+		resultType="alpass.ipt.rsm.prfl.vo.RsmPrflDsclAcrsVo">
+		/* selectPrflHsDsclAcrsList */
+		SELECT A.HS_CD 					/** Code Sh !== HS코드 ==! */
+			 , A.DCLR_YY 				/** Année de déclaration !== 신고년도 ==! */
+			 , A.TOT_DCLR_CNT 			/** Nombre total de déclaration !== 총신고건수 ==! */
+			 , A.TOT_TAX_AMT 			/** Total Taxe !== 총 세금 ==! */
+			 , A.TOT_TTXBS_NCY_AMT 		/** Total Prix de base d’imposition !== 총 과세기준가격 ==! */
+			 , B.SELC_RSLT_CD 			/** Code De Résultat De Ciblage !== 선별결과코드 ==! */
+			 , B.SELC_CNT 				/** Nombre de déclarations ciblées !== 선별건수 ==! */
+			 , B.SELC_TAX_AMT 			/** Taxe de sélection !== 선별 세금 ==! */
+			 , B.SELC_TTXBS_NCY_AMT 	/** Prix de base d’imposition de sélection !== 선별 과세기준가격 ==! */
+			 , (B.SELC_CNT/A.TOT_DCLR_CNT) * 100 AS SELC_RT 		/** Taux de ciblage !== 선별율 ==! */
+			 , CASE WHEN B.SELC_RSLT_CD = 'R' THEN (B.SELC_CNT/A.TOT_DCLR_CNT) * 100 ELSE 0 END  AS RED_SELC_RT 	/** Taux de ciblage (Rouge) !== Red 선별율 ==! */
+			 , CASE WHEN B.SELC_RSLT_CD = 'O' THEN (B.SELC_CNT/A.TOT_DCLR_CNT) * 100 ELSE 0 END  AS ORE_SELC_RT 	/** Taux de ciblage (Orange)!== Orange 선별율 ==! */
+			 , CASE WHEN B.SELC_RSLT_CD = 'B' THEN (B.SELC_CNT/A.TOT_DCLR_CNT) * 100 ELSE 0 END  AS BLU_SELC_RT 	/** Taux de ciblage (Bleu) !== Blue 선별율 ==! */
+			 , CASE WHEN B.SELC_RSLT_CD = 'G' THEN (B.SELC_CNT/A.TOT_DCLR_CNT) * 100 ELSE 0 END  AS GRN_SELC_RT 	/** Taux de ciblage (Vert) !== Green 선별율 ==! */
+			 , COALESCE(C.DSCL_CNT, 0) AS DSCL_CNT 						/** Nombre de détection  !== 적발건수 ==! */
+			 , COALESCE(C.DSCL_TAX_AMT, 0) AS DSCL_TAX_AMT 				/** Droits Et Taxes De Déclaration Détectée !== 적발세금 ==! */
+			 , COALESCE(C.DSCL_TTXBS_NCY_AMT, 0) AS DSCL_TTXBS_NCY_AMT 	/** Montant Ncy De La Base Taxable Détectée !== 적발 과세기준가격 ==! */
+			 , COALESCE((C.DSCL_CNT/B.SELC_CNT) * 100 , 0) AS DSCL_RT 	/** Taux de détection !== 적발율 ==! */
+			 , COALESCE(D.FINE_AMT, 0) AS FINE_AMT 						/** Montant d'amende !== 벌금금액 ==! */
+		FROM   (
+				   SELECT AA.HS_CD
+						, AA.DCLR_YY
+						, (    SELECT COUNT(HS_CD) FROM TB_RSMI_HS_INSC_RSLT 
+								WHERE HS_CD = AA.HS_CD 
+								  AND DCLR_YY = AA.DCLR_YY ) AS TOT_DCLR_CNT
+						, SUM(AA.TAX_AMT) AS TOT_TAX_AMT
+						, SUM(AA.PDLS_TXBS_NCY_AMT) AS TOT_TTXBS_NCY_AMT
+				   FROM   TB_RSMI_HS_INSC_RSLT AA
+				   WHERE  AA.DEL_YN ='N'
+				   AND    AA.HS_CD = #{hsCd} 						/** Code Sh !== HS코드 ==! */
+				   GROUP BY AA.HS_CD, DCLR_YY
+			   ) A
+			 , (
+				   SELECT BB.HS_CD
+						, BB.DCLR_YY
+						, BB.SELC_RSLT_CD
+						, (    SELECT COUNT(HS_CD) FROM TB_RSMI_HS_INSC_RSLT 
+								WHERE HS_CD = BB.HS_CD 
+								  AND DCLR_YY = BB.DCLR_YY 
+								  AND SELC_RSLT_CD = BB.SELC_RSLT_CD) AS SELC_CNT
+						, SUM(BB.TAX_AMT) AS SELC_TAX_AMT
+						, SUM(BB.PDLS_TXBS_NCY_AMT) AS SELC_TTXBS_NCY_AMT
+				   FROM   TB_RSMI_HS_INSC_RSLT BB
+				   WHERE  BB.DEL_YN ='N'
+				   AND    BB.HS_CD = #{hsCd} 						/** Code Sh !== HS코드 ==! */
+				   GROUP BY BB.HS_CD, BB.DCLR_YY, BB.SELC_RSLT_CD
+			   ) B
+			 , (
+				   SELECT CC.HS_CD
+					    , CC.DCLR_YY
+					    , CC.SELC_RSLT_CD
+   						, (    SELECT COUNT(HS_CD) FROM TB_RSMI_HS_INSC_RSLT 
+								WHERE HS_CD = CC.HS_CD 
+								  AND DCLR_YY = CC.DCLR_YY 
+								  AND SELC_RSLT_CD = CC.SELC_RSLT_CD) AS DSCL_CNT
+					    , SUM(CC.TAX_AMT) AS DSCL_TAX_AMT
+					    , SUM(CC.PDLS_TXBS_NCY_AMT) AS DSCL_TTXBS_NCY_AMT
+				   FROM   TB_RSMI_HS_INSC_RSLT CC
+			       WHERE  CC.DEL_YN = 'N'
+				   AND    CC.HS_CD = #{hsCd} 						/** Code Sh !== HS코드 ==! */
+		           AND    CC.INSC_1_RSLT_CD != '01' 				/** Code De Certificat De Visite 1 !== 검사1결과코드 ==! */
+				   GROUP BY CC.HS_CD, DCLR_YY, CC.SELC_RSLT_CD
+			   ) C
+			 , (
+           		   SELECT FF.HS_CD
+               			,  FF.DCLR_YY
+               			,  DD.SELC_RSLT_CD
+               			,  NVL(SUM(EE.FINE_AMT), 0) AS FINE_AMT
+           		   FROM   TB_RSMI_DED_SELC DD
+                       ,  TB_COLI_NTFC EE
+                       ,  (
+                      		SELECT GG.HS_CD
+                                 , GG.DCLR_YY
+                                 , GG.DTL_DCSH_NO
+                            FROM   TB_RSMI_HS_INSC_RSLT GG
+                            WHERE  GG.DEL_YN = 'N'
+                            AND    GG.HS_CD = #{hsCd}
+                            GROUP BY GG.HS_CD, GG.DCLR_YY, GG.DTL_DCSH_NO
+                          ) FF
+           		   WHERE  DD.DEL_YN ='N'
+				   AND    DD.DTL_DCSH_NO = FF.DTL_DCSH_NO 				/** Numero du DED !== DED번호 ==! */
+				   AND    SUBSTR(DD.SELC_DT, 1, 4) = FF.DCLR_YY 		/** Année de déclaration !== 신고년도 ==! */
+				   AND    EE.DEL_YN ='N' 								/** Suppression On !== 삭제여부 ==! */
+				   AND    EE.NTFC_PT_CD = 'A' 							/** Code De Type D'Avis !== 고지유형코드 ==! */
+				   AND    EE.REFF_NO_PT_CD = '002' 						/** Code De Type De Numéro De Référence !== 참조번호유형코드 ==! */
+				   AND    EE.CNCL_YN = 'N' 								/** Annulé (On) !== 취소여부 ==! */
+				   AND    EE.REFF_NO= DD.DTL_DCSH_NO 					/** N° De Référence !== 참조번호 ==! */
+				   GROUP BY FF.HS_CD, FF.DCLR_YY, DD.SELC_RSLT_CD
+       		   ) D
+		WHERE  B.HS_CD = A.HS_CD 										/** Code Sh !== HS코드 ==! */
+		AND    B.DCLR_YY = A.DCLR_YY 									/** Année de déclaration !== 신고년도 ==! */
+		AND    C.HS_CD(+) = B.HS_CD
+		AND    C.DCLR_YY(+) = B.DCLR_YY
+		AND    C.SELC_RSLT_CD(+) = B.SELC_RSLT_CD 						/** Code De Résultat De Ciblage !== 선별결과코드 ==! */
+		AND    D.HS_CD(+) = B.HS_CD
+		AND    D.DCLR_YY(+) = B.DCLR_YY
+		AND    D.SELC_RSLT_CD(+) = B.SELC_RSLT_CD
+		ORDER BY A.DCLR_YY DESC, DECODE(B.SELC_RSLT_CD, 'R', 1, 'O', 2, 'B', 3, 'G', 4 ) ASC
+	</select>
+
+	<!--
+     [Profils d'opérateur] Consultation des resultats par code SH(Importation)
+     !== [업체프로파일] HS코드별수입실적 ==!
+    -->
+	<select id="selectCoHsCdPrImpAcrsList" parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo" resultType="alpass.ipt.rsm.prfl.vo.RsmHsCdPrAcrsVo">
+		/* selectCoHsCdPrImpAcrsList */
+		WITH BF_YEAR_HS AS (
+		    SELECT HS_CD
+			   , (SELECT TO_CHAR(SYSDATE - 365, 'YYYY')) AS DCLR_YY
+			   , SUM(DCLR_CNT) AS DCLR_CNT
+               , ROUND(SUM(AL_TTWG) / 1000, 2) AS AL_TTWG
+               , ROUND(SUM(AL_NTWG) / 1000, 2) AS AL_NTWG
+			   , SUM(TTXBS_NCY_AMT) AS TTXBS_NCY_AMT
+		       , SUM(QTY) AS QTY
+			FROM TB_RSMI_ITBIT_IMEX_ACRS A
+		    WHERE PRFL_TP_CD = #{prflTpCd} 										/** Code de type de profils !== 프로파일구분코드 ==! */
+			AND TO_CHAR(SYSDATE - 365, 'YYYY') = SUBSTRING(DCLR_QRT, 0, 5) 		/** Année de déclaration !== 신고년도 ==! */
+			AND IMEX_TP_CD = 'IMP' 												/** Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+		    AND NIF = #{nif} 													/** NIF !== 납세번호 ==! */
+		    GROUP BY HS_CD
+		)
+		, CURR_YEAR_HS AS (
+			SELECT HS_CD
+				, TO_CHAR(SYSDATE, 'YYYY')  AS DCLR_YY
+				, SUM(DCLR_CNT) AS DCLR_CNT
+		        , ROUND(SUM(AL_TTWG) / 1000, 2) AS AL_TTWG
+		        , ROUND(SUM(AL_NTWG) / 1000, 2) AS AL_NTWG
+				, SUM(TTXBS_NCY_AMT) AS TTXBS_NCY_AMT
+		        , SUM(QTY) AS QTY
+			FROM TB_RSMI_ITBIT_IMEX_ACRS
+			WHERE PRFL_TP_CD = #{prflTpCd} 										/** Code de type de profils !== 프로파일구분코드 ==! */
+			AND TO_CHAR(SYSDATE, 'YYYY') = SUBSTRING(DCLR_QRT, 0, 5) 			/** Année de déclaration !== 신고년도 ==! */
+			AND IMEX_TP_CD = 'IMP' 												/** Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+			AND NIF = #{nif} 													/** NIF !== 납세번호 ==! */
+			GROUP BY HS_CD
+		)
+		SELECT
+			   NVL(A.HS_CD, B.HS_CD) AS HS_CD 		/** Code SH  !== HS 코드 ==! */
+			 , (SELECT TO_CHAR(SYSDATE - 365, 'YYYY'))  AS BF_DCLR_YY 		/** Année de déclaration (l'année dernière) !== 이전 신고년도 ==! */
+			 , NVL(A.DCLR_CNT, 0) AS BF_DCLR_CNT 	/** Nombre de déclarations (l'année dernière) !== 이전 신고건수 ==! */
+			 , NVL(A.AL_TTWG, 0) AS BF_AL_TTWG 		/** Poids brut (l'année dernière) !== 이전 총중량 ==! */
+			 , NVL(A.AL_NTWG, 0) AS BF_AL_NTWG 		/** Poids net (l'année dernière) !== 이전 순중량 ==! */
+			 , NVL(A.TTXBS_NCY_AMT, 0) AS BF_TTXBS_NCY_AMT 		/** Montant Ncy Total De La Base Taxable (l'année dernière) !== 이전 총과세기준NCY금액 ==! */
+			 , NVL(A.QTY, 0) AS BF_QTY 				/** Quantite precedent !== 이전수량 ==! */
+			 , TO_CHAR(SYSDATE, 'YYYY') AS CURR_DCLR_YY 		/** Année de déclaration (Cette année) !== 현재 신고년도 ==! */
+			 , NVL(B.DCLR_CNT, 0) AS CURR_DCLR_CNT 	/** Nombre de déclarations (Cette année) !== 현재 신고건수 ==! */
+			 , NVL(B.AL_TTWG, 0) AS CURR_AL_TTWG 	/** Poids brut (Cette année) !== 현재 총중량 ==! */
+			 , NVL(B.AL_NTWG, 0) AS CURR_AL_NTWG 	/** Poids net (Cette année) !== 현재 순중량 ==! */
+			 , NVL(B.TTXBS_NCY_AMT, 0) AS CURR_TTXBS_NCY_AMT 	/** Montant Ncy Total De La Base Taxable (Cette année) !== 현재 총과세기준NCY금액 ==! */
+			 , NVL(B.QTY, 0) AS CURR_QTY 			/** quantité actuelle !== 현재수량 ==! */
+		FROM BF_YEAR_HS A
+		  FULL OUTER JOIN CURR_YEAR_HS B ON A.HS_CD = B.HS_CD
+	</select>
+
+	<!--
+     [Profils d'opérateur] Consultation des résultats par code SH(Exportation)
+     !== [업체프로파일] HS코드별수출실적 ==!
+    -->
+	<select id="selecCotHsCdPrExpAcrsList" parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo" resultType="alpass.ipt.rsm.prfl.vo.RsmHsCdPrAcrsVo">
+		/* selecCotHsCdPrExpAcrsList */
+		WITH BF_YEAR_HS AS (
+		    SELECT HS_CD
+			   , (SELECT TO_CHAR(SYSDATE - 365, 'YYYY')) AS DCLR_YY
+			   , SUM(DCLR_CNT) AS DCLR_CNT
+               , ROUND(SUM(AL_TTWG) / 1000, 2) AS AL_TTWG
+               , ROUND(SUM(AL_NTWG) / 1000, 2) AS AL_NTWG
+			   , SUM(TTXBS_NCY_AMT) AS TTXBS_NCY_AMT
+		       , SUM(QTY) AS QTY
+			FROM TB_RSMI_ITBIT_IMEX_ACRS A
+		    WHERE PRFL_TP_CD = #{prflTpCd} 										/** Code de type de profils !== 프로파일구분코드 ==! */
+			AND TO_CHAR(SYSDATE - 365, 'YYYY') = SUBSTRING(DCLR_QRT, 0, 5) 		/** Année de déclaration !== 신고년도 ==! */
+			AND IMEX_TP_CD = 'EXP' 												/** Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+		    AND NIF = #{nif} 													/** NIF !== 납세번호 ==! */
+		    GROUP BY HS_CD
+		)
+		, CURR_YEAR_HS AS (
+			SELECT HS_CD
+				, TO_CHAR(SYSDATE, 'YYYY')  AS DCLR_YY
+				, SUM(DCLR_CNT) AS DCLR_CNT
+                , ROUND(SUM(AL_TTWG) / 1000, 2) AS AL_TTWG
+                , ROUND(SUM(AL_NTWG) / 1000, 2) AS AL_NTWG
+				, SUM(TTXBS_NCY_AMT) AS TTXBS_NCY_AMT
+		        , SUM(QTY) AS QTY
+			FROM TB_RSMI_ITBIT_IMEX_ACRS
+			WHERE PRFL_TP_CD = #{prflTpCd} 										/** Code de type de profils !== 프로파일구분코드 ==! */
+			AND TO_CHAR(SYSDATE, 'YYYY') = SUBSTRING(DCLR_QRT, 0, 5) 			/** Année de déclaration !== 신고년도 ==! */
+			AND IMEX_TP_CD = 'EXP' 												/** Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+			AND NIF = #{nif} 													/** NIF !== 납세번호 ==! */
+			GROUP BY HS_CD
+		)
+		SELECT
+               NVL(A.HS_CD, B.HS_CD) AS HS_CD 		/** Code SH  !== HS 코드 ==! */
+             , (SELECT TO_CHAR(SYSDATE - 365, 'YYYY'))  AS BF_DCLR_YY 		/** Année de déclaration (l'année dernière) !== 이전 신고년도 ==! */
+             , NVL(A.DCLR_CNT, 0) AS BF_DCLR_CNT  	/** Nombre de déclarations (l'année dernière) !== 이전 신고건수 ==! */
+             , NVL(A.AL_TTWG, 0) AS BF_AL_TTWG 		/** Poids brut (l'année dernière) !== 이전 총중량 ==! */
+             , NVL(A.AL_NTWG, 0) AS BF_AL_NTWG 		/** Poids net (l'année dernière) !== 이전 순중량 ==! */
+             , NVL(A.TTXBS_NCY_AMT, 0) AS BF_TTXBS_NCY_AMT 		/** Montant Ncy Total De La Base Taxable (l'année dernière) !== 이전 총과세기준NCY금액 ==! */
+             , NVL(A.QTY, 0) AS BF_QTY 				/** Quantite precedent !== 이전수량 ==! */
+             , TO_CHAR(SYSDATE, 'YYYY') AS CURR_DCLR_YY 		/** Année de déclaration (Cette année) !== 현재 신고년도 ==! */
+             , NVL(B.DCLR_CNT, 0) AS CURR_DCLR_CNT  /** Nombre de déclarations (Cette année) !== 현재 신고건수 ==! */
+             , NVL(B.AL_TTWG, 0) AS CURR_AL_TTWG 	/** Poids brut (Cette année) !== 현재 총중량 ==! */
+             , NVL(B.AL_NTWG, 0) AS CURR_AL_NTWG 	/** Poids net (Cette année) !== 현재 순중량 ==! */
+             , NVL(B.TTXBS_NCY_AMT, 0) AS CURR_TTXBS_NCY_AMT 	/** Montant Ncy Total De La Base Taxable (Cette année) !== 현재 총과세기준NCY금액 ==! */
+             , NVL(B.QTY, 0) AS CURR_QTY 			/** quantité actuelle !== 현재수량 ==! */
+		FROM BF_YEAR_HS A
+		  FULL OUTER JOIN CURR_YEAR_HS B ON A.HS_CD = B.HS_CD
+	</select>
+
+	<!--
+	  Consulter la liste des performance de Code SH par Taux de taxe(Importation/Exportation)
+	  !==  HS코드별적용세율 실적(수입/수출) 목록 조회 ==!
+	-->
+	<select id="selectPcoHsAplayTxrtAcrsList" parameterType="alpass.ipt.rsm.prfl.vo.RsmHsCdPrAcrsVo" resultType="alpass.ipt.rsm.basc.vo.RsmPcoHsAplayTxrtAcrsVo">
+		/* selectPcoHsAplayTxrtAcrsList */
+		SELECT A.HS_CD 				/** Code SH  !== HS코드 ==! */
+			 , ROUND(NVL(SUM(A.PDLS_NTWG), 0), 2) AS PDLS_NTWG 			/** Poids net de l'article !== 품목순중량 ==! */
+			 , A.QTY_UT_CD 			/** Code de l'unite de quantite !== 수량단위코드 ==! */
+			 , (
+					SELECT REPLACE(AA.VLTX_RT_CN, ',', '.') AS VLTX_RT_CN
+					FROM   TB_CLRI_PDLS_TFRT AA
+					WHERE  AA.HS_CD = A.HS_CD
+					AND    AA.TAX_CD = 'D.D'
+					AND    AA.TFRT_CTGY_CD = 'GL'
+					AND    AA.USE_YN = 'Y'
+					AND    AA.DEL_YN = 'N'
+				) AS TXRT 			/** Taux d'imposition !== 세율 ==! */
+		     , SUM(A.PDLS_TXBS_NCY_AMT) as PDLS_TXBS_NCY_AMT 		/** Montant Nyc De La Base Taxable De L'Article !== 품목과세기준NCY금액 ==! */
+		FROM   TB_RSMI_PCO_HS_APLY_TXRT_ACRS A
+		WHERE  A.NIF        = #{nif} 							/** NIF !== 납세번호 ==! */
+		AND    A.PRFL_TP_CD = #{prflTpCd} 						/** Code de type de profils !== 프로파일구분코드 ==! */
+		AND    A.IMEX_TP_CD = #{imexTpCd} 						/** Code de type de l'importation/exportation !== 수출입구분코드 ==! */
+		AND    #{dclrYy}    = SUBSTRING(A.DCLR_QRT, 0, 5) 		/** Année de déclaration !== 신고년도 ==! */
+		GROUP BY A.HS_CD, A.QTY_UT_CD
+	</select>
+
+	<!--
+      [Profils d'opérateur] Détails des performances de modification
+      !== [업체프로파일] 정정실적상세  ==!
+    -->
+	<select id="selectMdfyAcrsDtlList" parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo" resultType="alpass.ipt.rsm.smlt.vo.RsmSmltSelcStatsVo">
+		/* selectMdfyAcrsDtlList */
+		SELECT A.DTL_DCSH_NO                                       /** Numero du DED !== DED 번호 ==! */
+			, A.PDLS_NO                                            /** N° d'article !== 품목번호 ==! */
+			, A.HIST_SRNO AS INIT_HIST_SRNO                        /** Numero d'historique initial !== 최초이력번호 ==! */
+			, B.HIST_SRNO AS MDFY_HIST_SRNO                        /** Numero d'historique de rectification !== 정정이력번호 ==! */
+			, A.HS_CD AS INIT_HS_CD                                /** Code tarifaire initial !== 초기HS코드 ==! */
+			, B.HS_CD AS MDFY_HS_CD                                /** Code tarifaire apres changement !== 변경후 HS코드 ==! */
+			, A.QTY AS INIT_QTY                                    /** Quantite initiale !== 초기수량 ==! */
+			, B.QTY AS MDFY_QTY                                    /** Quantite apres changement !== 변경후 수량 ==! */
+			, A.QTY_UT_CD AS INIT_QTY_UT_CD                        /** Unite de quantite initiale !== 초기수량단위  ==! */
+			, B.QTY_UT_CD AS MDFY_QTY_UT_CD                        /** Unite de quantite apres changement !== 변경후 수량단위 ==! */
+			, A.PDLS_TTWG AS INIT_PDLS_TTWG                        /** Poids d'article initial  !== 초기품목중량 ==! */
+			, B.PDLS_TTWG AS MDFY_PDLS_TTWG                        /** Poids d'article apres changement !== 변경후 품목중량 ==! */
+			, A.PDLS_INVC_AMT AS INIT_PDLS_INVC_AMT                /** Montant de facture d'article initial !== 초기품목송장금액  ==! */
+			, B.PDLS_INVC_AMT AS MDFY_PDLS_INVC_AMT                /** Montant de facture d'article apres changement !== 변경후 품목송장금액 ==! */
+			, A.PDLS_CACH_NCY_AMT AS INIT_PDLS_CACH_NCY_AMT        /** Montant de transport d'article initial !== 초기품목운송금액 ==! */
+			, B.PDLS_CACH_NCY_AMT AS MDFY_PDLS_CACH_NCY_AMT        /** Montant de transport d'article apres changement !== 변경후 품목운송금액 ==! */
+			, A.PDLS_INFEE_NCY_AMT AS INIT_PDLS_INFEE_NCY_AMT      /** Montant de prime d'assurance initial !== 초기보험료금액 ==! */
+			, B.PDLS_INFEE_NCY_AMT AS MDFY_PDLS_INFEE_NCY_AMT      /** Montant de prime d'assurance apres changement !== 변경후 보험료금액 ==! */
+			, A.ORCY_CNTY_CD AS INIT_ORCY_CNTY_CD                  /** Code de pays d'origine initial !== 초기원산지코드 ==! */
+			, B.ORCY_CNTY_CD AS MDFY_ORCY_CNTY_CD                  /** Code de pays d'origine apres changement !== 변경후 원산지코드 ==! */
+			, A.TXRT AS INIT_TXRT                                  /** Taux de l'impot initial !== 초기세율 ==! */
+			, B.TXRT AS MDFY_TXRT                                  /** Taux de l'impot apres changement !== 변경후 세율 ==! */
+			, A.TXBS_AMT AS INIT_TXBS_AMT                          /** Montant de base de taxe initial !== 초기과세기준금액 ==! */
+			, B.TXBS_AMT AS MDFY_TXBS_AMT                          /** Montant de base de taxe apres changement !== 변경후 과세기준금액 ==! */
+			, A.TAX_AMT AS INIT_TAX_AMT                            /** Montant de taxe initial !== 초기세금금액 ==! */
+			, B.TAX_AMT AS MDFY_TAX_AMT                            /** Montant de taxe apres changement !== 변경후세금금액 ==! */
+			, A.DSCL_YN 										   /** Détecté O/N !== 적발여부 ==! */
+        FROM   ( SELECT A.DTL_DCSH_NO
+					, B.HIST_SRNO
+					, C.PDLS_NO
+					, 'MOD'
+					, C.HS_CD
+					, C.QTY
+					, C.QTY_UT_CD
+					, C.PDLS_TTWG
+					, E.PDLS_INVC_CURR_CD
+					, E.PDLS_INVC_NCY_AMT AS PDLS_INVC_AMT
+					, E.PDLS_CACH_NCY_AMT
+					, E.PDLS_INFEE_NCY_AMT
+					, C.ORCY_CNTY_CD
+					, D.TXRT
+					, E.PDLS_TXBS_NCY_AMT AS TXBS_AMT
+					, ( SELECT SUM (Z.TAX_AMT) AS TAX_AMT
+						FROM   TB_CLRI_DED_TAX_H Z
+						WHERE  Z.HIST_SRNO = 0
+						AND    A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+						AND    C.PDLS_NO = Z.PDLS_NO
+						AND    Z.DEL_YN = 'N'
+        			  ) AS TAX_AMT
+                     , NVL(( SELECT CASE WHEN NVL(H.INSC_1_RSLT_CD, '01') != '01' THEN 'Y'
+                                         ELSE 'N'
+                                    END
+                             FROM TB_CLRI_DED_PDLS_INSC_RSLT H
+                                , TB_CLRI_DED_INSC_RSLT I
+                             WHERE H.DTL_DCSH_NO(+) = C.DTL_DCSH_NO
+                             AND H.PDLS_NO(+) = C.PDLS_NO
+                             AND I.DTL_DCSH_NO(+) = C.DTL_DCSH_NO
+                             AND I.IPRT_PRCS_STTS_CD(+) = 'DD5'
+                             AND I.VIST_INSC_RQST_DGCNT = H.VIST_INSC_RQST_DGCNT
+                             AND I.VIST_INSC_RQST_DGCNT = (SELECT MAX(VIST_INSC_RQST_DGCNT)
+                                                             FROM TB_CLRI_DED_INSC_RSLT
+                                                            WHERE DTL_DCSH_NO = C.DTL_DCSH_NO
+                                                              AND IPRT_PRCS_STTS_CD = 'DD5'
+                                                              AND DEL_YN = 'N')
+                           ), 'N') AS DSCL_YN
+				FROM   TB_RSMI_DED_SELC A
+				     , TB_CLRI_DED_COMN_H B
+					 , TB_CLRI_DED_PDLS_H C
+					 , TB_CLRI_DED_TAX_H D
+					 , TB_CLRI_DED_VLUT_PDLS_H E
+				WHERE  A.DTL_DCSH_NO = B.DTL_DCSH_NO 			/** Numéro du DED !== DED번호 ==! */
+				AND    B.HIST_SRNO = C.HIST_SRNO(+) 			/** N° de sequence de l'historique !== 이력일련번호 ==! */
+				AND    A.DTL_DCSH_NO = C.DTL_DCSH_NO
+				AND    A.DTL_DCSH_NO = D.DTL_DCSH_NO(+)
+				AND    C.HIST_SRNO = D.HIST_SRNO
+				AND    C.PDLS_NO = D.PDLS_NO 					/** N° D'Article !== 품목번호 ==! */
+				AND    D.TAX_CD(+) = 'D.D' 						/** Code De Taxe !== 세금코드 ==! */
+				AND    D.DEL_YN(+) = 'N'
+				AND    A.DTL_DCSH_NO = E.DTL_DCSH_NO(+)
+				AND    C.PDLS_NO = E.PDLS_NO
+				AND    E.DEL_YN(+) = 'N'
+				AND    C.HIST_SRNO = E.HIST_SRNO
+				AND    B.HIST_SRNO = 0
+				<if test='prflTpCd == "O"'>
+				AND    A.DTL_DCSH_NO IN ( SELECT DTL_DCSH_NO FROM TB_CLRI_DED_COMN
+										  WHERE DEL_YN = 'N'
+										  AND TO_CHAR(TO_DATE(DCLR_DT,'YYYYMMDD'),'YYYY') = #{dclrYy}
+										  AND ( IMPPN_IDFY_NO = #{nif} OR EXPPN_IDFY_NO = #{nif} )
+										)
+				</if>
+				<if test='prflTpCd == "D"'>
+				AND    A.DTL_DCSH_NO IN ( SELECT DTL_DCSH_NO FROM TB_CLRI_DED_COMN
+										  WHERE DEL_YN = 'N'
+										  AND TO_CHAR(TO_DATE(DCLR_DT,'YYYYMMDD'),'YYYY') = #{dclrYy}
+										  AND DCER_CD = (SELECT CO_DCLR_CD FROM TB_COM_CO_DCLR_CD WHERE NIF = #{nif} AND CO_DCLR_TP_CD = 'H' AND ROWNUM =1)
+										)
+				</if>
+				UNION ALL
+				SELECT A.DTL_DCSH_NO
+					, B.HIST_SRNO
+					, C.PDLS_NO
+					, 'MOD'
+					, C.HS_CD
+					, C.QTY
+					, C.QTY_UT_CD
+					, C.PDLS_TTWG
+					, E.PDLS_INVC_CURR_CD
+					, E.PDLS_INVC_NCY_AMT AS PDLS_INVC_AMT
+					, E.PDLS_CACH_NCY_AMT
+					, E.PDLS_INFEE_NCY_AMT
+					, C.ORCY_CNTY_CD
+					, D.TXRT
+					, E.PDLS_TXBS_NCY_AMT AS TXBS_AMT
+					, ( SELECT SUM (Z.TAX_AMT) AS TAX_AMT
+					    FROM   TB_CLRI_DED_TAX Z
+						WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+						AND    C.PDLS_NO = Z.PDLS_NO
+						AND    Z.DEL_YN = 'N'
+					  ) AS TAX_AMT
+                     , NVL(( SELECT CASE WHEN NVL(H.INSC_1_RSLT_CD, '01') != '01' THEN 'Y'
+                                         ELSE 'N'
+                                    END
+                             FROM TB_CLRI_DED_PDLS_INSC_RSLT H
+                                , TB_CLRI_DED_INSC_RSLT I
+                             WHERE H.DTL_DCSH_NO(+) = C.DTL_DCSH_NO
+                             AND H.PDLS_NO(+) = C.PDLS_NO
+                             AND I.DTL_DCSH_NO(+) = C.DTL_DCSH_NO
+                             AND I.IPRT_PRCS_STTS_CD(+) = 'DD5'
+                             AND I.VIST_INSC_RQST_DGCNT = H.VIST_INSC_RQST_DGCNT
+                             AND I.VIST_INSC_RQST_DGCNT = (SELECT MAX(VIST_INSC_RQST_DGCNT)
+                                                             FROM TB_CLRI_DED_INSC_RSLT
+                                                            WHERE DTL_DCSH_NO = C.DTL_DCSH_NO
+                                                              AND IPRT_PRCS_STTS_CD = 'DD5'
+                                                              AND DEL_YN = 'N')
+                           ), 'N') AS DSCL_YN
+        		FROM   TB_RSMI_DED_SELC A
+					 , TB_CLRI_DED_COMN B
+					 , TB_CLRI_DED_PDLS C
+					 , TB_CLRI_DED_TAX D
+					 , TB_CLRI_DED_VLUT_PDLS E
+        		WHERE  A.DTL_DCSH_NO = B.DTL_DCSH_NO 			/** Numéro du DED !== DED번호 ==! */
+				AND    A.DTL_DCSH_NO = C.DTL_DCSH_NO
+				AND    A.DTL_DCSH_NO = D.DTL_DCSH_NO(+)
+				AND    C.PDLS_NO = D.PDLS_NO 					/** N° D'Article !== 품목번호 ==! */
+				AND    D.TAX_CD(+) = 'D.D' 						/** Code De Taxe !== 세금코드 ==! */
+				AND    D.DEL_YN(+) = 'N'
+				AND    A.DTL_DCSH_NO = E.DTL_DCSH_NO(+)
+				AND    C.PDLS_NO = E.PDLS_NO
+				AND    E.DEL_YN(+) = 'N'
+				AND    B.HIST_SRNO = 0 							/** N° de sequence de l'historique !== 이력일련번호 ==! */
+				<if test='prflTpCd == "O"'>
+				AND    A.DTL_DCSH_NO IN ( SELECT DTL_DCSH_NO FROM TB_CLRI_DED_COMN
+										  WHERE DEL_YN = 'N'
+										  AND TO_CHAR(TO_DATE(DCLR_DT,'YYYYMMDD'),'YYYY') = #{dclrYy}
+										  AND ( IMPPN_IDFY_NO = #{nif} OR EXPPN_IDFY_NO = #{nif} )
+										)
+				</if>
+				<if test='prflTpCd == "D"'>
+				AND    A.DTL_DCSH_NO IN ( SELECT DTL_DCSH_NO FROM TB_CLRI_DED_COMN
+										  WHERE DEL_YN = 'N'
+										  AND TO_CHAR(TO_DATE(DCLR_DT,'YYYYMMDD'),'YYYY') = #{dclrYy}
+										  AND DCER_CD = (SELECT CO_DCLR_CD FROM TB_COM_CO_DCLR_CD WHERE NIF = #{nif} AND CO_DCLR_TP_CD = 'H' AND ROWNUM =1)
+										)
+				</if>
+        ) A
+        , ( SELECT A.DTL_DCSH_NO
+        		 , NVL(B.HIST_SRNO, 0) AS HIST_SRNO
+				 , C.PDLS_NO
+				 , 'ORG'AS DIV
+				 , C.HS_CD
+				 , C.QTY
+				 , C.QTY_UT_CD
+				 , C.PDLS_TTWG
+				 , E.PDLS_INVC_CURR_CD
+				 , E.PDLS_INVC_NCY_AMT AS PDLS_INVC_AMT
+				 , E.PDLS_CACH_NCY_AMT
+				 , E.PDLS_INFEE_NCY_AMT
+				 , C.ORCY_CNTY_CD
+				 , D.TXRT
+				 , E.PDLS_TXBS_NCY_AMT AS TXBS_AMT
+				 , ( SELECT SUM (Z.TAX_AMT) AS TAX_AMT
+					 FROM   TB_CLRI_DED_TAX Z
+					 WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+					 AND    C.PDLS_NO = Z.PDLS_NO
+					 AND    Z.DEL_YN = 'N'
+				   ) AS TAX_AMT
+        	FROM   TB_RSMI_DED_SELC A
+        		 , TB_CLRI_DED_COMN B
+        		 , TB_CLRI_DED_PDLS C
+        		 , TB_CLRI_DED_TAX D
+        		 , TB_CLRI_DED_VLUT_PDLS E
+			WHERE  A.DTL_DCSH_NO = B.DTL_DCSH_NO 				/** Numéro du DED !== DED번호 ==! */
+			AND    A.DTL_DCSH_NO = C.DTL_DCSH_NO
+			AND    A.DTL_DCSH_NO = D.DTL_DCSH_NO(+)
+			AND    C.PDLS_NO = D.PDLS_NO 						/** N° D'Article !== 품목번호 ==! */
+			AND    D.TAX_CD(+) = 'D.D' 							/** Code De Taxe !== 세금코드 ==! */
+			AND    D.DEL_YN(+) = 'N'
+			AND    C.DTL_DCSH_NO = E.DTL_DCSH_NO(+)
+			AND    C.PDLS_NO = E.PDLS_NO(+)
+			AND    E.DEL_YN(+) = 'N'
+		    <if test='prflTpCd == "O"'>
+			AND    A.DTL_DCSH_NO IN ( SELECT DTL_DCSH_NO FROM TB_CLRI_DED_COMN
+								      WHERE DEL_YN = 'N'
+									  AND TO_CHAR(TO_DATE(DCLR_DT,'YYYYMMDD'),'YYYY') = #{dclrYy}
+									  AND ( IMPPN_IDFY_NO = #{nif} OR EXPPN_IDFY_NO = #{nif} )
+									)
+			</if>
+			<if test='prflTpCd == "D"'>
+			AND    A.DTL_DCSH_NO IN ( SELECT DTL_DCSH_NO FROM TB_CLRI_DED_COMN
+									  WHERE DEL_YN = 'N'
+									  AND TO_CHAR(TO_DATE(DCLR_DT,'YYYYMMDD'),'YYYY') = #{dclrYy}
+									  AND DCER_CD = (SELECT CO_DCLR_CD FROM TB_COM_CO_DCLR_CD WHERE NIF = #{nif} AND CO_DCLR_TP_CD = 'H' AND ROWNUM =1)
+									)
+			</if>
+			AND    B.HIST_SRNO > 0
+        ) B
+        WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO(+)
+        AND   A.PDLS_NO = B.PDLS_NO(+)
+		<if test='mdfyTpCd != null and !"".equals(mdfyTpCd)'>
+			<choose>
+				<when test='"HS".equals(mdfyTpCd)'>
+					<![CDATA[
+					AND NVL(A.HS_CD, 'X') <> NVL(B.HS_CD, 'X')
+					AND B.DTL_DCSH_NO IS NOT NULL
+					]]>
+				</when>
+				<when test='"QTY".equals(mdfyTpCd)'>
+					<![CDATA[
+					AND ( NVL(A.QTY, 0) <> NVL(B.QTY, 0) OR	 NVL(TRIM(A.QTY_UT_CD), 'X') <> NVL(TRIM(B.QTY_UT_CD), 'X') )
+					AND B.DTL_DCSH_NO IS NOT NULL
+					]]>
+				</when>
+				<when test='"TTWG".equals(mdfyTpCd)'>
+					<![CDATA[
+					AND NVL(A.PDLS_TTWG, 0) <> NVL(B.PDLS_TTWG, 0)
+					AND B.DTL_DCSH_NO IS NOT NULL
+					]]>
+				</when>
+				<when test='"INVC".equals(mdfyTpCd)'>
+					<![CDATA[
+					AND NVL(A.PDLS_INVC_AMT, 0) <> NVL(B.PDLS_INVC_AMT, 0)
+					AND B.DTL_DCSH_NO IS NOT NULL
+					]]>
+				</when>
+				<when test='"INFEE".equals(mdfyTpCd)'>
+					<![CDATA[
+					AND NVL(A.PDLS_INFEE_NCY_AMT, 0) <> NVL(B.PDLS_INFEE_NCY_AMT, 0)
+					AND B.DTL_DCSH_NO IS NOT NULL
+					]]>
+				</when>
+				<when test='"ORCY_CNTY".equals(mdfyTpCd)'>
+					<![CDATA[
+					AND NVL(A.ORCY_CNTY_CD, 'X') <> NVL(B.ORCY_CNTY_CD, 'X')
+					AND B.DTL_DCSH_NO IS NOT NULL
+					]]>
+				</when>
+				<when test='"CACH".equals(mdfyTpCd)'>
+					<![CDATA[
+					AND NVL(A.PDLS_CACH_NCY_AMT, 0) <> NVL(B.PDLS_CACH_NCY_AMT, 0)
+					AND B.DTL_DCSH_NO IS NOT NULL
+					]]>
+				</when>
+				<when test='"TXRT".equals(mdfyTpCd)'>
+					<![CDATA[
+					AND NVL(A.TXRT, 0) <> NVL(B.TXRT, 0)
+					AND B.DTL_DCSH_NO IS NOT NULL
+					]]>
+				</when>
+			</choose>
+		</if>
+
+        ORDER BY A.DTL_DCSH_NO, TO_NUMBER(A.PDLS_NO)
+	</select>
+
+</mapper>

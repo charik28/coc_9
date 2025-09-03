@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.psc.vhcl.rlse.audt.mapper.PscVhclRlseAudtMapper">
+
+  <!--
+  @TODO:번역필요 !==무관세통관연장신청서 관련 정보 조회 ==!
+  -->
+  <select id="selectVhclRlseInfo"  parameterType="alpass.ipt.psc.vhcl.rlse.audt.vo.PscVhclRlseAudtVo" 
+    resultType="alpass.ipt.psc.vhcl.rlse.rgsr.vo.PscVhclRlseVo"> 
+      /* selectVhclRlseInfo */
+      <include refid="pagination.header" ></include>     
+	    SELECT
+          		  A.VHCL_RLSE_TEMP_NO          /** Numéro temporaire de la sortie du véhicule !== 차량반출임시번호 ==! */
+                , A.VHCL_RLSE_MGMT_NO          /** Numéro de gestion de la sortie du véhicule !== 차량반출관리번호 ==! */
+                , A.VHCL_RLSE_RQST_STTS_CD       /** Code de statut de la demande de sortie du véhicule !== 차량반출신청상태코드 ==! */
+                , A.CUFR_CSCL_WRPM_ID          /** Identifiant de l'acquit à caution  !== 무관세통관허가증ID ==! */
+                , A.REFF_NO                    /** N° De Référence !== 참조번호 ==! */
+                , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+                , A.RLSE_RQST_DT               /** Date de demande de sortie !== 반출신청일자 ==! */
+                , A.RLSE_RQST_RSN_CN           /** Motif de la demande de sortie du  véhicule !== 반출신청사유내용 ==! */
+                , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+                , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+            FROM  ALPASSINT.TB_PSCI_VHCL_RLSE_RQST A
+           WHERE  1=1
+             AND  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+      	<if test='vhclRlseTempNo != null and vhclRlseTempNo != ""'>
+		     AND  A.VHCL_RLSE_TEMP_NO = #{vhclRlseTempNo}       /** Numéro temporaire de la sortie du véhicule !== 차량반출임시번호 ==! */
+		</if> 			
+      <include refid="pagination.footer" ></include>
+  </select>
+
+  <select id="selectAudtHistList"  parameterType="alpass.ipt.psc.vhcl.rlse.audt.vo.PscVhclRlseAudtVo" 
+    resultType="alpass.ipt.psc.vhcl.rlse.audt.vo.PscVhclRlseAudtVo"> 
+      /* selectAudtHistList */
+          SELECT
+                  A.VHCL_RLSE_TEMP_NO          /** Numéro temporaire de la sortie du véhicule !== 차량반출임시번호 ==! */
+                , A.AUDT_DGCNT                 /** ordre de jugement !== 심사차수 ==! */
+                , A.AUDT_RSLT_CD               /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+                , A.AUDT_RSLT_CN               /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+                , A.AUDT_RSLT_RGSR_DTTM        /** Date/Heure d'enregistrement du résultat de contrôle !== 심사결과등록일시 ==! */
+                , A.ADOR_ID                    /** Id De L'Inspecteur !== 심사자ID ==! */
+                , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+                , A.APRV_PRCS_STTS_CD          /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+                , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+                , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+            FROM   ALPASSINT.TB_PSCI_VHCL_RLSE_AUDT A
+           WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+             AND  A.VHCL_RLSE_TEMP_NO = #{vhclRlseTempNo}       /** Numéro temporaire de la sortie du véhicule !== 차량반출임시번호 ==! */             
+           <if test='audtDgcnt != null and audtDgcnt != "" '>
+             AND  A.AUDT_DGCNT = #{audtDgcnt}                 /** ordre de jugement !== 심사차수 ==! */
+           </if>
+           ORDER  BY A.AUDT_DGCNT DESC
+  </select>
+  
+  <select id="selectAudtMaxHist"  parameterType="alpass.ipt.psc.vhcl.rlse.audt.vo.PscVhclRlseAudtVo" 
+    resultType="alpass.ipt.psc.vhcl.rlse.audt.vo.PscVhclRlseAudtVo"> 
+      /* selectAudtMaxHist */
+          SELECT
+                  A.VHCL_RLSE_TEMP_NO          /** Numéro temporaire de la sortie du véhicule !== 차량반출임시번호 ==! */
+                , A.AUDT_DGCNT                 /** ordre de jugement !== 심사차수 ==! */
+                , A.AUDT_RSLT_CD               /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+                , A.AUDT_RSLT_CN               /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+                , A.AUDT_RSLT_RGSR_DTTM        /** Date/Heure d'enregistrement du résultat de contrôle !== 심사결과등록일시 ==! */
+                , A.ADOR_ID                    /** Id De L'Inspecteur !== 심사자ID ==! */
+                , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+                , A.APRV_PRCS_STTS_CD          /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+                , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+                , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+            FROM   ALPASSINT.TB_PSCI_VHCL_RLSE_AUDT A
+           WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+             AND  A.VHCL_RLSE_TEMP_NO = #{vhclRlseTempNo}       /** Numéro temporaire de la sortie du véhicule !== 차량반출임시번호 ==! */      
+             AND  A.AUDT_DGCNT = (SELECT MAX(AUDT_DGCNT) FROM ALPASSINT.TB_PSCI_VHCL_RLSE_AUDT WHERE VHCL_RLSE_TEMP_NO = A.VHCL_RLSE_TEMP_NO  )                 /** ordre de jugement !== 심사차수 ==! */
+  </select>
+  
+  <!--
+    @TODO:번역필요 !== GeneratorComments 수정 ==!
+    (Generated)
+    -->
+    <update id="updateVhclRlseAudt" parameterType="alpass.ipt.psc.vhcl.rlse.audt.vo.PscVhclRlseAudtVo">
+        /* updateVhclRlseAudt */
+        UPDATE  ALPASSINT.TB_PSCI_VHCL_RLSE_AUDT SET 
+        <trim prefixOverrides="," >
+                  AUDT_RSLT_CD = #{audtRsltCd}                /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+                , AUDT_RSLT_CN = #{audtRsltCn}                /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+                , AUDT_RSLT_RGSR_DTTM = #{audtRsltRgsrDttm}   /** Date/Heure d'enregistrement du résultat de contrôle !== 심사결과등록일시 ==! */
+                , ADOR_ID = #{adorId}                         /** Id De L'Inspecteur !== 심사자ID ==! */
+                , APRV_ID = #{aprvId}                         /** Id D'Approbation  !== 결재ID ==! */
+                , APRV_PRCS_STTS_CD = #{aprvPrcsSttsCd}       /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+                , DEL_YN = 'N'                                /** Suppression On !== 삭제여부 ==! */
+                , FRST_REGST_ID = #{frstRegstId}              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                , FRST_RGSR_DTTM = SYSTIMESTAMP               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        </trim>
+           WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+             AND  VHCL_RLSE_TEMP_NO = #{vhclRlseTempNo}       /** Numéro temporaire de la sortie du véhicule !== 차량반출임시번호 ==! */      
+             AND  AUDT_DGCNT = #{audtDgcnt}                   /** ordre de jugement !== 심사차수 ==! */
+    </update>
+    
+    
+   <!--
+   @TODO:번역필요 !== GeneratorComments 등록 ==!
+   (Generated)
+   -->
+   <insert id="insertPscVhclRlseAudt" parameterType="alpass.ipt.psc.vhcl.rlse.audt.vo.PscVhclRlseAudtVo">
+   	/* insertPscVhclRlseAmt */
+	<selectKey keyProperty="audtDgcnt" order="BEFORE" resultType="java.math.BigDecimal">
+	 	SELECT NVL(MAX(AUDT_DGCNT),0)+1 FROM ALPASSINT.TB_PSCI_VHCL_RLSE_AUDT WHERE VHCL_RLSE_TEMP_NO = #{vhclRlseTempNo}
+	</selectKey>
+	INSERT INTO ALPASSINT.TB_PSCI_VHCL_RLSE_AUDT
+    (
+      VHCL_RLSE_TEMP_NO            /** Numéro temporaire de la sortie du véhicule !== 차량반출임시번호 ==! */
+    , AUDT_DGCNT                   /** ordre de jugement !== 심사차수 ==! */
+    , AUDT_RSLT_CD                 /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+    , AUDT_RSLT_CN                 /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+    , AUDT_RSLT_RGSR_DTTM          /** Date/Heure d'enregistrement du résultat de contrôle !== 심사결과등록일시 ==! */
+    , ADOR_ID                      /** Id De L'Inspecteur !== 심사자ID ==! */
+    , APRV_ID                      /** Id D'Approbation  !== 결재ID ==! */
+    , APRV_PRCS_STTS_CD            /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+    , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+    , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+    , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+    , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+    , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    )
+    VALUES
+    (
+      #{vhclRlseTempNo}            /** Numéro temporaire de la sortie du véhicule !== 차량반출임시번호 ==! */
+    , #{audtDgcnt}                 /** ordre de jugement !== 심사차수 ==! */
+    , #{audtRsltCd}                /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+    , #{audtRsltCn}                /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+    , CURRENT_TIMESTAMP         /** Date/Heure d'enregistrement du résultat de contrôle !== 심사결과등록일시 ==! */
+    , #{adorId}                    /** Id De L'Inspecteur !== 심사자ID ==! */
+    , #{aprvId}                    /** Id D'Approbation  !== 결재ID ==! */
+    , #{aprvPrcsSttsCd}            /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+    , 'N'                          /** Suppression On !== 삭제여부 ==! */
+    , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+    , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+    , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+    , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    )
+    </insert>
+    
+    <!--
+  @TODO:번역필요 !==무관세통관연장신청서 등록자 조회 ==!
+  -->
+  <select id="selectVhclRlseRegst"  parameterType="alpass.ipt.psc.vhcl.rlse.audt.vo.PscVhclRlseAudtVo" 
+    resultType="alpass.ipt.psc.vhcl.rlse.audt.vo.PscVhclRlseAudtVo"> 
+      /* selectVhclRlseRegst */    
+	    SELECT VHCL_RLSE_TEMP_NO			  
+			  ,FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+		FROM  ALPASSINT.TB_PSCI_VHCL_RLSE_RQST
+		WHERE 1=1
+		AND DEL_YN = 'N'
+		AND VHCL_RLSE_TEMP_NO = #{vhclRlseTempNo} 
+  </select>
+  
+</mapper>

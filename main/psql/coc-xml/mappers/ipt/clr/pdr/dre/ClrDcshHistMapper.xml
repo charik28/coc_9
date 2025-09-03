@@ -1,0 +1,1110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.clr.pdr.dre.mapper.ClrDcshHistMapper">
+
+
+	<insert id="insertDedComnHist" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		INSERT INTO TB_CLRI_DED_COMN_H
+		(		DTL_DCSH_NO
+		,HIST_SRNO
+		,DCLR_DT
+		,REFF_NO
+		,MDFY_DGCNT
+		,RQST_DT
+		,DCLR_PT_CD
+		,EPC_CD
+		,DCLR_CSTM_CD
+		,CSCL_PLN_CD
+		,DCSH_FM_CD
+		,PDLS_GCNT
+		,PCKG_TGCNT
+		,CNTR_CAG_YN
+		,AL_TTWG
+		,AL_NTWG
+		,EXPPN_IDFY_NO_TP_CD
+		,EXPPN_IDFY_NO
+		,IMPPN_IDFY_NO_TP_CD
+		,IMPPN_IDFY_NO
+		,TXPR_IDFY_NO
+		,DCER_CD
+		,CSM_CNTY_CD
+		,TRDE_DLNG_CNTY_CD
+		,EXP_CNTY_CD
+		,DSTN_CNTY_CD
+		,DSTN_REGN_CD
+		,TRNP_METH_KND_CD
+		,TRNP_METH_IDFY_NO
+		,TRNP_METH_NAT_CD
+		,SHIP_NM
+		,CAG_MGMT_NO
+		,BL_NO
+		,ARVL_DT
+		,DIVD_CSCL_TP_CD
+		,LDNP_CD
+		,CNTR_GCNT
+		,DISPR_CD
+		,LDUN_DT
+		,RLBR_CSTM_CD
+		,CMDT_STGE_LOCT_CD
+		,BNBN_CMDT_WRHS_CD
+		,BF_BNBN_CMDT_WRHS_CD
+		,PSMGT_FFMN_XPIR_PRID
+		,DCRD_YN
+		,DLVR_COND_CD
+		,DLVR_PLC_CD
+		,INVC_NO
+		,INVC_PBLS_DT
+		,PYMN_MEAN_CD
+		,PYMN_BNK_CD
+		,PYMN_BNK_BRNH_CD
+		,PYMN_AC_NO
+		,DLNG_COND1_CD
+		,DLNG_COND2_CD
+		,PRC_DCSH_WRTE_YN
+		,OWHS_PRC_EV_YN
+		,DCER_WRTE_CN
+		,MDFY_RSN_CD
+		,MDFY_RSN_CN
+		,PRCS_STTS_CD
+		,DEPT_CD
+		,AUDT_DEPT_CD
+		,AUDT_EMP_ID
+		,INSC_EMP_ID
+		,SELC_RSLT_CD
+		,INSC_PLC_TP_CD
+		,PSMGT_TRGT_YN
+		,PSMGT_FFMN_CMPL_YN
+		,PSMGT_FFMN_CMPL_DT
+		,ADOR_HNOT_PRCS_YN
+		,ADOR_HNOT_OPIN_CN
+		,EXP_FFMN_CMPL_DT
+		,EXP_FFMN_XPIR_DT
+		,ASMT_DT
+		,ACPT_YN
+		,ACPT_DT
+		,RLSE_YN
+		,RLSE_DT
+		,ATR_DCLR_RCPN_YN
+		,CNCL_DCLR_RCPN_YN
+		,CSCL_PSTP_YN
+		,DPUT_YN
+		,PRVI_DCLR_APRE_YN
+		,NEW_SYS_YN
+		,HIST_CRET_TP_CD
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM
+		,WKNG_PT_CD
+		,EXPPN_CMRC_REGS_NO
+		,IMPPN_CMRC_REGS_NO
+		,TXPR_CMRC_REGS_NO
+		, prmsnt_dt
+		, sys_use_ss
+		, exp_cmdt_brng_rqno                   /** N° demande de l'introduction des marchandises à exporter !== 수출물품반입신청번호 ==! */
+		, exp_cmdt_loct_nm                     /** Exporter le nom de l'emplacement du produit !== 수출물품위치명 ==! */
+		, bf_dtl_dcsh_no                       /** N° de la déclaration en détail précédent !== 이전상세신고서번호 ==! */
+		, bfhn_no                              /** N° de autorisation pour PAD et provisoire !== 사전허가번호 ==! */
+		, pad_bfhn_no
+		, prvi_bfhn_no
+		, bfcy_idfy_no                /** NIF du bénéficiaire */
+		, bfcy_cmrc_regs_no           /** Registre de commerce du bénéficiaire */
+		, PRMSNT_STTS_CD
+		, bl_dt
+		, DLNG_PYMN_MEAN_CD
+		)	SELECT
+			dtl_dcsh_no
+				  ,hist_srno
+				  ,dclr_dt
+				  ,reff_no
+				  ,mdfy_dgcnt
+				  ,NVL2(rqst_dt, rqst_dt, dclr_dt) AS rqst_dt                    /** Date De Demande !== 신청일자 ==! */
+				  ,dclr_pt_cd
+				  ,epc_cd
+				  ,dclr_cstm_cd
+				  ,cscl_pln_cd
+				  ,dcsh_fm_cd
+				  ,pdls_gcnt
+				  ,pckg_tgcnt
+				  ,cntr_cag_yn
+				  ,al_ttwg
+				  ,al_ntwg
+				  ,exppn_idfy_no_tp_cd
+				  ,exppn_idfy_no
+				  ,imppn_idfy_no_tp_cd
+				  ,imppn_idfy_no
+				  ,txpr_idfy_no
+				  ,dcer_cd
+				  ,csm_cnty_cd
+				  ,trde_dlng_cnty_cd
+				  ,exp_cnty_cd
+				  ,dstn_cnty_cd
+				  ,dstn_regn_cd
+				  ,trnp_meth_knd_cd
+				  ,trnp_meth_idfy_no
+				  ,trnp_meth_nat_cd
+				  ,ship_nm
+				  ,cag_mgmt_no
+				  ,bl_no
+				  ,NVL(arvl_dt, '')
+				  ,divd_cscl_tp_cd
+				  ,ldnp_cd
+				  ,cntr_gcnt
+				  ,dispr_cd
+				  ,ldun_dt
+				  ,rlbr_cstm_cd
+				  ,cmdt_stge_loct_cd
+				  ,bnbn_cmdt_wrhs_cd
+				  ,bf_bnbn_cmdt_wrhs_cd
+				  ,psmgt_ffmn_xpir_prid
+				  ,dcrd_yn
+				  ,dlvr_cond_cd
+				  ,dlvr_plc_cd
+				  ,NVL(invc_no, '')
+				  ,NVL(invc_pbls_dt, '')
+				  ,pymn_mean_cd
+				  ,pymn_bnk_cd
+				  ,pymn_bnk_brnh_cd
+				  ,pymn_ac_no
+				  ,dlng_cond1_cd
+				  ,dlng_cond2_cd
+				  ,prc_dcsh_wrte_yn
+				  ,owhs_prc_ev_yn
+				  ,dcer_wrte_cn
+				  ,mdfy_rsn_cd
+				  ,mdfy_rsn_cn
+				  ,prcs_stts_cd
+				  ,dept_cd
+				  ,AUDT_DEPT_CD
+				  ,audt_emp_id
+				  ,insc_emp_id
+				  ,selc_rslt_cd
+				  ,insc_plc_tp_cd
+				  ,psmgt_trgt_yn
+				  ,psmgt_ffmn_cmpl_yn
+				  ,psmgt_ffmn_cmpl_dt
+				  ,ador_hnot_prcs_yn
+				  ,ador_hnot_opin_cn
+				  ,exp_ffmn_cmpl_dt
+				  ,exp_ffmn_xpir_dt
+				  ,asmt_dt
+				  ,acpt_yn
+				  ,acpt_dt
+				  ,rlse_yn
+				  ,rlse_dt
+				  ,atr_dclr_rcpn_yn
+				  ,cncl_dclr_rcpn_yn
+				  ,cscl_pstp_yn
+				  ,dput_yn
+				  ,prvi_dclr_apre_yn
+				  ,new_sys_yn
+				  ,#{histCretTpCd}
+				  ,del_yn
+				  ,frst_regst_id
+				  ,frst_rgsr_dttm
+				  ,last_chpr_id
+				  ,last_chg_dttm
+				  ,wkng_pt_cd
+				  ,exppn_cmrc_regs_no
+				  ,imppn_cmrc_regs_no
+				  ,txpr_cmrc_regs_no
+				  , prmsnt_dt
+				  , sys_use_ss
+				  , exp_cmdt_brng_rqno                   /** N° demande de l'introduction des marchandises à exporter !== 수출물품반입신청번호 ==! */
+				  , exp_cmdt_loct_nm                     /** Exporter le nom de l'emplacement du produit !== 수출물품위치명 ==! */
+				  , bf_dtl_dcsh_no                       /** N° de la déclaration en détail précédent !== 이전상세신고서번호 ==! */
+				  , bfhn_no                              /** N° de autorisation pour PAD et provisoire !== 사전허가번호 ==! */
+				  , pad_bfhn_no
+				  , prvi_bfhn_no
+				  , bfcy_idfy_no                /** NIF du bénéficiaire */
+				  , bfcy_cmrc_regs_no           /** Registre de commerce du bénéficiaire */
+				  , PRMSNT_STTS_CD
+				  , bl_dt
+				  , DLNG_PYMN_MEAN_CD
+		FROM TB_CLRI_DED_COMN
+		WHERE DEL_YN = 'N'
+	   AND  dtl_dcsh_no = #{dtlDcshNo}                  /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+
+	</insert>
+
+
+	<insert id="insertDedPdlsHist" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		INSERT INTO TB_CLRI_DED_PDLS_H
+		(		DTL_DCSH_NO
+		,HIST_SRNO
+		,PDLS_NO
+		,UPR_PDLS_NO
+		,HS_CD
+		,CMDT_CLSF_SPEL_CD
+		,PDLS_NM
+		,DLNG_PDLS_NM
+		,NWPR_SCAR_CMDT_CD
+		,PCKG_SHMR_MARK_NO
+		,PCKG_DESC
+		,ORCY_CNTY_CD
+		,APC_CD
+		,PRVL_CD
+		,QTA_APRE_NO
+		,MG_DSCN_APRE_NO
+		,PRC_DTRM_MEAN_CD
+		,BRND_NM
+		,BF_DTL_DCSH_NO
+		,BF_DTL_DCSH_DT
+		,BF_PDLS_NO
+		,DIVD_FFMN_TP_CD
+		,QTY
+		,QTY_UT_CD
+		,TRIF_BASE_VAL
+		,PDLS_TTWG
+		,PDLS_NTWG
+		,PDLS_PCKG_GCNT
+		,PDLS_PCKG_UT_CD
+		,OIL_TANK_NO
+		,VHCL_YN
+		,PDLS_PSMGT_TRGT_YN
+		,PDLS_PSMGT_FFMN_CMPL_YN
+		,PDLS_PSMGT_FFMN_CMPL_DT
+		,PDLS_PSMGT_CONC_RSN_CD
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM
+		,HS_ERR_PVNT_VAL
+		,REGM_RQST_CD
+		, prhb_cmdt_cd
+		, hs_excp_mtr_cd
+		, apc_excp_mtr_cd
+		, APC_DTL_CD
+		, PRVL_EXCP_MTR_CD
+		,adit_tx_qty
+		,adit_tx_qty_ut_cd
+		,PDLS_CLSF_BFHN_JDGN_PN
+		,apc_atpm_strt_dt
+		,apc_atpm_end_dt
+		,psmgt_ffmn_xpir_prid
+		)	SELECT
+			dtl_dcsh_no
+				  ,(SELECT HIST_SRNO FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo})
+				  ,pdls_no
+				  ,upr_pdls_no
+				  ,hs_cd
+				  ,NVL(cmdt_clsf_spel_cd, '')
+				  , NVL(pdls_nm, (SELECT A.hs_desc FROM tb_clri_hs_cd A WHERE A.HS_CD = hs_Cd
+					  AND   A.HS_APLY_STRT_DT <![CDATA[ <= ]]> NVL(( SELECT DCLR_DT FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo} ), TO_CHAR(SYSDATE, 'YYYYMMDD'))
+					  AND   A.HS_APLY_END_DT  <![CDATA[ >= ]]> NVL(( SELECT DCLR_DT FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo} ), TO_CHAR(SYSDATE, 'YYYYMMDD')) LIMIT 1))
+				  ,dlng_pdls_nm
+				  ,NVL(nwpr_scar_cmdt_cd, '')
+				  ,pckg_shmr_mark_no
+				  ,pckg_desc
+				  ,orcy_cnty_cd
+				  ,apc_cd
+				  ,NVL(prvl_cd, '')
+				  ,qta_apre_no
+				  ,mg_dscn_apre_no
+				  ,prc_dtrm_mean_cd
+				  ,NVL(brnd_nm, '')
+				  ,bf_dtl_dcsh_no
+				  ,bf_dtl_dcsh_dt
+				  ,NVL(bf_pdls_no, '')
+				  ,NVL(divd_ffmn_tp_cd, '')
+				  ,qty
+				  ,NVL(qty_ut_cd, (SELECT A.qty_ut_cd FROM tb_clri_hs_cd A WHERE A.HS_CD = hs_Cd and A.del_yn = 'N' ORDER BY hs_aply_strt_dt desc LIMIT 1))
+				  ,trif_base_val
+				  ,pdls_ttwg
+				  ,pdls_ntwg
+				  ,pdls_pckg_gcnt
+				  ,pdls_pckg_ut_cd
+				  ,oil_tank_no
+				  ,vhcl_yn
+				  ,pdls_psmgt_trgt_yn
+				  ,pdls_psmgt_ffmn_cmpl_yn
+				  ,pdls_psmgt_ffmn_cmpl_dt
+				  ,pdls_psmgt_conc_rsn_cd
+				  ,del_yn
+				  ,frst_regst_id
+				  ,frst_rgsr_dttm
+				  ,last_chpr_id
+				  ,last_chg_dttm
+				  ,hs_err_pvnt_val
+				  ,regm_rqst_cd
+			      , prhb_cmdt_cd
+				  , hs_excp_mtr_cd
+				  , apc_excp_mtr_cd
+				  , APC_DTL_CD
+				  , PRVL_EXCP_MTR_CD
+				  ,adit_tx_qty
+				  ,adit_tx_qty_ut_cd
+				  ,PDLS_CLSF_BFHN_JDGN_PN
+				  ,apc_atpm_strt_dt
+				  ,apc_atpm_end_dt
+				  , psmgt_ffmn_xpir_prid
+		FROM TB_CLRI_DED_PDLS
+		WHERE DEL_YN = 'N'
+		  AND  dtl_dcsh_no = #{dtlDcshNo}                  /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+
+	</insert>
+
+
+	<insert id="insertDedMdlStszHist" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		INSERT INTO TB_CLRI_DED_MDL_STSZ_H
+		(		DTL_DCSH_NO
+		,HIST_SRNO
+		,PDLS_NO
+		,MDL_STSZ_NO
+		,MDL_STSZ_NM
+		,INGR_NM
+		,QTY
+		,QTY_UT_CD
+		,UT_PRC
+		,INVC_AMT
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM
+		)	SELECT
+			dtl_dcsh_no
+				  ,(SELECT HIST_SRNO FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo})
+				  ,pdls_no
+				  ,mdl_stsz_no
+				  ,mdl_stsz_nm
+				  ,ingr_nm
+				  ,qty
+				  ,qty_ut_cd
+				  ,ut_prc
+				  ,invc_amt
+				  ,del_yn
+				  ,frst_regst_id
+				  ,frst_rgsr_dttm
+				  ,last_chpr_id
+				  ,last_chg_dttm
+		FROM TB_CLRI_DED_MDL_STSZ
+		WHERE DEL_YN = 'N'
+		  AND  dtl_dcsh_no = #{dtlDcshNo}                  /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+
+	</insert>
+
+	<insert id="insertDedVhclHist" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		INSERT INTO TB_CLRI_DED_VHCL_H
+		(		DTL_DCSH_NO
+		,HIST_SRNO
+		,PDLS_NO
+		,MDL_STSZ_NO
+		,CHSS_NO
+		,IMP_PT_NM
+		,VHCL_MNUR_CD
+		,CLR_NM
+		,VHCL_MDL_CD
+		,DRVR_NM
+		,TRSF_NNPR_YN
+		,DRVR_POST_NO
+		,DRVR_ADDR
+		,CAR_RGSR_NO
+		,VHCL_RELE_DT
+		,MKNG_YY
+		,VHCL_WGHT_CN
+		,LOAD_WGHT_CN
+		,OTPT_CN
+		,DPCMT_CN
+		,FL_KND_NM
+		,VHCL_KND_NM
+		,CABO_NM
+		,FRST_OPRA_DT
+		,STCNT
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM
+		,TRSF_NNPR_STRT_DT
+		,TRSF_NNPR_END_DT
+		,VHCL_KND_CD
+		,TRSF_UNBL_TP_CD
+		,IMP_CRPP_NO
+		,IMP_CRPP_DT
+		,IMP_CRPP_PRID
+		,VHCL_CSCL_MGMT_NO
+		)	SELECT
+			dtl_dcsh_no
+				  ,(SELECT HIST_SRNO FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo})
+				  ,pdls_no
+				  ,MDL_STSZ_NO
+				  ,chss_no
+				  ,imp_pt_nm
+				  ,vhcl_mnur_cd
+				  ,clr_nm
+				  ,vhcl_mdl_cd
+				  ,drvr_nm
+				  ,trsf_nnpr_yn
+				  ,drvr_post_no
+				  ,drvr_addr
+				  ,car_rgsr_no
+				  ,vhcl_rele_dt
+				  ,mkng_yy
+				  ,vhcl_wght_cn
+				  ,load_wght_cn
+				  ,otpt_cn
+				  ,dpcmt_cn
+				  ,fl_knd_nm
+				  ,vhcl_knd_nm
+				  ,cabo_nm
+				  ,frst_opra_dt
+				  ,stcnt
+				  ,del_yn
+				  ,frst_regst_id
+				  ,frst_rgsr_dttm
+				  ,last_chpr_id
+				  ,last_chg_dttm
+				  ,trsf_nnpr_strt_dt
+				  ,trsf_nnpr_end_dt
+				  ,vhcl_knd_cd
+				  ,trsf_unbl_tp_cd
+				  ,imp_crpp_no
+				  ,imp_crpp_dt
+				  ,imp_crpp_prid
+				  ,vhcl_cscl_mgmt_no
+		FROM TB_CLRI_DED_VHCL
+		WHERE DEL_YN = 'N'
+		  AND  dtl_dcsh_no = #{dtlDcshNo}                  /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+	</insert>
+
+	<insert id="insertDedRwmsHist" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		INSERT INTO TB_CLRI_DED_RWMS_H
+		(		DTL_DCSH_NO
+		,HIST_SRNO
+		,PDLS_NO
+		,RWMS_SRNO
+		,BF_DTL_DCSH_NO
+		,BF_PDLS_NO
+		,BF_HS_CD
+		,BF_CMDT_CLSF_SPEL_CD
+		,DIVD_FFMN_TP_CD
+		,QTY
+		,QTY_UT_CD
+		,NTWG
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM
+		)	SELECT
+			dtl_dcsh_no
+				  ,(SELECT HIST_SRNO FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo})
+				  ,pdls_no
+				  ,rwms_srno
+				  ,bf_dtl_dcsh_no
+				  ,bf_pdls_no
+				  ,bf_hs_cd
+				  ,bf_cmdt_clsf_spel_cd
+				  ,divd_ffmn_tp_cd
+				  ,qty
+				  ,qty_ut_cd
+				  ,ntwg
+				  ,del_yn
+				  ,frst_regst_id
+				  ,frst_rgsr_dttm
+				  ,last_chpr_id
+				  ,last_chg_dttm
+		FROM TB_CLRI_DED_RWMS
+		WHERE DEL_YN = 'N'
+		  AND  dtl_dcsh_no = #{dtlDcshNo}                  /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+	</insert>
+
+	<insert id="insertDedCoHist" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		INSERT INTO TB_CLRI_DED_CO_H
+		(		DTL_DCSH_NO
+		,HIST_SRNO
+		,EXPPN_CO_NM
+		,EXPPN_ADDR
+		,IMPPN_CO_NM
+		,IMPPN_ADDR
+		,TXPR_CO_NM
+		,TXPR_ADDR
+		,TXPR_TLPH_NO
+		,TXPR_EML
+		,DCER_CO_NM
+		,DCER_ADDR
+		,BFCY_CO_NM /** Nom De L''Entreprise Du Bénéficiaire */
+		,BFCY_ADDR /** Adresse Benef */
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM
+		)	SELECT
+			dtl_dcsh_no
+				  ,(SELECT HIST_SRNO FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo})
+				  ,NVL(exppn_co_nm, '')
+				  ,exppn_addr
+				  ,imppn_co_nm
+				  ,imppn_addr
+				  ,txpr_co_nm
+				  ,txpr_addr
+				  ,NVL(txpr_tlph_no, '')
+				  ,NVL(txpr_eml, '')
+				  ,dcer_co_nm
+				  ,dcer_addr
+				  ,BFCY_CO_NM /** Nom De L''Entreprise Du Bénéficiaire */
+				  ,BFCY_ADDR /** Adresse Benef */
+				  ,del_yn
+				  ,frst_regst_id
+				  ,frst_rgsr_dttm
+				  ,last_chpr_id
+				  ,last_chg_dttm
+		FROM TB_CLRI_DED_CO
+		WHERE DEL_YN = 'N'
+		  AND  dtl_dcsh_no = #{dtlDcshNo}                  /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+	</insert>
+
+	<insert id="insertDedCntrHist" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		INSERT INTO TB_CLRI_DED_CNTR_H
+		(		DTL_DCSH_NO
+		,HIST_SRNO
+		,CNTR_SRNO
+		,CNTR_NO
+		,CNTR_TP_CD
+		,CNTR_STFN_STTS_CD
+		,SEAL_NO1
+		,SEAL_NO2
+		,SEAL_NO3
+		,seal_chpn1               /** Code De La Personne Scellant !== 봉인담당자코드 ==! */
+		,seal_chpn2               /** Code De La Personne Scellant !== 봉인담당자코드 ==! */
+		,seal_chpn3               /** Code De La Personne Scellant !== 봉인담당자코드 ==! */
+		,seal_chpn_cd
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM
+		,INSC_TRGT_YN
+		)	SELECT
+			dtl_dcsh_no
+				  ,(SELECT HIST_SRNO FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo})
+				  ,cntr_srno
+				  ,cntr_no
+				  ,cntr_tp_cd
+				  ,cntr_stfn_stts_cd
+				  ,seal_no1
+				  ,seal_no2
+				  ,seal_no3
+				  ,seal_chpn1               /** Code De La Personne Scellant !== 봉인담당자코드 ==! */
+				  ,seal_chpn2               /** Code De La Personne Scellant !== 봉인담당자코드 ==! */
+				  ,seal_chpn3               /** Code De La Personne Scellant !== 봉인담당자코드 ==! */
+		          ,''
+				  ,del_yn
+				  ,frst_regst_id
+				  ,frst_rgsr_dttm
+				  ,last_chpr_id
+				  ,last_chg_dttm
+		  		,INSC_TRGT_YN
+		FROM TB_CLRI_DED_CNTR
+		WHERE DEL_YN = 'N'
+		  AND  dtl_dcsh_no = #{dtlDcshNo}                  /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+	</insert>
+
+	<insert id="insertDedMgHist" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		INSERT INTO TB_CLRI_DED_MG_H
+		(		DTL_DCSH_NO
+		,HIST_SRNO
+		,MG_AC_NO
+		,MG_TP_CD
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM
+		)	SELECT
+			dtl_dcsh_no
+				  ,(SELECT HIST_SRNO FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo})
+				  ,mg_ac_no
+				  ,mg_tp_cd
+				  ,del_yn
+				  ,frst_regst_id
+				  ,frst_rgsr_dttm
+				  ,last_chpr_id
+				  ,last_chg_dttm
+		FROM TB_CLRI_DED_MG
+		WHERE DEL_YN = 'N'
+		  AND  dtl_dcsh_no = #{dtlDcshNo}                  /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+	</insert>
+
+	<insert id="insertDedPrcDclrHist" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		INSERT INTO TB_CLRI_DED_PRC_DCLR_H
+		(		DTL_DCSH_NO
+		,HIST_SRNO
+		,BYER_IDFY_NO
+		,SELR_NO
+		,INVC_NO
+		,INVC_PBLS_DT
+		,CVNT_NO
+		,CVNT_DT
+		,DLVR_COND_CD
+		,BFHN_DTRM_OFDC_NO
+		,BFHN_DTRM_OFDC_PBLS_DT
+		,QUES_RSPN_1_YN
+		,QUES_RSPN_2_YN
+		,QUES_RSPN_3_YN
+		,QUES_RSPN_4_YN
+		,QUES_RSPN_5_YN
+		,QUES_RSPN_6_YN
+		,QUES_RSPN_7_YN
+		,DCER_NM
+		,DCLR_PLC_NM
+		,DCLR_DT
+		,CPUT_BSS_DLNG_PRC
+		,CPUT_BSS_INDR_AMT
+		,CPUT_BSS_SUM_AMT
+		,ADCST_SALE_CMIS_YN
+		,ADCST_PUCH_CMIS_YN
+		,ADCST_BRKG_AMT
+		,ADCST_CTNR_PCKG_CST
+		,ADCST_MTRL_CMPS_FTOR_CST
+		,ADCST_TOOL_OTCST
+		,ADCST_CNSM_CMDT_CST
+		,ADCST_TECH_DGN_OTCST
+		,ADCST_RYLT_CST
+		,ADCST_SELR_RVRS_AMT
+		,ADCST_TRNP_CST
+		,ADCST_IMP_PORT_TRCG_AMT
+		,ADCST_IMP_PORT_OTCST
+		,ADCST_PRCS_CST
+		,ADCST_IMP_PORT_INFEE_AMT
+		,ADTN_CST_SUM_AMT
+		,DDCT_TRNP_CST
+		,DDCT_OTCST
+		,DDCT_OTHS_APMT_AMT
+		,DDCT_EXP_CNTY_TRIF_AMT
+		,DDCT_SUM_AMT
+		,DCLR_TX_PRC
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM
+		,OTHS_DESC
+		,RSTC_MTR_CN
+		,QUES_RSPN_8_YN
+		,ADIT_OPIN_CN
+		)	SELECT
+			dtl_dcsh_no
+				  ,(SELECT HIST_SRNO FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo})
+				  ,byer_idfy_no
+				  ,selr_no
+				  ,invc_no
+				  ,invc_pbls_dt
+				  ,cvnt_no
+				  ,cvnt_dt
+				  ,dlvr_cond_cd
+				  ,bfhn_dtrm_ofdc_no
+				  ,bfhn_dtrm_ofdc_pbls_dt
+				  ,ques_rspn_1_yn
+				  ,ques_rspn_2_yn
+				  ,ques_rspn_3_yn
+				  ,ques_rspn_4_yn
+				  ,ques_rspn_5_yn
+				  ,ques_rspn_6_yn
+				  ,ques_rspn_7_yn
+				  ,dcer_nm
+				  ,dclr_plc_nm
+				  ,dclr_dt
+				  ,cput_bss_dlng_prc
+				  ,cput_bss_indr_amt
+				  ,cput_bss_sum_amt
+				  ,adcst_sale_cmis_yn
+				  ,adcst_puch_cmis_yn
+				  ,adcst_brkg_amt
+				  ,adcst_ctnr_pckg_cst
+				  ,adcst_mtrl_cmps_ftor_cst
+				  ,adcst_tool_otcst
+				  ,adcst_cnsm_cmdt_cst
+				  ,adcst_tech_dgn_otcst
+				  ,adcst_rylt_cst
+				  ,adcst_selr_rvrs_amt
+				  ,adcst_trnp_cst
+				  ,adcst_imp_port_trcg_amt
+				  ,adcst_imp_port_otcst
+				  ,adcst_prcs_cst
+				  ,adcst_imp_port_infee_amt
+				  ,adtn_cst_sum_amt
+				  ,ddct_trnp_cst
+				  ,ddct_otcst
+				  ,ddct_oths_apmt_amt
+				  ,ddct_exp_cnty_trif_amt
+				  ,ddct_sum_amt
+				  ,dclr_tx_prc
+				  ,del_yn
+				  ,frst_regst_id
+				  ,frst_rgsr_dttm
+				  ,last_chpr_id
+				  ,last_chg_dttm
+				  ,oths_desc
+				  ,rstc_mtr_cn
+				  ,ques_rspn_8_yn
+				  ,adit_opin_cn
+		FROM TB_CLRI_DED_PRC_DCLR
+		WHERE DEL_YN = 'N'
+		  AND  dtl_dcsh_no = #{dtlDcshNo}                  /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+	</insert>
+
+	<insert id="insertDedPrcDclrPdlsHist" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		INSERT INTO TB_CLRI_DED_PRC_DCLR_PDLS_H
+		(		DTL_DCSH_NO
+		, HIST_SRNO
+		, PDLS_NO
+		, mdl_stsz_no
+		, INDR_PYMN_TAMT
+		, PCFE_AMT
+		, MDTN_PCFE_AMT
+		, PCKG_AMT
+		, MNFU_SRVC_1_AMT
+		, MNFU_SRVC_2_AMT
+		, MNFU_SRVC_3_AMT
+		, MNFU_SRVC_4_AMT
+		, PCFE_LCNE_AMT
+		, RESALE_ERN_AMT
+		, TRNP_CST_AMT
+		, LOAD_CST_AMT
+		, INFEE_AMT
+		, BRNG_TRNP_CST
+		, TECH_SPPT_CST
+		, OTCST_AMT
+		, PYR_TRIF_AMT
+		, byer_pymn_cst
+		, DEL_YN
+		, FRST_REGST_ID
+		, FRST_RGSR_DTTM
+		, LAST_CHPR_ID
+		, LAST_CHG_DTTM
+		)	SELECT
+			dtl_dcsh_no
+				  ,(SELECT HIST_SRNO FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo})
+				  , PDLS_NO
+				  , mdl_stsz_no
+				  , INDR_PYMN_TAMT
+				  , PCFE_AMT
+				  , MDTN_PCFE_AMT
+				  , PCKG_AMT
+				  , MNFU_SRVC_1_AMT
+				  , MNFU_SRVC_2_AMT
+				  , MNFU_SRVC_3_AMT
+				  , MNFU_SRVC_4_AMT
+				  , PCFE_LCNE_AMT
+				  , RESALE_ERN_AMT
+				  , TRNP_CST_AMT
+				  , LOAD_CST_AMT
+				  , INFEE_AMT
+				  , BRNG_TRNP_CST
+				  , TECH_SPPT_CST
+				  , OTCST_AMT
+				  , PYR_TRIF_AMT
+				  , NVL(byer_pymn_cst, 0)
+				  ,del_yn
+				  ,frst_regst_id
+				  ,frst_rgsr_dttm
+				  ,last_chpr_id
+				  ,SYSTIMESTAMP
+		FROM TB_CLRI_DED_PRC_DCLR_PDLS
+		WHERE DEL_YN = 'N'
+		  AND  dtl_dcsh_no = #{dtlDcshNo}                  /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+	</insert>
+
+	<insert id="insertDedRimexPrngPdlsHist" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		INSERT INTO TB_CLRI_DED_RIMEX_PRNG_PDLS_H
+		(		DTL_DCSH_NO
+		,HIST_SRNO
+		,PRNG_PDLS_NO
+		,HS_CD
+		,CMDT_CLSF_SPEL_CD
+		,PDLS_NM
+		,DLNG_PDLS_NM
+		,ORCY_CNTY_CD
+		,QTY
+		,QTY_UT_CD
+		,PDLS_TTWG
+		,PDLS_NTWG
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM
+		)	SELECT
+			dtl_dcsh_no
+				  ,(SELECT HIST_SRNO FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo})
+				  ,prng_pdls_no
+				  ,'' /* HS_CD */
+				  ,cmdt_clsf_spel_cd
+				  ,pdls_nm
+				  ,dlng_pdls_nm
+				  ,orcy_cnty_cd
+				  ,qty
+				  ,qty_ut_cd
+				  ,pdls_ttwg
+				  ,pdls_ntwg
+				  ,del_yn
+				  ,frst_regst_id
+				  ,frst_rgsr_dttm
+				  ,last_chpr_id
+				  ,last_chg_dttm
+		FROM TB_CLRI_DED_RIMEX_PRNG_PDLS
+		WHERE DEL_YN = 'N'
+		  AND  dtl_dcsh_no = #{dtlDcshNo}                  /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+	</insert>
+
+	<insert id="insertDedAtdocHist" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		INSERT INTO TB_CLRI_DED_ATDOC_H
+		(		DTL_DCSH_NO
+		,HIST_SRNO
+		,ATCH_DOC_SRNO
+		,DOC_KND_CD
+		,PDLS_NO
+		,DOC_NO
+		,DOC_DESC
+		,ATCH_FILE_NM
+		,PBLS_ITT_NM
+		,PBLS_DT
+		,ATCH_FILE_ID
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM
+		)	SELECT
+			dtl_dcsh_no
+				  ,(SELECT HIST_SRNO FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo})
+				  ,atch_doc_srno
+				  ,doc_knd_cd
+				  ,pdls_no
+				  ,doc_no
+				  ,NVL(doc_desc, '')
+				  ,atch_file_nm
+				  ,pbls_itt_nm
+				  ,pbls_dt
+				  ,atch_file_id
+				  ,del_yn
+				  ,frst_regst_id
+				  ,frst_rgsr_dttm
+				  ,last_chpr_id
+				  ,last_chg_dttm
+		FROM TB_CLRI_DED_ATDOC
+		WHERE DEL_YN = 'N'
+		  AND  dtl_dcsh_no = #{dtlDcshNo}                  /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+	</insert>
+
+	<insert id="insertDedVlutComnHist" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		INSERT INTO TB_CLRI_DED_VLUT_COMN_H
+		(		DTL_DCSH_NO
+		,HIST_SRNO
+		,INVC_AMT
+		,INVC_CURR_CD
+		,INVC_FXRT
+		,INVC_NCY_AMT
+		,INVC_USD_AMT
+		,CACH_AMT
+		,CACH_CURR_CD
+		,CACH_FXRT
+		,CACH_NCY_AMT
+		,INFEE_AMT
+		,INFEE_CURR_CD
+		,INFEE_FXRT
+		,INFEE_NCY_AMT
+		,OTCST_AMT
+		,OTCST_CURR_CD
+		,OTCST_FXRT
+		,OTCST_NCY_AMT
+		,DDCT_AMT
+		,DDCT_RT
+		,DDCT_CURR_CD
+		,DDCT_FXRT
+		,DDCT_NCY_AMT
+		,TTXBS_NCY_AMT
+		,TTXBS_USD_AMT
+		,TVLUT_NCY_AMT
+		,TVLUT_USD_AMT
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM
+		)	SELECT
+			dtl_dcsh_no
+				  ,(SELECT HIST_SRNO FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo})
+				  ,invc_amt
+				  ,invc_curr_cd
+				  ,invc_fxrt
+				  ,invc_ncy_amt
+				  ,invc_usd_amt
+				  ,cach_amt
+				  ,cach_curr_cd
+				  ,cach_fxrt
+				  ,cach_ncy_amt
+				  ,infee_amt
+				  ,infee_curr_cd
+				  ,infee_fxrt
+				  ,infee_ncy_amt
+				  ,otcst_amt
+				  ,otcst_curr_cd
+				  ,otcst_fxrt
+				  ,otcst_ncy_amt
+				  ,ddct_amt
+				  ,ddct_rt
+				  ,ddct_curr_cd
+				  ,ddct_fxrt
+				  ,ddct_ncy_amt
+				  ,ttxbs_ncy_amt
+				  ,ttxbs_usd_amt
+				  ,tvlut_ncy_amt
+				  ,tvlut_usd_amt
+				  ,del_yn
+				  ,frst_regst_id
+				  ,frst_rgsr_dttm
+				  ,last_chpr_id
+				  ,last_chg_dttm
+		FROM TB_CLRI_DED_VLUT_COMN
+		WHERE DEL_YN = 'N'
+		  AND  dtl_dcsh_no = #{dtlDcshNo}                  /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+	</insert>
+
+	<insert id="insertDedVlutPdlsHist" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		INSERT INTO TB_CLRI_DED_VLUT_PDLS_H
+		(		DTL_DCSH_NO
+		,HIST_SRNO
+		,PDLS_NO
+		,PDLS_INVC_CURR_CD
+		,PDLS_INVC_FXRT
+		,PDLS_INVC_AMT
+		,PDLS_INVC_NCY_AMT
+		,PDLS_INVC_USD_AMT
+		,PDLS_CACH_CURR_CD
+		,PDLS_CACH_FXRT
+		,PDLS_CACH_AMT
+		,PDLS_CACH_NCY_AMT
+		,PDLS_INFEE_CURR_CD
+		,PDLS_INFEE_FXRT
+		,PDLS_INFEE_AMT
+		,PDLS_INFEE_NCY_AMT
+		,PDLS_OTCST_CURR_CD
+		,PDLS_OTCST_FXRT
+		,PDLS_OTCST_AMT
+		,PDLS_OTCST_NCY_AMT
+		,PDLS_DDCT_CURR_CD
+		,PDLS_DDCT_FXRT
+		,PDLS_DDCT_AMT
+		,PDLS_DDCT_NCY_AMT
+		,PDLS_TXBS_NCY_AMT
+		,PDLS_TXBS_USD_AMT
+		,PDLS_VLUT_NCY_AMT
+		,PDLS_VLUT_USD_AMT
+		,PDLS_MPRC_BASE_VAL
+		,PDLS_MPRC_UT_AMT
+		,PDLS_MPRC_NCY_AMT
+		,PDLS_MPRC_USD_AMT
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM
+		,PDLS_MPRC_TP_CD
+		,PDLS_MPRC_CURR_CD
+		)	SELECT
+			dtl_dcsh_no
+				  ,(SELECT HIST_SRNO FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo})
+				  ,pdls_no
+				  ,pdls_invc_curr_cd
+				  ,pdls_invc_fxrt
+				  ,pdls_invc_amt
+				  ,pdls_invc_ncy_amt
+				  ,pdls_invc_usd_amt
+				  ,pdls_cach_curr_cd
+				  ,pdls_cach_fxrt
+				  ,pdls_cach_amt
+				  ,pdls_cach_ncy_amt
+				  ,pdls_infee_curr_cd
+				  ,pdls_infee_fxrt
+				  ,pdls_infee_amt
+				  ,pdls_infee_ncy_amt
+				  ,pdls_otcst_curr_cd
+				  ,pdls_otcst_fxrt
+				  ,pdls_otcst_amt
+				  ,pdls_otcst_ncy_amt
+				  ,pdls_ddct_curr_cd
+				  ,pdls_ddct_fxrt
+				  ,pdls_ddct_amt
+				  ,pdls_ddct_ncy_amt
+				  ,pdls_txbs_ncy_amt
+				  ,pdls_txbs_usd_amt
+				  ,pdls_vlut_ncy_amt
+				  ,pdls_vlut_usd_amt
+				  ,pdls_mprc_base_val
+				  ,pdls_mprc_ut_amt
+				  ,pdls_mprc_ncy_amt
+				  ,pdls_mprc_usd_amt
+				  ,del_yn
+				  ,frst_regst_id
+				  ,frst_rgsr_dttm
+				  ,last_chpr_id
+				  ,last_chg_dttm
+				  ,pdls_mprc_tp_cd
+				  ,pdls_mprc_curr_cd
+		FROM TB_CLRI_DED_VLUT_PDLS
+		WHERE DEL_YN = 'N'
+		  AND  dtl_dcsh_no = #{dtlDcshNo}                  /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+	</insert>
+
+	<insert id="insertDedTaxHist" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		INSERT INTO TB_CLRI_DED_TAX_H
+		(		DTL_DCSH_NO
+		,HIST_SRNO
+		,PDLS_NO
+		,TAX_CD
+		,TXBS_AMT
+		,TFRT_CTGY_CD
+		,TXRT
+		,TAX_AMT
+		,PAY_TAX_AMT
+		,PAY_KND_CD
+		,RDEX_PT_CD
+		,RDEX_CD
+		,RDEX_AMT
+		,RDEX_BASE_AMT
+		,RDEX_TXRT
+		,MG_DSCN_APLY_AMT
+		,BSCS_TXBS_AMT
+		,BSCS_TXRT
+		,BSCS_TAX_AMT
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM
+		)	SELECT
+			dtl_dcsh_no
+				  ,(SELECT HIST_SRNO FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo})
+				  ,pdls_no
+				  ,tax_cd
+				  ,txbs_amt
+				  ,tfrt_ctgy_cd
+				  ,txrt
+				  ,tax_amt
+				  ,pay_tax_amt
+				  ,pay_knd_cd
+				  ,NVL(rdex_pt_cd, '')
+				  ,NVL(rdex_cd, '')
+				  ,rdex_amt
+				  ,rdex_base_amt
+				  ,rdex_txrt
+				  ,NVL(mg_dscn_aply_amt, 0)
+				  ,bscs_txbs_amt
+				  ,bscs_txrt
+				  ,bscs_tax_amt
+				  ,del_yn
+				  ,frst_regst_id
+				  ,frst_rgsr_dttm
+				  ,last_chpr_id
+				  ,last_chg_dttm
+		FROM TB_CLRI_DED_TAX
+		WHERE DEL_YN = 'N'
+		  AND  dtl_dcsh_no = #{dtlDcshNo}                  /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+	</insert>
+</mapper>

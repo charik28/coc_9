@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.rsm.selc.mapper.RsmSelcFrstBaseMapper">
+
+    <!--
+    [Premier critère] Enregistrer !== [최초기준관리] 등록 ==!
+    -->
+    <insert id="insertFrstBase" parameterType="alpass.ipt.rsm.com.vo.RsmFrstBaseVo">
+
+    /* RsmiSelcFrstBase_insertFrstBase */
+    INSERT INTO TB_RSMI_FRST_BASE (
+          BASE_RGSR_NO                  /* Numéro d'enregistrement !== 기준등록번호 ==!*/
+        , FRST_BASE_TP_CD               /* Code de type de premier critère  !== 최초기준구분코드 ==!*/
+        , SELC_DGCNT                    /* Nombre de ciblage !== 선별차수 ==!*/
+        , SELC_RT                       /* Taux de ciblage !== 선별율 ==!*/
+        , DEL_YN                        /* Suppression ON !== 삭제여부 ==!*/
+        , FRST_REGST_ID                 /* ID du premier enregistrant  !== 최초등록자ID ==!*/
+        , FRST_RGSR_DTTM                /* Date et heure de premier enregistrement !== 최초등록일시 ==!*/
+        , LAST_CHPR_ID                  /* ID du modificateur final !== 최종변경자ID ==!*/
+        , LAST_CHG_DTTM                 /* Date et heure de modification finale !== 최종변경일시 ==!*/
+    ) VALUES (
+          #{baseRgsrNo}                 /* Numéro d'enregistrement !== 기준등록번호 ==!*/
+        , #{frstBaseTpCd}               /* Code de type de premier critère  !== 최초기준구분코드 ==!*/
+        , #{selcDgcnt}                  /* Nombre de ciblage !== 선별차수 ==!*/
+        , #{selcRt}                     /* Taux de ciblage !== 선별율 ==!*/
+        , #{delYn}                      /* Suppression ON !== 삭제여부 ==!*/
+        , #{frstRegstId}                /* ID du premier enregistrant  !== 최초등록자ID ==!*/
+        , SYSTIMESTAMP                  /* Date et heure de premier enregistrement !== 최초등록일시 ==!*/
+        , #{lastChprId}                 /* ID du modificateur final !== 최종변경자ID ==!*/
+        , SYSTIMESTAMP                  /* Date et heure de modification finale !== 최종변경일시 ==!*/
+    )
+
+    </insert>
+
+    <!--
+    [Premier critère] Consulter le nombre de ciblage !== [최초기준관리] 선별횟수조회 ==!
+    -->
+    <select id="selectFrstBaseSelcRtInfo" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcFrstBaseVo" resultType="alpass.ipt.rsm.com.vo.RsmFrstBaseVo">
+
+    SELECT
+          BASE_RGSR_NO                  /* Numéro d'enregistrement !== 기준등록번호 ==! */
+        , FRST_BASE_TP_CD               /* Code de type de premier critère  !== 최초기준구분코드 ==! */
+        , SELC_DGCNT                    /* Nombre de ciblage !== 선별차수 ==! */
+        , SELC_RT                       /* Taux de ciblage !== 선별율 ==! */
+        , DEL_YN                        /* Suppression ON !== 삭제여부 ==! */
+        , FRST_REGST_ID                 /* ID du premier enregistrant  !== 최초등록자ID ==! */
+        , FRST_RGSR_DTTM                /* Date et heure de premier enregistrement !== 최초등록일시 ==! */
+        , LAST_CHPR_ID                  /* ID du modificateur final !== 최종변경자ID ==! */
+        , LAST_CHG_DTTM                 /* Date et heure de modification finale !== 최종변경일시 ==! */
+    FROM  TB_RSMI_FRST_BASE
+    WHERE DEL_YN = 'N'                  /* Suppression ON !== 삭제여부 ==! */
+    AND   BASE_RGSR_NO = #{baseRgsrNo}  /* Numéro d'enregistrement !== 기준등록번호 ==! */
+    ORDER BY
+          SELC_DGCNT                    /* Nombre de ciblage !== 선별차수 ==! */
+
+    </select>
+
+    <!--
+    [Premier critère] Supprimer !== [최초기준관리] 삭제 ==!
+    -->
+    <delete id="deleteFrstBase" parameterType="alpass.ipt.rsm.com.vo.RsmFrstBaseVo">
+
+    /* deleteFrstBase */
+    DELETE TB_RSMI_FRST_BASE
+    WHERE  BASE_RGSR_NO = #{baseRgsrNo} /* Numéro d'enregistrement !== 기준등록번호 ==! */
+
+    </delete>
+
+    <!--
+    [Premier critère] Supprimer !== [최초기준관리] 삭제 ==!
+    -->
+    <delete id="deleteFrstBase2" parameterType="alpass.ipt.rsm.com.vo.RsmFrstBaseVo">
+
+    /* deleteFrstBase */
+    UPDATE TB_RSMI_FRST_BASE SET
+           DEL_YN = 'Y'                 /* Suppression ON !== 삭제여부 ==! */
+         , LAST_CHPR_ID = #{lastChprId} /* ID du modificateur final !== 최종변경자ID ==! */
+         , LAST_CHG_DTTM = SYSTIMESTAMP /* Date et heure de modification finale !== 최종변경일시 ==! */
+    WHERE  BASE_RGSR_NO = #{baseRgsrNo} /* Numéro d'enregistrement !== 기준등록번호 ==! */
+
+    </delete>
+
+</mapper>

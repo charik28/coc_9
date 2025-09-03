@@ -1,0 +1,1603 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper">
+
+    <!--
+    Consulter la liste de déclaration d'introduction/sortie de conteneurs.  !== ""컨테이너 반출입 신고" 목록을 조회한다. ==!
+    -->
+    <select id="selectCntrRlbrList" resultType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectCntrRlbrList */
+        <include refid="pagination.header" ></include>
+        SELECT A.CNTR_RLBR_RQST_NO				/**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+             , Z.JRSD_CSTM_CD
+             , A.JRSD_ORGN_CD				/**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+             , A.IBOBZ_CD				/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+             , (SELECT COUNT(CNTR_NO) FROM TB_CARI_RLBR_FFMN B WHERE B.RLBR_FFMN_MGMT_NO = A.CNTR_RLBR_RQST_NO AND B.DEL_YN = 'N') AS CNTR_GCNT
+             , TO_CHAR(A.RLBR_DTTM, 'DD/MM/YYYY') AS RLBR_DTTM	/**  Date/Heure d'introduction/sortie  !== 반출입일시 ==!  */
+             , TO_CHAR(A.TRSN_DTTM, 'DD/MM/YYYY') AS TRSN_DTTM	/**  Date et heure de transmission  !== 전송일시 ==!  */
+             , A.TRSN_CO_CD				/**  Code d'entreprise transmettrice  !== 전송업체코드 ==!  */
+             , TO_CHAR(A.AUDT_DTTM, 'DD/MM/YYYY') AS AUDT_DTTM	/**  Date De L'Étude  !== 심사일시 ==!  */
+             , A.AUDT_PT_CD				/**  Code De Type De Contrôle  !== 심사유형코드 ==!  */
+             , A.AUDT_RSLT_CN				/**  Contenu Du Résultat De La Vérification  !== 심사결과내용 ==!  */
+             , B.PRCS_STTS_CD				/**  Code De Statut De Traitement  !== 처리상태코드 ==!  */
+             , B.AUDT_EMP_ID				/**  ID de l'insepcteur  !== 심사직원ID ==!  */
+             , (SELECT LTRIM(CONCAT(EMP_FMNM,' ',EMP_NM))
+                 FROM TB_POTI_EMP L
+                 WHERE L.DEL_YN = 'N'
+                 AND L.PBSR_NO = B.AUDT_EMP_ID) AS AUDT_EMP_NM
+             , TO_CHAR(B.PRCS_DTTM, 'DD/MM/YYYY') AS PRCS_DTTM
+             , A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+             , A.FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+             , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+             , A.LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+         FROM TB_CARI_CNTR_RLBR A
+         LEFT JOIN TB_CARI_CAG_PRCS_BRKD B
+           ON A.CNTR_RLBR_RQST_NO = B.CAG_RQST_NO
+          AND B.CAG_RQST_TP_CD = 'CC'||#{rlbrTpCd}
+          AND B.RQST_DGCNT = 0
+         LEFT JOIN (SELECT C1.ORGN_CD
+                         , C2.ORGN_CD AS JRSD_CSTM_CD
+                     FROM TB_POTI_ORGN C1
+                     LEFT JOIN TB_POTI_ORGN C2
+                       ON C1.UPR_ORGN_MGMT_CD = C2.ORGN_MGMT_CD
+                    WHERE C1.DEL_YN = 'N'
+         ) Z
+           ON A.JRSD_ORGN_CD = Z.ORGN_CD
+        WHERE A.DEL_YN = 'N'           /** Suppression ON !== 삭제여부 ==! */
+        <if test="rlbrTpCd != null and rlbrTpCd != ''">
+          AND A.RLBR_TP_CD = #{rlbrTpCd}
+        </if>
+        <if test="prcsSttsCd != null and prcsSttsCd != ''">
+          AND B.PRCS_STTS_CD = #{prcsSttsCd} /**  Code De Statut De Traitement  !== 처리상태코드 ==!  */
+        </if>
+        <if test="rlbrPtCd != null and rlbrPtCd != ''">
+          AND A.RLBR_PT_CD = #{rlbrPtCd} /**  Code de catégorie d'introduction/sortie  !== 반출입구분코드 ==!  */
+        </if>
+        <if test="cntrRlbrRqstNo != null and cntrRlbrRqstNo != ''">
+          AND A.CNTR_RLBR_RQST_NO LIKE #{cntrRlbrRqstNo} || '%' /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+        </if>
+        <if test="cntrNo != null and cntrNo != ''">
+          AND EXISTS (
+            SELECT CNTR_NO
+              FROM TB_CARI_RLBR_FFMN B
+             WHERE B.RLBR_FFMN_MGMT_NO = A.CNTR_RLBR_RQST_NO
+               AND B.CNTR_NO LIKE #{cntrNo} || '%'
+          )
+        </if>
+        <if test="cagMgmtNo != null and cagMgmtNo != ''">
+          AND EXISTS (
+            SELECT CAG_MGMT_NO
+              FROM TB_CARI_CNTR_RLBR_BL B
+             WHERE B.RLBR_FFMN_MGMT_NO = A.CNTR_RLBR_RQST_NO
+               AND B.CAG_MGMT_NO LIKE #{cagMgmtNo} || '%'
+          )
+        </if>
+        <if test="(searchKeywordFrom != null and searchKeywordFrom != '') and (searchKeywordTo != null and searchKeywordTo != '')">
+          AND (
+            A.FRST_RGSR_DTTM <![CDATA[ >= ]]> TO_DATE(#{searchKeywordFrom}, 'DD/MM/YYYY')       /**  Date et heure de transmission  !== 전송일시 ==!  */
+            AND A.FRST_RGSR_DTTM <![CDATA[ <= ]]> TO_DATE(#{searchKeywordTo}, 'DD/MM/YYYY')+0.9999   /**  Date et heure de transmission  !== 전송일시 ==!  */
+          )
+        </if>
+        <if test="(rlbrDttmFrom != null and rlbrDttmFrom != '') and (rlbrDttmTo != null and rlbrDttmTo != '')">
+          AND (
+            A.RLBR_DTTM <![CDATA[ >= ]]> TO_DATE(#{rlbrDttmFrom}, 'DD/MM/YYYY') /**  Dateheure D'Entrée  !== 반입일시 ==!  */
+            AND A.TRSN_DTTM <![CDATA[ <= ]]> TO_DATE(#{rlbrDttmTo}, 'DD/MM/YYYY')+0.9999 /**  Dateheure D'Entrée  !== 반입일시 ==!  */
+          )
+        </if>
+        <choose>
+            <when test="@alpass.ipt.car.com.util.CarMyBatisUtil@isEqualsStr(scrnTp, '1')">
+                AND B.PRCS_STTS_CD IN ('B02', 'D08', 'D09')
+            </when>
+            <otherwise>
+                AND B.PRCS_STTS_CD IN ('D01','B02', 'D08', 'D09')
+            </otherwise>
+        </choose>
+        <if test="roleId != null and (roleId.equals('CAR073'.toString()) or roleId.equals('CAR111'.toString()))">
+          /** 반출입신고 관리자인경우 */
+          AND A.JRSD_ORGN_CD LIKE SUBSTR(#{jrsdOrgnCd}, 1, 5) || '%'
+        </if>
+        <if test="roleId != null and (roleId.equals('CAR074'.toString()) or roleId.equals('CAR112'.toString()))">
+          /** 반출입신고 심사자인경우 */
+          AND B.AUDT_EMP_ID  = #{pbsrNo}
+        </if>
+        ORDER BY NVL(A.TRSN_DTTM, A.LAST_CHG_DTTM) DESC
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <!--
+    Consulter les détails de la déclaration d'introduction/sortie de conteneurs.  !== "컨테이너 반출입 신고" 상세내역을 조회한다. ==!
+    -->
+    <select id="selectCntrRlbr" resultType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectCntrRlbr */
+        SELECT A.CNTR_RLBR_RQST_NO				/**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+             , C.JRSD_CSTM_CD
+             , A.JRSD_ORGN_CD				/**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+             , A.RLBR_TP_CD
+             , A.IBOBZ_CD				/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+             , A.OTHS_ATCH_FILE_ID
+             , TO_CHAR(A.RLBR_DTTM, 'DD/MM/YYYY HH24:MI') AS RLBR_DTTM	/**  Date/Heure d'introduction/sortie  !== 반출입일시 ==!  */
+             , A.CO_RQST_NO				/**  N° demande d'inscription de l'entreprise  !== 업체신고번호 ==!  */
+             , TO_CHAR(A.TRSN_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS TRSN_DTTM	/**  Date et heure de transmission  !== 전송일시 ==!  */
+             , A.TRSN_CO_CD				/**  Code d'entreprise transmettrice  !== 전송업체코드 ==!  */
+             , TO_CHAR(B.PRCS_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS PRCS_DTTM	/**  Date Et Heure De Traitement  !== 처리일시 ==!  */
+             , B.PRCS_STTS_CD				/**  Code De Statut De Traitement  !== 처리상태코드 ==!  */
+             , B.AUDT_EMP_ID				/**  ID de l'insepcteur  !== 심사직원ID ==!  */
+             , A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+             , TO_CHAR(A.AUDT_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS AUDT_DTTM	/**  Date De L'Étude  !== 심사일시 ==!  */
+             , A.AUDT_PT_CD				/**  Code De Type De Contrôle  !== 심사유형코드 ==!  */
+             , A.AUDT_RSLT_CN				/**  Contenu Du Résultat De La Vérification  !== 심사결과내용 ==!  */
+             , CASE
+                 WHEN D.CAG_MGMT_NO_GCNT > 0 THEN 'IM' ELSE 'EX'
+               END CAG_TP_CD
+             , A.FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+             , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+             , A.LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+         FROM TB_CARI_CNTR_RLBR A
+         LEFT JOIN TB_CARI_CAG_PRCS_BRKD B
+           ON A.CNTR_RLBR_RQST_NO = B.CAG_RQST_NO
+          AND B.CAG_RQST_TP_CD  = 'CC'||#{rlbrTpCd}
+          AND B.RQST_DGCNT = 0
+         LEFT JOIN (SELECT C1.ORGN_CD
+                         , C2.ORGN_CD AS JRSD_CSTM_CD
+                     FROM TB_POTI_ORGN C1
+                     LEFT JOIN TB_POTI_ORGN C2
+                       ON C1.UPR_ORGN_MGMT_CD = C2.ORGN_MGMT_CD
+                    WHERE C1.DEL_YN = 'N'
+         ) C
+           ON A.JRSD_ORGN_CD = C.ORGN_CD
+         LEFT JOIN (
+                SELECT COUNT(NVL(CAG_MGMT_NO,NULL)) AS CAG_MGMT_NO_GCNT
+                     , RLBR_FFMN_MGMT_NO
+                  FROM TB_CARI_CNTR_RLBR_BL
+                 WHERE DEL_YN = 'N'
+                 GROUP BY RLBR_FFMN_MGMT_NO
+         ) D
+           ON A.CNTR_RLBR_RQST_NO = D.RLBR_FFMN_MGMT_NO
+        WHERE A.DEL_YN = 'N'           /** Suppression ON !== 삭제여부 ==! */
+          AND A.CNTR_RLBR_RQST_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+    </select>
+
+    <!--
+    Consulter la liste des infos sur l'accomplissement d'introduction/sortie.  !== 반출입 이행정보 목록을 조회한다. ==!
+    -->
+    <select id="selectCntrRlbrFfmn" resultType="alpass.ipt.car.bnwrhs.cagbrng.vo.CarRlbrFfmnVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectCntrRlbrFfmn */
+        SELECT DISTINCT
+               ARRAY_TO_STRING(ARRAY_AGG(DISTINCT A.RLBR_FFMN_MGMT_NO ORDER BY A.RLBR_FFMN_MGMT_NO),',') AS RLBR_FFMN_MGMT_NO
+             , A.RLBR_FFMN_SRNO
+             , ARRAY_TO_STRING(ARRAY_AGG(DISTINCT B.CAG_MGMT_NO ORDER BY B.CAG_MGMT_NO),',') AS CAG_MGMT_NO	/**  Crn  !== 화물관리번호 ==!  */
+             , ARRAY_TO_STRING(ARRAY_AGG(DISTINCT B.BL_NO ORDER BY B.BL_NO),',') AS BL_NO				/**  N° De Bl  !== BL번호 ==!  */
+             , A.CNTR_NO
+             , A.CNTR_TP_CD
+             , A.RLBR_PCKG_GCNT
+             , A.RLBR_WGHT
+             , A.BRNG_ACDN_PT_CD
+             , A.BRNG_ACDN_GCNT
+             , A.BRNG_ACDN_WGHT
+             , A.RLBR_VHCL_NO
+             , B.RLBR_PT_CD
+             , NVL(A.RLBR_CFRM_YN,'N') AS RLBR_CFRM_YN
+             , TO_CHAR(A.RLBR_CFRM_DTTM, 'DD/MM/YYYY') AS RLBR_CFRM_DTTM
+             , A.RLBR_CFMR_ID
+        FROM TB_CARI_RLBR_FFMN A
+           , TB_CARI_CNTR_RLBR_BL B
+        WHERE A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+          AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND A.RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+        GROUP BY A.RLBR_FFMN_SRNO, A.CNTR_NO, A.CNTR_TP_CD, A.RLBR_PCKG_GCNT, A.RLBR_WGHT, A.BRNG_ACDN_PT_CD, A.BRNG_ACDN_GCNT, A.BRNG_ACDN_WGHT, A.RLBR_VHCL_NO, A.RLBR_CFRM_YN, A.RLBR_CFRM_DTTM, A.RLBR_CFMR_ID, B.RLBR_PT_CD
+    </select>
+    
+    <!--
+    Consulter la liste des BL de déclaration d'introduction/sortie de conteneurs.  !== 컨테이너 반출입 신고 BL 목록을 조회한다. ==!
+    -->
+    <select id="selectCntrRlbrBlList" resultType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrBlVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectCntrRlbrBlList */
+        SELECT DISTINCT
+               A.RLBR_PRNG_NO
+             , A.CAG_MGMT_NO
+             , A.BL_NO
+             , C.CNTR_NO
+             , A.RLBR_PT_CD
+             , A.RELA_NO
+             , B.PCKG_GCNT AS RLBR_PRNG_PCKG_GCNT
+             , B.WGHT AS RLBR_PRNG_WGHT
+             , B.RLBR_PCKG_GCNT AS RLBR_PCKG_GCNT
+             , B.RLBR_WGHT AS RLBR_WGHT
+             , C.RLBR_DCLR_PCKG_GCNT
+             , C.RLBR_DCLR_WGHT
+             , A.DIVD_TP_CD
+         FROM TB_CARI_CNTR_RLBR_BL A
+        INNER JOIN ALPASSEXT.TB_CARE_RLBR_PRNG B
+           ON A.RLBR_PRNG_NO = B.RLBR_PRNG_NO
+          AND B.DEL_YN = 'N'
+        <choose>
+            <when test="cagTpCd.equals('IM')">
+          AND A.CAG_MGMT_NO = B.CAG_MGMT_NO
+            </when>
+            <when test="cagTpCd.equals('EX')">
+          AND A.RELA_NO = B.RELA_NO
+            </when>
+        </choose>
+        <choose>
+            <when test="cagTpCd.equals('IM')">
+         LEFT OUTER JOIN (
+            SELECT A.RLBR_FFMN_MGMT_NO
+                 , B.CAG_MGMT_NO
+                 , STRING_AGG(A.CNTR_NO, ',') AS CNTR_NO
+                 , SUM(A.RLBR_PCKG_GCNT) AS RLBR_DCLR_PCKG_GCNT
+                 , SUM(A.RLBR_WGHT) AS RLBR_DCLR_WGHT
+            FROM TB_CARI_RLBR_FFMN A
+               , TB_CARI_CNTR_RLBR_BL B
+            WHERE A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+              AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+              AND A.DEL_YN = 'N'
+              AND B.DEL_YN = 'N'
+            GROUP BY A.RLBR_FFMN_MGMT_NO, B.CAG_MGMT_NO
+         ) C
+           ON A.CAG_MGMT_NO = C.CAG_MGMT_NO
+          AND A.RLBR_FFMN_MGMT_NO = C.RLBR_FFMN_MGMT_NO
+            </when>
+            <when test="cagTpCd.equals('EX')">
+         LEFT OUTER JOIN (
+            SELECT A.RLBR_FFMN_MGMT_NO
+                 , B.RELA_NO
+                 , STRING_AGG(A.CNTR_NO, ',') AS CNTR_NO
+                 , SUM(A.RLBR_PCKG_GCNT) AS RLBR_DCLR_PCKG_GCNT
+                 , SUM(A.RLBR_WGHT) AS RLBR_DCLR_WGHT
+            FROM TB_CARI_RLBR_FFMN A
+               , TB_CARI_CNTR_RLBR_BL B
+            WHERE A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+              AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+              AND A.DEL_YN = 'N'
+              AND B.DEL_YN = 'N'
+            GROUP BY A.RLBR_FFMN_MGMT_NO, B.RELA_NO
+         ) C
+           ON A.RELA_NO = C.RELA_NO
+          AND A.RLBR_FFMN_MGMT_NO = C.RLBR_FFMN_MGMT_NO
+            </when>
+        </choose>
+        WHERE A.DEL_YN = 'N'
+          AND A.RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+        ORDER BY A.CAG_MGMT_NO
+    </select>
+
+    <!--
+    Consulter la liste des BL pour le suivi des marchandises de la déclaration d'introduction/sortie de conteneurs.    !== 컨테이너 반출입신고 화물추적용 BL 목록을 조회한다. ==!
+	-->
+    <select id="selectCntrBlPrcsList" resultType="alpass.ipt.car.bnwrhs.cagbrng.vo.CarRlbrFfmnVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectCntrBlPrcsList */
+        SELECT B.CAG_MGMT_NO
+        <choose>
+            <when test="cagTpCd.equals('IM')">
+             , SUM(A.RLBR_PCKG_GCNT) AS RLBR_PCKG_GCNT
+             , SUM(A.RLBR_WGHT) AS RLBR_WGHT
+            </when>
+            <when test="cagTpCd.equals('EX')">
+             , SUM(A.RLBR_PCKG_GCNT) AS RLBR_DCLR_PCKG_GCNT
+             , SUM(A.RLBR_WGHT) AS RLBR_DCLR_WGHT
+            </when>
+        </choose>
+             , A.BRNG_ACDN_PT_CD
+             , SUM(A.BRNG_ACDN_GCNT) AS BRNG_ACDN_GCNT
+             , SUM(A.BRNG_ACDN_WGHT) AS BRNG_ACDN_WGHT
+        FROM TB_CARI_RLBR_FFMN A
+           , TB_CARI_CNTR_RLBR_BL B
+        WHERE A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+          AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND A.RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+        GROUP BY B.CAG_MGMT_NO, A.BRNG_ACDN_PT_CD
+    </select>
+
+    <!--
+    Consulter la liste de stock des conteneurs.  !== 컨테이너재고 등록대상 목록을 조회한다. ==!
+    -->
+    <select id="selectCntrInvnTrgtList" resultType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrBlVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectCntrInvnTrgtList */
+        SELECT A.RLBR_FFMN_MGMT_NO
+             , A.CAG_MGMT_NO
+             , A.BL_NO
+             , A.RLBR_PT_CD
+             , A.RELA_NO
+             , A.DIVD_TP_CD
+             , B.CNTR_NO
+             , B.CNTR_TP_CD
+             , B.RLBR_PCKG_GCNT
+             , B.RLBR_WGHT
+         FROM TB_CARI_CNTR_RLBR_BL A
+        INNER JOIN TB_CARI_RLBR_FFMN B
+           ON A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+          AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+        WHERE A.DEL_YN = 'N'
+          AND A.RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+        ORDER BY A.CAG_MGMT_NO
+    </select>
+
+    <!--
+    Consulter la liste des déclarations d'introduction/sortie de conteneurs.  !== 반출입신고 대상 목록을 조회한다. ==!
+    -->
+    <select id="selectRlbrTrgtList" resultType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrBlVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectRlbrTrgtList */
+        SELECT DISTINCT
+               A.CAG_MGMT_NO
+             , A.BL_NO
+             , A.RLBR_PT_CD
+             , A.RELA_NO
+             , A.DIVD_TP_CD
+             , A.RLBR_PRNG_NO
+             , C.RLBR_DCLR_PCKG_GCNT
+             , C.RLBR_DCLR_WGHT
+             , B.BRNG_ACDN_PT_CD
+             , B.BRNG_ACDN_GCNT
+             , B.BRNG_ACDN_WGHT
+          FROM TB_CARI_CNTR_RLBR_BL A
+         INNER JOIN TB_CARI_RLBR_FFMN B
+            ON A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+           AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+        <choose>
+            <when test="cagTpCd.equals('IM')">
+         LEFT OUTER JOIN (
+              SELECT A.RLBR_FFMN_MGMT_NO
+                   , B.CAG_MGMT_NO
+                   , SUM(A.RLBR_PCKG_GCNT) AS RLBR_DCLR_PCKG_GCNT
+                   , SUM(A.RLBR_WGHT) AS RLBR_DCLR_WGHT
+               FROM TB_CARI_RLBR_FFMN A
+                  , TB_CARI_CNTR_RLBR_BL B
+              WHERE A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+                AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+                AND A.DEL_YN = 'N'
+                AND B.DEL_YN = 'N'
+              GROUP BY A.RLBR_FFMN_MGMT_NO, B.CAG_MGMT_NO
+          ) C
+            ON A.CAG_MGMT_NO = C.CAG_MGMT_NO
+           AND A.RLBR_FFMN_MGMT_NO = C.RLBR_FFMN_MGMT_NO
+            </when>
+            <when test="cagTpCd.equals('EX')">
+          LEFT OUTER JOIN (
+             SELECT A.RLBR_FFMN_MGMT_NO
+                  , B.RELA_NO
+                  , SUM(A.RLBR_PCKG_GCNT) AS RLBR_DCLR_PCKG_GCNT
+                  , SUM(A.RLBR_WGHT) AS RLBR_DCLR_WGHT
+              FROM TB_CARE_RLBR_FFMN A
+                 , TB_CARE_CNTR_RLBR_BL B
+             WHERE A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+               AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+               AND A.DEL_YN = 'N'
+               AND B.DEL_YN = 'N'
+             GROUP BY A.RLBR_FFMN_MGMT_NO, B.RELA_NO
+          ) C
+            ON A.RELA_NO = C.RELA_NO
+           AND A.RLBR_FFMN_MGMT_NO = C.RLBR_FFMN_MGMT_NO
+            </when>
+        </choose>
+         WHERE A.DEL_YN = 'N'
+           AND A.RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+         ORDER BY A.CAG_MGMT_NO
+    </select>
+
+    <!--
+    Consulter les conteneurs du batch d'échange entre fret-dédouanement.  !== 화물-통관 연계배치의 대상 컨테이너를 조회한다. ==!
+    -->
+    <select id="selectRlbrCntrList" resultType="alpass.ipt.car.com.vo.CarCagCsclIntfCntrVo">
+        SELECT A.CAG_MGMT_NO
+             , A.BL_NO
+             , A.RLBR_PT_CD
+             , A.RELA_NO
+             , A.DIVD_TP_CD
+             , B.CNTR_NO
+             , B.CNTR_TP_CD
+             , B.RLBR_PCKG_GCNT
+             , B.RLBR_WGHT
+         FROM TB_CARI_CNTR_RLBR_BL A
+        INNER JOIN TB_CARI_RLBR_FFMN B
+           ON A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+          AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+        WHERE A.DEL_YN = 'N'
+          AND A.RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+        ORDER BY A.CAG_MGMT_NO desc
+    </select>
+
+    <!--
+    Consulter s'il existe une introduction/sortie.  !== 반출입 존재여부를 조회한다. ==!
+    -->
+    <select id="selectRlbrListChk" resultType="Integer">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectRlbrListChk */
+        SELECT COUNT(A.RLBR_RQST_NO) AS RLBR_CNT
+        FROM TB_CARE_RLBR A
+        WHERE A.RLBR_TP_CD = #{rlbrTpCd}
+          AND A.DEL_YN = 'N'
+          AND A.IBOBZ_CD = #{ibobzCd}
+          <if test="cagMgmtNo != null and cagMgmtNo != ''">
+          AND A.CAG_MGMT_NO = #{cagMgmtNo}
+          </if>
+          <if test="blNo != null and blNo != ''">
+          AND A.BL_NO = #{blNo}
+          </if>
+          <if test="relaNo != null and relaNo != ''">
+          AND A.RELA_NO = #{relaNo}
+          </if>
+    </select>
+
+    <!--
+    Modifier les infos sur le contrôle la déclaration d'introduction/sortie de conteneurs.    !== 컨테이너 반출입 신고 심사정보를 수정한다.==!
+	-->
+    <update id="updateCntrRlbrAudt" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.updateCntrRlbrAudt */
+        UPDATE TB_CARI_CNTR_RLBR
+           SET LAST_CHPR_ID      = #{lastChprId} /**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , LAST_CHG_DTTM     = SYSTIMESTAMP /**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+        <if test="audtDttm != null and audtDttm != ''">
+             , AUDT_DTTM         = TO_DATE(#{audtDttm}, 'DDMMYYYYHH24MISS')
+        </if>
+        <if test="audtPtCd != null and audtPtCd != ''">
+             , AUDT_PT_CD        = #{audtPtCd}
+        </if>
+        <if test="audtRsltCn != null and audtRsltCn != ''">
+             , AUDT_RSLT_CN      = #{audtRsltCn}
+        </if>
+        WHERE CNTR_RLBR_RQST_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+    </update>
+
+    <!--
+    Enregistrer & Modifier le stock des conteneurs.    !== 컨테이너 재고를 등록 한다.==!
+	-->
+    <update id="mergeCntrRlbrInvn" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrInvnVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.mergeCntrRlbrInvn */
+        WITH UPSERT AS (
+            UPDATE TB_CARI_CNTR_INVN
+               SET INVN_YN = #{invnYn} 			/**  Stock On  !== 재고여부 ==!  */
+                 , DEL_YN = #{delYn} 			/**  Suppression On  !== 삭제여부 ==!  */
+                 , LAST_CHPR_ID = #{lastChprId} 			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+                 , LAST_CHG_DTTM = SYSTIMESTAMP 	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+            WHERE CAG_MGMT_NO = #{cagMgmtNo}				/**  Crn  !== 화물관리번호 ==!  */
+              AND CNTR_NO = #{cntrNo}				/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+              AND IBOBZ_CD = #{ibobzCd}				/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+        RETURNING *
+		)
+        INSERT INTO TB_CARI_CNTR_INVN (
+              CAG_MGMT_NO				/**  Crn  !== 화물관리번호 ==!  */
+            , CNTR_NO				/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+            , IBOBZ_CD				/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+            , INVN_YN				/**  Stock On  !== 재고여부 ==!  */
+            , DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+            , FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+            , FRST_RGSR_DTTM				/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+            , LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+            , LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+        )
+        SELECT
+              #{cagMgmtNo}			/**  Crn  !== 화물관리번호 ==!  */
+            , #{cntrNo}			/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+            , #{ibobzCd}			/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+            , #{invnYn}			/**  Stock On  !== 재고여부 ==!  */
+            , #{delYn}			/**  Suppression On  !== 삭제여부 ==!  */
+            , #{frstRegstId}			/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+            , SYSTIMESTAMP 	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+            , #{lastChprId}			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+            , SYSTIMESTAMP 	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+        WHERE NOT EXISTS(SELECT * FROM UPSERT)
+    </update>
+
+    <!--
+	Enregistrer & Modifier le conteneur du stock des marchandises à exporter.    !== 수출물품 재고 컨테이너를 등록&수정 한다. ==!
+	-->
+    <update id="mergeExpCmdtInvnCntr" parameterType="alpass.ipt.car.com.vo.CarExpCmdtInvnCntrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.mergeExpCmdtInvnCntr */
+        WITH UPSERT AS (
+        UPDATE TB_CARI_EXP_CMDT_INVN_CNTR
+           SET CNTR_NO = #{cntrNo} 			/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+             , INVN_YN = #{invnYn} 			/**  Stock On  !== 재고여부 ==!  */
+             , DEL_YN = #{delYn} 			/**  Suppression On  !== 삭제여부 ==!  */
+             , LAST_CHPR_ID = #{lastChprId} 			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , LAST_CHG_DTTM = SYSTIMESTAMP 	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+         WHERE EXP_CMDT_BRNG_RQNO = #{expCmdtBrngRqno} 			/**  N° demande de l'introduction des marchandises à exporter  !== 수출물품반입신청번호 ==!  */
+           AND IBOBZ_CD = #{ibobzCd}				/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+           AND CNTR_NO = #{cntrNo}				/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+        RETURNING *
+		)
+        INSERT INTO TB_CARI_EXP_CMDT_INVN_CNTR (
+              EXP_CMDT_BRNG_RQNO				/**  N° demande de l'introduction des marchandises à exporter  !== 수출물품반입신청번호 ==!  */
+            , IBOBZ_CD				/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+            , CNTR_NO				/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+            , INVN_YN				/**  Stock On  !== 재고여부 ==!  */
+            , DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+            , FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+            , FRST_RGSR_DTTM				/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+            , LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+            , LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+        )
+        SELECT #{expCmdtBrngRqno}			/**  N° demande de l'introduction des marchandises à exporter  !== 수출물품반입신청번호 ==!  */
+             , #{ibobzCd}			/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+             , #{cntrNo}			/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+             , #{invnYn}			/**  Stock On  !== 재고여부 ==!  */
+             , #{delYn}			/**  Suppression On  !== 삭제여부 ==!  */
+             , #{frstRegstId}			/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+             , SYSTIMESTAMP 	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+             , #{lastChprId}			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , SYSTIMESTAMP 	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+         WHERE NOT EXISTS(SELECT * FROM UPSERT)
+    </update>
+
+    <!--
+    Modifier les infos sur le numéro de B/L de la table d'introduction des marchandises à exporter.
+	 !== 수출물품반입테이블의 blno정보를 수정한다.(interne)==!
+	 -->
+    <update id="updateIptExpBlno" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.updateIptExpBlno */
+        UPDATE ALPASSINT.TB_CARI_EXP_CMDT_BRNG
+           SET LAST_CHPR_ID  = #{lastChprId}   /*last_chpr_idId Du Modificateur Final  				 !== 최종변경자ID ==!*/
+             , LAST_CHG_DTTM  = SYSTIMESTAMP  /*last_chg_dttmDate Et Heure De Modification Finale      !== 최종변경일시 ==!*/
+             <if test="blNo != null and blNo != ''">
+             , BL_NO = #{blNo}
+             </if>
+        WHERE EXP_CMDT_BRNG_RQNO = #{relaNo}  /**  Code De Statut De Traitement      		 !== 신청번호 ==!  */
+    </update>
+
+    <!--
+    Modifier les infos sur le numéro de B/L de la table d'introduction des marchandises à exporter.
+	 !== 수출물품반입테이블의 blno정보를 수정한다.(externe)==!
+	 -->
+    <update id="updateEptExpBlno" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.updateEptExpBlno */
+        UPDATE ALPASSEXT.TB_CARE_EXP_CMDT_BRNG
+           SET LAST_CHPR_ID  = #{lastChprId}   /*last_chpr_idId Du Modificateur Final  				 !== 최종변경자ID ==!*/
+             , LAST_CHG_DTTM  = SYSTIMESTAMP  /*last_chg_dttmDate Et Heure De Modification Finale      !== 최종변경일시 ==!*/
+             <if test="blNo != null and blNo != ''">
+             , BL_NO = #{blNo}
+             </if>
+        WHERE EXP_CMDT_BRNG_RQNO = #{relaNo}  /**  Code De Statut De Traitement      		 !== 신청번호 ==!  */
+    </update>
+
+    <!--
+    Enregistrer la rectification d'introduction/sortie de conteneurs.    !== 컨테이너 반출입 정정을 등록한다. ==!
+	-->
+    <insert id="insertCntrRlbrMdfy" parameterType="String">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.insertCntrRlbrMdfy */
+        INSERT INTO TB_CARI_CNTR_RLBR_MDFY (
+              CNTR_RLBR_RQST_NO				/**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+            , MDFY_DGCNT				/**  Fréquence de rectification  !== 정정차수 ==!  */
+            , RLBR_TP_CD				/**  Code de catégorie d'introduction/sortie  !== 반출입구분코드 ==!  */
+            , JRSD_ORGN_CD				/**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+            , IBOBZ_CD				/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+            , RLBR_DTTM				/**  Date/Heure d'introduction/sortie  !== 반출입일시 ==!  */
+            , TRSN_DTTM				/**  Date et heure de transmission  !== 전송일시 ==!  */
+            , TRSN_CO_CD				/**  Code d'entreprise transmettrice  !== 전송업체코드 ==!  */
+            , ATCH_FILE_ID
+            , DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+            , FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+            , FRST_RGSR_DTTM				/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+            , LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+            , LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+        )
+        SELECT CNTR_RLBR_RQST_NO				/**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+             , 0				/**  Fréquence de rectification  !== 정정차수 ==!  */
+             , RLBR_TP_CD				/**  Code de catégorie d'introduction/sortie  !== 반출입구분코드 ==!  */
+             , JRSD_ORGN_CD				/**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+             , IBOBZ_CD				/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+             , RLBR_DTTM				/**  Date/Heure d'introduction/sortie  !== 반출입일시 ==!  */
+             , TRSN_DTTM				/**  Date et heure de transmission  !== 전송일시 ==!  */
+             , TRSN_CO_CD				/**  Code d'entreprise transmettrice  !== 전송업체코드 ==!  */
+             , ATCH_FILE_ID
+             , DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+             , FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+             , FRST_RGSR_DTTM				/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+             , LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+         FROM TB_CARI_CNTR_RLBR
+        WHERE DEL_YN = 'N'           /** Suppression ON !== 삭제여부 ==! */
+          AND CNTR_RLBR_RQST_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+    </insert>
+
+    <!--
+    Enregistrer les infos sur l'accomplissement de la rectification d'introduction/sortie de conteneurs.    !== 컨테이너 반출입 정정 이행을 등록한다. ==!
+	-->
+    <insert id="insertCntrRlbrFfmnMdfy" parameterType="String">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.insertCntrRlbrFfmnMdfy */
+        INSERT INTO TB_CARI_RLBR_MDFY_FFMN (
+              RLBR_FFMN_MGMT_NO
+            , RLBR_FFMN_SRNO
+            , MDFY_DGCNT			/**  Fréquence de rectification  !== 정정차수 ==!  */
+            , CNTR_NO				/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+            , CNTR_TP_CD				/**  Code De Type De Conteneur  !== 컨테이너구분코드 ==!  */
+            , RLBR_PCKG_GCNT
+            , RLBR_WGHT
+            , BRNG_ACDN_PT_CD
+            , BRNG_ACDN_GCNT
+            , BRNG_ACDN_WGHT
+            , RLBR_VHCL_NO
+            , RLBR_CFRM_YN
+            , RLBR_CFRM_DTTM
+            , RLBR_CFMR_ID
+            , DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+            , FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+            , FRST_RGSR_DTTM				/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+            , LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+            , LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+        )
+        SELECT RLBR_FFMN_MGMT_NO
+             , RLBR_FFMN_SRNO
+             , 0			/**  Fréquence de rectification  !== 정정차수 ==!  */
+             , CNTR_NO				/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+             , CNTR_TP_CD				/**  Code De Type De Conteneur  !== 컨테이너구분코드 ==!  */
+             , RLBR_PCKG_GCNT
+             , RLBR_WGHT
+             , BRNG_ACDN_PT_CD
+             , BRNG_ACDN_GCNT
+             , BRNG_ACDN_WGHT
+             , RLBR_VHCL_NO
+             , RLBR_CFRM_YN
+             , RLBR_CFRM_DTTM
+             , RLBR_CFMR_ID
+             , DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+             , FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+             , FRST_RGSR_DTTM				/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+             , LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+          FROM TB_CARI_RLBR_FFMN
+         WHERE DEL_YN = 'N'           /** Suppression ON !== 삭제여부 ==! */
+           AND RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+    </insert>
+
+    <!--
+    Enregistrer le BL de la rectification d'introduction/sortie de conteneurs.    !== 수출물품 반입 BL 정정 이력을 등록 한다.==!
+    -->
+    <insert id="insertCntrRlbrMdfyBl" parameterType="String">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.insertCntrRlbrMdfyBl */
+        INSERT INTO TB_CARI_CNTR_RLBR_MDFY_BL (
+              RLBR_FFMN_MGMT_NO
+            , RLBR_FFMN_SRNO
+            , CNTR_RLBR_BL_SRNO
+            , MDFY_DGCNT			/**  Fréquence de rectification  !== 정정차수 ==!  */
+            , RLBR_PRNG_NO /**  N° Introduction/Sortie Prévue  !== 반출입예정번호 ==!  */
+            , CAG_MGMT_NO				/**  Crn  !== 화물관리번호 ==!  */
+            , BL_NO
+            , RLBR_PT_CD				/**  Code de type d'introduction/sortie  !== 반출입유형코드 ==!  */
+            , RELA_NO				/**  Numéro Concerné  !== 관련번호 ==!  */
+            , DIVD_TP_CD				/**  Code De Type D'Éclatement  !== 분할구분코드 ==!  */
+            , DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+            , FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+            , FRST_RGSR_DTTM				/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+            , LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+            , LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+        )
+        SELECT RLBR_FFMN_MGMT_NO
+             , RLBR_FFMN_SRNO
+             , CNTR_RLBR_BL_SRNO				/**  N° Série De B/L De L'Introduction/Sortie De Conteneurs  !== 컨테이너반출입BL일련번호 ==!  */
+             , 0			/**  Fréquence de rectification  !== 정정차수 ==!  */
+             , RLBR_PRNG_NO /**  N° Introduction/Sortie Prévue  !== 반출입예정번호 ==!  */
+             , CAG_MGMT_NO				/**  Crn  !== 화물관리번호 ==!  */
+             , BL_NO
+             , RLBR_PT_CD				/**  Code de type d'introduction/sortie  !== 반출입유형코드 ==!  */
+             , RELA_NO				/**  Numéro Concerné  !== 관련번호 ==!  */
+             , DIVD_TP_CD				/**  Code De Type D'Éclatement  !== 분할구분코드 ==!  */
+             , DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+             , FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+             , FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+             , LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+         FROM TB_CARI_CNTR_RLBR_BL
+        WHERE DEL_YN = 'N'           /** Suppression ON !== 삭제여부 ==! */
+          AND RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+    </insert>
+
+    <!--
+    Enregistrer la rectification d'introduction/sortie de conteneurs.    !== 컨테이너 반출입 정정을 등록 한다. ==!
+	-->
+    <insert id="insertCntrRlbrMdfyForEpt" parameterType="String">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.insertCntrRlbrMdfyForEpt */
+        INSERT INTO TB_CARE_CNTR_RLBR_MDFY (
+              CNTR_RLBR_RQST_NO				/**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+            , MDFY_DGCNT				/**  Fréquence de rectification  !== 정정차수 ==!  */
+            , RLBR_TP_CD				/**  Code de catégorie d'introduction/sortie  !== 반출입구분코드 ==!  */
+            , JRSD_ORGN_CD				/**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+            , IBOBZ_CD				/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+            , RLBR_DTTM				/**  Date/Heure d'introduction/sortie  !== 반출입일시 ==!  */
+            , TRSN_DTTM				/**  Date et heure de transmission  !== 전송일시 ==!  */
+            , TRSN_CO_CD				/**  Code d'entreprise transmettrice  !== 전송업체코드 ==!  */
+            , ATCH_FILE_ID
+            , DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+            , PRCS_DTTM
+            , PRCS_STTS_CD
+            , FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+            , FRST_RGSR_DTTM				/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+            , LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+            , LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+        )
+        SELECT CNTR_RLBR_RQST_NO				/**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+             , 0				/**  Fréquence de rectification  !== 정정차수 ==!  */
+             , RLBR_TP_CD				/**  Code de catégorie d'introduction/sortie  !== 반출입구분코드 ==!  */
+             , JRSD_ORGN_CD				/**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+             , IBOBZ_CD				/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+             , RLBR_DTTM				/**  Date/Heure d'introduction/sortie  !== 반출입일시 ==!  */
+             , TRSN_DTTM				/**  Date et heure de transmission  !== 전송일시 ==!  */
+             , TRSN_CO_CD				/**  Code d'entreprise transmettrice  !== 전송업체코드 ==!  */
+             , ATCH_FILE_ID
+             , DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+             , SYSTIMESTAMP AS PRCS_DTTM
+             , 'D08' AS PRCS_STTS_CD				/** !==처리상태: 승인==! */
+             , FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+             , FRST_RGSR_DTTM				/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+             , LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+        FROM TB_CARE_CNTR_RLBR
+        WHERE DEL_YN = 'N'           /** Suppression ON !== 삭제여부 ==! */
+          AND CNTR_RLBR_RQST_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+    </insert>
+
+    <!--
+    Enregistrer les infos sur l'accomplissement de la rectification d'introduction/sortie de conteneurs.    !== 컨테이너 반출입 정정 이행정보를 등록한다. ==!
+    -->
+    <insert id="insertCntrRlbrFfmnMdfyForEpt" parameterType="string">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.insertCntrRlbrFfmnMdfyForEpt */
+        INSERT INTO TB_CARE_RLBR_MDFY_FFMN (
+              RLBR_FFMN_MGMT_NO
+            , RLBR_FFMN_SRNO
+            , MDFY_DGCNT				/**  Fréquence de rectification  !== 정정차수 ==!  */
+            , CNTR_NO				/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+            , CNTR_TP_CD				/**  Code De Type De Conteneur  !== 컨테이너구분코드 ==!  */
+            , RLBR_PCKG_GCNT
+            , RLBR_WGHT
+            , BRNG_ACDN_PT_CD
+            , BRNG_ACDN_GCNT
+            , BRNG_ACDN_WGHT
+            , RLBR_VHCL_NO
+            , RLBR_CFRM_YN
+            , RLBR_CFRM_DTTM
+            , RLBR_CFMR_ID
+            , DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+            , FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+            , FRST_RGSR_DTTM				/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+            , LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+            , LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+        )
+        SELECT RLBR_FFMN_MGMT_NO
+             , RLBR_FFMN_SRNO
+             , 0				/**  Fréquence de rectification  !== 정정차수 ==!  */
+             , CNTR_NO				/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+             , CNTR_TP_CD				/**  Code De Type De Conteneur  !== 컨테이너구분코드 ==!  */
+             , RLBR_PCKG_GCNT
+             , RLBR_WGHT
+             , BRNG_ACDN_PT_CD
+             , BRNG_ACDN_GCNT
+             , BRNG_ACDN_WGHT
+             , RLBR_VHCL_NO
+             , RLBR_CFRM_YN
+             , RLBR_CFRM_DTTM
+             , RLBR_CFMR_ID
+             , DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+             , FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+             , FRST_RGSR_DTTM				/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+             , LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+          FROM TB_CARE_RLBR_FFMN
+         WHERE DEL_YN = 'N'           /** Suppression ON !== 삭제여부 ==! */
+           AND RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+    </insert>
+    
+    <!--
+    Enregistrer le BL de la rectification d'introduction/sortie de conteneurs.    !== 컨테이너 반출입 정정 BL을 등록 한다. ==!
+    -->
+    <insert id="insertCntrRlbrMdfyBlForEpt" parameterType="String">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.insertCntrRlbrMdfyBlForEpt */
+        INSERT INTO TB_CARE_CNTR_RLBR_MDFY_BL (
+              RLBR_FFMN_MGMT_NO
+            , RLBR_FFMN_SRNO
+            , CNTR_RLBR_BL_SRNO				/**  N° Série De B/L De L'Introduction/Sortie De Conteneurs  !== 컨테이너반출입BL일련번호 ==!  */
+            , MDFY_DGCNT			/**  Fréquence de rectification  !== 정정차수 ==!  */
+            , RLBR_PRNG_NO
+            , CAG_MGMT_NO				/**  Crn  !== 화물관리번호 ==!  */
+            , BL_NO
+            , RLBR_PT_CD				/**  Code de type d'introduction/sortie  !== 반출입유형코드 ==!  */
+            , RELA_NO				/**  Numéro Concerné  !== 관련번호 ==!  */
+            , DIVD_TP_CD				/**  Code De Type D'Éclatement  !== 분할구분코드 ==!  */
+            , DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+            , FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+            , FRST_RGSR_DTTM				/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+            , LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+            , LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+        )
+        SELECT RLBR_FFMN_MGMT_NO
+             , RLBR_FFMN_SRNO
+             , CNTR_RLBR_BL_SRNO				/**  N° Série De B/L De L'Introduction/Sortie De Conteneurs  !== 컨테이너반출입BL일련번호 ==!  */
+             , 0			/**  Fréquence de rectification  !== 정정차수 ==!  */
+             , RLBR_PRNG_NO
+             , CAG_MGMT_NO				/**  Crn  !== 화물관리번호 ==!  */
+             , BL_NO
+             , RLBR_PT_CD				/**  Code de type d'introduction/sortie  !== 반출입유형코드 ==!  */
+             , RELA_NO				/**  Numéro Concerné  !== 관련번호 ==!  */
+             , DIVD_TP_CD				/**  Code De Type D'Éclatement  !== 분할구분코드 ==!  */
+             , DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+             , FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+             , FRST_RGSR_DTTM				/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+             , LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+         FROM TB_CARE_CNTR_RLBR_BL
+        WHERE DEL_YN = 'N'           /** Suppression ON !== 삭제여부 ==! */
+          AND RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+    </insert>
+
+    <!--
+    Modifier l'état de traitement de la déclaration d'introduction/sortie de conteneurs.    !== 컨테이너 반출입 신고 처리상태코드를 수정한다.==!
+	-->
+    <update id="updateCntrRlbrAudtForEpt" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.updateCntrRlbrAudtForEpt */
+        UPDATE TB_CARE_CNTR_RLBR
+           SET PRCS_STTS_CD     = #{prcsSttsCd}
+             , PRCS_DTTM        = TO_DATE(#{audtDttm}, 'DDMMYYYYHH24MISS')
+             , LAST_CHPR_ID     = #{lastChprId}
+             , LAST_CHG_DTTM    = SYSTIMESTAMP
+        WHERE CNTR_RLBR_RQST_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+    </update>
+
+    <!--
+    Modifier le nombre de colis/quantité de l'introduction/sortie prévue.    !== 반출입예정의 포장개수/수량을 수정한다.==!
+	-->
+    <update id="updateCagBrngRlbrPrngEpt" parameterType="alpass.ipt.car.bnwrhs.cagbrng.vo.CarCagBrngRlbrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.updateCagBrngRlbrPrngEpt */
+        UPDATE ALPASSEXT.TB_CARE_RLBR_PRNG
+        SET RLBR_PCKG_GCNT = RLBR_PCKG_GCNT - TO_NUMBER(#{rlbrPckgGcnt})		/** Nombre de colis d'introduction/sortie    	!== 반출입포장개수 ==!*/
+          , RLBR_WGHT      = RLBR_WGHT - TO_NUMBER(#{rlbrWght})				/**Poids d'introduction/sortie  			    !== 반출입중량    ==!*/
+          , RLBR_CMPL_YN   = CASE WHEN RLBR_PCKG_GCNT - TO_NUMBER(#{rlbrPckgGcnt}) >= PCKG_GCNT AND RLBR_WGHT - TO_NUMBER(#{rlbrWght}) >= WGHT
+                                      THEN 'Y'
+                                  ELSE 'N'
+            END  /**  Fin d'introduction/sortie O/N  			!== 반출입완료여부 ==!*/
+          , LAST_CHPR_ID   = #{lastChprId}  			/**  Id Du Modificateur Final  				 	!== 최종변경자ID ==!  */
+          , LAST_CHG_DTTM  = SYSTIMESTAMP 	 			/**  Date Et Heure De Modification Finale  		!== 최종변경일시 ==!  */
+        WHERE CAG_MGMT_NO = #{cagMgmtNo}		/**  Crn  										!== 화물관리번호 ==!  */
+          AND   RLBR_TP_CD  = #{rlbrTpCd}			/**  Code de catégorie d'introduction/sortie  	!== 반출입구분코드 ==!  */
+          AND   RLBR_PT_CD  = #{rlbrPtCd}			/**  Code de type d'introduction/sortie  		!== 반출입유형코드 ==!  */
+    </update>
+
+    <!--
+        Lors d'une introduction suite au transfert, vérifier si la sortie a été autorisée ou non(Conteneur Grid List)
+        !== 운송에 의한 반입 시, 반출승인여부 체크(컨테이너) =!
+    -->
+    <select id="carCntrBrngRlbrTrnpChk" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo" resultType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        /** alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.carCntrBrngRlbrTrnpChk */
+        SELECT C.CAG_MGMT_NO
+             , C.BL_NO
+             , B.CNTR_NO
+             , D.RELA_NO
+        FROM TB_CARI_CNTR_RLBR A
+           , TB_CARI_RLBR_FFMN B
+           , TB_CARI_CNTR_RLBR_BL C
+           , ALPASSEXT.TB_CARE_RLBR_PRNG D
+           , TB_CARI_TRNP E
+           , TB_CARI_CAG_PRCS_BRKD F
+        WHERE A.CNTR_RLBR_RQST_NO = B.RLBR_FFMN_MGMT_NO
+          AND B.RLBR_FFMN_MGMT_NO = C.RLBR_FFMN_MGMT_NO
+          AND B.RLBR_FFMN_SRNO = C.RLBR_FFMN_SRNO
+          AND C.RLBR_PRNG_NO = D.RLBR_PRNG_NO
+          AND D.RELA_NO = E.TRNP_RQST_NO
+          AND E.TRNP_RQST_NO = F.CAG_RQST_NO
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND C.DEL_YN = 'N'
+          AND D.DEL_YN = 'N'
+          AND E.DEL_YN = 'N'
+          AND A.RLBR_TP_CD = 'O'
+          AND D.RLBR_PT_CD IN ('53','54','56','67')
+          AND F.CAG_RQST_TP_CD ='MCG'
+          AND F.PRCS_STTS_CD = 'D08'
+          AND E.ARLC_IBOBZ_CD = #{ibobzCd}
+          AND C.CAG_MGMT_NO IN <foreach collection="cagMgmtNoArr" item="item" index="index" separator="," open="(" close=")"> #{item} </foreach>
+          AND B.CNTR_NO IN <foreach collection="cntrNoArr" item="item" index="index" separator="," open="(" close=")"> #{item} </foreach>
+    </select>
+
+    <!--
+        Vérifier si la sortie est terminée pour chaque conteneur.
+        !== 컨테이너단위로 반출이 완료되었는지 확인 =!
+    -->
+    <select id="selectCntrRlseCnt" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo" resultType="int">
+        /** alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectCntrRlseCnt */
+        SELECT COUNT(*)
+        FROM TB_CARI_CNTR_RLBR A
+           , TB_CARI_RLBR_FFMN B
+           , TB_CARI_CNTR_RLBR_BL C
+           , ALPASSEXT.TB_CARE_RLBR_PRNG D
+           , TB_CARI_CAG_PRCS_BRKD E
+        WHERE A.CNTR_RLBR_RQST_NO = B.RLBR_FFMN_MGMT_NO
+          AND B.RLBR_FFMN_MGMT_NO = C.RLBR_FFMN_MGMT_NO
+          AND B.RLBR_FFMN_SRNO = C.RLBR_FFMN_SRNO
+          AND C.RLBR_PRNG_NO = D.RLBR_PRNG_NO
+          AND A.CNTR_RLBR_RQST_NO = E.CAG_RQST_NO
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND C.DEL_YN = 'N'
+          AND D.DEL_YN = 'N'
+          AND A.RLBR_TP_CD = 'O'
+          AND D.RLBR_PT_CD IN ('53','54','56','67')
+          AND E.PRCS_STTS_CD NOT IN ('D08','D09')
+          AND D.rela_no = #{relaNo}
+          AND C.CAG_MGMT_NO = #{cagMgmtNo}
+          AND C.BL_NO = #{blNo}
+          AND B.CNTR_NO = #{cntrNo}
+    </select>
+
+    <!--
+        @TODO 번역필요 !== 컨테이너 반출입의 BL단위 예정정보가 최종(D)건 승인 시 다른 신청서의 분할(T)건이 먼저 승인되도록 미처리내역 확인 ==!
+    -->
+    <select id="carCntrRlbrBlDivisionChk" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo" resultType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrBlVo">
+        /** alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.carCntrRlbrBlDivisionChk */
+        SELECT A.CNTR_RLBR_RQST_NO
+             , C.CAG_MGMT_NO
+             , C.BL_NO
+             , B.CNTR_NO
+        FROM TB_CARI_CNTR_RLBR A
+           , TB_CARI_RLBR_FFMN B
+           , TB_CARI_CNTR_RLBR_BL C
+           , TB_CARI_CAG_PRCS_BRKD D
+        WHERE A.CNTR_RLBR_RQST_NO = B.RLBR_FFMN_MGMT_NO
+          AND B.RLBR_FFMN_MGMT_NO = C.RLBR_FFMN_MGMT_NO
+          AND B.RLBR_FFMN_SRNO = C.RLBR_FFMN_SRNO
+          AND A.CNTR_RLBR_RQST_NO = D.CAG_RQST_NO
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND C.DEL_YN = 'N'
+          AND C.DIVD_TP_CD = 'P'
+          AND D.PRCS_STTS_CD NOT IN ('D08','D09')
+          AND A.RLBR_TP_CD = #{rlbrTpCd}
+          AND A.CNTR_RLBR_RQST_NO != #{cntrRlbrRqstNo}
+          AND A.IBOBZ_CD = #{ibobzCd}
+          AND C.CAG_MGMT_NO = #{cagMgmtNo}
+          AND C.BL_NO = #{blNo}
+    </select>
+
+    <!--
+    Voir la liste des Demande de "Demande de la rectification d'introduction de conteneurs"  !== "컨테이너 반출입 정정 신고" 목록을 조회한다. ==!
+    -->
+    <select id="selectCntrRlbrMdfyList" resultType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectCntrRlbrMdfyList */
+        <include refid="pagination.header" ></include>
+        SELECT A.CNTR_RLBR_RQST_NO				/**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+             , A.MDFY_DGCNT				/**  Fréquence de rectification  !== 정정차수 ==!  */
+             , Z.JRSD_CSTM_CD
+             , A.JRSD_ORGN_CD				/**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+             , A.RLBR_MDFY_TP_CD				/**  Code de catégorie de rectif. d'introduction/sortie  !== 반출입정정구분코드 ==!  */
+             , A.MDFY_RSN_CN				/**  Motif de rectification  !== 정정사유내용 ==!  */
+             , A.IBOBZ_CD				/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+             , (SELECT COUNT(CNTR_NO) FROM TB_CARI_RLBR_MDFY_FFMN B WHERE B.RLBR_FFMN_MGMT_NO = A.CNTR_RLBR_RQST_NO AND B.MDFY_DGCNT = A.MDFY_DGCNT AND B.DEL_YN = 'N') AS CNTR_GCNT
+             , TO_CHAR(A.RLBR_DTTM, 'DD/MM/YYYY') AS RLBR_DTTM	/**  Date/Heure d'introduction/sortie  !== 반출입일시 ==!  */
+             , TO_CHAR(A.TRSN_DTTM, 'DD/MM/YYYY') AS TRSN_DTTM	/**  Date et heure de transmission  !== 전송일시 ==!  */
+             , A.TRSN_CO_CD				/**  Code d'entreprise transmettrice  !== 전송업체코드 ==!  */
+             , TO_CHAR(A.AUDT_DTTM, 'DD/MM/YYYY') AS AUDT_DTTM	/**  Date De L'Étude  !== 심사일시 ==!  */
+             , A.AUDT_PT_CD				/**  Code De Type De Contrôle  !== 심사유형코드 ==!  */
+             , A.AUDT_RSLT_CN				/**  Contenu Du Résultat De La Vérification  !== 심사결과내용 ==!  */
+             , B.PRCS_STTS_CD				/**  Code De Statut De Traitement  !== 처리상태코드 ==!  */
+             , B.AUDT_EMP_ID				/**  ID de l'insepcteur  !== 심사직원ID ==!  */
+             , (SELECT LTRIM(CONCAT(EMP_FMNM,' ',EMP_NM))
+                  FROM TB_POTI_EMP L
+                 WHERE L.DEL_YN = 'N'
+                   AND L.PBSR_NO = B.AUDT_EMP_ID) AS AUDT_EMP_NM
+             , TO_CHAR(B.PRCS_DTTM, 'DD/MM/YYYY') AS PRCS_DTTM
+             , A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+             , A.FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+             , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+             , A.LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+         FROM TB_CARI_CNTR_RLBR_MDFY A
+         LEFT JOIN TB_CARI_CAG_PRCS_BRKD B
+           ON A.CNTR_RLBR_RQST_NO = B.CAG_RQST_NO
+          AND A.MDFY_DGCNT = B.RQST_DGCNT
+          AND B.CAG_RQST_TP_CD  = 'CM'||#{rlbrTpCd}
+        LEFT JOIN (SELECT C1.ORGN_CD
+                        , C2.ORGN_CD AS JRSD_CSTM_CD
+                    FROM TB_POTI_ORGN C1
+                    LEFT JOIN TB_POTI_ORGN C2
+                      ON C1.UPR_ORGN_MGMT_CD = C2.ORGN_MGMT_CD
+                   WHERE C1.DEL_YN = 'N'
+        ) Z
+           ON A.JRSD_ORGN_CD = Z.ORGN_CD
+        WHERE A.DEL_YN = 'N'           /** Suppression ON !== 삭제여부 ==! */
+        <if test="prcsSttsCd != null and prcsSttsCd != ''">
+            AND B.PRCS_STTS_CD = #{prcsSttsCd} /**  Code De Statut De Traitement  !== 처리상태코드 ==!  */
+        </if>
+        <if test="rlbrPtCd != null and rlbrPtCd != ''">
+            AND A.RLBR_PT_CD = #{rlbrPtCd} /**  Code de catégorie d'introduction/sortie  !== 반출입구분코드 ==!  */
+        </if>
+          <if test="cntrRlbrRqstNo != null and cntrRlbrRqstNo != ''">
+            AND A.CNTR_RLBR_RQST_NO LIKE #{cntrRlbrRqstNo} || '%' /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+        </if>
+        <if test="cntrNo != null and cntrNo != ''">
+            AND EXISTS (
+                SELECT CNTR_NO
+                  FROM TB_CARI_RLBR_MDFY_FFMN B
+                 WHERE B.RLBR_FFMN_MGMT_NO = A.CNTR_RLBR_RQST_NO
+                   AND B.MDFY_DGCNT = A.MDFY_DGCNT
+                   AND B.CNTR_NO LIKE #{cntrNo} || '%'
+            )
+        </if>
+        <if test="cagMgmtNo != null and cagMgmtNo != ''">
+            AND EXISTS (
+                SELECT CAG_MGMT_NO
+                  FROM TB_CARI_CNTR_RLBR_MDFY_BL B
+                 WHERE B.RLBR_FFMN_MGMT_NO = A.CNTR_RLBR_RQST_NO
+                   AND B.MDFY_DGCNT = A.MDFY_DGCNT
+                   AND B.CAG_MGMT_NO LIKE #{cagMgmtNo} || '%'
+            )
+        </if>
+        <if test="(searchKeywordFrom != null and searchKeywordFrom != '') and (searchKeywordTo != null and searchKeywordTo != '')">
+            AND (
+                A.FRST_RGSR_DTTM <![CDATA[ >= ]]> TO_TIMESTAMP(#{searchKeywordFrom}, 'DD/MM/YYYY') /**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+                AND A.FRST_RGSR_DTTM <![CDATA[ <= ]]> TO_TIMESTAMP(#{searchKeywordTo}, 'DD/MM/YYYY')+0.9999 /**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+            )
+        </if>
+
+        <if test="(rlbrDttmFrom != null and rlbrDttmFrom != '') and (rlbrDttmTo != null and rlbrDttmTo != '')">
+            AND (
+                A.RLBR_DTTM <![CDATA[ >= ]]> TO_DATE(#{rlbrDttmFrom}, 'DD/MM/YYYY') /**  Dateheure D'Entrée  !== 반입일시 ==!  */
+                AND A.TRSN_DTTM <![CDATA[ <= ]]> TO_DATE(#{rlbrDttmTo}, 'DD/MM/YYYY')+0.9999 /**  Dateheure D'Entrée  !== 반입일시 ==!  */
+            )
+        </if>
+
+        <choose>
+            <when test="@alpass.ipt.car.com.util.CarMyBatisUtil@isEqualsStr(scrnTp, '1')">
+                AND B.PRCS_STTS_CD IN ('B02', 'D08', 'D09')
+            </when>
+            <otherwise>
+                AND B.PRCS_STTS_CD IN ('D01','B02', 'D08', 'D09')
+            </otherwise>
+        </choose>
+        <if test="roleId != null and (roleId.equals('CAR075'.toString()) or roleId.equals('CAR113'.toString()))">
+            /** 반출입신고 관리자인경우 */
+            AND A.JRSD_ORGN_CD LIKE SUBSTR(#{jrsdOrgnCd}, 1, 5) || '%'
+        </if>
+        <if test="roleId != null and (roleId.equals('CAR076'.toString()) or roleId.equals('CAR114'.toString()))">
+            /** 반출입신고 심사자인경우 */
+            AND B.AUDT_EMP_ID  = #{pbsrNo}
+        </if>
+
+        ORDER BY NVL(A.TRSN_DTTM, A.LAST_CHG_DTTM) DESC
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <!--
+    Consulter les détails de la déclaration de rectification d'introduction/sortie de conteneurs.  !== "컨테이너 반출입 정정 신고" 상세내역을 조회한다. ==!
+    -->
+    <select id="selectCntrRlbrMdfy" resultType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectCntrRlbrMdfy */
+        WITH BEFORE_LAST_MDFY_DGCNT_TB AS (
+            SELECT MAX(A.MDFY_DGCNT) AS BEFORE_LAST_MDFY_DGCNT
+              FROM TB_CARI_CNTR_RLBR_MDFY  A
+              LEFT JOIN TB_CARI_CAG_PRCS_BRKD B
+                ON A.CNTR_RLBR_RQST_NO = B.CAG_RQST_NO
+               AND A.MDFY_DGCNT = B.RQST_DGCNT
+               AND B.CAG_RQST_TP_CD  = 'CM'||#{rlbrTpCd}
+            WHERE B.PRCS_STTS_CD = 'D08'
+              AND A.CNTR_RLBR_RQST_NO = #{cntrRlbrRqstNo}		/**  N ° de demande de transbordement	  !== 환적신고번호 ==!  */
+              AND A.MDFY_DGCNT <![CDATA[ < ]]> #{mdfyDgcnt}		/**  Fréquence de rectification  !== 정정차수 ==!  */
+        )
+        SELECT A.CNTR_RLBR_RQST_NO				/**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+             , A.MDFY_DGCNT				/**  Fréquence de rectification  !== 정정차수 ==!  */
+             , NVL((SELECT BEFORE_LAST_MDFY_DGCNT FROM BEFORE_LAST_MDFY_DGCNT_TB), 0) AS BF_MDFY_DGCNT
+             , C.JRSD_CSTM_CD
+             , A.JRSD_ORGN_CD				/**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+             , A.RLBR_TP_CD
+             , A.IBOBZ_CD				/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+             , A.RLBR_MDFY_TP_CD
+             , A.MDFY_RSN_CN
+             , TO_CHAR(A.RLBR_DTTM, 'DD/MM/YYYY HH24:MI') AS RLBR_DTTM	/**  Date/Heure d'introduction/sortie  !== 반출입일시 ==!  */
+             , TO_CHAR(A.TRSN_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS TRSN_DTTM	/**  Date et heure de transmission  !== 전송일시 ==!  */
+             , A.TRSN_CO_CD				/**  Code d'entreprise transmettrice  !== 전송업체코드 ==!  */
+             , TO_CHAR(B.PRCS_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS PRCS_DTTM	/**  Date Et Heure De Traitement  !== 처리일시 ==!  */
+             , B.PRCS_STTS_CD				/**  Code De Statut De Traitement  !== 처리상태코드 ==!  */
+             , CASE
+                 WHEN D.CAG_MGMT_NO_GCNT > 0 THEN 'IM' ELSE 'EX'
+               END CAG_TP_CD
+             , TO_CHAR(A.AUDT_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS AUDT_DTTM	/**  Date De L'Étude  !== 심사일시 ==!  */
+             , A.AUDT_PT_CD				/**  Code De Type De Contrôle  !== 심사유형코드 ==!  */
+             , A.AUDT_RSLT_CN				/**  Contenu Du Résultat De La Vérification  !== 심사결과내용 ==!  */
+             , B.AUDT_EMP_ID				/**  ID de l'insepcteur  !== 심사직원ID ==!  */
+             , A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+             , A.FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+             , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS frst_rgsr_dttm	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+             , A.LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS last_chg_dttm	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+         FROM TB_CARI_CNTR_RLBR_MDFY A
+         LEFT JOIN TB_CARI_CAG_PRCS_BRKD B
+           ON A.CNTR_RLBR_RQST_NO = B.CAG_RQST_NO
+          AND A.MDFY_DGCNT = B.RQST_DGCNT
+          AND B.CAG_RQST_TP_CD  = 'CM'||#{rlbrTpCd}
+         LEFT JOIN (SELECT C1.ORGN_CD
+                         , C2.ORGN_CD AS JRSD_CSTM_CD
+                      FROM TB_POTI_ORGN C1
+                      LEFT JOIN TB_POTI_ORGN C2
+                        ON C1.UPR_ORGN_MGMT_CD = C2.ORGN_MGMT_CD
+                     WHERE C1.DEL_YN = 'N'
+         ) C
+           ON A.JRSD_ORGN_CD = C.ORGN_CD
+         LEFT JOIN (
+             SELECT COUNT(NVL(CAG_MGMT_NO,NULL)) AS CAG_MGMT_NO_GCNT
+                  , RLBR_FFMN_MGMT_NO
+                  , MDFY_DGCNT
+             FROM TB_CARI_CNTR_RLBR_MDFY_BL
+             GROUP BY RLBR_FFMN_MGMT_NO, MDFY_DGCNT
+         ) D
+           ON A.CNTR_RLBR_RQST_NO = D.RLBR_FFMN_MGMT_NO
+          AND A.MDFY_DGCNT = D.MDFY_DGCNT
+        WHERE A.DEL_YN = 'N'           /** Suppression ON !== 삭제여부 ==! */
+          AND A.CNTR_RLBR_RQST_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+          AND A.MDFY_DGCNT = #{mdfyDgcnt}				/**  Fréquence de rectification  !== 정정차수 ==!  */
+    </select>
+
+    <!--
+    Consulter la liste d'accomplissement de la déclaration de rectification d'introduction/sortie de conteneurs.  !== 컨테이너 반출입 정정 신고 이행 목록을 조회한다. ==!
+    -->
+    <select id="selectCntrRlbrMdfyFfmnList" resultType="alpass.ipt.car.bnwrhs.cagbrng.vo.CarRlbrFfmnVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectCntrRlbrMdfyFfmnList */
+        SELECT ARRAY_TO_STRING(ARRAY_AGG(DISTINCT A.RLBR_FFMN_MGMT_NO ORDER BY A.RLBR_FFMN_MGMT_NO),',') AS RLBR_FFMN_MGMT_NO
+             , A.RLBR_FFMN_SRNO
+             , A.MDFY_DGCNT
+             , ARRAY_TO_STRING(ARRAY_AGG(DISTINCT B.CAG_MGMT_NO ORDER BY B.CAG_MGMT_NO),',') AS CAG_MGMT_NO	/**  Crn  !== 화물관리번호 ==!  */
+             , ARRAY_TO_STRING(ARRAY_AGG(DISTINCT B.BL_NO ORDER BY B.BL_NO),',') AS BL_NO				/**  N° De Bl  !== BL번호 ==!  */
+             , A.RLBR_MDFY_TP_CD
+             , A.CNTR_NO
+             , A.CNTR_TP_CD
+             , A.RLBR_PCKG_GCNT
+             , A.RLBR_WGHT
+             , A.BRNG_ACDN_PT_CD
+             , A.BRNG_ACDN_GCNT
+             , A.BRNG_ACDN_WGHT
+             , A.RLBR_VHCL_NO
+             , NVL(A.RLBR_CFRM_YN,'N') AS RLBR_CFRM_YN
+             , TO_CHAR(A.RLBR_CFRM_DTTM, 'DD/MM/YYYY') AS RLBR_CFRM_DTTM
+             , A.RLBR_CFMR_ID
+        FROM TB_CARI_RLBR_MDFY_FFMN A
+           , TB_CARI_CNTR_RLBR_MDFY_BL B
+        WHERE A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+          AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+          AND A.MDFY_DGCNT = B.MDFY_DGCNT
+          AND A.DEL_YN = 'N'
+          AND A.RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+          AND A.MDFY_DGCNT = #{mdfyDgcnt}
+        GROUP BY A.MDFY_DGCNT
+               , A.RLBR_FFMN_SRNO
+               , A.RLBR_MDFY_TP_CD
+               , A.CNTR_NO
+               , A.CNTR_TP_CD
+               , A.RLBR_PCKG_GCNT
+               , A.RLBR_WGHT
+               , A.BRNG_ACDN_PT_CD
+               , A.BRNG_ACDN_GCNT
+               , A.BRNG_ACDN_WGHT
+               , A.RLBR_VHCL_NO
+               , A.RLBR_CFRM_YN
+               , A.RLBR_CFRM_DTTM
+               , A.RLBR_CFMR_ID
+    </select>
+
+    <!--
+    Consulter la liste des BL de la déclaration de rectification d'introduction/sortie de conteneurs.  !== 컨테이너 반출입 정정 신고 BL 목록을 조회한다. ==!
+    -->
+    <select id="selectCntrRlbrMdfyBlList" resultType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrBlVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectCntrRlbrMdfyBlList */
+        SELECT DISTINCT
+              A.RLBR_PRNG_NO
+            , A.CAG_MGMT_NO
+            , A.BL_NO
+            , C.CNTR_NO
+            , A.RLBR_PT_CD
+            , A.RELA_NO
+            , NVL(B.PCKG_GCNT,0) AS RLBR_PRNG_PCKG_GCNT
+            , NVL(B.WGHT,0) AS RLBR_PRNG_WGHT
+            , NVL(B.RLBR_PCKG_GCNT,0) AS RLBR_PCKG_GCNT
+            , NVL(B.RLBR_WGHT,0) AS RLBR_WGHT
+            , NVL(C.RLBR_DCLR_PCKG_GCNT,0) AS RLBR_DCLR_PCKG_GCNT
+            , NVL(C.RLBR_DCLR_WGHT,0) AS RLBR_DCLR_WGHT
+            , A.DIVD_TP_CD
+         FROM TB_CARI_CNTR_RLBR_MDFY_BL A
+        INNER JOIN ALPASSEXT.TB_CARE_RLBR_PRNG B
+           ON B.DEL_YN = 'N'
+          AND A.RLBR_PRNG_NO = B.RLBR_PRNG_NO
+        <choose>
+            <when test="cagTpCd.equals('IM')">
+          AND A.CAG_MGMT_NO = B.CAG_MGMT_NO
+            </when>
+            <when test="cagTpCd.equals('EX')">
+          AND A.RELA_NO = B.RELA_NO
+            </when>
+        </choose>
+         LEFT OUTER JOIN (
+            SELECT A.RLBR_FFMN_MGMT_NO
+                 , A.MDFY_DGCNT
+                 , STRING_AGG(A.CNTR_NO, ',') AS CNTR_NO
+                 <if test="cagTpCd.equals('IM')">
+                 , B.CAG_MGMT_NO
+                 , SUM(A.RLBR_PCKG_GCNT) AS RLBR_DCLR_PCKG_GCNT
+                 , SUM(A.RLBR_WGHT) AS RLBR_DCLR_WGHT
+                 </if>
+                 <if test="cagTpCd.equals('EX')">
+                 , B.RELA_NO
+                 , SUM(A.RLBR_PCKG_GCNT) AS RLBR_DCLR_PCKG_GCNT
+                 , SUM(A.RLBR_WGHT) AS RLBR_DCLR_WGHT
+                 </if>
+            FROM TB_CARI_RLBR_MDFY_FFMN A
+               , TB_CARI_CNTR_RLBR_MDFY_BL B
+            WHERE A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+              AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+              AND A.MDFY_DGCNT = B.MDFY_DGCNT
+              AND A.DEL_YN = 'N'
+              AND (A.RLBR_MDFY_TP_CD != '03' OR A.RLBR_MDFY_TP_CD IS NULL)
+            GROUP BY A.RLBR_FFMN_MGMT_NO, B.CAG_MGMT_NO, A.MDFY_DGCNT
+        ) C
+           ON A.RLBR_FFMN_MGMT_NO = C.RLBR_FFMN_MGMT_NO
+        <if test="cagTpCd.equals('IM')">
+          AND A.CAG_MGMT_NO = C.CAG_MGMT_NO
+        </if>
+        <if test="cagTpCd.equals('EX')">
+          AND A.RELA_NO = C.RELA_NO
+        </if>
+          AND A.MDFY_DGCNT = C.MDFY_DGCNT
+        WHERE A.RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+          AND A.MDFY_DGCNT = #{mdfyDgcnt} /**  Fréquence de rectification  !== 정정차수 ==!  */
+        ORDER BY A.CAG_MGMT_NO
+    </select>
+
+    <!--
+    Consulter la liste des BL pour le suivi des marchandises de la déclaration de rectification d'introduction/sortie de conteneurs.    !== 컨테이너 반출입 정정 신고 화물추적용 BL 목록을 조회한다. ==!
+	-->
+    <select id="selectCntrMdfyBlPrcsList" resultType="alpass.ipt.car.bnwrhs.cagbrng.vo.CarRlbrFfmnVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectCntrMdfyBlPrcsList */
+        SELECT B.CAG_MGMT_NO
+            <choose>
+                <when test="cagTpCd.equals('IM')">
+             , SUM(A.RLBR_PCKG_GCNT) AS RLBR_PCKG_GCNT
+             , SUM(A.RLBR_WGHT) AS RLBR_WGHT
+                </when>
+                <when test="cagTpCd.equals('EX')">
+             , SUM(A.RLBR_PCKG_GCNT) AS RLBR_DCLR_PCKG_GCNT
+             , SUM(A.RLBR_WGHT) AS RLBR_DCLR_WGHT
+                </when>
+            </choose>
+             , A.BRNG_ACDN_PT_CD
+             , SUM(A.BRNG_ACDN_GCNT) AS BRNG_ACDN_GCNT
+             , SUM(A.BRNG_ACDN_WGHT) AS BRNG_ACDN_WGHT
+        FROM TB_CARI_RLBR_MDFY_FFMN A
+           , TB_CARI_CNTR_RLBR_MDFY_BL B
+        WHERE A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+          AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+          AND A.MDFY_DGCNT = B.MDFY_DGCNT
+          AND A.DEL_YN = 'N'
+        <if test="rlbrMdfyTpCd != null and rlbrMdfyTpCd == '02'">
+          AND A.RLBR_MDFY_TP_CD != '03'
+        </if>
+          AND A.RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+          AND A.MDFY_DGCNT = #{mdfyDgcnt} /**  Fréquence de rectification  !== 정정차수 ==!  */
+        GROUP BY B.CAG_MGMT_NO, A.BRNG_ACDN_PT_CD
+    </select>
+
+    <!--
+    Modifier la déclaration d'introduction/sortie de conteneurs.    !== 컨테이너 반출입 신고를 수정한다.==!
+	-->
+    <update id="updateCntrRlbr" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.updateCntrRlbr */
+        UPDATE TB_CARI_CNTR_RLBR
+           SET RLBR_DTTM = TO_TIMESTAMP(#{rlbrDttm}, 'DD/MM/YYYY HH24:mi') 	/**  Date/Heure d'introduction/sortie  !== 반출입일시 ==!  */
+             , DEL_YN = #{delYn} 			/**  Suppression On  !== 삭제여부 ==!  */
+             , LAST_CHPR_ID = #{lastChprId} 			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , LAST_CHG_DTTM = SYSTIMESTAMP 	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+        WHERE CNTR_RLBR_RQST_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+    </update>
+
+    <!--
+    Modifier les infos sur le contrôle la déclaration d'introduction/sortie de conteneurs.    !== 컨테이너 반출입 신고 심사정보를 수정한다.==!
+	-->
+    <update id="updateEptCntrRlbr" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.updateEptCntrRlbr */
+        UPDATE ALPASSEXT.TB_CARE_CNTR_RLBR
+           SET RLBR_DTTM = TO_TIMESTAMP(#{rlbrDttm}, 'DD/MM/YYYY HH24:mi') 	/**  Date/Heure d'introduction/sortie  !== 반출입일시 ==!  */
+             , DEL_YN = #{delYn} 			/**  Suppression On  !== 삭제여부 ==!  */
+             , LAST_CHPR_ID = #{lastChprId} 			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , LAST_CHG_DTTM = SYSTIMESTAMP 	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+        WHERE CNTR_RLBR_RQST_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+    </update>
+
+    <!--
+    Modifier les infos sur l'accomplissement d'introduction/sortie de conteneurs.
+    !== 컨테이너 반출입 신고 이행정보를 수정한다.==!
+    -->
+    <update id="updateCntrRlbrFfmn" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrBlVo">
+        UPDATE TB_CARI_RLBR_FFMN
+           SET DEL_YN = #{delYn}
+             , LAST_CHPR_ID = #{lastChprId} 			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , LAST_CHG_DTTM = SYSTIMESTAMP 	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+         WHERE RLBR_FFMN_MGMT_NO = #{rlbrFfmnMgmtNo}
+           AND RLBR_FFMN_SRNO = #{rlbrFfmnSrno}
+    </update>
+
+    <!--
+    Modifier les infos sur l'accomplissement d'introduction/sortie de conteneurs.(externe)
+    !== 컨테이너 반출입 신고 이행정보를 수정한다.==!-->
+    <update id="updateEptCntrRlbrFfmn" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrBlVo">
+        UPDATE ALPASSEXT.TB_CARE_RLBR_FFMN
+           SET DEL_YN = #{delYn}
+             , LAST_CHPR_ID = #{lastChprId} 			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , LAST_CHG_DTTM = SYSTIMESTAMP 	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+         WHERE RLBR_FFMN_MGMT_NO = #{rlbrFfmnMgmtNo}
+           AND RLBR_FFMN_SRNO = #{rlbrFfmnSrno}
+    </update>
+
+    <!--
+    Modifier les infos sur le B/L de la déclaration d'introduction/sortie de conteneurs.
+    !== 컨테이너 반출입 신고 BL정보를 수정한다.==!
+    -->
+    <update id="updateCntrRlbrBl" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrBlVo">
+        UPDATE TB_CARI_CNTR_RLBR_BL
+           SET DEL_YN = #{delYn}
+             , DIVD_TP_CD = #{divdTpCd}
+             , LAST_CHPR_ID = #{lastChprId} 			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , LAST_CHG_DTTM = SYSTIMESTAMP 	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+         WHERE RLBR_FFMN_MGMT_NO = #{rlbrFfmnMgmtNo}
+           AND RLBR_FFMN_SRNO = #{rlbrFfmnSrno}
+    </update>
+
+    <!--
+    Modifier les infos sur le B/L de la déclaration d'introduction/sortie de conteneurs.(externe)
+    !== 컨테이너 반출입 신고 BL정보를 수정한다.==!
+    -->
+    <update id="updateEptCntrRlbrBl" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrBlVo">
+        UPDATE ALPASSEXT.TB_CARE_CNTR_RLBR_BL
+           SET DEL_YN = #{delYn}
+             , DIVD_TP_CD = #{divdTpCd}
+             , LAST_CHPR_ID = #{lastChprId} 			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , LAST_CHG_DTTM = SYSTIMESTAMP 	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+         WHERE RLBR_FFMN_MGMT_NO = #{rlbrFfmnMgmtNo}
+           AND RLBR_FFMN_SRNO = #{rlbrFfmnSrno}
+    </update>
+
+    <!--
+    Supprimer les infos sur l'accomplissement de la déclaration d'introduction/sortie de conteneurs.    !==컨테이너 반출입 신고 이행정보를 삭제 한다.==!
+	-->
+    <update id="updateCntrRlbrFfmnDelPrCs" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        UPDATE TB_CARI_RLBR_FFMN
+           SET DEL_YN = 'Y'
+             , LAST_CHPR_ID = #{lastChprId}
+             , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+    </update>
+
+    <!--
+    Supprimer les infos sur l'accomplissement de la déclaration d'introduction/sortie de conteneurs.    !== 컨테이너 반출입 신고 이행정보를 삭제 한다.==!
+	-->
+    <update id="updateEptCntrRlbrFfmnDelPrCs" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        UPDATE ALPASSEXT.TB_CARE_RLBR_FFMN
+           SET DEL_YN = 'Y'
+             , LAST_CHPR_ID = #{lastChprId}
+             , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+    </update>
+
+    <!--
+    Supprimer le BL de la déclaration d'introduction/sortie de conteneurs.    !== 컨테이너 반출입 신고 BL을 삭제 한다.==!
+	-->
+    <update id="updateCntrRlbrBlDelPrCs" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.updateCntrRlbrBlDelPrCs */
+        UPDATE TB_CARI_CNTR_RLBR_BL
+           SET DEL_YN = 'Y'
+             , LAST_CHPR_ID = #{lastChprId}
+             , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+    </update>
+
+    <!--
+    Supprimer le BL de la déclaration d'introduction/sortie de conteneurs.    !== 컨테이너 반출입 신고 BL을 삭제 한다.==!
+	-->
+    <update id="updateEptCntrRlbrBlDelPrCs" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.updateEptCntrRlbrBlDelPrCs */
+        UPDATE ALPASSEXT.TB_CARE_CNTR_RLBR_BL
+           SET DEL_YN = 'Y'
+             , LAST_CHPR_ID = #{lastChprId}
+             , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+    </update>
+
+    <!--
+    Consulter la liste de stock des conteneurs du rectif.    !== 정정 컨테이너재고 등록대상 목록을 조회한다. ==!
+	-->
+    <select id="selectCntrInvnTrgtMdfyList" resultType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrBlVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectCntrInvnTrgtMdfyList */
+        SELECT A.RLBR_FFMN_MGMT_NO
+             , A.RLBR_FFMN_SRNO
+             , A.RLBR_PRNG_NO
+             , A.CAG_MGMT_NO
+             , A.BL_NO
+             , A.RLBR_PT_CD
+             , A.RELA_NO
+             , A.DIVD_TP_CD
+             , B.CNTR_NO
+             , B.CNTR_TP_CD
+             , B.RLBR_PCKG_GCNT
+             , B.RLBR_WGHT
+             , B.RLBR_MDFY_TP_CD
+         FROM TB_CARI_CNTR_RLBR_MDFY_BL A
+        INNER JOIN TB_CARI_RLBR_MDFY_FFMN B
+           ON A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+          AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+          AND A.MDFY_DGCNT = B.MDFY_DGCNT
+        WHERE B.DEL_YN ='N'
+          AND A.RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+          AND A.MDFY_DGCNT = #{mdfyDgcnt} /**  Fréquence de rectification  !== 정정차수 ==!  */
+        ORDER BY A.CAG_MGMT_NO
+    </select>
+
+    <!--
+    Consulter la liste des déclarations d'introduction/sortie de conteneurs.   !== 반출입신고 대상 목록을 조회한다. ==!
+    -->
+    <select id="selectRlbrTrgtMdfyList" resultType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrBlVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectRlbrTrgtMdfyList */
+        SELECT DISTINCT
+              A.CAG_MGMT_NO
+            , A.BL_NO
+            , A.RLBR_PT_CD
+            , A.RELA_NO
+            , A.DIVD_TP_CD
+            , A.RLBR_PRNG_NO
+            , C.RLBR_DCLR_PCKG_GCNT
+            , C.RLBR_DCLR_WGHT
+            , B.BRNG_ACDN_PT_CD
+            , B.BRNG_ACDN_GCNT
+            , B.BRNG_ACDN_WGHT
+            , B.RLBR_VHCL_NO
+            , B.RLBR_MDFY_TP_CD
+         FROM TB_CARI_CNTR_RLBR_MDFY_BL A
+        INNER JOIN TB_CARI_RLBR_MDFY_FFMN B
+           ON A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+          AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+          AND A.MDFY_DGCNT = B.MDFY_DGCNT
+        <choose>
+            <when test="cagTpCd.equals('IM')">
+         LEFT OUTER JOIN (
+            SELECT A.RLBR_FFMN_MGMT_NO
+                 , B.CAG_MGMT_NO
+                 , A.MDFY_DGCNT
+                 , SUM(A.RLBR_PCKG_GCNT) AS RLBR_DCLR_PCKG_GCNT
+                 , SUM(A.RLBR_WGHT) AS RLBR_DCLR_WGHT
+              FROM TB_CARI_RLBR_MDFY_FFMN A
+                 , TB_CARI_CNTR_RLBR_MDFY_BL B
+             WHERE A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+               AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+               AND A.MDFY_DGCNT = B.MDFY_DGCNT
+               AND A.DEL_YN = 'N'
+            <if test="rlbrMdfyTpCd != null and rlbrMdfyTpCd == '02'">
+               AND A.RLBR_MDFY_TP_CD = '03'
+            </if>
+             GROUP BY A.RLBR_FFMN_MGMT_NO, B.CAG_MGMT_NO, A.MDFY_DGCNT
+        ) C
+           ON A.CAG_MGMT_NO = C.CAG_MGMT_NO
+          AND A.RLBR_FFMN_MGMT_NO = C.RLBR_FFMN_MGMT_NO
+          AND A.MDFY_DGCNT = C.MDFY_DGCNT
+            </when>
+            <when test="cagTpCd.equals('EX')">
+         LEFT OUTER JOIN (
+            SELECT A.RLBR_FFMN_MGMT_NO
+                 , B.RELA_NO
+                 , A.MDFY_DGCNT
+                 , SUM(A.RLBR_PCKG_GCNT) AS RLBR_DCLR_PCKG_GCNT
+                 , SUM(A.RLBR_WGHT) AS RLBR_DCLR_WGHT
+              FROM TB_CARI_RLBR_MDFY_FFMN A
+                 , TB_CARI_CNTR_RLBR_MDFY_BL B
+             WHERE A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+               AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+               AND A.MDFY_DGCNT = B.MDFY_DGCNT
+               AND A.DEL_YN = 'N'
+                <if test="rlbrMdfyTpCd != null and rlbrMdfyTpCd == '02'">
+               AND A.RLBR_MDFY_TP_CD = '03'
+                </if>
+             GROUP BY A.RLBR_FFMN_MGMT_NO, B.RELA_NO, A.MDFY_DGCNT
+         ) C
+           ON A.RELA_NO = C.RELA_NO
+          AND A.RLBR_FFMN_MGMT_NO = C.RLBR_FFMN_MGMT_NO
+          AND A.MDFY_DGCNT = C.MDFY_DGCNT
+            </when>
+        </choose>
+        WHERE A.RLBR_FFMN_MGMT_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+          AND A.MDFY_DGCNT = #{mdfyDgcnt}
+        ORDER BY A.CAG_MGMT_NO
+    </select>
+
+    <!--
+    Modifier les infos sur le contrôle la déclaration de rectification d'introduction/sortie de conteneurs.    !== 컨테이너 반출입 정정 신고 심사정보를 수정한다.==!
+	-->
+    <update id="updateCntrRlbrMdfyAudt" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.updateCntrBrngMdfyAudt */
+        UPDATE TB_CARI_CNTR_RLBR_MDFY
+           SET LAST_CHPR_ID      = #{lastChprId} /**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+             , LAST_CHG_DTTM     = SYSTIMESTAMP /**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+        <if test="audtDttm != null and audtDttm != ''">
+             , AUDT_DTTM         = TO_DATE(#{audtDttm}, 'DDMMYYYYHH24MISS')
+        </if>
+        <if test="audtPtCd != null and audtPtCd != ''">
+             , AUDT_PT_CD        = #{audtPtCd}
+        </if>
+        <if test="audtRsltCn != null and audtRsltCn != ''">
+             , AUDT_RSLT_CN      = #{audtRsltCn}
+        </if>
+        WHERE CNTR_RLBR_RQST_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+          AND MDFY_DGCNT = #{mdfyDgcnt}				/**  Fréquence de rectification  !== 정정차수 ==!  */
+    </update>
+
+    <!--
+    Modifier l'état de traitement de la déclaration d'introduction/sortie de conteneurs.    !== 컨테이너 반출입 신고 처리상태코드를 수정한다.==!
+	-->
+    <update id="updateEptCntrRlbrMdfyAudtForEpt" parameterType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.updateCntrBrngMdfyAudtForEpt */
+        UPDATE ALPASSEXT.TB_CARE_CNTR_RLBR_MDFY
+           SET PRCS_STTS_CD     = #{prcsSttsCd}
+             , PRCS_DTTM        = TO_DATE(#{audtDttm}, 'DDMMYYYYHH24MISS')
+             , LAST_CHPR_ID     = #{lastChprId}
+             , LAST_CHG_DTTM    = SYSTIMESTAMP
+        WHERE CNTR_RLBR_RQST_NO = #{cntrRlbrRqstNo} /**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+          AND MDFY_DGCNT = #{mdfyDgcnt} /**  Fréquence de rectification  !== 정정차수 ==!  */
+    </update>
+
+    <!--
+    Consulter le rapport de la déclaration d'introduction/sortie de conteneurs.  !== "컨테이너 반출입 신고" 보고서를 조회한다. ==!
+    -->
+    <select id="selectCntrRlbrReport" resultType="alpass.ipt.car.bnwrhs.cntrrlbr.vo.CarCntrRlbrVo">
+        /* alpass.ipt.car.bnwrhs.cntrrlbr.mapper.CarCntrRlbrMapper.selectCntrRlbrReport */
+        WITH CNTR_INFO AS (
+            SELECT A.CNTR_RLBR_RQST_NO				/**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+                 , A.RLBR_TP_CD
+                 , A.JRSD_ORGN_CD				/**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+                 , (SELECT C1.ORGN_NM || '(' || C1.ADMN_CD ||')' FROM TB_POTI_ORGN C1 WHERE C1.DEL_YN = 'N' AND C1.ORGN_MGMT_CD = (SELECT UPR_ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE DEL_YN = 'N' AND ORGN_CD = A.JRSD_ORGN_CD) ) AS JRSD_ORGN_NM
+                 , (SELECT C1.ORGN_NM || '(' || C1.ADMN_CD || ')' FROM TB_POTI_ORGN C1 WHERE C1.DEL_YN = 'N' AND C1.ORGN_CD = A.JRSD_ORGN_CD ) AS JRSD_CSTM_NM
+                 , (SELECT C1.ORGN_NM || '(' || C1.ADMN_CD || ')' FROM TB_POTI_ORGN C1 WHERE C1.DEL_YN = 'N' AND C1.ORGN_CD = A.JRSD_ORGN_CD ) AS JRSD_DEPT_NM
+                 , A.IBOBZ_CD				/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+                 , B.IBOBZ_NM  /* Nom de la zone sous douane !== 보세구역명 ==! */
+                 , TO_CHAR(A.RLBR_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS RLBR_DTTM	/**  Date/Heure d'introduction/sortie  !== 반출입일시 ==!  */
+                 , TO_CHAR(A.TRSN_DTTM, 'DD/MM/YYYY') AS TRSN_DTTM	/**  Date et heure de transmission  !== 전송일시 ==!  */
+                 , TO_CHAR(A.PRCS_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS PRCS_DTTM
+             FROM TB_CARE_CNTR_RLBR A
+             LEFT JOIN TB_CARI_IBOBZ B
+               ON A.IBOBZ_CD = B.IBOBZ_CD
+            WHERE A.DEL_YN = 'N'
+              AND A.CNTR_RLBR_RQST_NO = #{cntrRlbrRqstNo}
+        )
+        SELECT C.CNTR_RLBR_RQST_NO				/**  N° Demande D'Introduction/Sortie De Conteneurs  !== 컨테이너반출입신고번호 ==!  */
+             , C.JRSD_ORGN_CD				/**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+             , C.JRSD_ORGN_NM
+             , C.JRSD_CSTM_NM
+             , C.JRSD_DEPT_NM
+             , C.IBOBZ_CD				/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+             , C.IBOBZ_NM  /* Nom de la zone sous douane !== 보세구역명 ==! */
+             , C.RLBR_DTTM	/**  Date/Heure d'introduction/sortie  !== 반출입일시 ==!  */
+             , C.TRSN_DTTM	/**  Date et heure de transmission  !== 전송일시 ==!  */
+             , C.PRCS_DTTM
+             , CASE WHEN C.RLBR_TP_CD = 'I' THEN FN_GET_CD_VDVAL_NM('CAR_0006', B.RLBR_PT_CD, 'FR')
+                    ELSE FN_GET_CD_VDVAL_NM('CAR_0007', B.RLBR_PT_CD, 'FR')
+               END RLBR_PT_CD
+             , A.CNTR_NO
+             , FN_GET_CD_VDVAL_NM('CAR_0020', A.CNTR_TP_CD, 'FR') AS CNTR_TP_CD
+             , ARRAY_TO_STRING(ARRAY_AGG(DISTINCT B.CAG_MGMT_NO ORDER BY B.CAG_MGMT_NO),',') AS CAG_MGMT_NO	/**  Crn  !== 화물관리번호 ==!  */
+             , ARRAY_TO_STRING(ARRAY_AGG(DISTINCT B.BL_NO ORDER BY B.BL_NO),',') AS BL_NO				/**  N° De Bl  !== BL번호 ==!  */
+             , A.RLBR_PCKG_GCNT AS PCKG_GCNT
+             , A.RLBR_WGHT AS WGHT
+        FROM TB_CARI_RLBR_FFMN A
+           , TB_CARI_CNTR_RLBR_BL B
+           , CNTR_INFO C
+        WHERE A.RLBR_FFMN_MGMT_NO = B.RLBR_FFMN_MGMT_NO
+          AND A.RLBR_FFMN_SRNO = B.RLBR_FFMN_SRNO
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN = 'N'
+          AND A.RLBR_FFMN_MGMT_NO = C.CNTR_RLBR_RQST_NO
+        GROUP BY C.CNTR_RLBR_RQST_NO
+               , C.JRSD_ORGN_CD
+               , C.JRSD_ORGN_NM
+               , C.JRSD_CSTM_NM
+               , C.JRSD_DEPT_NM
+               , C.IBOBZ_CD
+               , C.IBOBZ_NM
+               , C.RLBR_DTTM
+               , C.TRSN_DTTM
+               , C.PRCS_DTTM
+               , C.RLBR_TP_CD
+               , A.RLBR_FFMN_SRNO, A.CNTR_NO, A.CNTR_TP_CD, A.RLBR_PCKG_GCNT, A.RLBR_WGHT
+               , B.RLBR_PT_CD
+    </select>
+
+</mapper>

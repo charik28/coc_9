@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="alpass.ipt.aeo.com.mapper.AeoComTodoMapper">
+
+    <!--
+    [TO-DO] Consulter la liste !==[TO-DO] 목록조회==!
+    -->
+    <select id="selectTodoIdLst"
+        parameterType="alpass.com.todo.vo.ComTodoVo"
+        resultType="alpass.com.todo.vo.ComTodoVo">
+        /* selectTodoIdLst */
+        SELECT A.TODO_ID         /** Id De L'À Faire !== 할일ID ==! */
+        	 , A.CHPN_ID         /** Id Du Responsable !== 담당자ID ==! */
+        FROM   TB_POTI_TODO A    /** POTI_À FAIRE !== POTI_할일 ==! */
+             , TB_POTI_EMP B     /** POTI_EMPLOYÉ !== POTI_직원 ==! */
+        WHERE  A.CHPN_ID = B.PBSR_NO
+        AND    A.TODO_REFF_NO = #{todoReffNo}
+        AND    A.TODO_STTS_CD = 'A'
+        <if test="mdfyDgcnt != null and mdfyDgcnt != ''">
+        AND    A.MDFY_DGCNT = #{mdfyDgcnt}
+        </if>
+        <if test="todoBsopTpCd != null and todoBsopTpCd != ''">
+        AND    A.TODO_BSOP_TP_CD = #{todoBsopTpCd}
+        </if>
+        <if test="chpnId != null and chpnId != ''">
+         AND   A.CHPN_ID = #{chpnId}
+        </if>
+    </select>
+
+    <!--
+    [TO-DO] Consulter !==[TO-DO] 조회==!
+    -->
+    <select id="selectMytodoId"
+        parameterType="alpass.com.todo.vo.ComTodoVo"
+        resultType="java.lang.String">
+        /* selectMytodoId */
+        SELECT A.TODO_ID       /** Id De L'À Faire !== 할일ID ==! */
+        FROM TB_POTI_TODO A    /** POTI_À FAIRE !== POTI_할일 ==! */
+           , TB_POTI_EMP B     /** POTI_EMPLOYÉ !== POTI_직원 ==! */
+        WHERE A.CHPN_ID = B.PBSR_NO
+        AND A.CHPN_ID =  #{userId}
+        AND A.DEL_YN = 'N'
+        AND A.TODO_REFF_NO = #{todoReffNo}
+        AND A.TODO_STTS_CD = 'A'
+        AND A.TODO_BSOP_TP_CD = #{todoBsopTpCd}
+    </select>
+
+    <!--
+    [Personne responsable par rôle] Consulter la liste !==[Role별 담당자] 목록조회==!
+    -->
+    <select id="selectRoleCstmEmpList"
+        parameterType="java.lang.String"
+        resultType="java.lang.String">
+        /* selectRoleCstmEmpList */
+        SELECT B.PBSR_NO             /** Matricule Solde !== 공무원번호 ==! */
+		FROM   VW_POTI_ROLE_UNFC A
+			 , TB_POTI_EMP B         /** POTI_EMPLOYÉ !== POTI_직원 ==! */
+		WHERE  B.DEL_YN = 'N'
+		AND    A.PBSR_NO = B.PBSR_NO
+		AND    A.ROLE_ID = #{roleId}
+    </select>
+
+    <!--
+    Consulter le numéro de l'avis correspondant au numéro de référence TODO !== TODO 참조번호에 해당하는 의견서번호 조회 ==!
+    -->
+    <select id="selectTodoWriopNo"
+        parameterType="java.lang.String"
+        resultType="java.lang.String">
+        /* selectWriopTodo */
+        SELECT WRIOP_NO         /** N° Feuille D'Avis !== 의견서번호 ==! */
+        FROM   TB_AEOI_WRIOP    /** AEOI_AVIS !== AEOI_의견서 ==! */
+        WHERE  DEL_YN = 'N'
+        AND    AEO_RQST_NO = #{todoReffNo}
+        AND    DTL_PRCS_STTS_CD != 'U04'  
+    </select>
+
+
+</mapper>

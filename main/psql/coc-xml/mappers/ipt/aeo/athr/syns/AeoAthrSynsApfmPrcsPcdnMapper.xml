@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+Mapper : État de traitement de la demande !== 신청서처리현황 Mapper. ==!
+(wonjun.cha)
+-->
+<mapper namespace="alpass.ipt.aeo.athr.syns.mapper.AeoAthrSynsApfmPrcsPcdnMapper">
+
+    <!--
+    [État de traitement de la demande] Consulter la liste !== [신청서처리현황] 목록조회 ==!
+    -->
+	<select id="selectAeoApfmPrcsPcdnList" parameterType="alpass.ipt.aeo.athr.syns.vo.AeoAthrSynsApfmPrcsPcdnVo" resultType="alpass.ipt.aeo.athr.syns.vo.AeoAthrSynsApfmPrcsPcdnVo">
+		/* selectAeoApfmPrcsPcdnList */
+        SELECT C.AUDT_ORGN_MGMT_CD AS PLN_AUDT_DEPT_CD    /** Service des contrôles a posteriori !== 계획심사부서코드 ==! */
+             , (SELECT TPO.ORGN_NM FROM TB_POTI_ORGN TPO WHERE TPO.ORGN_MGMT_CD = C.AUDT_ORGN_MGMT_CD) AS PLN_AUDT_DEPT_NM    /** Service des contrôles a posteriori !== 계획심사부서코드 ==! */
+             , A.AUDT_PT_CD    /** Code De Type De Contrôle !== 심사유형코드 ==! */
+             , FN_GET_CD_VDVAL_NM('AEO_0002', A.AUDT_PT_CD, #{langCd}) AS AUDT_PT_NM    /** Code De Type De Contrôle !== 심사유형코드 ==! */
+             , SUM(DECODE(A.PRCS_STTS_CD, 'A07', 1, 0)) AS SBMT /** Dépôt !== 제출 ==! */
+             , SUM(DECODE(A.PRCS_STTS_CD, 'D01', 1, 0)) AS ACAP /** Réception !== 접수 ==! */
+             , SUM(DECODE(A.PRCS_STTS_CD, 'D28', 1, 0)) AS AUDT /** Audit !== 심사 ==! */
+             , SUM(DECODE(A.PRCS_STTS_CD, 'D29', 1, 0)) AS INVG /** Enquête !== 조사 ==! */
+             , SUM(DECODE(A.PRCS_STTS_CD, 'D30', 1, 0)) AS DLBR /** Délibération !== 심의 ==! */
+             , SUM(DECODE(A.PRCS_STTS_CD, 'D31', 1, 0)) AS DTRM /** Décision !== 결정 ==! */
+        FROM   TB_AEOI_ATHR_RQST A         /** AEOI_DEMANDE D'AGRÉMENT !== AEOI_공인신청 ==! */
+             , TB_POTI_ORGN B              /** POTI_ORGANISATION !== POTI_조직 ==! */
+             , TB_AEOI_ATHR_AUDT_ORGN C    /** ENTITÉ QUI GÈRE LES INFORMATIONS SUR L'ORGANIGRAMME DU SERVICE CHARGÉ DE L'AUDIT OEA !== AEOI_공인심사조직 ==! */
+        WHERE  A.ACAP_CSTM_CD = B.ORGN_MGMT_CD
+        AND    B.UPR_ORGN_MGMT_CD = C.DRD_ORGN_MGMT_CD
+        AND    A.DEL_YN = 'N'
+        AND    B.DEL_YN = 'N'
+        AND    C.DEL_YN = 'N'
+        <if test='(srchStrtDt != null and !"".equals(srchStrtDt)) and (srchEndDt != null and !"".equals(srchEndDt))'>
+        AND    TO_CHAR(A.RQST_DTTM, 'YYYYMMDD') BETWEEN TO_CHAR(TO_DATE(REPLACE(#{srchStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(REPLACE(#{srchEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+        </if>
+        <if test='srchPlnAudtDeptOrgnCd != null and !"".equals(srchPlnAudtDeptOrgnCd)'>
+        AND    C.AUDT_ORGN_MGMT_CD = #{srchPlnAudtDeptOrgnCd}
+        </if>
+        GROUP  BY C.AUDT_ORGN_MGMT_CD||A.AUDT_PT_CD, C.AUDT_ORGN_MGMT_CD, A.AUDT_PT_CD
+        ORDER  BY C.AUDT_ORGN_MGMT_CD||A.AUDT_PT_CD
+	</select>
+
+</mapper>

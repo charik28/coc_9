@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.car.bnwrhs.cnso.mapper.CarCnsoExsfRprtMapper">
+
+  <!--
+    Rechercher la liste des "Demandes de dépotage/empotage des marchandises en groupage" correspondant aux critères de recherche
+     !== 조회조건에 해당하는 “콘솔화물 적출입 보고” 목록을 조회한다. ==!
+    -->
+  <select id="selectCnsoExsfRprtList"
+          resultType="alpass.ipt.car.bnwrhs.cnso.vo.CarCnsoExsfRprtVo">
+    /* selectCnsoExsfRprtList */
+    <include refid="pagination.header" ></include>
+    SELECT TCER.EXSF_RPRT_NO      /* Numéro du rapport d'extraction !== 적출입보고번호 ==! */
+         , TCER.EXSF_TP_CD           /* Catégorie de dépotage/empotage !== 적출입구분코드 ==! */
+         , TO_CHAR(TCER.EXSF_DTTM,'DD/MM/YYYY HH24:MI') AS EXSF_DTTM /* Date et heure de dépotage/empotage !== 적출입일시 ==! */
+         , TCER.EXSF_QLFC_CD         /* Code de qualité de dépotage/empotage !== 적출입자격코드 ==! */
+         , TO_CHAR(TCER.TRSN_DTTM,'DD/MM/YYYY') AS TRSN_DTTM /* Date et heure de transmission !== 전송일시 ==! */
+         , TCCPB.PRCS_STTS_CD         /* Code De Statut De Traitement !== 처리상태코드 ==! */
+         , TCER.FRWR_CD              /* Code De Groupeur !== 포워더코드 ==! */
+         , TCER.NIF                  /* NIF !== 납세번호 ==! */
+         , TCER.FRWR_APRP_NO         /* N° agrément du groupeur !== 포워더인가번호 ==! */
+         , TO_CHAR(TO_DATE(FRWR_APRP_ISS_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS FRWR_APRP_ISS_DT /* Date de délivrance de l'agrément du groupeur !== 포워더인가발급일자 ==! */
+         , TCER.FRWR_CMRC_REGS_NO    /* N° registre du commerce du groupeur !== 포워더상업등기번호 ==! */
+         , TCER.FRWR_ADDR            /* Adresse De L'Expéditeur !== 포워더주소 ==! */
+         , TCER.CAG_MGMT_NO          /* Crn !== 화물관리번호 ==! */
+         , TCER.MBL_NO               /* N° de Master B/L !== MBL번호 ==! */
+         , TCER.JRSD_ORGN_CD         /* Code D'Unité Compétente !== 관할조직코드 ==! */
+         , TCER.IBOBZ_CD             /* Code de zone sous douane !== 보세구역코드 ==! */
+         , TCER.DEL_YN               /* Suppression On !== 삭제여부 ==! */
+         , TCER.FRST_REGST_ID        /* Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+         , TCER.FRST_RGSR_DTTM       /* Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+         , TCER.LAST_CHPR_ID         /* Id Du Modificateur Final !== 최종변경자ID ==! */
+         , TO_CHAR(TCER.LAST_CHG_DTTM,'DD/MM/YYYY') AS LAST_CHG_DTTM /* Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+         , TCCPB.AUDT_EMP_ID               /* ID de l'insepcteur !== 심사직원ID ==! */
+         , (SELECT LTRIM(CONCAT(EMP_FMNM,' ',EMP_NM))
+              FROM TB_POTI_EMP L
+             WHERE L.DEL_YN = 'N'
+               AND L.PBSR_NO = TCCPB.AUDT_EMP_ID
+           ) AS AUDT_EMP_NM
+         , TCER.AUDT_PT_CD                /* Code De Type De Contrôle !== 심사유형코드 ==! */
+         , TCER.AUDT_DT                   /* Date De Contrôle !== 심사일자 ==! */
+         , AUDT_RSLT_CN               /* Motif De Rejet !== 반려사유내용 ==! */
+      FROM TB_CARI_EXSF_RPRT TCER /* CARE_DÉPOTAGE/EMPOTAGE_ÉTAT !== CARE_적출입_보고 ==! */
+      JOIN TB_CARI_CAG_PRCS_BRKD TCCPB
+        ON TCCPB.CAG_RQST_NO = TCER.EXSF_RPRT_NO
+       AND TCCPB.RQST_DGCNT = 0
+     WHERE 1=1
+       AND TCER.DEL_YN = 'N'
+    <if test="searExsfRprtNo != null and searExsfRprtNo != ''">
+       AND EXSF_RPRT_NO LIKE REPLACE(CONCAT(#{searExsfRprtNo},'%'),'-')        /* N° demande de dépotage/empotage !== 적출입신청번호 ==! */
+    </if>
+    <if test="searPrcsSttsCd != null and searPrcsSttsCd != ''">
+       AND TCCPB.PRCS_STTS_CD = #{searPrcsSttsCd}        /* Code De Statut De Traitement !== 처리상태코드 ==! */
+    </if>
+    <if test="searExsfDtFrom != '' and searExsfDtTo != '' and searExsfDtFrom != null and searExsfDtTo != null">
+       AND TO_DATE(TO_CHAR(EXSF_DTTM, 'DD/MM/YYYY'), 'DD/MM/YYYY') BETWEEN TO_DATE(#{searExsfDtFrom},'DD/MM/YYYY') AND TO_DATE(#{searExsfDtTo},'DD/MM/YYYY')
+    </if>
+    <if test="searExsfTpCd != null and searExsfTpCd != ''">
+       AND EXSF_TP_CD = #{searExsfTpCd}          /* Catégorie de dépotage/empotage !== 적출입구분코드 ==! */
+    </if>
+    <if test="searBlNo != null and searBlNo != ''">
+       AND MBL_NO LIKE CONCAT('%',#{searBlNo},'%')              /* N° de Master B/L !== MBL번호 ==! */
+    </if>
+    <if test="searExsfQlfcCd != null and searExsfQlfcCd != ''">
+       AND EXSF_QLFC_CD = #{searExsfQlfcCd}        /* Code de qualité de dépotage/empotage !== 적출입자격코드 ==! */
+    </if>
+    <!--<if test="searJrsdOrgnCd != null and searJrsdOrgnCd != ''">
+       AND TCER.JRSD_ORGN_CD = #{searJrsdOrgnCd}        /* Code D'Unité Compétente !== 관할조직코드 ==! */
+    </if>-->
+    <if test="searIbobzCd != null and searIbobzCd != ''">
+       AND TCER.IBOBZ_CD = #{searIbobzCd}            /* Code de zone sous douane !== 보세구역코드 ==! */
+    </if>
+   <choose>
+       <when test="@alpass.ipt.car.com.util.CarMyBatisUtil@isEqualsStr(scrnTp,'1')">
+    AND TCCPB.PRCS_STTS_CD IN ('B02', 'D08', 'D09', 'D33')
+        </when>
+        <otherwise>
+    AND TCCPB.PRCS_STTS_CD IN ('D01', 'B02', 'D08', 'D09')
+        </otherwise>
+    </choose>
+    <choose>
+      <when test="roleId.equals('CAR116'.toString())">
+          AND (TCCPB.AUDT_EMP_ID  = #{searPbsrNo}
+            OR EXISTS(SELECT 1
+                        FROM TB_CARI_EXSF_RQST_PTPT TCERP
+                       WHERE TCERP.EXSF_RQST_NO = TCER.EXSF_RQST_NO
+                         AND TCERP.PRSC_EMP_ID = #{searPbsrNo}))
+      </when>
+      <otherwise>
+          AND TCCPB.JRSD_ORGN_CD LIKE SUBSTR(#{searJrsdOrgnCd}, 1, 5) || '%'
+      </otherwise>
+    </choose>
+      ORDER BY TCER.LAST_CHG_DTTM DESC
+     <include refid="pagination.footer" ></include>
+   </select>
+
+   <!--
+     Demander les détails de la "Demande de dépotage/empotage des marchandises en groupage"
+      !== “콘솔화물 적출입 보고” 상세내역을 요청한다. ==!
+     -->
+  <select id="selectCnsoExsfRprt"
+          resultType="alpass.ipt.car.bnwrhs.cnso.vo.CarCnsoExsfRprtVo">
+    /* selectCnsoExsfRprt */
+    SELECT TCER.EXSF_RPRT_NO      /* Numéro du rapport d'extraction !== 적출입보고번호 ==! */
+         , TCER.EXSF_RQST_NO      /* N° demande de dépotage/empotage !== 적출입신청번호 ==! */
+         , TCER.EXSF_TP_CD        /* Catégorie de dépotage/empotage !== 적출입구분코드 ==! */
+         , TO_CHAR(TCER.EXSF_DTTM,'DD/MM/YYYY HH24:MI') AS EXSF_DTTM /* Date de dépotage/empotage !== 적출입일자 ==! */
+         , TCER.EXSF_QLFC_CD      /* Code de qualité de dépotage/empotage !== 적출입자격코드 ==! */
+         , TO_CHAR(TCER.TRSN_DTTM,'DD/MM/YYYY') AS TRSN_DTTM         /* Date et heure de transmission !== 전송일시 ==! */
+         , TCER.FRWR_CD           /* Code De Groupeur !== 포워더코드 ==! */
+         , (SELECT C.CO_NM
+              FROM TB_COM_CO C
+              JOIN TB_COM_CO_DCLR_CD D
+                ON C.NIF = D.NIF
+               AND D.DEL_YN = 'N'
+               AND D.USE_YN = 'Y'
+               AND D.RQST_TP_CD IN ('01','02') /* 신규나/수정 상태*/
+               AND D.PRCS_STTS_CD = 'O' /* 업체  승인상태 */
+               AND D.USE_YN = 'Y' /* 사용여부 */
+             WHERE 1=1
+               AND C.DEL_YN = 'N'
+               AND D.CO_DCLR_CD = TCER.FRWR_CD) as FRWR_NM
+         , TCER.NIF               /* NIF !== 납세번호 ==! */
+         , TCER.FRWR_APRP_NO      /* N° agrément du groupeur !== 포워더인가번호 ==! */
+         , TO_CHAR(TO_DATE(TCER.FRWR_APRP_ISS_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS FRWR_APRP_ISS_DT /* Date de délivrance de l'agrément du groupeur !== 포워더인가발급일자 ==! */
+         , TCER.FRWR_CMRC_REGS_NO /* N° registre du commerce du groupeur !== 포워더상업등기번호 ==! */
+         , TCER.FRWR_ADDR         /* Adresse De L'Expéditeur !== 포워더주소 ==! */
+         , CASE WHEN TCER.EXSF_TP_CD = 'E' THEN TCER.CAG_MGMT_NO END AS CAG_MGMT_NO        /* CRN !== 화물관리번호 ==! */
+         , CASE WHEN TCER.EXSF_TP_CD = 'S' THEN TCER.CAG_MGMT_NO END AS EXP_CMDT_BRNG_RQNO
+         , CASE WHEN TCER.EXSF_TP_CD = 'S'
+                THEN ''
+                WHEN TCER.EXSF_TP_CD = 'E'
+                THEN (SELECT TCCD.MRN
+                        FROM TB_CARE_CAG_DCSH_BL TCCDB
+                        JOIN TB_CARE_CAG_DCSH TCCD
+                          ON TCCD.CAG_DCSH_RGSR_MGMT_NO = TCCDB.CAG_DCSH_RGSR_MGMT_NO
+                       WHERE TCCDB.CAG_MGMT_NO = TCER.CAG_MGMT_NO
+                         AND TCCD.MRN IS NOT NULL
+                         AND TCCD.MRN != ''
+                         AND TCCD.PRCS_STTS_CD = 'D08')
+                ELSE ''
+                 END AS MRN     /* Mrn !== Mrn ==! */
+          , CASE WHEN TCER.EXSF_TP_CD = 'S'
+                 THEN 0
+                 WHEN TCER.EXSF_TP_CD = 'E'
+                 THEN (SELECT TCCDB.PCKG_GCNT
+                         FROM TB_CARE_CAG_DCSH_BL TCCDB
+                         JOIN TB_CARE_CAG_DCSH TCCD
+                           ON TCCD.CAG_DCSH_RGSR_MGMT_NO = TCCDB.CAG_DCSH_RGSR_MGMT_NO
+                        WHERE TCCDB.CAG_MGMT_NO = TCER.CAG_MGMT_NO
+                          AND TCCD.MRN IS NOT NULL
+                          AND TCCD.MRN != ''
+                          AND TCCD.PRCS_STTS_CD = 'D08')
+                 ELSE 0
+                  END AS PCKG_GCNT             /* Nombre De Colis !== 포장개수 ==! */
+          , CASE WHEN TCER.EXSF_TP_CD = 'S'
+                 THEN 0
+                 WHEN TCER.EXSF_TP_CD = 'E'
+                 THEN (SELECT TCCDB.TTWG
+                         FROM TB_CARE_CAG_DCSH_BL TCCDB
+                         JOIN TB_CARE_CAG_DCSH TCCD
+                           ON TCCD.CAG_DCSH_RGSR_MGMT_NO = TCCDB.CAG_DCSH_RGSR_MGMT_NO
+                        WHERE TCCDB.CAG_MGMT_NO = TCER.CAG_MGMT_NO
+                          AND TCCD.MRN IS NOT NULL
+                          AND TCCD.MRN != ''
+                          AND TCCD.PRCS_STTS_CD = 'D08')
+                 ELSE 0
+                  END AS TTWG     /* Poids Brut !== 총중량 ==! */
+          , CASE WHEN TCER.EXSF_TP_CD = 'S'
+                 THEN 0
+                 WHEN TCER.EXSF_TP_CD = 'E'
+                 THEN (SELECT TCCDB.NTWG
+                         FROM TB_CARE_CAG_DCSH_BL TCCDB
+                         JOIN TB_CARE_CAG_DCSH TCCD
+                           ON TCCD.CAG_DCSH_RGSR_MGMT_NO = TCCDB.CAG_DCSH_RGSR_MGMT_NO
+                        WHERE TCCDB.CAG_MGMT_NO = TCER.CAG_MGMT_NO
+                          AND TCCD.MRN IS NOT NULL
+                          AND TCCD.MRN != ''
+                          AND TCCD.PRCS_STTS_CD = 'D08')
+                 ELSE 0
+                  END AS NTWG     /* Poids net !== 순중량 ==! */
+         , TCER.MBL_NO            /* N° de Master B/L !== MBL번호 ==! */
+         , C.JRSD_CSTM_CD         /* Code de bureau compétent !== 관할세관코드 ==! */
+         , TCER.JRSD_ORGN_CD      /* Code D'Unité Compétente !== 관할조직코드 ==! */
+         , TCER.IBOBZ_CD          /* Code de zone sous douane !== 보세구역코드 ==! */
+         , TCER.IBOBZ_PRPT_NM          /* Propriétaire de zone sous douane !== 보세구역운영인명 ==! */
+         , TCER.DEL_YN            /* Suppression On !== 삭제여부 ==! */
+         , TCER.FRST_REGST_ID     /* Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+         , TCER.FRST_RGSR_DTTM    /* Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+         , TCER.LAST_CHPR_ID      /* Id Du Modificateur Final !== 최종변경자ID ==! */
+         , TO_CHAR(TCER.LAST_CHG_DTTM,'DD/MM/YYYY') AS LAST_CHG_DTTM /* Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+         , TCCPB.PRCS_STTS_CD      /* Code De Statut De Traitement !== 처리상태코드 ==! */
+         , TCCPB.AUDT_EMP_ID               /* ID de l'insepcteur !== 심사직원ID ==! */
+         , TCER.AUDT_PT_CD                /* Code De Type De Contrôle !== 심사유형코드 ==! */
+         , TCER.AUDT_DT                   /* Date De Contrôle !== 심사일자 ==! */
+         , TCER.AUDT_RSLT_CN              /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+      from TB_CARI_EXSF_RPRT TCER /* CARE_DÉPOTAGE/EMPOTAGE_ÉTAT !== CARE_적출입_보고 ==! */
+      JOIN TB_CARI_CAG_PRCS_BRKD TCCPB
+        ON TCCPB.CAG_RQST_NO = TCER.EXSF_RPRT_NO
+       AND TCCPB.RQST_DGCNT = 0
+      JOIN TB_CARE_EXSF_RQST TCE_RQST
+        ON TCER.EXSF_RQST_NO = TCE_RQST.EXSF_RQST_NO
+      LEFT OUTER JOIN (SELECT K1.CO_NM       ,
+                              K1.RPRS_TLPH_NO,
+                              K1.CO_ADDR     ,
+                              K2.CO_DCLR_CD
+                         FROM TB_COM_CO         K1,
+                              TB_COM_CO_DCLR_CD K2
+                        WHERE K1.NIF = K2.NIF
+                          AND K1.DEL_YN = 'N'
+                          AND K2.DEL_YN = 'N'
+                          AND K2.RQST_TP_CD IN ('01','02') /* 신규나/수정 상태*/
+                          AND K2.PRCS_STTS_CD = 'O' /* 업체  승인상태 */
+                          AND K2.use_yn = 'Y' /* 사용여부 */) H2
+        ON H2.CO_DCLR_CD = TCER.FRWR_CD
+      LEFT JOIN ( SELECT C1.ORGN_CD
+                       , C2.ORGN_CD JRSD_CSTM_CD
+                    FROM TB_POTI_ORGN C1
+                    LEFT JOIN TB_POTI_ORGN C2
+                      ON C1.UPR_ORGN_MGMT_CD = C2.ORGN_MGMT_CD
+                   WHERE C1.DEL_YN = 'N'
+      ) C
+        ON TCER.JRSD_ORGN_CD = C.ORGN_CD
+     WHERE 1=1
+    <if test="exsfRprtNo != null and exsfRprtNo != ''">
+       AND TCER.EXSF_RPRT_NO = #{exsfRprtNo}
+    </if>
+    <if test="exsfRqstNo != null and exsfRqstNo != ''">
+       AND TCER.EXSF_RQST_NO = #{exsfRqstNo}
+    </if>
+  </select>
+
+  <!--
+   Demander les détails des HBL du "rapport de dépotage/empotage des marchandises en groupage".
+   !== “콘솔화물 적출입 보고” HBL 상세내역을 요청한다. ==!
+  -->
+  <select id="selectCnsoExsfRprtHblList"
+          resultType="alpass.ipt.car.bnwrhs.cnso.vo.CarCnsoExsfRprtHblVo">
+    /* selectCnsoExsfRprtHblList */
+    SELECT EXSF_RPRT_NO
+         , EXSF_RPRT_SRNO
+         , CAG_MGMT_NO
+         , HBL_NO
+         , CAG_DCSH_EXST_YN
+         , PLTE_BOX_NO
+         , DTL_DCSH_NO
+         , SNDR_NIF
+         , SNDR_NTNAL_IDFY_NO
+         , SNDR_NM
+         , SNDR_ADDR
+         , RCVR_NM
+         , RCVR_ADDR
+         , TTWG
+         , NTWG
+         , PCKG_GCNT
+         , SEND_REGN_CD
+         , ORCY_CNTY_CD
+         , PDLS_NM
+         , DFCT_OVER_PT_CD
+         , OTHS_CN
+         , DEL_YN           /* Suppression On !== 삭제여부 ==! */
+         , FRST_REGST_ID    /* Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+         , FRST_RGSR_DTTM   /* Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+         , LAST_CHPR_ID     /* Id Du Modificateur Final !== 최종변경자ID ==! */
+         , LAST_CHG_DTTM    /* Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+         , (SELECT CAG_CHRC_CD
+              FROM TB_CARE_CAG_DCSH TCCD
+              JOIN TB_CARE_CAG_DCSH_BL TCCDB
+                ON TCCD.CAG_DCSH_RGSR_MGMT_NO = TCCDB.CAG_DCSH_RGSR_MGMT_NO
+             WHERE TCCDB.CAG_MGMT_NO = TCERH.CAG_MGMT_NO
+               AND ROWNUM = 1) AS CAG_CHRC_CD /** Nature De Cargaison!==화물특성코드==! */
+      FROM TB_CARE_EXSF_RPRT_HBL TCERH /* CARE_DÉPOTAGE/EMPOTAGE_ÉTAT_HBL !== CARE_적출입_보고_HBL ==! */
+     WHERE 1=1
+       AND EXSF_RPRT_NO = #{exsfRprtNo}
+     ORDER BY EXSF_RPRT_SRNO
+  </select>
+
+ <!--
+ Sauvegarder les infos de contrôle sur le "rapport de dépotage/empotage des marchandises en groupage".
+ !== “콘솔화물 적출입 보고” 심사 정보를 저장한다. ==!
+  -->
+  <update id="updateCarCnsoExsfRprtAudt"
+          parameterType="alpass.ipt.car.bnwrhs.cnso.vo.CarCnsoExsfRprtVo">
+    /* updateCarCnsoExsfRprtAudt */
+    UPDATE TB_CARI_EXSF_RPRT
+       SET AUDT_PT_CD     =	#{audtPtCd}   /* Code De Type De Contrôle !== 심사유형코드 ==! */
+    <if test="audtDt != '' and audtDt != null">
+         , AUDT_DT        =	#{audtDt}   /* Date De Contrôle !== 심사일자 ==! */
+    </if>
+    <if test="audtRsltCn != '' and audtRsltCn != null">
+         , AUDT_RSLT_CN    =	#{audtRsltCn}   /* Motif De Rejet !== 반려사유내용 ==! */
+    </if>
+         , DEL_YN         =	'N'   /* Suppression On !== 삭제여부 ==! */
+         , LAST_CHPR_ID   =	#{lastChprId}   /* Id Du Modificateur Final !== 최종변경자ID ==! */
+         , LAST_CHG_DTTM  =	SYSTIMESTAMP   /* Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    WHERE EXSF_RPRT_NO =	#{exsfRprtNo}
+  </update>
+
+  <!--
+ Sauvegarder les infos sur le contrôle du rapport de dépotage/empotage des marchandises en groupage.
+ !== 외부로 콘솔화물 적출입 보고 심사 정보를 저장한다 ==!
+  -->
+  <update id="updateEptCarCnsoExsfRprt"
+          parameterType="alpass.ipt.car.bnwrhs.cnso.vo.CarCnsoExsfRprtVo">
+    /* updateEptCarCnsoExsfRqst */
+    UPDATE TB_CARE_EXSF_RPRT A
+       SET A.PRCS_STTS_CD  = #{prcsSttsCd}    /* Code De Statut De Traitement !== 처리상태코드 ==! */
+         , A.LAST_CHPR_ID  = B.LAST_CHPR_ID    /* Id Du Modificateur Final !== 최종변경자ID ==! */
+         , A.LAST_CHG_DTTM = B.LAST_CHG_DTTM   /* Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+      FROM TB_CARI_EXSF_RPRT B
+     WHERE A.EXSF_RPRT_NO = B.EXSF_RPRT_NO
+       AND A.EXSF_RPRT_NO = #{exsfRprtNo}
+  </update>
+
+  <!--
+ Sauvegarder l'autorisation des participants du rapport de dépotage/empotage des marchandises en groupage
+ !== 콘솔화물 적출입 보고 입회자 승인내용 저장 ==!
+  -->
+  <update id="updateCarCnsoExsfRprtMakeCmpl"
+          parameterType="alpass.ipt.car.bnwrhs.cnso.vo.CarCnsoExsfRqstPtptVo">
+    /* updateCarCnsoExsfRprtMakeCmpl */
+    UPDATE TB_CARI_EXSF_RQST_PTPT
+       SET CSTM_EMP_APRE_CN = #{cstmEmpApreCn}
+     WHERE EXSF_RQST_NO = #{exsfRqstNo}
+       AND PRSC_EMP_ID = #{prscEmpId}
+  </update>
+
+</mapper>

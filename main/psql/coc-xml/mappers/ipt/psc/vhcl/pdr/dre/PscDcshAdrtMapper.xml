@@ -1,0 +1,649 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.psc.vhcl.pdr.dre.mapper.PscDcshAdrtMapper">
+
+	<!--
+    Consultation du recours sur le résultat de contrôle !== 심사결과 이의제기 조회 ==!
+    (Kim Kiryong)
+    -->
+	<select id="selectVlutAudtMkoj" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedSrchVo" resultType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrVlutAudtMkojVo">
+		/* ClriDpsMkoj_selectVlutAudtMkoj */
+		SELECT *
+		FROM
+			(
+				SELECT
+					A.DTL_DCSH_NO                     /** Numero du DAU !== SAD번호 ==! */
+					 , A.PRC_EV_DGCNT               /** Degree de l'evaluation de valeur !== 가격평가차수 ==! */
+					 , A.OBJT_LDGG_CN               /** Contenu de la contestation !== 이의제기내용 ==! */
+					 , A.dpsit_yn
+
+				FROM   TB_CLRI_VLUT_AUDT_MKOJ A
+				WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+				  AND  A.DTL_DCSH_NO = #{dtlDcshNo}                         /** Numero du DAU !== SAD번호 ==! */
+				ORDER BY PRC_EV_DGCNT DESC
+			)
+		WHERE ROWNUM = 1
+
+	</select>
+
+	<!--
+    Consultation des documents joins de recours sur le résultat de contrôle !== 심사결과 이의제기 첨부파일 조회 ==!
+    (Kim Kiryong)
+    -->
+	<select id="selectVlutAudtMkojAtdocList" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedSrchVo" resultType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrVlutAudtMkojAtdocVo">
+		/* ClriDpsMkoj_selectVlutAudtMkojAtdocList */
+		SELECT
+			A.DTL_DCSH_NO                     /** Numero du DAU !== SAD번호 ==! */
+			 , A.PRC_EV_DGCNT               /** Degree de l'evaluation de valeur !== 가격평가차수 ==! */
+			 , B.ATCH_FILE_SRNO AS ATCH_DOC_SRNO              /** N° de sequence du document joint !== 첨부문서일련번호 ==! */
+			 , A.ATCH_FILE_ID               /** @TODO : 번역필요 !== 첨부파일ID ==! */
+			 , B.SRBK_FILE_NM AS DOC_DESC
+			 , TO_CHAR(B.FRST_RGSR_DTTM,'DD/MM/YYYY') AS FRST_RGSR_DTTM
+			 , A.dpsit_yn
+		FROM   TB_CLRI_VLUT_AUDT_MKOJ A
+		   , TB_COM_ATCH_FILE B
+		WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+		  AND B.DEL_YN = 'N'
+		  AND A.ATCH_FILE_ID = B.ATCH_FILE_ID
+		  AND A.DTL_DCSH_NO = #{dtlDcshNo}                         /** Numero du DAU !== SAD번호 ==! */
+		  AND A.PRC_EV_DGCNT = #{prcEvDgcnt}
+
+	</select>
+
+	<!--
+       * SQL 설명 : TODO 번역필요 !== 심사결과등록 결재 ID 업데이트 ==!
+   -->
+	<update id="updateAdrtAprv" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedAdrtVo">
+		/* updateAdrtAprv */
+		UPDATE TB_CLRI_DED_ADRT
+		SET APRV_ID = #{aprvId}
+		  , LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+		  ,  LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+		WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+		  AND DTL_DCSH_NO = #{dtlDcshNo}
+		  AND PRC_EV_DGCNT = #{prcEvDgcnt}
+	</update>
+
+	<!-- 심사결과 가격평가공통 조회 -->
+	<select id="selectAdrtVlutAudtComn" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedSrchVo" resultType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedVlutAudtDcshVo">
+		/* selectAdrtVlutAudtComn */
+		SELECT
+			A.DTL_DCSH_NO
+			 , C.PRC_EV_DGCNT
+			 , B.INVC_CURR_CD
+			 , B.INVC_AMT
+			 , B.CACH_NCY_AMT
+			 , B.INFEE_NCY_AMT
+			 , B.OTCST_NCY_AMT
+			 , B.DDCT_NCY_AMT
+			 , B.TTXBS_NCY_AMT
+			 , C.ASED_INVC_AMT
+			 , C.ASED_INVC_NCY_AMT
+			 , C.ASED_INVC_CURR_CD
+			 , C.ASED_CACH_NCY_AMT
+			 , C.ASED_INFEE_NCY_AMT
+			 , C.ASED_OTCST_NCY_AMT
+			 , C.ASED_DDCT_NCY_AMT
+			 , C.ASED_TTXBS_NCY_AMT
+			 , DECODE(C.ASED_INVC_CURR_CD, B.INVC_CURR_CD, 'N', 'Y') AS INVC_CURR_CD_CHG_YN
+			 , DECODE(C.ASED_INVC_AMT, B.INVC_AMT, 'N', 'Y') AS INVC_AMT_CHG_YN
+			 , DECODE(C.ASED_CACH_NCY_AMT, B.CACH_NCY_AMT, 'N', 'Y') AS CACH_NCY_AMT_CHG_YN
+			 , DECODE(C.ASED_INFEE_NCY_AMT, B.INFEE_NCY_AMT, 'N', 'Y') AS INFEE_NCY_AMT_CHG_YN
+			 , DECODE(C.ASED_OTCST_NCY_AMT, B.OTCST_NCY_AMT, 'N', 'Y') AS OTCST_NCY_AMT_CHG_YN
+			 , DECODE(C.ASED_DDCT_NCY_AMT, B.DDCT_NCY_AMT, 'N', 'Y') AS DDCT_NCY_AMT_CHG_YN
+			 , DECODE(C.ASED_TTXBS_NCY_AMT, B.TTXBS_NCY_AMT, 'N', 'Y') AS TTXBS_NCY_AMT_CHG_YN
+			 , C.VLUT_PRCS_STTS_CD
+		FROM  TB_CLRI_DED_COMN A
+		   , TB_CLRI_DED_VLUT_COMN B
+		   , TB_CLRI_DED_VLUT_AUDT_COMN C
+
+		WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+		  AND A.DTL_DCSH_NO = C.DTL_DCSH_NO
+		  AND A.DEL_YN = 'N'
+		  AND B.DEL_YN = 'N'
+		  AND C.DEL_YN = 'N'
+		  AND C.LAST_YN = 'Y'
+		  AND A.DTL_DCSH_NO = #{dtlDcshNo}
+	</select>
+
+	<!-- 심사결과 가격평가 공통 비교 목록 조회 -->
+	<select id="selectAdrtAdrtVlutAudtComnCmprList" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedSrchVo" resultType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedVlutAudtDcshVo">
+		/* selectAdrtAdrtVlutAudtComnCmprList */
+
+		SELECT
+			'D' AS TP_CD
+			 , A.EPC_CD
+			 , A.IMPPN_IDFY_NO
+			 , A.TXPR_IDFY_NO
+			 , B.INVC_CURR_CD
+			 , B.INVC_AMT
+			 , B.CACH_NCY_AMT
+			 , B.INFEE_NCY_AMT
+			 , B.OTCST_NCY_AMT
+			 , B.DDCT_NCY_AMT
+			 , B.TTXBS_NCY_AMT
+		FROM     TB_CLRI_DED_COMN A
+		   , TB_CLRI_DED_VLUT_COMN B
+		   , TB_CLRI_DED_VLUT_AUDT_COMN C
+
+		WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+		  AND A.DTL_DCSH_NO = C.DTL_DCSH_NO
+		  AND A.DEL_YN = 'N'
+		  AND B.DEL_YN = 'N'
+		  AND C.DEL_YN = 'N'
+		  AND C.LAST_YN = 'Y'
+		  AND A.DTL_DCSH_NO = #{dtlDcshNo}
+		UNION ALL
+		SELECT
+			'L' AS TP_CD
+			 , C.ASED_EPC_CD
+			 , C.ASED_IMPPN_IDFY_NO
+			 , C.ASED_TXPR_IDFY_NO
+			 , C.ASED_INVC_CURR_CD
+			 , C.ASED_INVC_AMT
+			 , C.ASED_CACH_NCY_AMT
+			 , C.ASED_INFEE_NCY_AMT
+			 , C.ASED_OTCST_NCY_AMT
+			 , C.ASED_DDCT_NCY_AMT
+			 , C.ASED_TTXBS_NCY_AMT
+		FROM     TB_CLRI_DED_COMN A
+		   , TB_CLRI_DED_VLUT_COMN B
+		   , TB_CLRI_DED_VLUT_AUDT_COMN C
+
+		WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+		  AND A.DTL_DCSH_NO = C.DTL_DCSH_NO
+		  AND A.DEL_YN = 'N'
+		  AND B.DEL_YN = 'N'
+		  AND C.DEL_YN = 'N'
+		  AND C.LAST_YN = 'Y'
+		  AND A.DTL_DCSH_NO = #{dtlDcshNo}
+		ORDER BY TP_CD
+
+	</select>
+
+	<!-- 심사결과 가격평가 품목 목록 조회 -->
+	<select id="selectAdrtVlutAudtPdlsList" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedSrchVo" resultType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedVlutAudtPdlsDcshVo">
+		/* selectAdrtVlutAudtPdlsList */
+		SELECT
+			A.DTL_DCSH_NO
+			 , A.PDLS_NO
+			 , A.HS_CD
+			 , A.PDLS_NM
+			 , A.DLNG_PDLS_NM
+			 , A.ORCY_CNTY_CD
+			 , A.APC_CD
+			 , A.PRVL_CD
+			 , B.PDLS_TXBS_NCY_AMT
+			 , B.PDLS_INVC_AMT
+			 , B.PDLS_INVC_NCY_AMT
+			 , C.ASED_HS_CD
+			 , C.ASED_APC_CD
+			 , C.ASED_ORCY_CNTY_CD
+			 , C.ASED_PRVL_CD
+			 , C.ASED_PDLS_TXBS_NCY_AMT
+			 , C.ASED_PDLS_INVC_AMT
+			 , C.ASED_PDLS_INVC_NCY_AMT
+			 , DECODE(C.ASED_HS_CD, A.HS_CD, 'N', 'Y') AS HS_CD_CHG_YN
+			 , DECODE(C.ASED_ORCY_CNTY_CD, A.ORCY_CNTY_CD, 'N', 'Y') AS ORCY_CNTY_CD_CHG_YN
+			 , DECODE(C.ASED_APC_CD, A.APC_CD, 'N', 'Y') AS APC_CD_CHG_YN
+			 , DECODE(C.ASED_PRVL_CD, A.PRVL_CD, 'N', 'Y') AS PRVL_CD_CHG_YN
+			 , DECODE(C.ASED_PDLS_TXBS_NCY_AMT, B.PDLS_TXBS_NCY_AMT, 'N', 'Y') AS PDLS_TXBS_NCY_AMT_CHG_YN
+			 , DECODE(C.ASED_PDLS_INVC_AMT, B.PDLS_INVC_AMT, 'N', 'Y') AS PDLS_INVC_AMT_CHG_YN
+		FROM  TB_CLRI_DED_PDLS A
+		   , TB_CLRI_DED_VLUT_PDLS B
+		   , TB_CLRI_DED_VLUT_AUDT_PDLS C
+		WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+		  AND A.DTL_DCSH_NO = C.DTL_DCSH_NO
+		  AND A.PDLS_NO = B.PDLS_NO
+		  AND A.PDLS_NO = C.PDLS_NO
+		  AND A.DEL_YN = 'N'
+		  AND B.DEL_YN = 'N'
+		  AND C.DEL_YN = 'N'
+		  AND A.DTL_DCSH_NO = #{dtlDcshNo}
+		ORDER BY TO_NUMBER(A.PDLS_NO)
+
+	</select>
+
+	<!-- 심사결과 가격평가 품목 비교 목록 조회 -->
+	<select id="selectAdrtVlutAudtPdlsCmprList" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedSrchVo" resultType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedVlutAudtPdlsCmprVo">
+		/* selectAdrtVlutAudtPdlsCmprList */
+		SELECT *
+		FROM
+			(
+				SELECT
+					A.PDLS_NO
+					 , 'D' AS TP_CD
+					 , A.HS_CD
+					 , A.ORCY_CNTY_CD
+					 , A.APC_CD
+					 , A.PRVL_CD
+					 , B.PDLS_TXBS_NCY_AMT
+					 , B.PDLS_INVC_AMT
+					 , ( SELECT NVL(SUM(PAY_TAX_AMT),0)
+						 FROM TB_CLRI_DED_TAX
+						 WHERE DTL_DCSH_NO = A.DTL_DCSH_NO
+						   AND PDLS_NO = A.PDLS_NO
+						   AND DEL_YN = 'N'
+				) AS PAY_TAX_AMT
+					 , A.BRND_NM
+					 , A.QTY
+					 , A.QTY_UT_CD
+					 , A.PDLS_TTWG
+					 , (SELECT DOC_NO
+						FROM   TB_CLRI_DED_ATDOC
+						WHERE  DEL_YN = 'N'
+						  AND    DOC_KND_CD = 'RVC'
+						  AND    DTL_DCSH_NO = A.DTL_DCSH_NO
+						  AND    PDLS_NO = A.PDLS_NO
+						  AND    ROWNUM = 1 ) AS RVC_DOC_NO
+					 , (SELECT DOC_NO
+						FROM   TB_CLRI_DED_ATDOC
+						WHERE  DEL_YN = 'N'
+						  AND    DOC_KND_CD = 'DPI'
+						  AND    DTL_DCSH_NO = A.DTL_DCSH_NO
+						  AND    PDLS_NO = A.PDLS_NO
+						  AND    ROWNUM = 1 ) AS DPI_DOC_NO
+				FROM
+					TB_CLRI_DED_PDLS A
+				   , TB_CLRI_DED_VLUT_PDLS B
+				   , TB_CLRI_DED_VLUT_AUDT_PDLS C
+				WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+				  AND A.DTL_DCSH_NO = C.DTL_DCSH_NO
+				  AND A.PDLS_NO = B.PDLS_NO
+				  AND A.PDLS_NO = C.PDLS_NO
+				  AND A.DEL_YN = 'N'
+				  AND B.DEL_YN = 'N'
+				  AND C.DEL_YN = 'N'
+				  AND C.PRC_EV_DGCNT = ( SELECT PRC_EV_DGCNT FROM TB_CLRI_DED_VLUT_AUDT_COMN
+										 WHERE DTL_DCSH_NO = #{dtlDcshNo}
+										   AND DEL_YN = 'N'
+										   AND LAST_YN = 'Y'
+				)
+				  AND A.DTL_DCSH_NO = #{dtlDcshNo}
+				UNION ALL
+				SELECT
+					A.PDLS_NO
+					 , 'L' AS TP_CD
+					 , C.ASED_HS_CD
+					 , C.ASED_ORCY_CNTY_CD
+					 , C.ASED_APC_CD
+					 , C.ASED_PRVL_CD
+					 , C.ASED_PDLS_TXBS_NCY_AMT
+					 , C.ASED_PDLS_INVC_AMT
+					 , ( SELECT NVL(SUM(PAY_TAX_AMT),0)
+						 FROM TB_CLRI_DED_VLUT_AUDT_TAX
+						 WHERE DTL_DCSH_NO = A.DTL_DCSH_NO
+						   AND PDLS_NO = A.PDLS_NO
+						   AND DEL_YN = 'N'
+						   AND PRC_EV_DGCNT = C.PRC_EV_DGCNT
+				) AS ASED_PAY_TAX_AMT
+					 , A.BRND_NM
+					 , A.QTY
+					 , A.QTY_UT_CD
+					 , A.PDLS_TTWG
+					 , '' AS RVC_DOC_NO
+					 , '' AS DPI_DOC_NO
+				FROM
+					TB_CLRI_DED_PDLS A
+				   , TB_CLRI_DED_VLUT_PDLS B
+				   , TB_CLRI_DED_VLUT_AUDT_PDLS C
+				WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+				  AND A.DTL_DCSH_NO = C.DTL_DCSH_NO
+				  AND A.PDLS_NO = B.PDLS_NO
+				  AND A.PDLS_NO = C.PDLS_NO
+				  AND A.DEL_YN = 'N'
+				  AND B.DEL_YN = 'N'
+				  AND C.DEL_YN = 'N'
+				  AND C.PRC_EV_DGCNT = ( SELECT PRC_EV_DGCNT FROM TB_CLRI_DED_VLUT_AUDT_COMN
+										 WHERE DTL_DCSH_NO = #{dtlDcshNo}
+										   AND DEL_YN = 'N'
+										   AND LAST_YN = 'Y'
+				)
+				  AND A.DTL_DCSH_NO = #{dtlDcshNo}
+			)
+		ORDER BY TO_NUMBER(PDLS_NO), TP_CD
+	</select>
+
+	<!-- 심사결과 상세 목록 조회 -->
+	<select id="selectAdrtDtlList" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedSrchVo" resultType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedAdrtDVo">
+		/* selectAdrtDtlList */
+		SELECT
+			A.DTL_DCSH_NO                     /** Numero du DAU !== SAD번호 ==! */
+			 , A.AUDT_RSLT_CD               /** Code de resultat de la verification !== 심사결과코드 ==! */
+			 , A.SORT_ORDR                  /** Ordre d'alignement !== 정렬순서 ==! */
+			 , A.DEL_YN                     /** Suppression ON !== 삭제여부 ==! */
+			 , A.FRST_REGST_ID              /** ID du premier enregistrant  !== 최초등록자ID ==! */
+			 , A.FRST_RGSR_DTTM             /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+			 , A.LAST_CHPR_ID               /** ID du modificateur final !== 최종변경자ID ==! */
+			 , A.LAST_CHG_DTTM              /** Date et heure de modification finale !== 최종변경일시 ==! */
+		FROM   TB_CLRI_DED_ADRT_D A
+		WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+		  AND A.DTL_DCSH_NO = #{dtlDcshNo}
+		  AND A.PRC_EV_DGCNT = #{prcEvDgcnt}
+
+	</select>
+
+	<!-- 심사결과  조회 -->
+	<select id="selectAdrt" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedSrchVo" resultType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedAdrtVo">
+		/* selectAdrt */
+		SELECT
+			A.DTL_DCSH_NO                     /** Numero du DAU !== SAD번호 ==! */
+			 , A.PRC_EV_DGCNT               /** !== 가격평가차수  ==! */
+			 , A.HIST_SRNO                  /** N° de sequence de l'histoire !== 이력일련번호 ==! */
+			 , A.AUDT_EMP_ID                /** ID de la personne verifiant !== 심사직원ID ==! */
+			 , A.AUDT_RSLT_RGSR_DT          /** Date de l'enregistrement du resultat de la verification !== 심사결과등록일자 ==! */
+			 , A.AUDT_RSLT_CN               /** Contenu du resultat de la verification !== 심사결과내용 ==! */
+			 , A.AUDT_CMPL_YN               /** Verification terminee ON !== 심사완료여부 ==! */
+			 , A.APRV_ID                    /** ID d'approbation  !== 결재ID ==! */
+			 , ( SELECT APRV_PRCS_STTS_CD
+				 FROM TB_POTI_APRV
+				 WHERE DEL_YN = 'N'
+				   AND APRV_ID = A.APRV_ID
+		) AS APRV_PRCS_STTS_CD
+			 , ( SELECT APRV_EMP_PBSR_NO
+				 FROM TB_POTI_APRV_D
+				 WHERE DEL_YN = 'N'
+				   AND APRV_ID = A.APRV_ID
+				 ORDER BY APRV_PRCS_DTTM DESC, APRV_SRNO ASC NULLS FIRST
+					 FETCH FIRST 1 ROW ONLY
+		) AS APRV_EMP_PBSR_NO		 /** !== 결재직원공무원번호 (우선순위 1.그 다음 결재 할 결재대기자 2. 모두 결재된 경우 최종 결재자) ==! */
+		FROM   TB_CLRI_DED_ADRT A
+		WHERE  DEL_YN = 'N'                  /** Suppression ON !== 삭제여부 ==! */
+		  AND A.DTL_DCSH_NO = #{dtlDcshNo}
+		  AND A.PRC_EV_DGCNT = #{prcEvDgcnt}
+	</select>
+
+
+	<!-- 심사결과 이력 목록 조회 -->
+	<select id="selectAdrtHistList" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedSrchVo" resultType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedAdrtVo">
+		/* selectAdrtHistList */
+		<include refid="pagination.header" ></include>
+		SELECT
+			A.DTL_DCSH_NO                     /** Numero du DAU !== SAD번호 ==! */
+			 , A.HIST_SRNO                  /** N° de sequence de l'histoire !== 이력일련번호 ==! */
+			 , A.AUDT_EMP_ID                /** ID de la personne verifiant !== 심사직원ID ==! */
+			 , (SELECT EMP_NM FROM TB_POTI_EMP  WHERE PBSR_NO = A.AUDT_EMP_ID) AS AUDT_EMP_NM
+			 , TO_CHAR(TO_DATE(A.AUDT_RSLT_RGSR_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS AUDT_RSLT_RGSR_DT          /** Date de l'enregistrement du resultat de la verification !== 심사결과등록일자 ==! */
+			 , A.AUDT_RSLT_CN               /** Contenu du resultat de la verification !== 심사결과내용 ==! */
+			 , A.AUDT_CMPL_YN               /** Verification terminee ON !== 심사완료여부 ==! */
+			 , A.APRV_ID                    /** ID d'approbation  !== 결재ID ==! */
+		FROM   TB_CLRI_DED_ADRT A
+		WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+		  AND A.DTL_DCSH_NO = #{dtlDcshNo}
+		ORDER BY PRC_EV_DGCNT, HIST_SRNO, AUDT_RSLT_RGSR_DT
+		<include refid="pagination.footer" ></include>
+	</select>
+
+	<!-- 심사결과등록 여부 조회   -->
+	<select id="selectAdrtRgsrYn" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedAdrtDcshVo" resultType="java.lang.String">
+		/* selectAdrtRgsrYn */
+		SELECT 1 AS ADRT_RGSR_YN
+		FROM TB_CLRI_DED_ADRT
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		  AND PRC_EV_DGCNT = #{prcEvDgcnt}
+		  AND DEL_YN = 'N'
+	</select>
+
+	<!--
+    Suppression des résultats du contrôle !== 심사결과 삭제 ==!
+    -->
+	<update id="deleteAdrt" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedAdrtVo">
+		/* deleteAdrt */
+		UPDATE  TB_CLRI_DED_ADRT
+		SET
+			DEL_YN = 'Y'
+		  , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+		  , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+		WHERE  DTL_DCSH_NO = #{dtlDcshNo}
+		  AND PRC_EV_DGCNT = #{prcEvDgcnt}
+		  AND DEL_YN = 'N'
+
+	</update>
+
+
+
+	<!--
+    CLRI_Enregistrement des résultats du contrôle de la déclaration en détail  !== CLRI_상세신고서심사결과 등록 ==!
+    (Generated)
+    -->
+	<insert id="mergeInsertDedAdrt" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedAdrtVo">
+		/* insertClrDedAdrt */
+		INSERT INTO TB_CLRI_DED_ADRT (
+			dtl_dcsh_no                            /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+		, prc_ev_dgcnt                         /** Nombre De Fois De L'Évaluation De Valeur !== 가격평가차수 ==! */
+		, hist_srno                            /** N° de sequence de l'historique !== 이력일련번호 ==! */
+		, audt_emp_id                          /** ID de l'insepcteur !== 심사직원ID ==! */
+		, audt_rslt_rgsr_dt                    /** Date D'Enregistrement Du Résultat De La Vérification !== 심사결과등록일자 ==! */
+		<if test="audtRsltCn != null and audtRsltCn != ''">
+		, audt_rslt_cn                         /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+		</if>
+		, audt_cmpl_yn                         /** Vérification Terminée On !== 심사완료여부 ==! */
+		, del_yn                               /** Suppression On !== 삭제여부 ==! */
+		, frst_regst_id                        /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+		, frst_rgsr_dttm                              /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+		, last_chpr_id                         /** Id Du Modificateur Final !== 최종변경자ID ==! */
+		, last_chg_dttm                               /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		, vlut_acpt_prcs_yn                    /** Autorisation Après Liquidation !== 가격평가수리처리여부 ==! */
+		, acpt_af_rlse_prcs_yn                 /** Sortie Après L'Autoris. De Sortie De Mse !== 수리후반출처리여부 ==! */
+		<if test="aprvId != null and aprvId != ''">
+		, aprv_id                              /** Id D'Approbation  !== 결재ID ==! */
+		</if>
+		) VALUES (
+					 #{dtlDcshNo}                           /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+				 , #{prcEvDgcnt}                                /** Nombre De Fois De L'Évaluation De Valeur !== 가격평가차수 ==! */
+				 , #{histSrno}                                  /** N° de sequence de l'historique !== 이력일련번호 ==! */
+				 , #{frstRegstId}                                 /** ID de l'insepcteur !== 심사직원ID ==! */
+				 , TO_CHAR(SYSDATE, 'YYYYMMDD')  /** Date D'Enregistrement Du Résultat De La Vérification !== 심사결과등록일자 ==! */
+		<if test="audtRsltCn != null and audtRsltCn != ''">
+				 , #{audtRsltCn}                                /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+		</if>
+				 , NVL(#{audtCmplYn}, 'N')                /** Verification terminee ON !== 심사완료여부 ==! */
+				 , 'N'                                          /** Suppression On !== 삭제여부 ==! */
+				 , #{frstRegstId}                               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+				 , SYSTIMESTAMP                                /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+				 , #{lastChprId}                                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+				 , SYSTIMESTAMP                                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+				 , NVL(#{vlutAcptPrcsYn}, 'N')				   /** 가격평가수리처리여부 */
+		, NVL(#{acptAfRlsePrcsYn}, 'N')				   /** 수리후반출처리여부 */
+		<if test="aprvId != null and aprvId != ''">
+				 , #{aprvId}                                    /** Id D'Approbation  !== 결재ID ==! */
+		</if>
+				 )
+		ON CONFLICT ( dtl_dcsh_no,prc_ev_dgcnt )
+			DO UPDATE SET
+			audt_emp_id = #{frstRegstId}                            /** ID de l'insepcteur !== 심사직원ID ==! */
+						,audt_rslt_rgsr_dt = TO_CHAR(SYSDATE,'YYYYMMDD')  /** Date D'Enregistrement Du Résultat De La Vérification !== 심사결과등록일자 ==! */
+		<if test="audtRsltCn != null and audtRsltCn != ''">
+						,audt_rslt_cn = #{audtRsltCn}                         /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+		</if>
+			            ,hist_srno = #{histSrno}
+						, AUDT_CMPL_YN = NVL(#{audtCmplYn}, 'N')
+						,last_chpr_id = #{lastChprId}                         /** Id Du Modificateur Final !== 최종변경자ID ==! */
+						, last_chg_dttm = SYSTIMESTAMP                               /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		, VLUT_ACPT_PRCS_YN = NVL(#{vlutAcptPrcsYn}, 'N')
+		, ACPT_AF_RLSE_PRCS_YN = NVL(#{acptAfRlsePrcsYn}, 'N')
+		<if test="aprvId != null and aprvId != ''">
+						,aprv_id = #{aprvId}                                  /** Id D'Approbation  !== 결재ID ==! */
+		</if>
+	</insert>
+
+	<!-- 심사결과상세 (심사결과코드) 등록   -->
+	<insert id="insertAudtRsltDtl" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedAdrtDVo">
+		/* insertAudtRsltDtl */
+		<selectKey keyProperty="sortOrdr" resultType="BigDecimal" order="BEFORE">
+			SELECT NVL(MAX(SORT_ORDR), 0) + 1 FROM TB_CLRI_DED_ADRT_D WHERE DTL_DCSH_NO =  #{dtlDcshNo}	AND PRC_EV_DGCNT = #{prcEvDgcnt} AND DEL_YN = 'N'
+		</selectKey>
+		INSERT INTO TB_CLRI_DED_ADRT_D (
+		dtl_dcsh_no                            /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+		, prc_ev_dgcnt                         /** Nombre De Fois De L'Évaluation De Valeur !== 가격평가차수 ==! */
+		, audt_rslt_cd                         /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+		, del_yn                               /** Suppression On !== 삭제여부 ==! */
+		, frst_regst_id                        /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+		, frst_rgsr_dttm                              /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+		, last_chpr_id                         /** Id Du Modificateur Final !== 최종변경자ID ==! */
+		, last_chg_dttm                               /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		, sort_ordr                            /** Ordre D'Alignement !== 정렬순서 ==! */
+		) VALUES (
+		#{dtlDcshNo}                           /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+		, #{prcEvDgcnt}                                /** Nombre De Fois De L'Évaluation De Valeur !== 가격평가차수 ==! */
+		, #{audtRsltCd}                                /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+		, 'N'                                          /** Suppression On !== 삭제여부 ==! */
+		, #{frstRegstId}                               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+		, SYSTIMESTAMP                                /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+		, #{lastChprId}                                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+		, SYSTIMESTAMP                                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		, #{sortOrdr}                                  /** Ordre D'Alignement !== 정렬순서 ==! */
+		)
+		ON CONFLICT ( dtl_dcsh_no,prc_ev_dgcnt,audt_rslt_cd )
+		DO UPDATE SET
+		              del_yn = 'N',
+		last_chpr_id = #{lastChprId}                          /** Id Du Modificateur Final !== 최종변경자ID ==! */
+		, last_chg_dttm = SYSTIMESTAMP                               /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		,sort_ordr = #{sortOrdr}                              /** Ordre D'Alignement !== 정렬순서 ==! */
+	</insert>
+
+	<!--
+    Suppéression des détails de résultat du contrôle !== 심사결과 상세 삭제 ==!
+    (차주원)
+    -->
+	<update id="deleteAudtRsltDtl" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedAdrtDcshVo">
+		/* deleteAudtRsltDtl */
+		UPDATE  TB_CLRI_DED_ADRT_D
+		SET
+			DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+		  ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+		  ,  LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+		WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+		  AND DTL_DCSH_NO = #{dtlDcshNo}
+		  AND PRC_EV_DGCNT = #{prcEvDgcnt}
+	</update>
+
+	<!--
+	@TODO 번역필요
+	!== 가격평가차수 조회 ==!
+	-->
+	<select id="selectPrcEvDgcnt" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedSrchVo" resultType="java.math.BigDecimal">
+		/* ClriComVlut_selectPrcEvDgcnt */
+		SELECT PRC_EV_DGCNT
+		FROM TB_CLRI_DED_VLUT_AUDT_COMN
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		  AND LAST_YN = 'Y'
+		  AND DEL_YN = 'N'
+	</select>
+
+	<!--
+    Suppression de LIMI_RÉSOLUTION DE L'AUDIENCE  !== LIMI_RÉSOLUTION DE L'AUDIENCE 삭제 ==!
+    (Generated)
+    -->
+	<update id="updateDedMgExt" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedMgVo">
+		/* ClrDedMg_deleteClrDedMg */
+		INSERT INTO ALPASSEXT.TB_CLRE_DED_MG (
+		reff_no                                /** N° De Référence !== N° De Référence ==! */
+		, mdfy_dgcnt                           /** Fréquence de rectification !== Fréquence de rectification ==! */
+		, mg_ac_no                             /** N° De Compte De Caution !== N° De Compte De Caution ==! */
+		, mg_tp_cd                             /** Code De Type De Caution !== Code De Type De Caution ==! */
+		, del_yn                               /** Suppression On !== Suppression On ==! */
+		, frst_regst_id                        /** Id Du Premier Enregistrant  !== Id Du Premier Enregistrant  ==! */
+		, frst_rgsr_dttm                              /** Date Et Heure De Premier Enregistrement !== Date Et Heure De Premier Enregistrement ==! */
+		, last_chpr_id                         /** Id Du Modificateur Final !== Id Du Modificateur Final ==! */
+		, last_chg_dttm                               /** Date Et Heure De Modification Finale !== Date Et Heure De Modification Finale ==! */
+		) VALUES (
+		  (SELECT reff_no FROM ALPASSEXT.tb_clre_ded_comn where dtl_dcsh_no = #{dtlDcshNo} and last_yn = 'Y' LIMIT 1)
+		, (SELECT mdfy_dgcnt FROM ALPASSEXT.tb_clre_ded_comn where dtl_dcsh_no = #{dtlDcshNo} and last_yn = 'Y' LIMIT 1)
+		, #{mgAcNo}                                    /** N° De Compte De Caution !== N° De Compte De Caution ==! */
+		, #{mgTpCd}                                    /** Code De Type De Caution !== Code De Type De Caution ==! */
+		, 'N'                                          /** Suppression On !== Suppression On ==! */
+		, #{lastChprId}                               /** Id Du Premier Enregistrant  !== Id Du Premier Enregistrant  ==! */
+		, SYSTIMESTAMP                                /** Date Et Heure De Premier Enregistrement !== Date Et Heure De Premier Enregistrement ==! */
+		, #{lastChprId}                                /** Id Du Modificateur Final !== Id Du Modificateur Final ==! */
+		, SYSTIMESTAMP                                /** Date Et Heure De Modification Finale !== Date Et Heure De Modification Finale ==! */
+		)
+		ON CONFLICT ( reff_no,mdfy_dgcnt,mg_ac_no )
+		DO UPDATE SET
+		mg_tp_cd = #{mgTpCd}                                  /** Code De Type De Caution !== Code De Type De Caution ==! */
+		,last_chpr_id = #{lastChprId}                         /** Id Du Modificateur Final !== Id Du Modificateur Final ==! */
+		, last_chg_dttm = SYSTIMESTAMP                               /** Date Et Heure De Modification Finale !== Date Et Heure De Modification Finale ==! */
+	</update>
+
+	<!--
+    Suppression de LIMI_RÉSOLUTION DE L'AUDIENCE  !== LIMI_RÉSOLUTION DE L'AUDIENCE 삭제 ==!
+    (Generated)
+    -->
+	<update id="updateDedMgInt" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedMgVo">
+		/* ClrDedMg_deleteClrDedMg */
+		INSERT INTO TB_CLRI_DED_MG (
+		dtl_dcsh_no                            /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+		, mg_ac_no                             /** N° De Compte De Caution !== 담보계좌번호 ==! */
+		, del_yn                               /** Suppression On !== 삭제여부 ==! */
+		, frst_regst_id                        /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+		, frst_rgsr_dttm                              /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+		, last_chpr_id                         /** Id Du Modificateur Final !== 최종변경자ID ==! */
+		, last_chg_dttm                               /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		, mg_tp_cd                             /** Code De Type De Caution !== 담보구분코드 ==! */
+		) VALUES (
+		#{dtlDcshNo}                           /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+		, #{mgAcNo}                                    /** N° De Compte De Caution !== 담보계좌번호 ==! */
+		, 'N'                                          /** Suppression On !== 삭제여부 ==! */
+		, #{lastChprId}                               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+		, SYSTIMESTAMP                                /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+		, #{lastChprId}                                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+		, SYSTIMESTAMP                                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		, #{mgTpCd}                                    /** Code De Type De Caution !== 담보구분코드 ==! */
+		)
+		ON CONFLICT ( dtl_dcsh_no,mg_ac_no )
+		DO UPDATE SET
+		last_chpr_id = #{lastChprId}                          /** Id Du Modificateur Final !== 최종변경자ID ==! */
+		, last_chg_dttm = SYSTIMESTAMP                               /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		,mg_tp_cd = #{mgTpCd}                                 /** Code De Type De Caution !== 담보구분코드 ==! */
+	</update>
+
+	<!--
+    Suppression de LIMI_RÉSOLUTION DE L'AUDIENCE  !== LIMI_RÉSOLUTION DE L'AUDIENCE 삭제 ==!
+    (Generated)
+    -->
+	<update id="updateDedMgHist" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedMgVo">
+		/* ClrDedMg_deleteClrDedMg */
+		INSERT INTO TB_CLRI_DED_MG_H (
+		dtl_dcsh_no                            /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+		, hist_srno                            /** N° de sequence de l'historique !== 이력일련번호 ==! */
+		, mg_ac_no                             /** N° De Compte De Caution !== 담보계좌번호 ==! */
+		, mg_tp_cd                             /** Code De Type De Caution !== 담보구분코드 ==! */
+		, del_yn                               /** Suppression On !== 삭제여부 ==! */
+		, frst_regst_id                        /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+		, frst_rgsr_dttm                              /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+		, last_chpr_id                         /** Id Du Modificateur Final !== 최종변경자ID ==! */
+		, last_chg_dttm                               /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		) VALUES (
+		#{dtlDcshNo}                           /** Numero de la déclaration en détail!! !== 상세신고서번호 ==! */
+		, (SELECT MAX(hist_srno) FROM tb_clri_ded_mg_h where dtl_dcsh_no = #{dtlDcshNo} and mg_tp_cd = #{mgTpCd} )
+		, #{mgAcNo}                                    /** N° De Compte De Caution !== 담보계좌번호 ==! */
+		, #{mgTpCd}                                    /** Code De Type De Caution !== 담보구분코드 ==! */
+		, 'N'                                          /** Suppression On !== 삭제여부 ==! */
+		, #{lastChprId}                               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+		, SYSTIMESTAMP                                /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+		, #{lastChprId}                                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+		, SYSTIMESTAMP                                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		)
+		ON CONFLICT ( dtl_dcsh_no,hist_srno,mg_ac_no )
+		DO UPDATE SET
+		mg_tp_cd = #{mgTpCd}                                  /** Code De Type De Caution !== 담보구분코드 ==! */
+		,last_chpr_id = #{lastChprId}                         /** Id Du Modificateur Final !== 최종변경자ID ==! */
+		, last_chg_dttm = SYSTIMESTAMP                               /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+	</update>
+
+	<!--
+        !== 검사완료 여부 조회 ==!
+        (Kim Kiryong)
+    -->
+	<select id="selectInscCmplYn" parameterType="string" resultType="string">
+		select 'Y' from TB_CLRI_DED_INSC_RSLT where dtl_dcsh_no = #{dtlDcshNo} AND del_yn = 'N' AND iprt_prcs_stts_cd = 'DD5'
+	</select>
+
+
+	<select id="selectAprsRqstList" parameterType="alpass.ipt.psc.vhcl.pdr.dre.vo.ClrDedComnDcshVo" resultType="alpass.ipt.clr.poa.ara.vo.ClrAraDcshAprsRqstVo">
+		select *,
+			fn_get_cd_vdval_nm('CLR_0110',rqst_tp_cd, #{langCd}) rqst_tp_nm
+		       from TB_CLRI_DTL_DCSH_APRS_RQST
+		where dtl_dcsh_no = #{dtlDcshNo} AND del_yn = 'N' limit 1
+	</select>
+</mapper>

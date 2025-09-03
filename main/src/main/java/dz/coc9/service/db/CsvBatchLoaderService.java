@@ -24,6 +24,7 @@ public class CsvBatchLoaderService {
     private final SqlSessionFactory sqlSessionFactory;
     private final GenericBatchMapper genericBatchMapper;
 
+    public String sqlCopyScript="";
     public CsvBatchLoaderService(GenericBatchMapper mapper, @Qualifier("sqlSessionFactory") SqlSessionFactory sqlSessionFactory, GenericBatchMapper genericBatchMapper) {
         this.mapper = mapper;
         this.sqlSessionFactory = sqlSessionFactory;
@@ -34,6 +35,7 @@ public class CsvBatchLoaderService {
     @Transactional
     public String loadCsvFolder(String folderPath) throws Exception {
         tbCount = 0;
+        sqlCopyScript="";
         File folder = new File(folderPath);
         if (!folder.exists() || !folder.isDirectory()) {
             throw new IllegalArgumentException("Invalid folder path: " + folderPath);
@@ -45,7 +47,7 @@ public class CsvBatchLoaderService {
                 loadCsvFileToTable(file.toPath(), tableName);
             }
         }
-        return "loaded " + tbCount +" of "+ Objects.requireNonNull(folder.listFiles()).length +" file";
+        return "loaded " + tbCount +" of "+ Objects.requireNonNull(folder.listFiles()).length +" file\n"+sqlCopyScript;
     }
 
     private String extractTableName(String fileName) {
@@ -68,6 +70,16 @@ public class CsvBatchLoaderService {
                     .map(String::trim)
                     .collect(Collectors.toList());
 
+            sqlCopyScript +=
+                    "\n\n" +
+                            "select count(*) FROM alpassint."+tableName+";\n"+
+            "COPY alpassint."+ tableName+ " ("  +
+                    fields.stream().map(String::trim).collect(Collectors.joining(","))+
+                    ") FROM '" +
+                            filePath+"'" +
+                            " DELIMITER ',' CSV HEADER; "
+            ;
+;
             try {
                 if (!"tb_coc_arm".equals(tableName) && !tableName.contains("_rel")) {
 

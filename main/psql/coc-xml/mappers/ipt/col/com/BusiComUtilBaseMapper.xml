@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.col.com.mapper.BusiComUtilBaseMapper">
+
+
+    <!--
+		***********************************************************************************************************************
+		************************************************* 채번 관련 SQL *******************************************************
+		***********************************************************************************************************************
+	-->
+
+    <!--
+       * SQL 설명 : 일련번호 채번 카운트
+       * 작성자 : 황용하
+      -->
+    <select id="selectBusiComSrnoGsnSrnoLen" parameterType="alpass.ipt.col.com.vo.BusiComSrnoGsnDVo" resultType="java.lang.Integer">
+        /** BusiComUtilBaseMapper_selectBusiComSrnoGsnSrnoLen */
+        SELECT
+        SRNO_LEN
+        <choose>
+            <when test="chnlTp != null and chnlTp != ''">
+                <if test='chnlTp == "I"'>
+                    <if test='appTp == "I"'>
+                        FROM TB_COM_SRNO_GSN
+                    </if>
+                    <if test='appTp != "I"'>
+                        FROM TB_COM_SRNO_GSN@LN_ICOM
+                    </if>
+                </if>
+                <if test='chnlTp == "E"'>
+                    <if test='appTp == "E"'>
+                        FROM TB_COM_SRNO_GSN
+                    </if>
+                    <if test='appTp != "E"'>
+                        FROM TB_COM_SRNO_GSN@LN_ECOM
+                    </if>
+                </if>
+                <if test='chnlTp == "G"'>
+                    <if test='appTp == "G"'>
+                        FROM TB_COM_SRNO_GSN
+                    </if>
+                    <if test='appTp != "G"'>
+                        FROM TB_COM_SRNO_GSN@LN_GCOM
+                    </if>
+                </if>
+            </when>
+            <otherwise>
+                FROM TB_COM_SRNO_GSN
+            </otherwise>
+        </choose>
+        WHERE USE_YN = 'Y'
+        AND   DEL_YN = 'N'
+        AND   GSN_CD = #{gsnCd}
+    </select>
+
+    <!--
+      * SQL 설명 : 일련번호 채번 카운트
+      * 작성자 : 황용하
+     -->
+    <select id="selectBusiComSrnoGsnDGsnLastSrno" parameterType="alpass.ipt.col.com.vo.BusiComSrnoGsnDVo" resultType="java.lang.String">
+        /** BusiComUtilBaseMapper_selectBusiComSrnoGsnDGsnLastSrno */
+        SELECT NVL(GSN_LAST_SRNO, 0) + 1
+
+        <choose>
+            <when test="chnlTp != null and chnlTp != ''">
+                <if test='chnlTp == "I"'>
+                    <if test='appTp == "I"'>
+                        FROM TB_COM_SRNO_GSN_D
+                    </if>
+                    <if test='appTp != "I"'>
+                        FROM TB_COM_SRNO_GSN_D@LN_ICOM
+                    </if>
+                </if>
+                <if test='chnlTp == "E"'>
+                    <if test='appTp == "E"'>
+                        FROM TB_COM_SRNO_GSN_D
+                    </if>
+                    <if test='appTp != "E"'>
+                        FROM TB_COM_SRNO_GSN_D@LN_ECOM
+                    </if>
+                </if>
+                <if test='chnlTp == "G"'>
+                    <if test='appTp == "G"'>
+                        FROM TB_COM_SRNO_GSN_D
+                    </if>
+                    <if test='appTp != "G"'>
+                        FROM TB_COM_SRNO_GSN_D@LN_GCOM
+                    </if>
+                </if>
+            </when>
+            <otherwise>
+                FROM TB_COM_SRNO_GSN_D
+            </otherwise>
+        </choose>
+
+        WHERE GSN_CD = #{gsnCd} AND GSN_TP_VAL = #{gsnTpVal}
+        FOR UPDATE
+    </select>
+
+    <!--
+       * SQL 설명 : 일련번호채번상세 등록
+       * 작성자 : 황용하
+      -->
+    <insert id="updateBusiComSrnoGsnD" parameterType="alpass.ipt.col.com.vo.BusiComSrnoGsnDVo">
+        /** BusiComUtilBaseMapper_updateBusiComSrnoGsnD */
+        MERGE INTO
+
+        <choose>
+            <when test="chnlTp != null and chnlTp != ''">
+                <if test='chnlTp == "I"'>
+                    <if test='appTp == "I"'>
+                        TB_COM_SRNO_GSN_D
+                    </if>
+                    <if test='appTp != "I"'>
+                        TB_COM_SRNO_GSN_D@LN_ICOM
+                    </if>
+                </if>
+                <if test='chnlTp == "E"'>
+                    <if test='appTp == "E"'>
+                        TB_COM_SRNO_GSN_D
+                    </if>
+                    <if test='appTp != "E"'>
+                        TB_COM_SRNO_GSN_D@LN_ECOM
+                    </if>
+                </if>
+                <if test='chnlTp == "G"'>
+                    <if test='appTp == "G"'>
+                        TB_COM_SRNO_GSN_D
+                    </if>
+                    <if test='appTp != "G"'>
+                        TB_COM_SRNO_GSN_D@LN_GCOM
+                    </if>
+                </if>
+            </when>
+            <otherwise>
+                TB_COM_SRNO_GSN_D
+            </otherwise>
+        </choose>
+
+        USING DUAL ON
+        (
+        GSN_CD = #{gsnCd} AND GSN_TP_VAL = #{gsnTpVal}
+        )
+        WHEN MATCHED THEN
+
+        UPDATE SET
+        LAST_CHPR_ID = 'SYSTEM'
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        , DEL_YN = 'N'
+        , GSN_LAST_SRNO = #{gsnLastSrno}
+        WHEN NOT MATCHED THEN
+
+        INSERT
+        (
+        GSN_CD
+        , GSN_TP_VAL
+        , GSN_LAST_SRNO
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM
+        )
+        VALUES
+        (
+        #{gsnCd}
+        , #{gsnTpVal}
+        , 1
+        , 'N'
+        , 'SYSTEM'
+        , SYSTIMESTAMP
+        , 'SYSTEM'
+        , SYSTIMESTAMP
+        )
+    </insert>
+
+    <!--
+      * SQL 설명 : 일련번호 채번
+      * 작성자 : 황용하
+     -->
+    <select id="selectBusiComSrnoGsnDLastSrno" parameterType="alpass.ipt.col.com.vo.BusiComSrnoGsnDVo" resultType="java.lang.String">
+        /** BusiComUtilBaseMapper_selectBusiComSrnoGsnDLastSrno */
+        SELECT #{gsnTpVal}||LPAD(NVL( (SELECT MAX(GSN_LAST_SRNO)
+
+        <choose>
+            <when test="chnlTp != null and chnlTp != ''">
+                <if test='chnlTp == "I"'>
+                    <if test='appTp == "I"'>
+                        FROM TB_COM_SRNO_GSN_D
+                    </if>
+                    <if test='appTp != "I"'>
+                        FROM TB_COM_SRNO_GSN_D@LN_ICOM
+                    </if>
+                </if>
+                <if test='chnlTp == "E"'>
+                    <if test='appTp == "E"'>
+                        FROM TB_COM_SRNO_GSN_D
+                    </if>
+                    <if test='appTp != "E"'>
+                        FROM TB_COM_SRNO_GSN_D@LN_ECOM
+                    </if>
+                </if>
+                <if test='chnlTp == "G"'>
+                    <if test='appTp == "G"'>
+                        FROM TB_COM_SRNO_GSN_D
+                    </if>
+                    <if test='appTp != "G"'>
+                        FROM TB_COM_SRNO_GSN_D@LN_GCOM
+                    </if>
+                </if>
+            </when>
+            <otherwise>
+                FROM TB_COM_SRNO_GSN_D
+            </otherwise>
+        </choose>
+
+        WHERE GSN_CD = #{gsnCd} AND GSN_TP_VAL = #{gsnTpVal} ), 0), #{srnoLen}, '0') FROM DUAL
+    </select>
+
+</mapper>

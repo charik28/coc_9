@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.ii.cd.mapper.PotIiCdCurrCdMapper">
+
+  <!--
+    Consulter la liste des codes de devise !==통화코드 목록을 조회한다==!
+  -->
+  <select id="selectCurrCdList"
+    parameterType="alpass.ipt.pot.ii.cd.vo.PotIiCdCurrCdVo"
+    resultType="alpass.ipt.pot.ii.cd.vo.PotIiCdCurrCdVo">
+    /** selectCurrCdList */
+    <include refid="pagination.header"/>
+    SELECT
+    A.CURR_CD
+    , A.CURR_CD AS ORG_CURR_CD
+    , (SELECT B.CURR_NM FROM TB_COM_CURR_CD_LANG B WHERE B.CURR_CD = A.CURR_CD AND B.LANG_CD = #{langCd}) AS CURR_NM
+    , A.DGT3_NUM_CURR_CD
+    , A.CURR_SMBL
+    , A.RPRS_CNTY_CD
+    , FN_GET_CNTY_NM(A.RPRS_CNTY_CD, #{langCd}) AS CNTY_NM
+    , A.FRST_REGST_ID
+    , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM
+    , A.LAST_CHPR_ID
+    , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY') AS LAST_CHG_DTTM
+    FROM TB_COM_CURR_CD A
+    WHERE A.DEL_YN = 'N'
+    <if test="searCurrCd != null and searCurrCd != ''">
+      AND A.CURR_CD LIKE '%'||#{searCurrCd}||'%'
+    </if>
+    <if test="searDgt3NumCurrCd != null and searDgt3NumCurrCd != ''">
+      AND A.DGT3_NUM_CURR_CD = #{searDgt3NumCurrCd}
+    </if>
+    <if test="searRprsCntyCd != null and searRprsCntyCd != ''">
+      AND A.RPRS_CNTY_CD = #{searRprsCntyCd}
+    </if>
+    <if test="searCurrNm != null and searCurrNm != ''">
+      AND A.CURR_CD IN ( SELECT B.CURR_CD
+      FROM TB_COM_CURR_CD_LANG B
+      WHERE UPPER(B.CURR_NM) LIKE '%'||UPPER(#{searCurrNm})||'%'
+      AND B.DEL_YN = 'N'
+      )
+    </if>
+    ORDER BY A.CURR_CD, A.DGT3_NUM_CURR_CD, A.CURR_SMBL, A.RPRS_CNTY_CD, A.FRST_REGST_ID, A.FRST_RGSR_DTTM, A.LAST_CHPR_ID, A.LAST_CHG_DTTM
+    <include refid="pagination.footer"/>
+  </select>
+
+  <!--
+    Consulter la liste des codes de devise !==통화코드(상세) 목록을 조회한다==!
+  -->
+  <select id="selectCurrCdDetailList" parameterType="alpass.ipt.pot.ii.cd.vo.PotIiCdCurrCdVo" resultType="alpass.ipt.pot.ii.cd.vo.PotIiCdCurrCdLangVo">
+    /** selectCurrCdDetailList */
+    SELECT
+      B.CURR_CD AS KEY1
+         , A.CD_VDVAL AS LANG_CD
+         , B.CURR_NM AS LANG_CN
+    FROM TB_COM_COMN_CD_D A,
+         TB_COM_CURR_CD_LANG B
+    WHERE A.COMN_CD = 'COM_0057'
+      AND B.DEL_YN(+) = 'N'
+      AND B.CURR_CD(+) = #{currCd}
+      AND A.CD_VDVAL  = B.LANG_CD(+)
+    ORDER BY TO_NUMBER(A.SORT_ORDR) ASC
+  </select>
+
+</mapper>

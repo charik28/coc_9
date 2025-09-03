@@ -1,0 +1,1856 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper">
+
+	<!--
+		[Rechercher] Consulter la liste des "Demande de transfert" !== 운송 신청 목록을 조회한다. ==!
+		(Jeong Byungyeol)
+		-->
+	<select id="selectTrnpList" resultType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.selectTrnpList */
+		<include refid="pagination.header" ></include>
+		SELECT
+			  A.TRNP_RQST_NO				/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+			, A.JRSD_ORGN_CD			        /**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+			, BL.CAG_MGMT_NO	/**  Crn  !== 화물관리번호 ==!  */
+			, BL.BL_NO 	/**  N° De Bl  !== BL번호 ==!  */
+			, A.TRNP_TP_CD				/**  Code de type de transfert  !== 운송구분코드 ==!  */
+			, A.TRNP_MEAN_CD				/**  Code de mode de transport  !== 운송방법코드 ==!  */
+		    , TO_CHAR(A.DPTR_DTTM, 'DD/MM/YYYY HH24:MI')       AS DPTR_DTTM /** Date Et Heure De Départ !== Date Et Heure De Départ ==! */
+		    , TO_CHAR(A.ARVL_DTTM, 'DD/MM/YYYY HH24:MI')       AS ARVL_DTTM /** Date Et Heure D'Arrivée !== Date Et Heure D'Arrivée ==! */
+			, A.TRNP_PATH_CN				/**  Contenu De L'Itinéraire Du Transport  !== 운송경로내용 ==!  */
+			, A.DPRP_CSTM_CD				/**  Code De Bureau De Départ  !== 출발지세관코드 ==!  */
+			, A.ARLC_CSTM_CD				/**  Bureau De Destination  !== 도착지세관코드 ==!  */
+			, A.DPRP_IBOBZ_CD				/**  Code De Zone Sous Douane De Départ  !== 출발지보세구역코드 ==!  */
+			, (SELECT IBOBZ_NM FROM TB_CARI_IBOBZ B WHERE B.IBOBZ_CD = A.DPRP_IBOBZ_CD) AS DPRP_IBOBZ_NM
+			, A.ARLC_IBOBZ_CD				/**  Code De Zone Sous Douane De Destination  !== 도착지보세구역코드 ==!  */
+			, (SELECT IBOBZ_NM FROM TB_CARI_IBOBZ B WHERE B.IBOBZ_CD = A.ARLC_IBOBZ_CD) AS ARLC_IBOBZ_NM
+			, A.HDCB_YN				/**  Hydrocarbon O/N  !== 탄화수소여부 ==!  */
+			, TO_CHAR(A.TRSN_DTTM, 'DD/MM/YYYY') AS TRSN_DTTM	/**  Date et heure de transmission  !== 전송일시 ==!  */
+			, A.TRSN_CO_CD				/**  Code d'entreprise transmettrice  !== 전송업체코드 ==!  */
+			, B.AUDT_EMP_ID				/**  ID de l'insepcteur  !== 심사직원ID ==!  */
+			, B.AUDT_EMP_NM				/**  Nom du l'insepcteur  !== 심사직원명 ==!  */
+			, B.PRCS_DTTM 				/**  Date Et Heure De Traitement  !== 처리일시 ==!  */
+			,CASE WHEN ((SELECT MAX(PRCS_STTS_CD) FROM TB_CARI_CAG_PRCS_BRKD Z WHERE Z.CAG_RQST_NO = A.TRNP_RQST_NO AND Z.DEL_YN = 'N') = 'D08'
+				AND (SELECT PRCS_STTS_CD FROM TB_CARI_CAG_PRCS_BRKD Z WHERE Z.CAG_RQST_NO = A.TRNP_RQST_NO AND Z.CAG_RQST_TP_CD  = 'MCE' AND Z.DEL_YN = 'N') = 'B04')
+				THEN 'B04' ELSE (SELECT MAX(PRCS_STTS_CD) FROM TB_CARI_CAG_PRCS_BRKD Z WHERE Z.CAG_RQST_NO = A.TRNP_RQST_NO AND Z.DEL_YN = 'N') END
+				AS PRCS_STTS_CD
+			, A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			, A.FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, A.LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+			/*20230224 추가*/
+			, B.CAG_RQST_TP_CD /**  Code de type de demTCCPB.de fret  !== 화물신청구분코드 ==!  */
+		FROM
+			TB_CARI_TRNP 	A
+		LEFT JOIN (
+			SELECT
+				S.TRNP_RQST_NO
+				, ARRAY_TO_STRING(ARRAY_AGG(S.CAG_MGMT_NO), ',') AS CAG_MGMT_NO
+				, ARRAY_TO_STRING(ARRAY_AGG(S.BL_NO), ',') AS BL_NO
+			FROM
+			(
+				SELECT
+					TBL.CAG_MGMT_NO /**  Crn  !== 화물관리번호 ==!  */
+					, TBL.BL_NO /**  N° De Bl  !== BL번호 ==!  */
+					, TBL.TRNP_RQST_NO
+				FROM TB_CARI_TRNP_BL TBL
+				WHERE TBL.DEL_YN = 'N' /**  Suppression On  !== 삭제여부 ==!  */
+			) S GROUP BY TRNP_RQST_NO
+		) BL ON BL.TRNP_RQST_NO = A.TRNP_RQST_NO
+		LEFT JOIN (
+			SELECT
+				TCCPB.CAG_RQST_NO				/** N° De Demande De Cargaison !== 화물신청번호 ==! */
+				, TCCPB.CAG_RQST_TP_CD				/**  Code de type de demTCCPB.de fret  !== 화물신청구분코드 ==!  */
+				, TCCPB.RQST_DGCNT				/**  N° ordre de lTCCPB.demTCCPB.de  !== 신청차수 ==!  */
+				, TCCPB.JRSD_ORGN_CD				/**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+				, TCCPB.TRNP_TP_CD				/**  Code de type de trTCCPB.sfert  !== 운송구분코드 ==!  */
+				, TCCPB.IBOBZ_CD				/**  Code de zone sous douTCCPB.e  !== 보세구역코드 ==!  */
+				, TCCPB.PRCS_STTS_CD				/**  Code De StTCCPB.ut De TrTCCPB.tement  !== 처리상태코드 ==!  */
+				, TO_CHAR(TCCPB.PRCS_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS PRCS_DTTM	/**  Date Et Heure De Traitement  !== 처리일시 ==!  */
+				, TCCPB.HNOT_EMP_ID				/**  ID du chTCCPB.gé de cotTCCPB.ion  !== 배부직원ID ==!  */
+				, TCCPB.AUDT_EMP_ID				/**  ID de l'insepcteur  !== 심사직원ID ==!  */
+				, TPE.EMP_FMNM || ' ' || TPE.EMP_NM AS AUDT_EMP_NM				/**  ID de l'insepcteur  !== 심사직원ID ==!  */
+				, TCCPB.INSC_EMP_ID				/**  ID de l'vérificTCCPB.eur  !== 검사직원ID ==!  */
+			FROM TB_CARI_CAG_PRCS_BRKD TCCPB
+			LEFT JOIN TB_POTI_EMP TPE ON TPE.PBSR_NO = TCCPB.AUDT_EMP_ID
+			WHERE TCCPB.DEL_YN = 'N'
+			AND TPE.DEL_YN = 'N'
+		) B
+		ON A.TRNP_RQST_NO = B.CAG_RQST_NO
+		AND B.CAG_RQST_TP_CD  = 'MCG'
+		AND B.RQST_DGCNT      = 0
+		LEFT OUTER JOIN (
+			SELECT
+				K1.CO_NM
+				, K1.RPRS_TLPH_NO
+				, K1.CO_ADDR
+				, K2.CO_DCLR_CD
+			FROM
+				TB_COM_CO K1
+				,TB_COM_CO_DCLR_CD K2
+			WHERE K1.NIF = K2.NIF
+			AND K1.DEL_YN = 'N'
+			AND K2.DEL_YN = 'N'
+		    AND K2.RQST_TP_CD IN ('01','02') /* 신규나/수정 상태*/
+		    AND K2.PRCS_STTS_CD = 'O' /* 업체  승인상태 */
+		    AND K2.USE_YN = 'Y' /* 사용여부 */
+		) C
+		ON A.TRSN_CO_CD = C.CO_DCLR_CD
+		WHERE A.DEL_YN = 'N'              /**  Suppression On  !== 삭제여부 ==!  */
+		<if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(searchKeywordFrom) and @alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(searchKeywordTo)">
+			AND (
+				(
+					A.TRSN_DTTM <![CDATA[ >= ]]> TO_DATE(#{searchKeywordFrom}, 'DD/MM/YYYY')       /**  Date et heure de transmission  !== 전송일시 ==!  */
+					AND A.TRSN_DTTM <![CDATA[ <= ]]> TO_DATE(#{searchKeywordTo}, 'DD/MM/YYYY')+0.9999   /**  Date et heure de transmission  !== 전송일시 ==!  */
+				) OR (
+					A.LAST_CHG_DTTM <![CDATA[ >= ]]> TO_TIMESTAMP(#{searchKeywordFrom}, 'DD/MM/YYYY')
+					AND A.LAST_CHG_DTTM <![CDATA[ <= ]]> TO_TIMESTAMP(#{searchKeywordTo}, 'DD/MM/YYYY')+0.9999
+				)
+			)
+		</if>
+
+		<if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(prcsSttsCd)">
+			AND B.PRCS_STTS_CD = #{prcsSttsCd}                                           /**  Code De Statut De Traitement  !== 처리상태코드 ==!  */
+		</if>
+
+		AND A.TRNP_TP_CD != '50'
+		<if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(trnpTpCd)">
+			AND A.TRNP_TP_CD = #{trnpTpCd}                        /**  Code de type de transfert  !== 운송구분코드 ==!  */
+		</if>
+
+		<if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(trnpMeanCd)">
+			AND A.TRNP_MEAN_CD = #{trnpMeanCd}                    /**  Code de mode de transport  !== 운송방법코드 ==!  */
+		</if>
+
+		<if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(trnpRqstNo)">
+			AND A.TRNP_RQST_NO = #{trnpRqstNo}                    /**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		</if>
+
+		<if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(cagMgmtNo)">
+			AND EXISTS (
+				SELECT 1
+				FROM TB_CARI_TRNP_BL 		TCTB
+				WHERE TCTB.TRNP_RQST_NO = A.TRNP_RQST_NO
+			    AND TCTB.DEL_YN = 'N'
+			    AND  TCTB.CAG_MGMT_NO LIKE CONCAT('%',#{cagMgmtNo},'%')           /**  Crn  !== 화물관리번호 ==!  */
+			)
+		</if>
+
+		<if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(blNo)">
+			AND EXISTS (
+				SELECT 1
+				FROM TB_CARI_TRNP_BL 		TCTB
+				WHERE TCTB.TRNP_RQST_NO = A.TRNP_RQST_NO
+			    AND TCTB.DEL_YN = 'N'
+			    AND  TCTB.BL_NO LIKE CONCAT('%',#{blNo},'%')                      /**  N° De Bl  !== BL번호 ==!  */
+			)
+		</if>
+
+		<choose>
+			<when test="@alpass.ipt.car.com.util.CarMyBatisUtil@isEqualsStr(scrnTp,'1')">
+				AND B.PRCS_STTS_CD IN ('B02', 'B04', 'D08', 'D09', 'D30')
+			</when>
+			<otherwise>
+				AND B.PRCS_STTS_CD IN ('D01', 'B02', 'B04', 'D08', 'D09', 'D30')
+			</otherwise>
+		</choose>
+
+		<choose>
+			<when test="roleId.equals('CAR067'.toString())">
+				AND B.AUDT_EMP_ID  = #{pbsrNo}
+			</when>
+			<otherwise>
+				AND A.JRSD_ORGN_CD LIKE SUBSTR(#{jrsdOrgnCd}, 1, 5) || '%'
+			</otherwise>
+		</choose>
+
+		ORDER BY B.PRCS_DTTM DESC
+		<include refid="pagination.footer" ></include>
+	</select>
+
+	<!--
+		[Rechercher] Consulter la liste des "Demande de transfert" !== 운송 신청을 조회한다. ==!
+		(Jeong Byungyeol)
+		-->
+	<select id="selectTrnp" resultType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.selectTrnp */
+		SELECT
+			A.TRNP_RQST_NO				/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+			 , C.JRSD_CSTM_CD
+			 , A.JRSD_ORGN_CD			        /**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+			 , A.TRNP_TP_CD				/**  Code de type de transfert  !== 운송구분코드 ==!  */
+			 , A.TRNP_MEAN_CD				/**  Code de mode de transport  !== 운송방법코드 ==!  */
+			 , TO_CHAR(A.DPTR_DTTM, 'DD/MM/YYYY HH24:MI')       AS DPTR_DTTM /** Date Et Heure De Départ !== Date Et Heure De Départ ==! */
+			 , TO_CHAR(A.ARVL_DTTM, 'DD/MM/YYYY HH24:MI')       AS ARVL_DTTM /** Date Et Heure D'Arrivée !== Date Et Heure D'Arrivée ==! */
+			 , A.TRNP_PATH_CN				/**  Contenu De L'Itinéraire Du Transport  !== 운송경로내용 ==!  */
+			 , A.DPRP_CSTM_CD				/**  Code De Bureau De Départ  !== 출발지세관코드 ==!  */
+			 , A.ARLC_CSTM_CD				/**  Bureau De Destination  !== 도착지세관코드 ==!  */
+			 , A.DPRP_IBOBZ_CD				/**  Code De Zone Sous Douane De Départ  !== 출발지보세구역코드 ==!  */
+			 , (SELECT IBOBZ_NM FROM TB_CARI_IBOBZ B WHERE B.IBOBZ_CD = A.DPRP_IBOBZ_CD) AS DPRP_IBOBZ_NM
+			 , A.ARLC_IBOBZ_CD				/**  Code De Zone Sous Douane De Destination  !== 도착지보세구역코드 ==!  */
+			 , (SELECT IBOBZ_NM FROM TB_CARI_IBOBZ B WHERE B.IBOBZ_CD = A.ARLC_IBOBZ_CD) AS ARLC_IBOBZ_NM
+			 , A.HDCB_YN				/**  Hydrocarbon O/N  !== 탄화수소여부 ==!  */
+			 , A.ATCH_FILE_ID				/**  Id Du Fichier Joint  !== 첨부파일ID ==!  */
+			 , TO_CHAR(A.trsn_dttm, 'DD/MM/YYYY HH24:mi:ss') AS TRSN_DTTM	/**  Date et heure de transmission  !== 전송일시 ==!  */
+			 , A.TRSN_CO_CD				/**  Code d'entreprise transmettrice  !== 전송업체코드 ==!  */
+			 , B.AUDT_EMP_ID				/**  ID de l'insepcteur  !== 심사직원ID ==!  */
+			 , B.AUDT_EMP_NM				/**  Nom du l'insepcteur  !== 심사직원명 ==!  */
+			 , B.PRCS_DTTM 				/**  Date Et Heure De Traitement  !== 처리일시 ==!  */
+			 ,CASE WHEN ((SELECT MAX(PRCS_STTS_CD) FROM TB_CARI_CAG_PRCS_BRKD Z WHERE Z.CAG_RQST_NO = A.TRNP_RQST_NO AND Z.DEL_YN = 'N') = 'D08'
+			AND (SELECT PRCS_STTS_CD FROM TB_CARI_CAG_PRCS_BRKD Z WHERE Z.CAG_RQST_NO = A.TRNP_RQST_NO AND Z.CAG_RQST_TP_CD  = 'MCE' AND Z.DEL_YN = 'N') = 'B04')
+					   THEN 'B04' ELSE (SELECT MAX(PRCS_STTS_CD) FROM TB_CARI_CAG_PRCS_BRKD Z WHERE Z.CAG_RQST_NO = A.TRNP_RQST_NO AND Z.DEL_YN = 'N') END
+			AS PRCS_STTS_CD
+			 , A.AUDT_PT_CD 			  /**  Code De Type De Contrôle  !== 심사유형코드 ==!  */
+			 , A.AUDT_RSLT_CN 		  /**  Contenu Du Résultat De La Vérification  !== 심사결과내용 ==!  */
+			 , A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			 , A.FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			 , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			 , A.LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			 , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+			/*20230224 추가*/
+			 , B.CAG_RQST_TP_CD /**  Code de type de demTCCPB.de fret  !== 화물신청구분코드 ==!  */
+		FROM TB_CARI_TRNP 	A
+		LEFT JOIN (
+			SELECT
+				TCCPB.CAG_RQST_NO				/** N° De Demande De Cargaison !== 화물신청번호 ==! */
+				 , TCCPB.CAG_RQST_TP_CD				/**  Code de type de demTCCPB.de fret  !== 화물신청구분코드 ==!  */
+				 , TCCPB.RQST_DGCNT				/**  N° ordre de lTCCPB.demTCCPB.de  !== 신청차수 ==!  */
+				 , TCCPB.JRSD_ORGN_CD				/**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+				 , TCCPB.TRNP_TP_CD				/**  Code de type de trTCCPB.sfert  !== 운송구분코드 ==!  */
+				 , TCCPB.IBOBZ_CD				/**  Code de zone sous douTCCPB.e  !== 보세구역코드 ==!  */
+				 , TCCPB.PRCS_STTS_CD				/**  Code De StTCCPB.ut De TrTCCPB.tement  !== 처리상태코드 ==!  */
+				 , TO_CHAR(TCCPB.PRCS_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS PRCS_DTTM	/**  Date Et Heure De Traitement  !== 처리일시 ==!  */
+				 , TCCPB.HNOT_EMP_ID				/**  ID du chTCCPB.gé de cotTCCPB.ion  !== 배부직원ID ==!  */
+				 , TCCPB.AUDT_EMP_ID				/**  ID de l'insepcteur  !== 심사직원ID ==!  */
+				 , TPE.EMP_FMNM || ' ' || TPE.EMP_NM AS AUDT_EMP_NM				/**  ID de l'insepcteur  !== 심사직원ID ==!  */
+				 , TCCPB.INSC_EMP_ID				/**  ID de l'vérificTCCPB.eur  !== 검사직원ID ==!  */
+			FROM
+				TB_CARI_CAG_PRCS_BRKD TCCPB
+					LEFT JOIN TB_POTI_EMP TPE ON TPE.PBSR_NO = TCCPB.AUDT_EMP_ID
+			WHERE
+				TCCPB.DEL_YN = 'N'
+			  AND
+				TPE.DEL_YN = 'N'
+		) B
+		  ON A.TRNP_RQST_NO = B.CAG_RQST_NO
+		 AND B.CAG_RQST_TP_CD  = 'MCG'
+		 AND B.RQST_DGCNT      = 0
+		LEFT JOIN ( SELECT C1.ORGN_CD
+						 , C2.ORGN_CD JRSD_CSTM_CD
+					FROM TB_POTI_ORGN C1
+					LEFT JOIN TB_POTI_ORGN C2
+					  ON C1.UPR_ORGN_MGMT_CD = C2.ORGN_MGMT_CD
+					WHERE C1.DEL_YN = 'N'
+		) C
+		ON A.JRSD_ORGN_CD = C.ORGN_CD
+		WHERE
+			A.DEL_YN = 'N'              /**  Suppression On  !== 삭제여부 ==!  */
+		  AND
+			A.TRNP_RQST_NO = #{trnpRqstNo}                    /**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</select>
+
+	<!--
+	[Modifier] Supprimer la demande de transfert.   !== 운송 신청을 삭제처리 한다.==!
+	(Jeong Byungyeol)
+	-->
+	<update id="deleteTrnp" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.deleteTrnp */
+		UPDATE
+			TB_CARI_TRNP
+		SET
+			DEL_YN      			= 'Y'
+		  , LAST_CHPR_ID      = #{lastChprId} /**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		  , LAST_CHG_DTTM     = SYSTIMESTAMP /**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		WHERE
+			TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de Demander la rectification de transfert  !== 운송신청번호 ==!  */
+	</update>
+
+	<!--
+	[Modifier] Modifier l'état de traitement de la demande de transfert.   !== 운송 신청의 처리상태를 수정한다.==!
+	(Jeong Byungyeol)
+	-->
+	<update id="updateTrnpPrcsSttsCd" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.updateTrnpPrcsSttsCd */
+		UPDATE
+			TB_CARI_TRNP
+		SET
+			AUDT_DTTM 			= SYSTIMESTAMP 	/**  Date De L'Étude  !== 심사일시 ==!  */
+		  , AUDT_PT_CD 			= #{audtPtCd} 			/**  Code De Type De Contrôle  !== 심사유형코드 ==!  */
+		  , AUDT_RSLT_CN 		= #{audtRsltCn} 			/**  Contenu Du Résultat De La Vérification  !== 심사결과내용 ==!  */
+		  , LAST_CHPR_ID    = #{lastChprId} /**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		  , LAST_CHG_DTTM   = SYSTIMESTAMP /**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		WHERE
+			TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de Demander la rectification de transfert  !== 운송신청번호 ==!  */
+	</update>
+
+	<!--
+	[Rechercher] Consulter la liste des B/L de la demande de transfert. !== "운송신청 BL" 목록을 조회한다.==!
+	(Jeong Byungyeol)
+	-->
+	<select id="selectTrnpBlList" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpBlVo" resultType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpBlVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.selectTrnpBlList */
+		SELECT
+			  A.BL_SRNO				/**  N° De Séquence De Bl  !== BL일련번호 ==!  */
+			, A.TRNP_RQST_NO				/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+			, A.CAG_MGMT_NO				/**  Crn  !== 화물관리번호 ==!  */
+			, A.BL_NO				/**  N° De Bl  !== BL번호 ==!  */
+			, A.PDLS_NM				/**  Nom De L'Article  !== 품목명 ==!  */
+			, A.PCKG_GCNT				/**  Nombre De Colis  !== 포장개수 ==!  */
+			, A.WGHT				/**  Poids  !== 중량 ==!  */
+			, NVL(A.RELA_NO,'') AS RELA_NO				/**  Numéro Concerné  !== 관련번호 ==!  */
+			, NVL(Z.CNTR_CNT,0) AS CNTR_CNT
+			, A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			, A.FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, A.LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		FROM
+			TB_CARI_TRNP_BL A
+		<if test="trnpTpCd == '60'">
+		LEFT OUTER JOIN ( SELECT COUNT(DISTINCT Z.CNTR_NO) AS CNTR_CNT
+		                       , X.EXP_CMDT_BRNG_RQNO/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+		                    FROM TB_CARI_EXP_CMDT_BRNG_CNTR Z
+		                    LEFT JOIN TB_CARI_EXP_CMDT_BRNG X
+		                      ON X.EXP_CMDT_BRNG_RQNO = Z.EXP_CMDT_BRNG_RQNO
+		                   WHERE Z.DEL_YN  = 'N'
+		                     AND X.DEL_YN  = 'N'
+		                   GROUP BY X.EXP_CMDT_BRNG_RQNO
+		) Z
+		ON Z.EXP_CMDT_BRNG_RQNO = A.RELA_NO
+		</if>
+		<if test="trnpTpCd != '60'">
+		LEFT OUTER JOIN ( SELECT COUNT(DISTINCT Z.CNTR_NO) AS CNTR_CNT
+							   , X.CAG_MGMT_NO/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+						  FROM TB_CARI_CAG_DCSH_BL_CNTR Z
+						   LEFT JOIN TB_CARI_CAG_DCSH_BL X
+							 ON X.CAG_MGMT_NO = Z.CAG_MGMT_NO AND X.MRN = Z.MRN
+						  WHERE Z.DEL_YN  = 'N'
+							AND X.DEL_YN  = 'N'
+						  GROUP BY X.CAG_MGMT_NO
+		) Z
+		ON  Z.CAG_MGMT_NO = A.CAG_MGMT_NO
+		</if>
+		WHERE
+			A.DEL_YN = 'N'              /**  Suppression On  !== 삭제여부 ==!  */
+		  AND
+			A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		ORDER BY A.BL_SRNO
+	</select>
+	
+	<!--
+	[Rechercher] (Divide) Consulter la liste des B/L de la demande de transfert. !== "(분할)운송신청 BL" 목록을 조회한다.==!
+	(Jeong Byungyeol)
+	-->
+	<select id="selectDidvTrnpBlList" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpBlVo" resultType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpBlVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.selectDidvTrnpBlList */
+		SELECT
+			  A.BL_SRNO				/**  N° De Séquence De Bl  !== BL일련번호 ==!  */
+			, A.TRNP_RQST_NO				/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+			, A.CAG_MGMT_NO				/**  Crn  !== 화물관리번호 ==!  */
+			, A.BL_NO				/**  N° De Bl  !== BL번호 ==!  */
+			, A.PDLS_NM				/**  Nom De L'Article  !== 품목명 ==!  */
+			<if test="trnpTpCd == '60'">
+			, A.PCKG_GCNT				/**  Nombre De Colis  !== 포장개수 ==!  */
+			, A.WGHT				/**  Poids  !== 중량 ==!  */
+			, NVL(A.RELA_NO,'') AS RELA_NO				/**  Numéro Concerné  !== 관련번호 ==!  */
+			</if>
+			<if test="trnpTpCd != '60'">
+			, D.APRE_PCKG_GCNT AS PCKG_GCNT
+   			, D.APRE_TTWG AS WGHT
+     		, D.DTL_DCSH_NO AS RELA_NO
+			</if>
+			, NVL(Z.CNTR_CNT,0) AS CNTR_CNT
+			, A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			, A.FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, A.LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		FROM
+			TB_CARI_TRNP_BL A
+		<if test="trnpTpCd == '60'">
+		LEFT OUTER JOIN ( SELECT COUNT(DISTINCT Z.CNTR_NO) AS CNTR_CNT
+		                       , X.EXP_CMDT_BRNG_RQNO/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+		                    FROM TB_CARI_EXP_CMDT_BRNG_CNTR Z
+		                    LEFT JOIN TB_CARI_EXP_CMDT_BRNG X
+		                      ON X.EXP_CMDT_BRNG_RQNO = Z.EXP_CMDT_BRNG_RQNO
+		                   WHERE Z.DEL_YN  = 'N'
+		                     AND X.DEL_YN  = 'N'
+		                   GROUP BY X.EXP_CMDT_BRNG_RQNO
+		) Z
+		ON Z.EXP_CMDT_BRNG_RQNO = A.RELA_NO
+		</if>
+		<if test="trnpTpCd != '60'">
+		LEFT OUTER JOIN ( SELECT COUNT(DISTINCT Z.CNTR_NO) AS CNTR_CNT
+							   , X.CAG_MGMT_NO/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+						  FROM TB_CARI_CAG_DCSH_BL_CNTR Z
+						   LEFT JOIN TB_CARI_CAG_DCSH_BL X
+							 ON X.CAG_MGMT_NO = Z.CAG_MGMT_NO AND X.MRN = Z.MRN
+						  WHERE Z.DEL_YN  = 'N'
+							AND X.DEL_YN  = 'N'
+						  GROUP BY X.CAG_MGMT_NO
+		) Z
+		ON  Z.CAG_MGMT_NO = A.CAG_MGMT_NO
+		LEFT JOIN TB_CARI_TRNP M
+        ON A.TRNP_RQST_NO = M.TRNP_RQST_NO
+        AND M.DEL_YN = 'N' 
+        LEFT JOIN ALPASSINT.TB_CLRI_CSCL_CAG_INTF D  
+        ON A.CAG_MGMT_NO = D.CAG_MGMT_NO
+        AND M.DPRP_IBOBZ_CD = D.CMDT_STGE_LOCT_CD
+        AND M.ARLC_IBOBZ_CD = D.ARLC_IBOBZ_CD
+        AND D.DCLR_PT_CD = 'IM8'
+        AND D.DEL_YN = 'N'
+        AND NVL(D.MDFY_RQST_YN, 'N') = 'N'
+		</if>
+		WHERE
+			A.DEL_YN = 'N'              /**  Suppression On  !== 삭제여부 ==!  */
+		  AND
+			A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		ORDER BY A.BL_SRNO
+	</select>
+
+	<!--
+	[Rechercher] Consulter la liste des transporteurs de la demande de transfert. !== "운송신청 운송사" 목록을 조회한다.==!
+	(YoungChae.Kim)
+	-->
+	<select id="selectTrnpCarrList" resultType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpCarrVo">
+		/* alpass.ept.car.trnpcvy.trnp.mapper.CarTrnpMapper.selectTrnpCarrList */
+		SELECT A.CARR_SRNO				/** N° série du transporteur !== 운송사일련번호 ==! */
+             , A.BL_SRNO				/**  N° De Séquence De Bl  !== BL일련번호 ==!  */
+             , C.BL_NO
+             , A.TRNP_RQST_NO			/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+             , NVL(A.CARR_CD,'') AS CARR_CD				/**  Code De Société De Transport  !== 운송사코드 ==!  */
+             , NVL(A.CARR_NIF,'') AS CARR_NIF				/**  Niu Transporteur   !== 운송사사업자등록번호 ==!  */
+             , NVL(A.CARR_ADDR_NM,'') AS CARR_ADDR_NM			/**  Adresse De Société De Transport  !== 운송사주소명 ==!  */
+             , NVL(A.CARR_NM,'') AS CARR_NM
+		  FROM TB_CARI_TRNP_CARR A
+             , TB_CARI_TRNP_BL C
+		 WHERE A.DEL_YN = 'N'              /**  Suppression On  !== 삭제여부 ==!  */
+           AND A.BL_SRNO = C.BL_SRNO
+           AND A.TRNP_RQST_NO = C.TRNP_RQST_NO
+           AND C.DEL_YN = 'N'
+           AND A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		<if test="blSrno !=null and blSrno !=''">
+           AND A.BL_SRNO = #{blSrno}
+		</if>
+		ORDER BY A.CARR_SRNO
+	</select>
+
+	<!--
+	[Rechercher] Consulter la liste des moyens de transport de la demande de transfert. !== "운송신청 운송수단" 목록을 조회한다.==!
+	(Jeong Byungyeol)
+	-->
+	<select id="selectTrnpCarrMethList" resultType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpMethVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.selectTrnpCarrMethList */
+		SELECT A.TRNP_METH_SRNO				/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+		     , A.TRNP_RQST_NO				/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		     , A.BL_SRNO						/**  N° De Séquence De Bl  !== BL일련번호 ==!  */
+		     , C.BL_NO
+		     , B.CARR_CD
+		     , B.CARR_NM
+		     , A.CARR_SRNO					/** N° série du transporteur !== 운송사일련번호 ==! */
+		     , A.TRNP_METH_PT_CD				/**  Type De Moyen De Transport  !== 운송수단유형코드 ==!  */
+			 , FN_GET_CD_VDVAL_NM('CAR_0005', A.TRNP_METH_PT_CD, #{langCd}) AS TRNP_METH_PT_NM
+		     , A.TRNP_METH_NM				/**  Nom De Moyen De Transport  !== 운송수단명 ==!  */
+		     , A.TRNP_METH_IDFY_NO			/**  N° D'Identification Du Moyen De Transport  !== 운송수단식별번호 ==!  */
+		     , A.TRNP_RFER_NO				/**  N° de référence de transport  !== 운송참고번호 ==!  */
+		     , A.TRNP_METH_NAT_CD			/**  Code de nationalité du moyen de transport  !== 운송수단국적코드 ==!  */
+			 , FN_GET_CNTY_NM(A.TRNP_METH_NAT_CD, #{langCd}) AS TRNP_METH_NAT_NM
+		     , A.IMO_NO						/**  N° IMO  !== IMO번호 ==!  */
+		     , A.SHIP_TTN					/**  Tonnage Brut Du Navire  !== 선박총톤수 ==!  */
+		     , A.SHIP_NTTN					/**  Tonnage Net Du Navire  !== 선박순톤수 ==!  */
+		     , A.DRVR_NM						/**  Nom de conducteur  !== 운전자명 ==!  */
+		     , A.NTNAL_IDFY_NO				/**  Nin  !== 자국민식별번호 ==!  */
+		     , A.LCNE_NO						/**  N° permis de conduire  !== 면허번호 ==!  */
+		     , A.PSPR_NO						/**  N° De Passeport  !== 여권번호 ==!  */
+		     , A.DEL_YN						/**  Suppression On  !== 삭제여부 ==!  */
+		     , A.FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+		     , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+		     , A.LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		     , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		     , A.SEAL_NO /**  N° De Scellé  !== 봉인번호 ==!  */
+		  FROM TB_CARI_TRNP_METH A
+		     , TB_CARI_TRNP_CARR B
+		     , TB_CARI_TRNP_BL C
+		 WHERE A.DEL_YN = 'N'              /**  Suppression On  !== 삭제여부 ==!  */
+		   AND A.BL_SRNO = B.BL_SRNO
+		   AND A.CARR_SRNO = B.CARR_SRNO
+		   AND A.TRNP_RQST_NO = B.TRNP_RQST_NO
+		   AND B.DEL_YN = 'N'
+		   AND A.BL_SRNO = C.BL_SRNO
+		   AND A.TRNP_RQST_NO = C.TRNP_RQST_NO
+		   AND C.DEL_YN = 'N'
+		   AND A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		<if test="blSrno !=null and blSrno !=''">
+		   AND A.BL_SRNO = #{blSrno}
+		</if>
+		<if test="carrSrno !=null and carrSrno !=''">
+		   AND A.CARR_SRNO = #{carrSrno}
+		</if>
+		ORDER BY A.TRNP_METH_SRNO
+	</select>
+
+	<!--
+	[Rechercher] Consulter la liste des conteneurs de la demande de transfert. !== "운송신청 컨테이너" 목록을 조회한다.==!
+	(Jeong Byungyeol)
+	-->
+	<select id="selectTrnpCntrList" resultType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpCntrVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.selectTrnpCntrList */
+		SELECT A.CNTR_SRNO				/**  N° De Séquence Du Conteneur  !== 컨테이너일련번호 ==!  */
+		     , A.TRNP_RQST_NO			/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		     , A.CARR_SRNO				/** N° série du transporteur !== 운송사일련번호 ==! */
+		     , A.TRNP_METH_SRNO			/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+		     , A.CNTR_NO					/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+		     , A.CNTR_TP_CD				/**  Code De Type De Conteneur  !== 컨테이너구분코드 ==!  */
+			 , FN_GET_CD_VDVAL_NM('CAR_0020', A.CNTR_TP_CD, #{langCd}) AS CNTR_TP_NM
+		     , A.SEAL_NO1				/**  N° De Scellé1  !== 봉인번호1 ==!  */
+		     , A.SEAL_CHPN1				/**  Responsable de scellé 1  !== 봉인담당자1 ==!  */
+		     , A.SEAL_NO2				/**  N° De Scellé2  !== 봉인번호2 ==!  */
+		     , A.SEAL_CHPN2				/**  Responsable de scellé 2  !== 봉인담당자2 ==!  */
+		     , A.SEAL_NO3				/**  N° De Scellé3  !== 봉인번호3 ==!  */
+		     , A.SEAL_CHPN3				/**  Responsable de scellé 3  !== 봉인담당자3 ==!  */
+		     , A.PCKG_GCNT				/**  Nombre De Colis  !== 포장개수 ==!  */
+		     , A.PCKG_UT_CD				/**  Code De L'Unité De Colis  !== 포장단위코드 ==!  */
+			 , FN_GET_CD_VDVAL_NM('CAR_0021', A.PCKG_UT_CD, #{langCd}) AS PCKG_UT_NM
+		     , A.ECNTR_WGHT              /**  Tare De Conteneur(S) À Vide  !== 공컨테이너중량 ==!  */
+		     , A.WGHT					/**  Poids  !== 중량 ==!  */
+		     , A.ELCT_SEAL_NO			/**  N° Scellé Électronique  !== 전자봉인번호 ==!  */
+		     , A.ELCT_SEAL_NO_MNTN_DTTM	/**  Date De La Pose De N° Scellé Électronique  !== 전자봉인번호장착일시 ==!  */
+		     , A.ELCT_SEAL_NO_MNTN_CHPN	/**  Responsable De La Pose De N° Scellé Électronique  !== 전자봉인번호장착담당자 ==!  */
+		     , A.DEL_YN					/**  Suppression On  !== 삭제여부 ==!  */
+		     , A.FRST_REGST_ID			/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+		     , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+		     , A.LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		     , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		     , A.TRLR_SRNO				/**  N° D'Immatriculation De Remorque  !== 트레일러차량등록번호 ==!  */
+		     , A.WGN_SRNO				/**  N° De Wagon  !== 왜건번호 ==!  */
+		     , A.BL_SRNO					/**  N° De Séquence De Bl  !== BL일련번호 ==!  */
+		     , D.BL_NO
+		  FROM TB_CARI_TRNP_CNTR A
+		     , TB_CARI_TRNP_METH B
+		     , TB_CARI_TRNP_CARR C
+		     , TB_CARI_TRNP_BL D
+		<if test="trlrSrno !=null and trlrSrno !=''">
+		     , TB_CARI_TRNP_TRLR TT
+		</if>
+		<if test="wgnSrno !=null and wgnSrno !=''">
+		     , TB_CARI_TRNP_WGN TW
+		</if>
+		 WHERE A.DEL_YN = 'N'              /**  Suppression On  !== 삭제여부 ==!  */
+		   AND A.BL_SRNO = B.BL_SRNO
+		   AND A.CARR_SRNO = B.CARR_SRNO
+		   AND A.TRNP_RQST_NO = B.TRNP_RQST_NO
+		   AND A.TRNP_METH_SRNO = B.TRNP_METH_SRNO
+		   AND B.DEL_YN = 'N'
+		   AND A.BL_SRNO = C.BL_SRNO
+		   AND A.CARR_SRNO  = C.CARR_SRNO
+		   AND A.TRNP_RQST_NO = C.TRNP_RQST_NO
+		   AND C.DEL_YN = 'N'
+		   AND A.BL_SRNO = D.BL_SRNO
+		   AND A.TRNP_RQST_NO = D.TRNP_RQST_NO
+		   AND D.DEL_YN = 'N'
+		<if test="trlrSrno !=null and trlrSrno !=''">
+		   AND A.TRLR_SRNO = TT.TRLR_SRNO
+		   AND A.TRNP_RQST_NO = TT.TRNP_RQST_NO
+		   AND A.TRNP_METH_SRNO = TT.TRNP_METH_SRNO
+		   AND A.CARR_SRNO = TT.CARR_SRNO
+		   AND A.BL_SRNO = TT.BL_SRNO
+		   AND TT.DEL_YN='N'
+		</if>
+		<if test="wgnSrno !=null and wgnSrno !=''">
+		   AND A.WGN_SRNO = TW.WGN_SRNO
+		   AND A.TRNP_RQST_NO = TW.TRNP_RQST_NO
+		   AND A.TRNP_METH_SRNO = TW.TRNP_METH_SRNO
+		   AND A.CARR_SRNO = TW.CARR_SRNO
+		   AND A.BL_SRNO = TW.BL_SRNO
+		   AND TW.DEL_YN='N'
+		</if>
+		   AND A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		<if test="blSrno !=null and blSrno !=''">
+		   AND A.BL_SRNO = #{blSrno}
+		</if>
+		<if test="carrSrno !=null and carrSrno !=''">
+		   AND A.CARR_SRNO = #{carrSrno}
+		</if>
+		<if test="trnpMethSrno !=null and trnpMethSrno !=''">
+		   AND A.TRNP_METH_SRNO = #{trnpMethSrno}	/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+		</if>
+		<if test="trlrSrno !=null and trlrSrno !=''">
+		   AND A.TRLR_SRNO = #{trlrSrno}	/**  N° D'Immatriculation De Remorque  !== 트레일러차량등록번호 ==!  */
+		</if>
+		<if test="wgnSrno !=null and wgnSrno !=''">
+		   AND A.WGN_SRNO = #{wgnSrno}				/**  N° De Wagon  !== 왜건번호 ==!  */
+		</if>
+		ORDER BY A.CNTR_SRNO
+	</select>
+
+	<!--
+	[Rechercher] Consulter la liste des remorques de la demande de transfert. !== "운송신청 트레일러" 목록을 조회한다.==!
+	(Jeong Byungyeol)
+	-->
+	<select id="selectTrnpTrlrList" resultType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpTrlrVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.selectTrnpTrlrList */
+		SELECT A.TRLR_SRNO				/**  Numéro de série de la remorque  !== 트레일러일련번호 ==!  */
+		     , A.TRNP_RQST_NO			/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		     , A.BL_SRNO					/**  N° De Séquence De Bl  !== BL일련번호 ==!  */
+		     , A.CARR_SRNO				/** N° série du transporteur !== 운송사일련번호 ==! */
+		     , A.TRNP_METH_SRNO			/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+		     , A.TRLR_VHCL_RGSR_NO		/**  N° D'Immatriculation De Remorque  !== 트레일러차량등록번호 ==!  */
+		     , A.TRLR_SSIS_NO			/**  N° Châssis De Remorque  !== 트레일러샤시번호 ==!  */
+		     , A.TRLR_STSZ				/**  Gabarit De Remorque  !== 트레일러규격 ==!  */
+		     , D.BL_NO
+		     , A.DEL_YN					/**  Suppression On  !== 삭제여부 ==!  */
+		     , A.FRST_REGST_ID			/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+		     , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+		     , A.LAST_CHPR_ID			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		     , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		  FROM TB_CARI_TRNP_TRLR A
+		     , TB_CARI_TRNP_METH B
+		     , TB_CARI_TRNP_CARR C
+		     , TB_CARI_TRNP_BL D
+		 WHERE A.DEL_YN = 'N'              	/**  Suppression On  !== 삭제여부 ==!  */
+		   AND A.BL_SRNO = B.BL_SRNO
+		   AND A.CARR_SRNO = B.CARR_SRNO
+		   AND A.TRNP_RQST_NO = B.TRNP_RQST_NO
+		   AND A.TRNP_METH_SRNO = B.TRNP_METH_SRNO
+		   AND B.DEL_YN = 'N'
+		   AND A.BL_SRNO = C.BL_SRNO
+		   AND A.CARR_SRNO  = C.CARR_SRNO
+		   AND A.TRNP_RQST_NO = C.TRNP_RQST_NO
+		   AND C.DEL_YN = 'N'
+		   AND A.BL_SRNO = D.BL_SRNO
+		   AND A.TRNP_RQST_NO = D.TRNP_RQST_NO
+		   AND D.DEL_YN = 'N'
+		   AND A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		<if test="blSrno !=null and blSrno !=''">
+			AND A.BL_SRNO = #{blSrno}
+		</if>
+		<if test="carrSrno !=null and carrSrno !=''">
+			AND A.CARR_SRNO = #{carrSrno}
+		</if>
+		<if test="trnpMethSrno !=null and trnpMethSrno !=''">
+		   AND A.TRNP_METH_SRNO = #{trnpMethSrno}	/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+		</if>
+	</select>
+
+	<!--
+	[Rechercher] Consulter la liste des wagons de la demande de transfert. !== "운송신청 왜건" 목록을 조회한다.==!
+	(Jeong Byungyeol)
+	-->
+	<select id="selectTrnpWgnList" resultType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpWgnVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.selectTrnpWgnList */
+		SELECT A.WGN_SRNO					/**  N° série de wagon !== 왜건일련번호 ==!  */
+		     , A.TRNP_RQST_NO				/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		     , A.BL_SRNO						/**  N° De Séquence De Bl  !== BL일련번호 ==!  */
+		     , A.CARR_SRNO					/** N° série du transporteur !== 운송사일련번호 ==! */
+		     , A.TRNP_METH_SRNO				/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+		     , A.WGN_NO						/**  N° De Wagon  !== 왜건번호 ==!  */
+		     , A.WGN_TYPE					/**  type de wagon  !== 왜건타입 ==!  */
+		     , D.BL_NO
+		     , A.DEL_YN						/**  Suppression On  !== 삭제여부 ==!  */
+		     , A.FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+		     , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+		     , A.LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		     , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		  FROM TB_CARI_TRNP_WGN A
+		     , TB_CARI_TRNP_METH B
+		     , TB_CARI_TRNP_CARR C
+		     , TB_CARI_TRNP_BL D
+		 WHERE A.DEL_YN = 'N'              	/**  Suppression On  !== 삭제여부 ==!  */
+		   AND A.BL_SRNO = B.BL_SRNO
+		   AND A.CARR_SRNO = B.CARR_SRNO
+		   AND A.TRNP_RQST_NO = B.TRNP_RQST_NO
+		   AND A.TRNP_METH_SRNO = B.TRNP_METH_SRNO
+		   AND B.DEL_YN = 'N'
+		   AND A.BL_SRNO = C.BL_SRNO
+		   AND A.CARR_SRNO  = C.CARR_SRNO
+		   AND A.TRNP_RQST_NO = C.TRNP_RQST_NO
+		   AND C.DEL_YN = 'N'
+		   AND A.BL_SRNO = D.BL_SRNO
+		   AND A.TRNP_RQST_NO = D.TRNP_RQST_NO
+		   AND D.DEL_YN = 'N'
+		   AND A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		<if test="blSrno !=null and blSrno !=''">
+			AND A.BL_SRNO = #{blSrno}
+		</if>
+		<if test="carrSrno !=null and carrSrno !=''">
+			AND A.CARR_SRNO = #{carrSrno}
+		</if>
+		<if test="trnpMethSrno !=null and trnpMethSrno !=''">
+			AND A.TRNP_METH_SRNO = #{trnpMethSrno}	/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+		</if>
+	</select>
+
+	<!--
+	[Modifier] Modifier l'état de traitement de l'interface des marchandises dédouanées.   !== 통관화물인터페이스 변경.==!
+	-->
+	<update id="updateCsclCag" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpInvnBlVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.updateCsclCag */
+		UPDATE TB_CLRI_CSCL_CAG_INTF
+		SET LAST_CHPR_ID      = #{lastChprId} 	/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		, LAST_CHG_DTTM     = SYSTIMESTAMP 	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		<if test="prcsYn != null and prcsYn != ''">
+			, PRCS_YN	= #{prcsYn}					/** Traitement ON !== 처리여부 ==! */
+		</if>
+		<if test="prcsRsltCd != null">
+			, PRCS_RSLT_CD = #{prcsRsltCd}         /** Code de résultat du traitement !== 처리결과코드 ==! */
+		</if>
+		WHERE DEL_YN = 'N'
+		  AND (DCLR_PT_CD, EPC_CD, CAG_MGMT_NO, CMDT_STGE_LOCT_CD, ARLC_IBOBZ_CD) IN ( SELECT DCLR_PT_CD, EPC_CD, CAG_MGMT_NO, CMDT_STGE_LOCT_CD, ARLC_IBOBZ_CD 
+                                                                                         FROM TB_CLRI_CSCL_CAG_INTF 
+                                                                                        WHERE DTL_DCSH_NO = #{relaNo} AND DEL_YN = 'N')
+	</update>
+
+	<!--
+	[Modifier] Modifier le N° demande de transfert des marchandises ayant dépassé le délai légal du séjour.   !== 보관일경과물품 운송신청번호 변경.==!
+	-->
+	<update id="updateCariStdtPassCmdtRqstNo" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpInvnBlVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.updateCariStdtPassCmdtRqstNo */
+		UPDATE TB_CARI_STDT_PASS_CMDT
+		SET LAST_CHPR_ID      = #{lastChprId} 	/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		  , LAST_CHG_DTTM     = SYSTIMESTAMP 	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		  , TRNP_RQST_NO		 = #{trnpRqstNo}	/** Traitement ON !== 처리여부 ==! */
+		WHERE DPOT_NO = #{relaNo}					/**  NUMÉRO CONCERNÉ  !== 관련번호 ==!  */
+		  AND DEL_YN='N'
+	</update>
+
+	<insert id="insertTrnpMdfy" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.insertTrnpMdfy */
+		INSERT INTO TB_CARI_TRNP_MDFY
+		( TRNP_RQST_NO
+		,MDFY_DGCNT
+		,JRSD_ORGN_CD
+		,TRNP_TP_CD
+		,TRNP_MEAN_CD
+		,DPTR_DTTM
+		,ARVL_DTTM
+		,TRNP_PATH_CN
+		,DPRP_CSTM_CD
+		,DPRP_IBOBZ_CD
+		,DPTR_PORT_CD
+		,ARLC_CSTM_CD
+		,ARLC_IBOBZ_CD
+		,LDUN_PORT_CD
+		,HDCB_YN
+		,TRSN_DTTM
+		,TRSN_CO_CD
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM)
+		SELECT A.TRNP_RQST_NO	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+			 ,0 AS MDFY_DGCNT 	/**  Fréquence de rectification !== 정정 차수 ==! */
+			 ,A.JRSD_ORGN_CD	/**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+			 ,A.TRNP_TP_CD		/**  Code de type de transfert  !== 운송구분코드 ==!  */
+			 ,A.TRNP_MEAN_CD	/**  Code de mode de transport  !== 운송방법코드 ==!  */
+			 ,A.DPTR_DTTM /** Date Et Heure De Départ !== 출발일시 ==! */
+			 ,A.ARVL_DTTM /** Date Et Heure D'Arrivée !== 도착일시 ==! */
+			 ,A.TRNP_PATH_CN	/**  Contenu De L'Itinéraire Du Transport  !== 운송경로내용 ==!  */
+			 ,A.DPRP_CSTM_CD	/**  Code De Bureau De Départ  !== 출발지세관코드 ==!  */
+			 ,A.DPRP_IBOBZ_CD	/**  Code De Zone Sous Douane De Départ  !== 출발지보세구역코드 ==!  */
+			 ,A.dptr_port_cd	/**  Code De Port De Départ !== 출발항구코드 ==! */
+			 ,A.ARLC_CSTM_CD	/**  Bureau De Destination  !== 도착지세관코드 ==!  */
+			 ,A.ARLC_IBOBZ_CD	/**  Code De Zone Sous Douane De Destination  !== 도착지보세구역코드 ==!  */
+			 ,A.LDUN_PORT_CD	/**  Code De Port De Déchargement !== 하역항구코드 ==! */
+			 ,A.HDCB_YN		/**  Hydrocarbon O/N  !== 탄화수소여부 ==!  */
+			 ,A.TRSN_DTTM		/**  Date et heure de transmission  !== 전송일시 ==!  */
+			 ,A.TRSN_CO_CD		/**  Code d'entreprise transmettrice  !== 전송업체코드 ==!  */
+			 ,A.DEL_YN			/**  Suppression On  !== 삭제여부 ==!  */
+			 ,A.FRST_REGST_ID	/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			 ,A.FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			 ,A.LAST_CHPR_ID	/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			 ,A.LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		FROM TB_CARI_TRNP	A
+		WHERE A.DEL_YN = 'N'	/** Suppression ON !== 삭제여부 ==! */
+		  AND A.TRNP_RQST_NO = #{trnpRqstNo} /**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</insert>
+
+	<!--
+        [Enregistrer] Enregistrer le B/L de la demande de rectification de transfert. !== 운송 정정 신청 BL을 등록 한다.==!
+        -->
+	<insert id="insertTrnpBlMdfy" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.insertTrnpBlMdfy */
+		INSERT INTO TB_CARI_TRNP_MDFY_BL
+		(BL_SRNO
+		,TRNP_RQST_NO
+		,MDFY_DGCNT
+		,CAG_MGMT_NO
+		,BL_NO
+		,PDLS_NM
+		,PCKG_GCNT
+		,WGHT
+		,RELA_NO
+		,MG_NO
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM)
+		SELECT A.BL_SRNO			/**  N° De Séquence De Bl  !== BL일련번호 ==!  */
+			 ,A.TRNP_RQST_NO		/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+			 ,0 as MDFY_DGCNT		/**  Fréquence de rectification !== 정정 차수 ==! */
+			 ,A.CAG_MGMT_NO		/**  Crn  !== 화물관리번호 ==!  */
+			 ,A.BL_NO				/**  N° De Bl  !== BL번호 ==!  */
+			 ,A.PDLS_NM			/**  Nom De L'Article  !== 품목명 ==!  */
+			 ,A.PCKG_GCNT			/**  Nombre De Colis  !== 포장개수 ==!  */
+			 ,A.WGHT				/**  Poids  !== 중량 ==!  */
+			 ,A.RELA_NO			/**  Numéro Concerné  !== 관련번호 ==!  */
+			 ,A.MG_NO				/**  N° De Caution  !== 담보번호 ==!  */
+			 ,A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			 ,A.FRST_REGST_ID		/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			 ,A.FRST_RGSR_DTTM		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			 ,A.LAST_CHPR_ID		/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			 ,A.LAST_CHG_DTTM		/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		FROM TB_CARI_TRNP_BL A
+		WHERE A.DEL_YN = 'N'		/** Suppression ON !== 삭제여부 ==! */
+		  AND A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</insert>
+
+	<!--
+	[Enregistrer] Enregistrer le transporteur de la demande de rectification de transfert.      !== 운송 정정 신청 운송사을 등록 한다. ==!
+	-->
+	<insert id="insertTrnpCarrMdfy" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.insertTrnpCarrMdfy */
+		INSERT INTO TB_CARI_TRNP_MDFY_CARR
+		(TRNP_RQST_NO
+		,BL_SRNO
+		,CARR_SRNO
+		,MDFY_DGCNT
+		,CARR_NM
+		,CARR_CD
+		,CARR_NIF
+		,CARR_ADDR_NM
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM)
+		SELECT A.TRNP_RQST_NO
+			 ,A.BL_SRNO
+			 ,A.CARR_SRNO
+			 ,0 AS MDFY_DGCNT 		/**  Fréquence de rectification !== 정정 차수 ==! */
+		     ,A.CARR_NM
+			 ,A.CARR_CD
+			 ,A.CARR_NIF
+			 ,A.CARR_ADDR_NM
+			 ,A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			 ,A.FRST_REGST_ID		/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			 ,A.FRST_RGSR_DTTM		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			 ,A.LAST_CHPR_ID			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			 ,A.LAST_CHG_DTTM		/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		FROM TB_CARI_TRNP_CARR 	A
+		WHERE A.DEL_YN = 'N'         /**  Suppression On  !== 삭제여부 ==!  */
+		  AND A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</insert>
+
+	<!--
+	[Enregistrer] Enregistrer le moyen de transport de la demande de rectification de transfert.      !== 운송 정정 신청 운송수단을 등록 한다. ==!
+	-->
+	<insert id="insertTrnpMethMdfy" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.insertTrnpMethMdfy */
+		INSERT INTO TB_CARI_TRNP_MDFY_METH
+		(TRNP_METH_SRNO
+		,TRNP_RQST_NO
+		,BL_SRNO
+		,CARR_SRNO
+		,MDFY_DGCNT
+		,TRNP_METH_PT_CD
+		,TRNP_METH_NM
+		,TRNP_METH_IDFY_NO
+		,TRNP_RFER_NO
+		,TRNP_METH_NAT_CD
+		,IMO_NO
+		,SHIP_TTN
+		,SHIP_NTTN
+		,DRVR_NM
+		,NTNAL_IDFY_NO
+		,LCNE_NO
+		,PSPR_NO
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM
+		,SEAL_NO        /**  N° De Scellé  !== 봉인번호 ==!  */
+		)
+		SELECT A.TRNP_METH_SRNO		/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+			 ,A.TRNP_RQST_NO			/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+			 ,A.BL_SRNO
+			 ,A.CARR_SRNO
+			 ,0 AS MDFY_DGCNT 		/**  Fréquence de rectification !== 정정 차수 ==! */
+			 ,A.TRNP_METH_PT_CD		/**  Type De Moyen De Transport  !== 운송수단유형코드 ==!  */
+			 ,A.TRNP_METH_NM			/**  Nom De Moyen De Transport  !== 운송수단명 ==!  */
+			 ,A.TRNP_METH_IDFY_NO	/**  N° D'Identification Du Moyen De Transport  !== 운송수단식별번호 ==!  */
+			 ,A.TRNP_RFER_NO			/**  N° de référence de transport  !== 운송참고번호 ==!  */
+			 ,A.TRNP_METH_NAT_CD		/**  Code de nationalité du moyen de transport  !== 운송수단국적코드 ==!  */
+			 ,A.IMO_NO				/**  N° IMO  !== IMO번호 ==!  */
+			 ,A.SHIP_TTN				/**  Tonnage Brut Du Navire  !== 선박총톤수 ==!  */
+			 ,A.SHIP_NTTN			/**  Tonnage Net Du Navire  !== 선박순톤수 ==!  */
+			 ,A.DRVR_NM				/**  Nom de conducteur  !== 운전자명 ==!  */
+			 ,A.NTNAL_IDFY_NO		/**  Nin  !== 자국민식별번호 ==!  */
+			 ,A.LCNE_NO				/**  N° permis de conduire  !== 면허번호 ==!  */
+			 ,A.PSPR_NO				/**  N° De Passeport  !== 여권번호 ==!  */
+			 ,A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			 ,A.FRST_REGST_ID		/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			 ,A.FRST_RGSR_DTTM		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			 ,A.LAST_CHPR_ID			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			 ,A.LAST_CHG_DTTM		/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+			 ,A.SEAL_NO        /**  N° De Scellé  !== 봉인번호 ==!  */
+		FROM TB_CARI_TRNP_METH 	A
+		WHERE A.DEL_YN = 'N'         /**  Suppression On  !== 삭제여부 ==!  */
+		  AND A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</insert>
+
+	<!--
+	[Enregistrer] Enregistrer la remorque de la demande de rectification de transfert.      !== 운송 정정 신청 트레일러을 등록 한다. ==!
+	-->
+	<insert id="insertTrnpTrlrMdfy" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.insertTrnpTrlrMdfy */
+		INSERT INTO
+			TB_CARI_TRNP_MDFY_TRLR
+		(
+			TRLR_SRNO				/**  Numéro de série de la remorque  !== 트레일러일련번호 ==!  */
+		, TRNP_RQST_NO			/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		, BL_SRNO
+		, CARR_SRNO
+		, MDFY_DGCNT
+		, TRNP_METH_SRNO		/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+		, TRLR_VHCL_RGSR_NO		/**  N° D'Immatriculation De Remorque  !== 트레일러차량등록번호 ==!  */
+		, TRLR_SSIS_NO			/**  N° Châssis De Remorque  !== 트레일러샤시번호 ==!  */
+		, TRLR_STSZ				/**  Gabarit De Remorque  !== 트레일러규격 ==!  */
+		, DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+		, FRST_REGST_ID			/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+		, FRST_RGSR_DTTM		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+		, LAST_CHPR_ID			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		, LAST_CHG_DTTM			/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		)
+		SELECT
+			A.TRLR_SRNO			/**  Numéro de série de la remorque  !== 트레일러일련번호 ==!  */
+			 , A.TRNP_RQST_NO		/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+			 , A.BL_SRNO
+			 , A.CARR_SRNO
+			 , 0 AS MDFY_DGCNT 			/**  Fréquence de rectification !== 정정 차수 ==! */
+			 , A.TRNP_METH_SRNO		/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+			 , A.TRLR_VHCL_RGSR_NO	/**  N° D'Immatriculation De Remorque  !== 트레일러차량등록번호 ==!  */
+			 , A.TRLR_SSIS_NO		/**  N° Châssis De Remorque  !== 트레일러샤시번호 ==!  */
+			 , A.TRLR_STSZ			/**  Gabarit De Remorque  !== 트레일러규격 ==!  */
+			 , A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			 , A.FRST_REGST_ID		/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			 , A.FRST_RGSR_DTTM		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			 , A.LAST_CHPR_ID		/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			 , A.LAST_CHG_DTTM		/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		FROM
+			TB_CARI_TRNP_TRLR A
+		WHERE
+			A.DEL_YN = 'N'          /**  Suppression On  !== 삭제여부 ==!  */
+		  AND
+			A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</insert>
+
+	<!--
+	[Enregistrer] Enregistrer le wagon de la demande de rectification de transfert.      !== 운송 정정 신청 왜건을 등록 한다. ==!
+	-->
+	<insert id="insertTrnpWgnMdfy" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.insertTrnpWgnMdfy */
+		INSERT INTO
+			TB_CARI_TRNP_MDFY_WGN
+		(
+			WGN_SRNO				/**  N° série de wagon !== 왜건일련번호 ==!  */
+		, TRNP_RQST_NO			/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		, BL_SRNO
+		, CARR_SRNO
+		, MDFY_DGCNT
+		, TRNP_METH_SRNO		/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+		, WGN_NO				/**  N° De Wagon  !== 왜건번호 ==!  */
+		, WGN_TYPE				/**  type de wagon  !== 왜건타입 ==!  */
+		, DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+		, FRST_REGST_ID			/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+		, FRST_RGSR_DTTM		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+		, LAST_CHPR_ID			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		, LAST_CHG_DTTM			/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		)
+		SELECT
+			A.WGN_SRNO				/**  N° série de wagon !== 왜건일련번호 ==!  */
+			 , A.TRNP_RQST_NO			/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+			 , A.BL_SRNO
+			 , A.CARR_SRNO
+			 , 0 AS MDFY_DGCNT 			/**  Fréquence de rectification !== 정정 차수 ==! */
+			 , A.TRNP_METH_SRNO			/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+			 , A.WGN_NO					/**  N° De Wagon  !== 왜건번호 ==!  */
+			 , A.WGN_TYPE				/**  type de wagon  !== 왜건타입 ==!  */
+			 , A.DEL_YN					/**  Suppression On  !== 삭제여부 ==!  */
+			 , A.FRST_REGST_ID			/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			 , A.FRST_RGSR_DTTM			/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			 , A.LAST_CHPR_ID			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			 , A.LAST_CHG_DTTM			/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		FROM
+			TB_CARI_TRNP_WGN A
+		WHERE
+			A.DEL_YN = 'N'          /**  Suppression On  !== 삭제여부 ==!  */
+		  AND
+			A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</insert>
+
+	<!--
+	[Enregistrer] Enregistrer le conteneur de la demande de rectification de transfert.      !== 운송 정정 신청 컨테이너을 등록 한다. ==!
+	-->
+	<insert id="insertTrnpCntrMdfy" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.insertTrnpCntrMdfy */
+		INSERT INTO
+			TB_CARI_TRNP_MDFY_CNTR
+		(
+			CNTR_SRNO				/**  N° De Séquence Du Conteneur  !== 컨테이너일련번호 ==!  */
+		, TRNP_RQST_NO			/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		, MDFY_DGCNT
+		, TRNP_METH_SRNO		/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+		, CNTR_NO				/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+		, CNTR_TP_CD			/**  Code De Type De Conteneur  !== 컨테이너구분코드 ==!  */
+		, SEAL_NO1				/**  N° De Scellé1  !== 봉인번호1 ==!  */
+		, SEAL_CHPN1			/**  Responsable de scellé 1  !== 봉인담당자1 ==!  */
+		, SEAL_NO2				/**  N° De Scellé2  !== 봉인번호2 ==!  */
+		, SEAL_CHPN2			/**  Responsable de scellé 2  !== 봉인담당자2 ==!  */
+		, SEAL_NO3				/**  N° De Scellé3  !== 봉인번호3 ==!  */
+		, SEAL_CHPN3			/**  Responsable de scellé 3  !== 봉인담당자3 ==!  */
+		, PCKG_GCNT				/**  Nombre De Colis  !== 포장개수 ==!  */
+		, PCKG_UT_CD			/**  Code De L'Unité De Colis  !== 포장단위코드 ==!  */
+		, WGHT					/**  Poids  !== 중량 ==!  */
+		, ECNTR_WGHT            /**  Tare De Conteneur(S) À Vide  !== 공컨테이너중량 ==!  */
+		, BL_SRNO				/**  N° De Séquence De Bl  !== BL일련번호 ==!  */
+		, CARR_SRNO
+		, WGN_SRNO				/**  N° série de wagon !== 왜건일련번호 ==!  */
+		, TRLR_SRNO				/**  Numéro de série de la remorque  !== 트레일러일련번호 ==!  */
+		, DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+		, FRST_REGST_ID			/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+		, FRST_RGSR_DTTM		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+		, LAST_CHPR_ID			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		, LAST_CHG_DTTM			/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		)
+		SELECT
+			A.CNTR_SRNO			/**  N° De Séquence Du Conteneur  !== 컨테이너일련번호 ==!  */
+			 , A.TRNP_RQST_NO		/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+			 , 0 AS MDFY_DGCNT 			/**  Fréquence de rectification !== 정정 차수 ==! */
+			 , A.TRNP_METH_SRNO		/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+			 , A.CNTR_NO				/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+			 , A.CNTR_TP_CD			/**  Code De Type De Conteneur  !== 컨테이너구분코드 ==!  */
+			 , A.SEAL_NO1			/**  N° De Scellé1  !== 봉인번호1 ==!  */
+			 , A.SEAL_CHPN1			/**  Responsable de scellé 1  !== 봉인담당자1 ==!  */
+			 , A.SEAL_NO2			/**  N° De Scellé2  !== 봉인번호2 ==!  */
+			 , A.SEAL_CHPN2			/**  Responsable de scellé 2  !== 봉인담당자2 ==!  */
+			 , A.SEAL_NO3			/**  N° De Scellé3  !== 봉인번호3 ==!  */
+			 , A.SEAL_CHPN3			/**  Responsable de scellé 3  !== 봉인담당자3 ==!  */
+			 , A.PCKG_GCNT			/**  Nombre De Colis  !== 포장개수 ==!  */
+			 , A.PCKG_UT_CD			/**  Code De L'Unité De Colis  !== 포장단위코드 ==!  */
+			 , A.WGHT				/**  Poids  !== 중량 ==!  */
+			 , A.ECNTR_WGHT          /**  Tare De Conteneur(S) À Vide  !== 공컨테이너중량 ==!  */
+			 , A.BL_SRNO				/**  N° De Séquence De Bl  !== BL일련번호 ==!  */
+		     , A.CARR_SRNO
+			 , A.WGN_SRNO			/**  N° série de wagon !== 왜건일련번호 ==!  */
+			 , A.TRLR_SRNO			/**  Numéro de série de la remorque  !== 트레일러일련번호 ==!  */
+			 , A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			 , A.FRST_REGST_ID		/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			 , A.FRST_RGSR_DTTM		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			 , A.LAST_CHPR_ID		/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			 , A.LAST_CHG_DTTM		/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		FROM
+			TB_CARI_TRNP_CNTR 	A
+		WHERE
+			A.DEL_YN = 'N'          /**  Suppression On  !== 삭제여부 ==!  */
+		  AND
+			A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</insert>
+
+	<!--
+	[Enregistrer] Modifier la demande de transfert.   !== 운송신청을 수정 한다.==!
+	-->
+	<update id="updateTrnp" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.updateTrnp */
+		UPDATE TB_CARI_TRNP
+		SET DPTR_DTTM = TO_TIMESTAMP(#{dptrDttm}, 'DD/MM/YYYY HH24:MI:SS') /** Date/Heure de départ !== 출발일시 ==! */
+		  , ARVL_DTTM = TO_TIMESTAMP(#{arvlDttm}, 'DD/MM/YYYY HH24:MI:SS') /** Date/Heure d'arrivée prévue !== 도착예정일시 ==! */
+		  , TRNP_PATH_CN = #{trnpPathCn} /**  Contenu De L'Itinéraire Du Transport  !== 운송경로내용 ==!  */
+		  , ARLC_CSTM_CD = #{arlcCstmCd} /**  Bureau De Destination  !== 도착지세관코드 ==!  */
+		  , ARLC_IBOBZ_CD = #{arlcIbobzCd} /**  Code De Zone Sous Douane De Destination  !== 도착지보세구역코드 ==!  */
+		  , HDCB_YN = #{hdcbYn} /**  Hydrocarbon O/N  !== 탄화수소여부 ==!  */
+		  , DPTR_PORT_CD	= #{dptrPortCd} /**  Code De Port De Départ    !== 출발항구코드 ==!  */
+		  , LDUN_PORT_CD	= #{ldunPortCd} /**  Code De Port De Déchargement     !== 하역항구코드 ==!  */
+		  , DEL_YN = #{delYn} /**  Suppression On  !== 삭제여부 ==!  */
+		  , LAST_CHPR_ID = #{lastChprId} /**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		  , LAST_CHG_DTTM = SYSTIMESTAMP /**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		WHERE TRNP_RQST_NO = #{trnpRqstNo} /**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</update>
+
+	<!--
+	[Effacer] Supprimer le conteneur de la demande de transfert. !== "운송신청 컨테이너"을 삭제 한다.==!
+	-->
+	<delete id="deleteTrnpCntr" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.deleteTrnpCntr */
+		DELETE FROM TB_CARI_TRNP_CNTR A
+		WHERE A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</delete>
+	<!--
+	[Effacer] Supprimer la remorque de la demande de transfert. !== "운송신청 트레일러"을 삭제 한다.==!
+	-->
+	<delete id="deleteTrnpTrlr" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.deleteTrnpTrlr */
+		DELETE FROM TB_CARI_TRNP_TRLR 	A
+		WHERE A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</delete>
+
+	<!--
+	[Effacer] Supprimer le wagon de la demande de transfert. !== "운송신청 왜건"을 삭제 한다.==!
+	-->
+	<delete id="deleteTrnpWgn" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.deleteTrnpWgn */
+		DELETE FROM TB_CARI_TRNP_WGN 	A
+		WHERE A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</delete>
+
+	<!--
+	[Effacer] Supprimer le moyen de transport de la demande de transfert. !== "운송신청 운송수단"을 삭제 한다.==!
+	-->
+	<delete id="deleteTrnpMeth" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.deleteTrnpMeth */
+		DELETE FROM TB_CARI_TRNP_METH A
+		WHERE A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</delete>
+
+	<!--
+	[Effacer] Supprimer le moyen de transport de la demande de transfert. !== "운송신청 운송사"를 삭제 한다.==!
+	-->
+	<delete id="deleteTrnpCarr" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarCbtgMapper.deleteTrnpCarr */
+		DELETE FROM TB_CARI_TRNP_CARR A
+		WHERE A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</delete>
+
+	<!--
+	[Effacer] Supprimer le B/L de la demande de transfert. !== "운송신청 BL"을 삭제 한다.==!
+	-->
+	<delete id="deleteTrnpBl" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.deleteTrnpBl */
+		DELETE FROM TB_CARI_TRNP_BL A
+		WHERE A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</delete>
+	
+	<!--
+	[Modifier] Supprimer la demande de transfert.(externe)   !== 외부 운송신청을 삭제처리 한다.==!
+	(Jeong Byungyeol)
+	-->
+	<update id="deleteEptTrnp" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpVo">
+	/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.deleteEptTrnp */
+		UPDATE
+			ALPASSEXT.TB_CARE_TRNP
+		SET
+			  DEL_YN      			= 'Y'
+			, LAST_CHPR_ID      = #{lastChprId} /**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, LAST_CHG_DTTM     = SYSTIMESTAMP /**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+			<if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(prcsSttsCd)">
+			, PRCS_STTS_CD      = #{prcsSttsCd}
+			</if>
+		WHERE TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</update>
+
+	<!--
+	[Modifier] Modifier l'état de traitement de la demande de transfert.(externe)   !== 외부 운송신청의 처리상태를 수정한다.==!
+	(Jeong Byungyeol)
+	-->
+	<update id="updateEptTrnpPrcsSttsCd" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpVo">
+	/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.updateEptTrnpPrcsSttsCd */
+		UPDATE
+			ALPASSEXT.TB_CARE_TRNP
+		SET
+			PRCS_STTS_CD      = #{prcsSttsCd} /**  Code De Statut De Traitement  !== 처리상태코드 ==!  */,
+			LAST_CHPR_ID      = #{lastChprId} /**  Id Du Modificateur Final  !== 최종변경자ID ==!  */,
+			LAST_CHG_DTTM     = SYSTIMESTAMP /**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		WHERE
+	    TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</update>
+
+	<!--
+	[Effacer] Supprimer le B/L de la demande de transfert.(externe) !== "외부 운송신청 BL"을 삭제 한다.==!
+	(Jeong Byungyeol)
+	-->
+	<delete id="deleteEptTrnpBl" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.deleteEptTrnpBl */
+		DELETE FROM
+			ALPASSEXT.TB_CARE_TRNP_BL A
+		WHERE
+			A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</delete>
+
+	<!--
+	[Effacer] Supprimer le moyen de transport de la demande de transfert.(externe) !== "외부 운송신청 운송수단"을 삭제 한다.==!
+	(Jeong Byungyeol)
+	-->
+	<delete id="deleteEptTrnpMeth" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.deleteEptTrnpBl */
+		DELETE FROM
+			ALPASSEXT.TB_CARE_TRNP_METH A
+		WHERE
+			A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</delete>
+
+	<!--
+	[Effacer] Supprimer le moyen de transport de la demande de transfert.(externe)   !== "외부 운송신청 운송사"를 삭제처리 한다.==!
+	(Jeong Byungyeol)
+	-->
+	<delete id="deleteEptTrnpCarr" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarCbtgMapper.deleteEptTrnpCarr */
+		DELETE FROM ALPASSEXT.TB_CARE_TRNP_CARR A
+		WHERE A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</delete>
+
+	<!--
+	[Effacer] Supprimer le conteneur de la demande de transfert.(externe) !== "외부 운송신청 컨테이너"을 삭제 한다.==!
+	(Jeong Byungyeol)
+	-->
+	<delete id="deleteEptTrnpCntr" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.deleteEptTrnpCntr */
+		DELETE FROM
+			ALPASSEXT.TB_CARE_TRNP_CNTR A
+		WHERE
+			A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</delete>
+
+	<!--
+	[Effacer] Supprimer la remorque de la demande de transfert.(externe) !== "외부 운송신청 트레일러"을 삭제 한다.==!
+	(Jeong Byungyeol)
+	-->
+	<delete id="deleteEptTrnpTrlr" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.deleteEptTrnpTrlr */
+		DELETE FROM
+			ALPASSEXT.TB_CARE_TRNP_TRLR 	A
+		WHERE
+			A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</delete>
+
+	<!--
+	[Effacer] Supprimer le wagon de la demande de transfert.(externe) !== "외부 운송신청 왜건"을 삭제 한다.==!
+	(Jeong Byungyeol)
+	-->
+	<delete id="deleteEptTrnpWgn" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.deleteEptTrnpWgn */
+		DELETE FROM
+			ALPASSEXT.TB_CARE_TRNP_WGN 	A
+		WHERE
+			A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</delete>
+
+	<insert id="insertEptTrnpMdfy" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.insertEptTrnpMdfy */
+		INSERT INTO ALPASSEXT.TB_CARE_TRNP_MDFY
+					( TRNP_RQST_NO
+					,MDFY_DGCNT
+					,JRSD_ORGN_CD
+					,TRNP_TP_CD
+					,TRNP_MEAN_CD
+					,DPTR_DTTM
+					,ARVL_DTTM
+					,TRNP_PATH_CN
+					,DPRP_CSTM_CD
+					,DPRP_IBOBZ_CD
+					,DPTR_PORT_CD
+					,ARLC_CSTM_CD
+					,ARLC_IBOBZ_CD
+					,LDUN_PORT_CD
+					,HDCB_YN
+					,TRSN_DTTM
+					,TRSN_CO_CD
+					,PRCS_DTTM
+					,PRCS_STTS_CD
+					,DEL_YN
+					,FRST_REGST_ID
+					,FRST_RGSR_DTTM
+					,LAST_CHPR_ID
+					,LAST_CHG_DTTM)
+			SELECT A.TRNP_RQST_NO	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+				  ,0 AS MDFY_DGCNT 	/**  Fréquence de rectification !== 정정 차수 ==! */
+				  ,A.JRSD_ORGN_CD	/**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+				  ,A.TRNP_TP_CD		/**  Code de type de transfert  !== 운송구분코드 ==!  */
+				  ,A.TRNP_MEAN_CD	/**  Code de mode de transport  !== 운송방법코드 ==!  */
+				  ,A.DPTR_DTTM /** Date Et Heure De Départ !== 출발일시 ==! */
+				  ,A.ARVL_DTTM /** Date Et Heure D'Arrivée !== 도착일시 ==! */
+				  ,A.TRNP_PATH_CN	/**  Contenu De L'Itinéraire Du Transport  !== 운송경로내용 ==!  */
+				  ,A.DPRP_CSTM_CD	/**  Code De Bureau De Départ  !== 출발지세관코드 ==!  */
+				  ,A.DPRP_IBOBZ_CD	/**  Code De Zone Sous Douane De Départ  !== 출발지보세구역코드 ==!  */
+				  ,A.dptr_port_cd	/**  Code De Port De Départ !== 출발항구코드 ==! */
+				  ,A.ARLC_CSTM_CD	/**  Bureau De Destination  !== 도착지세관코드 ==!  */
+				  ,A.ARLC_IBOBZ_CD	/**  Code De Zone Sous Douane De Destination  !== 도착지보세구역코드 ==!  */
+				  ,A.LDUN_PORT_CD	/**  Code De Port De Déchargement !== 하역항구코드 ==! */
+				  ,A.HDCB_YN		/**  Hydrocarbon O/N  !== 탄화수소여부 ==!  */
+				  ,A.TRSN_DTTM		/**  Date et heure de transmission  !== 전송일시 ==!  */
+				  ,A.TRSN_CO_CD		/**  Code d'entreprise transmettrice  !== 전송업체코드 ==!  */
+				  ,A.PRCS_DTTM		/**  Date Et Heure De Traitement  !== 전송일시 ==!  */
+				  ,'D08' AS PRCS_STTS_CD	/**  Code De Statut De Traitement  !== 처리상태코드 ==!  */
+				  ,A.DEL_YN			/**  Suppression On  !== 삭제여부 ==!  */
+				  ,A.FRST_REGST_ID	/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+				  ,A.FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+				  ,A.LAST_CHPR_ID	/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+				  ,A.LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+			 FROM TB_CARE_TRNP	A
+			WHERE A.DEL_YN = 'N'	/** Suppression ON !== 삭제여부 ==! */
+			  AND A.TRNP_RQST_NO = #{trnpRqstNo} /**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</insert>
+
+<!--
+	Enregistrer en externe le B/L de la demande de rectification de transfert.      !== 외부 운송 정정 신청 BL을 등록 한다. ==!
+	-->
+	<insert id="insertEptTrnpBlMdfy" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.insertEptTrnpBlMdfy */
+		INSERT INTO ALPASSEXT.TB_CARE_TRNP_MDFY_BL
+					(BL_SRNO
+					,TRNP_RQST_NO
+					,MDFY_DGCNT
+					,CAG_MGMT_NO
+					,BL_NO
+					,PDLS_NM
+					,PCKG_GCNT
+					,WGHT
+					,RELA_NO
+					,MG_NO
+					,DEL_YN
+					,FRST_REGST_ID
+					,FRST_RGSR_DTTM
+					,LAST_CHPR_ID
+					,LAST_CHG_DTTM)
+				SELECT A.BL_SRNO			/**  N° De Séquence De Bl  !== BL일련번호 ==!  */
+				      ,A.TRNP_RQST_NO		/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+					  ,0 as MDFY_DGCNT		/**  Fréquence de rectification !== 정정 차수 ==! */
+					  ,A.CAG_MGMT_NO		/**  Crn  !== 화물관리번호 ==!  */
+				      ,A.BL_NO				/**  N° De Bl  !== BL번호 ==!  */
+				      ,A.PDLS_NM			/**  Nom De L'Article  !== 품목명 ==!  */
+				      ,A.PCKG_GCNT			/**  Nombre De Colis  !== 포장개수 ==!  */
+				      ,A.WGHT				/**  Poids  !== 중량 ==!  */
+				      ,A.RELA_NO			/**  Numéro Concerné  !== 관련번호 ==!  */
+				      ,A.MG_NO				/**  N° De Caution  !== 담보번호 ==!  */
+				      ,A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+				      ,A.FRST_REGST_ID		/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+				      ,A.FRST_RGSR_DTTM		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+				      ,A.LAST_CHPR_ID		/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+				      ,A.LAST_CHG_DTTM		/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+				FROM ALPASSEXT.TB_CARE_TRNP_BL A
+				WHERE A.DEL_YN = 'N'		/** Suppression ON !== 삭제여부 ==! */
+				AND A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</insert>
+
+	<!--
+	Enregistrer en externe le transporteur de la demande de rectification de transfert.      !== 외부 운송 정정 신청 운송사를 등록 한다. ==!
+	-->
+	<insert id="insertEptTrnpCarrMdfy" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.insertEptTrnpCarrMdfy */
+		INSERT INTO ALPASSEXT.TB_CARE_TRNP_MDFY_CARR
+		(TRNP_RQST_NO
+		,BL_SRNO
+		,CARR_SRNO
+		,MDFY_DGCNT
+		,CARR_CD
+		,CARR_NM
+		,CARR_NIF
+		,CARR_ADDR_NM
+		,DEL_YN
+		,FRST_REGST_ID
+		,FRST_RGSR_DTTM
+		,LAST_CHPR_ID
+		,LAST_CHG_DTTM)
+		SELECT A.TRNP_RQST_NO
+			 ,A.BL_SRNO
+			 ,A.CARR_SRNO
+			 ,0 AS MDFY_DGCNT 		/**  Fréquence de rectification !== 정정 차수 ==! */
+			 ,A.CARR_CD
+		     ,A.CARR_NM
+			 ,A.CARR_NIF
+			 ,A.CARR_ADDR_NM
+			 ,A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			 ,A.FRST_REGST_ID		/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			 ,A.FRST_RGSR_DTTM		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			 ,A.LAST_CHPR_ID			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			 ,A.LAST_CHG_DTTM		/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		FROM ALPASSEXT.TB_CARE_TRNP_CARR 	A
+		WHERE A.DEL_YN = 'N'         /**  Suppression On  !== 삭제여부 ==!  */
+		  AND A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</insert>
+
+	<!--
+	Enregistrer en externe le moyen de transport de la demande de rectification de transfert.      !== 외부 운송 정정 신청 운송수단을 등록 한다. ==!
+	-->
+	<insert id="insertEptTrnpMethMdfy" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.insertEptTrnpMethMdfy */
+		INSERT INTO ALPASSEXT.TB_CARE_TRNP_MDFY_METH
+					(TRNP_METH_SRNO
+					,TRNP_RQST_NO
+					,BL_SRNO
+					,CARR_SRNO
+					,MDFY_DGCNT
+					,TRNP_METH_PT_CD
+					,TRNP_METH_NM
+					,TRNP_METH_IDFY_NO
+					,TRNP_RFER_NO
+					,TRNP_METH_NAT_CD
+					,IMO_NO
+					,SHIP_TTN
+					,SHIP_NTTN
+					,DRVR_NM
+					,NTNAL_IDFY_NO
+					,LCNE_NO
+					,PSPR_NO
+					,DEL_YN
+					,FRST_REGST_ID
+					,FRST_RGSR_DTTM
+					,LAST_CHPR_ID
+					,LAST_CHG_DTTM
+					,SEAL_NO /**  N° De Scellé  !== 봉인번호 ==!  */
+					)
+		      SELECT A.TRNP_METH_SRNO		/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+			        ,A.TRNP_RQST_NO			/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		            ,A.BL_SRNO
+		            ,A.CARR_SRNO
+			        ,0 AS MDFY_DGCNT 		/**  Fréquence de rectification !== 정정 차수 ==! */
+			        ,A.TRNP_METH_PT_CD		/**  Type De Moyen De Transport  !== 운송수단유형코드 ==!  */
+			        ,A.TRNP_METH_NM			/**  Nom De Moyen De Transport  !== 운송수단명 ==!  */
+			        ,A.TRNP_METH_IDFY_NO	/**  N° D'Identification Du Moyen De Transport  !== 운송수단식별번호 ==!  */
+			        ,A.TRNP_RFER_NO			/**  N° de référence de transport  !== 운송참고번호 ==!  */
+			        ,A.TRNP_METH_NAT_CD		/**  Code de nationalité du moyen de transport  !== 운송수단국적코드 ==!  */
+			        ,A.IMO_NO				/**  N° IMO  !== IMO번호 ==!  */
+			        ,A.SHIP_TTN				/**  Tonnage Brut Du Navire  !== 선박총톤수 ==!  */
+			        ,A.SHIP_NTTN			/**  Tonnage Net Du Navire  !== 선박순톤수 ==!  */
+			        ,A.DRVR_NM				/**  Nom de conducteur  !== 운전자명 ==!  */
+			        ,A.NTNAL_IDFY_NO		/**  Nin  !== 자국민식별번호 ==!  */
+			        ,A.LCNE_NO				/**  N° permis de conduire  !== 면허번호 ==!  */
+			        ,A.PSPR_NO				/**  N° De Passeport  !== 여권번호 ==!  */
+			        ,A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			        ,A.FRST_REGST_ID		/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			        ,A.FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			        ,A.LAST_CHPR_ID			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			        ,A.LAST_CHG_DTTM		/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+			        ,A.SEAL_NO        /**  N° De Scellé  !== 봉인번호 ==!  */
+		        FROM ALPASSEXT.TB_CARE_TRNP_METH 	A
+		       WHERE A.DEL_YN = 'N'         /**  Suppression On  !== 삭제여부 ==!  */
+		         AND A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</insert>
+
+	<!--
+	Enregistrer en externe la remorque de la demande de rectification de transfert.      !== 외부 운송 정정 신청 트레일러을 등록 한다. ==!
+	-->
+	<insert id="insertEptTrnpTrlrMdfy" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.insertEptTrnpTrlrMdfy */
+		INSERT INTO
+			ALPASSEXT.TB_CARE_TRNP_MDFY_TRLR
+		(
+			  TRLR_SRNO				/**  Numéro de série de la remorque  !== 트레일러일련번호 ==!  */
+			, TRNP_RQST_NO			/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		    , BL_SRNO
+		    , CARR_SRNO
+			, MDFY_DGCNT
+			, TRNP_METH_SRNO		/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+			, TRLR_VHCL_RGSR_NO		/**  N° D'Immatriculation De Remorque  !== 트레일러차량등록번호 ==!  */
+			, TRLR_SSIS_NO			/**  N° Châssis De Remorque  !== 트레일러샤시번호 ==!  */
+			, TRLR_STSZ				/**  Gabarit De Remorque  !== 트레일러규격 ==!  */
+			, DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			, FRST_REGST_ID			/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, FRST_RGSR_DTTM		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, LAST_CHPR_ID			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, LAST_CHG_DTTM			/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		)
+		SELECT
+			  A.TRLR_SRNO			/**  Numéro de série de la remorque  !== 트레일러일련번호 ==!  */
+			, A.TRNP_RQST_NO		/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+			, A.BL_SRNO
+			, A.CARR_SRNO
+			, 0 AS MDFY_DGCNT 		/**  Fréquence de rectification !== 정정 차수 ==! */
+			, A.TRNP_METH_SRNO		/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+			, A.TRLR_VHCL_RGSR_NO	/**  N° D'Immatriculation De Remorque  !== 트레일러차량등록번호 ==!  */
+			, A.TRLR_SSIS_NO		/**  N° Châssis De Remorque  !== 트레일러샤시번호 ==!  */
+			, A.TRLR_STSZ			/**  Gabarit De Remorque  !== 트레일러규격 ==!  */
+			, A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			, A.FRST_REGST_ID		/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, A.FRST_RGSR_DTTM		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, A.LAST_CHPR_ID		/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, A.LAST_CHG_DTTM		/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		FROM
+			ALPASSEXT.TB_CARE_TRNP_TRLR A
+		WHERE
+			A.DEL_YN = 'N'          /**  Suppression On  !== 삭제여부 ==!  */
+		AND
+			A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</insert>
+
+	<!--
+	Enregistrer en externe le wagon de la demande de rectification de transfert.      !== 외부 운송 정정 신청 왜건을 등록 한다. ==!
+	-->
+	<insert id="insertEptTrnpWgnMdfy" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.insertEptTrnpWgnMdfy */
+		INSERT INTO
+			ALPASSEXT.TB_CARE_TRNP_MDFY_WGN
+		(
+			  WGN_SRNO				/**  N° série de wagon !== 왜건일련번호 ==!  */
+			, TRNP_RQST_NO			/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		    , BL_SRNO
+		    , CARR_SRNO
+			, MDFY_DGCNT
+			, TRNP_METH_SRNO		/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+			, WGN_NO				/**  N° De Wagon  !== 왜건번호 ==!  */
+			, WGN_TYPE				/**  type de wagon  !== 왜건타입 ==!  */
+			, DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			, FRST_REGST_ID			/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, FRST_RGSR_DTTM		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, LAST_CHPR_ID			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, LAST_CHG_DTTM			/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		)
+		SELECT
+		  A.WGN_SRNO				/**  N° série de wagon !== 왜건일련번호 ==!  */
+		, A.TRNP_RQST_NO			/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		, A.BL_SRNO
+		, A.CARR_SRNO
+		, 0 AS MDFY_DGCNT 			/**  Fréquence de rectification !== 정정 차수 ==! */
+		, A.TRNP_METH_SRNO			/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+		, A.WGN_NO					/**  N° De Wagon  !== 왜건번호 ==!  */
+		, A.WGN_TYPE				/**  type de wagon  !== 왜건타입 ==!  */
+		, A.DEL_YN					/**  Suppression On  !== 삭제여부 ==!  */
+		, A.FRST_REGST_ID			/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+		, A.FRST_RGSR_DTTM			/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+		, A.LAST_CHPR_ID			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		, A.LAST_CHG_DTTM			/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		FROM
+			ALPASSEXT.TB_CARE_TRNP_WGN A
+		WHERE
+			A.DEL_YN = 'N'          /**  Suppression On  !== 삭제여부 ==!  */
+		AND
+			A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</insert>
+
+	<!--
+	Enregistrer en externe le conteneur de la demande de rectification de transfert.      !== 외부 운송 정정 신청 컨테이너을 등록 한다. ==!
+	-->
+	<insert id="insertEptTrnpCntrMdfy" parameterType="String">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.insertEptTrnpCntrMdfy */
+		INSERT INTO
+			ALPASSEXT.TB_CARE_TRNP_MDFY_CNTR
+		(
+			  CNTR_SRNO				/**  N° De Séquence Du Conteneur  !== 컨테이너일련번호 ==!  */
+			, TRNP_RQST_NO			/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+			, MDFY_DGCNT
+			, TRNP_METH_SRNO		/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+			, CNTR_NO				/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+			, CNTR_TP_CD			/**  Code De Type De Conteneur  !== 컨테이너구분코드 ==!  */
+			, SEAL_NO1				/**  N° De Scellé1  !== 봉인번호1 ==!  */
+			, SEAL_CHPN1			/**  Responsable de scellé 1  !== 봉인담당자1 ==!  */
+			, SEAL_NO2				/**  N° De Scellé2  !== 봉인번호2 ==!  */
+			, SEAL_CHPN2			/**  Responsable de scellé 2  !== 봉인담당자2 ==!  */
+			, SEAL_NO3				/**  N° De Scellé3  !== 봉인번호3 ==!  */
+			, SEAL_CHPN3			/**  Responsable de scellé 3  !== 봉인담당자3 ==!  */
+			, PCKG_GCNT				/**  Nombre De Colis  !== 포장개수 ==!  */
+			, PCKG_UT_CD			/**  Code De L'Unité De Colis  !== 포장단위코드 ==!  */
+			, WGHT					/**  Poids  !== 중량 ==!  */
+			, ECNTR_WGHT            /**  Tare De Conteneur(S) À Vide  !== 공컨테이너중량 ==!  */
+			, BL_SRNO				/**  N° De Séquence De Bl  !== BL일련번호 ==!  */
+			, CARR_SRNO
+			, WGN_SRNO				/**  N° série de wagon !== 왜건일련번호 ==!  */
+			, TRLR_SRNO				/**  Numéro de série de la remorque  !== 트레일러일련번호 ==!  */
+			, DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			, FRST_REGST_ID			/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, FRST_RGSR_DTTM		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, LAST_CHPR_ID			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, LAST_CHG_DTTM			/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		)
+		SELECT
+			  A.CNTR_SRNO			/**  N° De Séquence Du Conteneur  !== 컨테이너일련번호 ==!  */
+			, A.TRNP_RQST_NO		/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+			, 0 AS MDFY_DGCNT 			/**  Fréquence de rectification !== 정정 차수 ==! */
+			, A.TRNP_METH_SRNO		/**  N° De Série De Moyen De Transport  !== 운송수단일련번호 ==!  */
+			, A.CNTR_NO				/**  N° De Conteneur  !== 컨테이너번호 ==!  */
+			, A.CNTR_TP_CD			/**  Code De Type De Conteneur  !== 컨테이너구분코드 ==!  */
+			, A.SEAL_NO1			/**  N° De Scellé1  !== 봉인번호1 ==!  */
+			, A.SEAL_CHPN1			/**  Responsable de scellé 1  !== 봉인담당자1 ==!  */
+			, A.SEAL_NO2			/**  N° De Scellé2  !== 봉인번호2 ==!  */
+			, A.SEAL_CHPN2			/**  Responsable de scellé 2  !== 봉인담당자2 ==!  */
+			, A.SEAL_NO3			/**  N° De Scellé3  !== 봉인번호3 ==!  */
+			, A.SEAL_CHPN3			/**  Responsable de scellé 3  !== 봉인담당자3 ==!  */
+			, A.PCKG_GCNT			/**  Nombre De Colis  !== 포장개수 ==!  */
+			, A.PCKG_UT_CD			/**  Code De L'Unité De Colis  !== 포장단위코드 ==!  */
+			, A.WGHT				/**  Poids  !== 중량 ==!  */
+			, A.ECNTR_WGHT          /**  Tare De Conteneur(S) À Vide  !== 공컨테이너중량 ==!  */
+			, A.BL_SRNO				/**  N° De Séquence De Bl  !== BL일련번호 ==!  */
+		    , A.CARR_SRNO
+			, A.WGN_SRNO			/**  N° série de wagon !== 왜건일련번호 ==!  */
+			, A.TRLR_SRNO			/**  Numéro de série de la remorque  !== 트레일러일련번호 ==!  */
+			, A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			, A.FRST_REGST_ID		/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, A.FRST_RGSR_DTTM		/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, A.LAST_CHPR_ID		/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, A.LAST_CHG_DTTM		/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		FROM
+			ALPASSEXT.TB_CARE_TRNP_CNTR 	A
+		WHERE
+			A.DEL_YN = 'N'          /**  Suppression On  !== 삭제여부 ==!  */
+		AND
+			A.TRNP_RQST_NO = #{trnpRqstNo}	/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</insert>
+
+	<!--
+	[Enregistrer] Modifier en externe la demande de rectification de transfert.      !== 외부 운송 정정 신청을 수정 한다. ==!
+	-->
+	<update id="updateEptTrnp" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.updateEptTrnp */
+		UPDATE ALPASSEXT.TB_CARE_TRNP
+		   SET DPTR_DTTM = TO_TIMESTAMP(#{dptrDttm}, 'DD/MM/YYYY HH24:MI:SS') /** Date/Heure de départ !== 출발일시 ==! */
+			  ,ARVL_DTTM = TO_TIMESTAMP(#{arvlDttm}, 'DD/MM/YYYY HH24:MI:SS') /** Date/Heure d'arrivée prévue !== 도착예정일시 ==! */
+		      ,TRNP_PATH_CN = #{trnpPathCn} /**  Contenu De L'Itinéraire Du Transport  !== 운송경로내용 ==!  */
+		      ,ARLC_CSTM_CD = #{arlcCstmCd} /**  Bureau De Destination  !== 도착지세관코드 ==!  */
+		      ,ARLC_IBOBZ_CD = #{arlcIbobzCd} /**  Code De Zone Sous Douane De Destination  !== 도착지보세구역코드 ==!  */
+		      ,HDCB_YN = #{hdcbYn} /**  Hydrocarbon O/N  !== 탄화수소여부 ==!  */
+		      ,DPTR_PORT_CD	= #{dptrPortCd} /**  Code De Port De Départ    !== 출발항구코드 ==!  */
+			  ,LDUN_PORT_CD	= #{ldunPortCd} /**  Code De Port De Déchargement     !== 하역항구코드 ==!  */
+		      ,DEL_YN = #{delYn} /**  Suppression On  !== 삭제여부 ==!  */
+		      ,LAST_CHPR_ID = #{lastChprId} /**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		      ,LAST_CHG_DTTM = SYSTIMESTAMP /**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		 WHERE TRNP_RQST_NO = #{trnpRqstNo} /**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</update>
+
+	<select id="selectTrnpReport" resultType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpVo">
+		/* alpass.ept.car.trnpcvy.trnp.mapper.CarTrnpMapper.selectTrnpReport */
+		SELECT
+		      A.TRNP_RQST_NO				/**  N° de demande de transfert  !== 운송신청번호 ==!  */
+			, C.UP_CSTM_CD
+			, C.UP_CSTM_NM
+			, C.JRSD_CSTM_CD
+			, C.JRSD_CSTM_NM
+			, A.JRSD_ORGN_CD			        /**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+			, (SELECT ORGN_NM || '(' || ADMN_CD || ')'
+				FROM TB_POTI_ORGN
+				WHERE ORGN_CD = A.JRSD_ORGN_CD
+				  AND DEL_YN = 'N'
+				  AND ROWNUM=1
+			) AS JRSD_ORGN_NM
+			, A.TRNP_TP_CD				/**  Code de type de transfert  !== 운송구분코드 ==!  */
+			, FN_GET_CD_VDVAL_NM('CAR_0033', A.TRNP_TP_CD, 'FR') AS TRNP_TP_NM
+			, A.TRNP_MEAN_CD				/**  Code de mode de transport  !== 운송방법코드 ==!  */
+			, FN_GET_CD_VDVAL_NM('CAR_0003', A.TRNP_MEAN_CD, 'FR') AS TRNP_MEAN_NM
+			, TO_TIMESTAMP(#{dptrDttm}, 'DD/MM/YYYY HH24:MI:SS') AS DPTR_DTTM/** Date Et Heure De Départ !== 출발일시 ==! */
+			, TO_TIMESTAMP(#{arvlDttm}, 'DD/MM/YYYY HH24:MI:SS') AS ARVL_DTTM/** Date Et Heure D'Arrivée !== 도착일시 ==! */
+			, A.TRNP_PATH_CN				/**  Contenu De L'Itinéraire Du Transport  !== 운송경로내용 ==!  */
+			, A.DPRP_CSTM_CD				/**  Code De Bureau De Départ  !== 출발지세관코드 ==!  */
+			, A.ARLC_CSTM_CD				/**  Bureau De Destination  !== 도착지세관코드 ==!  */
+			, A.DPRP_IBOBZ_CD				/**  Code De Zone Sous Douane De Départ  !== 출발지보세구역코드 ==!  */
+			, (SELECT IBOBZ_NM FROM TB_CARI_IBOBZ B WHERE B.IBOBZ_CD = A.DPRP_IBOBZ_CD) AS DPRP_IBOBZ_NM
+			, A.ARLC_IBOBZ_CD				/**  Code De Zone Sous Douane De Destination  !== 도착지보세구역코드 ==!  */
+			, (SELECT IBOBZ_NM FROM TB_CARI_IBOBZ B WHERE B.IBOBZ_CD = A.ARLC_IBOBZ_CD) AS ARLC_IBOBZ_NM
+			, A.HDCB_YN				/**  Hydrocarbon O/N  !== 탄화수소여부 ==!  */
+			, TO_CHAR(A.TRSN_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS TRSN_DTTM	/**  Date et heure de transmission  !== 전송일시 ==!  */
+			, D.NIF
+			, A.TRSN_CO_CD				/**  Code d'entreprise transmettrice  !== 전송업체코드 ==!  */
+			, D.TRSN_CO_NM
+			, D.CO_ADDR
+			, TO_CHAR(A.PRCS_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS PRCS_DTTM	/**  Date Et Heure De Traitement  !== 처리일시 ==!  */
+			, A.PRCS_STTS_CD				/**  Code De Statut De Traitement  !== 처리상태코드 ==!  */
+			, TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		FROM TB_CARE_TRNP 	A
+	    LEFT JOIN ( SELECT C1.ORGN_CD
+					     , C2.ORGN_CD JRSD_CSTM_CD
+					     , C2.ORGN_NM || '(' || C2.ADMN_CD || ')' JRSD_CSTM_NM
+					     , C3.ORGN_CD UP_CSTM_CD
+					     , C3.ORGN_NM || '(' || C3.ADMN_CD || ')' UP_CSTM_NM
+				     FROM TB_POTI_ORGN C1
+					 LEFT JOIN TB_POTI_ORGN C2
+					   ON C1.UPR_ORGN_MGMT_CD = C2.ORGN_MGMT_CD
+					 LEFT JOIN TB_POTI_ORGN C3
+					   ON C2.UPR_ORGN_MGMT_CD = C3.ORGN_MGMT_CD
+				    WHERE C1.DEL_YN = 'N'
+		) C
+		  ON A.JRSD_ORGN_CD = C.ORGN_CD
+		LEFT JOIN (
+			SELECT C.NIF
+				 , C.CO_NM AS TRSN_CO_NM
+				 , C.CO_ADDR
+				 , D.CO_DCLR_CD
+			FROM TB_COM_CO C, TB_COM_CO_DCLR_CD D
+			WHERE C.NIF = D.NIF
+			  AND C.DEL_YN = 'N'
+			  AND D.DEL_YN = 'N'
+			  AND D.USE_YN = 'Y'
+			  AND D.RQST_TP_CD IN ('01','02') /* 신규나/수정 상태*/
+			  AND D.PRCS_STTS_CD = 'O' /* 업체  승인상태 */
+			  AND D.USE_YN = 'Y' /* 사용여부 */
+		) D
+		  ON D.CO_DCLR_CD = A.TRSN_CO_CD
+		WHERE A.DEL_YN = 'N'              /**  Suppression On  !== 삭제여부 ==!  */
+		  AND A.TRNP_RQST_NO = #{trnpRqstNo}                    /**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</select>
+
+	<select id="selectTrnpReportBlList" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpVo" resultType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpCntrVo">
+		SELECT DISTINCT BL.BL_SRNO, CARR.CARR_SRNO, METH.TRNP_METH_SRNO, TRLR.TRLR_SRNO, WGN.WGN_SRNO
+		FROM TB_CARE_TRNP_BL BL
+		LEFT OUTER JOIN TB_CARE_TRNP_CARR CARR ON BL.TRNP_RQST_NO = CARR.TRNP_RQST_NO AND BL.BL_SRNO = CARR.BL_SRNO AND CARR.DEL_YN = 'N'
+		LEFT OUTER JOIN TB_CARE_TRNP_METH METH ON BL.TRNP_RQST_NO = METH.TRNP_RQST_NO AND BL.BL_SRNO = METH.BL_SRNO AND METH.DEL_YN = 'N'
+		LEFT OUTER JOIN TB_CARE_TRNP_TRLR TRLR ON BL.TRNP_RQST_NO = TRLR.TRNP_RQST_NO AND BL.BL_SRNO = TRLR.BL_SRNO AND TRLR.DEL_YN='N'
+		LEFT OUTER JOIN TB_CARE_TRNP_WGN WGN ON BL.TRNP_RQST_NO = WGN.TRNP_RQST_NO AND BL.BL_SRNO = WGN.BL_SRNO AND BL.DEL_YN='N'
+		WHERE BL.DEL_YN = 'N'
+		  AND BL.TRNP_RQST_NO = #{trnpRqstNo}
+		ORDER BY BL.BL_SRNO, CARR.CARR_SRNO, METH.TRNP_METH_SRNO
+	</select>
+
+	<select id="selectTrnpReportMethList" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpVo" resultType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpCntrVo">
+		SELECT DISTINCT METH.BL_SRNO, METH.CARR_SRNO, METH.TRNP_METH_SRNO
+		  FROM TB_CARE_TRNP_METH METH
+		  LEFT OUTER JOIN TB_CARE_TRNP_BL BL
+		    ON METH.BL_SRNO = BL.BL_SRNO
+		   AND METH.TRNP_RQST_NO = BL.TRNP_RQST_NO
+		   AND BL.DEL_YN = 'N'
+		  LEFT OUTER JOIN TB_CARE_TRNP_CARR CARR
+		    ON METH.BL_SRNO = CARR.BL_SRNO
+		   AND METH.CARR_SRNO  = CARR.CARR_SRNO
+		   AND METH.TRNP_RQST_NO = CARR.TRNP_RQST_NO
+		   AND CARR.DEL_YN = 'N'
+		 WHERE METH.DEL_YN = 'N'
+		   AND METH.TRNP_RQST_NO = #{trnpRqstNo}
+		ORDER BY METH.BL_SRNO, METH.CARR_SRNO, METH.TRNP_METH_SRNO
+	</select>
+
+	<select id="selectTrnpReportCntrList" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpVo" resultType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpCntrVo">
+		SELECT DISTINCT CNTR.BL_SRNO, CNTR.CARR_SRNO, CNTR.TRNP_METH_SRNO, CNTR.TRLR_SRNO, CNTR.WGN_SRNO
+		  FROM TB_CARE_TRNP_CNTR CNTR
+		  LEFT OUTER JOIN TB_CARE_TRNP_BL BL
+		    ON CNTR.BL_SRNO = BL.BL_SRNO
+		   AND CNTR.TRNP_RQST_NO = BL.TRNP_RQST_NO
+		   AND BL.DEL_YN = 'N'
+		  LEFT OUTER JOIN TB_CARE_TRNP_CARR CARR
+		    ON CNTR.BL_SRNO = CARR.BL_SRNO
+		   AND CNTR.CARR_SRNO  = CARR.CARR_SRNO
+		   AND CNTR.TRNP_RQST_NO = CARR.TRNP_RQST_NO
+		   AND CARR.DEL_YN = 'N'
+		  LEFT OUTER JOIN TB_CARE_TRNP_METH METH
+		    ON CNTR.BL_SRNO = METH.BL_SRNO
+		   AND CNTR.CARR_SRNO = METH.CARR_SRNO
+		   AND CNTR.TRNP_RQST_NO = METH.TRNP_RQST_NO
+		   AND CNTR.TRNP_METH_SRNO = METH.TRNP_METH_SRNO
+		   AND METH.DEL_YN = 'N'
+		  LEFT OUTER JOIN TB_CARE_TRNP_TRLR TRLR
+		    ON CNTR.TRLR_SRNO = TRLR.TRLR_SRNO
+		   AND CNTR.TRNP_RQST_NO = TRLR.TRNP_RQST_NO
+		   AND CNTR.TRNP_METH_SRNO = TRLR.TRNP_METH_SRNO
+		   AND CNTR.CARR_SRNO = TRLR.CARR_SRNO
+		   AND CNTR.BL_SRNO = TRLR.BL_SRNO
+		   AND TRLR.DEL_YN='N'
+		  LEFT OUTER JOIN TB_CARE_TRNP_WGN WGN
+		    ON CNTR.WGN_SRNO = WGN.WGN_SRNO
+		   AND CNTR.TRNP_RQST_NO = WGN.TRNP_RQST_NO
+		   AND CNTR.TRNP_METH_SRNO = WGN.TRNP_METH_SRNO
+		   AND CNTR.CARR_SRNO = WGN.CARR_SRNO
+		   AND CNTR.BL_SRNO = WGN.BL_SRNO
+		   AND WGN.DEL_YN='N'
+		 WHERE CNTR.DEL_YN = 'N'
+		   AND CNTR.TRNP_RQST_NO = #{trnpRqstNo}
+		 ORDER BY CNTR.BL_SRNO, CNTR.CARR_SRNO, CNTR.TRNP_METH_SRNO
+	</select>
+
+
+	<!--
+		Lors de l'autorisation du transfert, consulter les informations à sauvegarder dans la table Transfert_Introduction/Sortie_Apurement.(Transfert vers le DT)
+		!== 운송 승인시 운송_반출입_이행 테이블에 저장할 정보를 조회한다.(하선운송) ==!
+	-->
+	<select id="selectTrnpRlbrFfmnList" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpVo"  resultType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpRlbrFfmnVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.selectTrnpRlbrFfmnList */
+		SELECT BL.TRNP_RQST_NO AS TRNP_RLBR_FFMN_MGMT_NO
+			 , ROWNUM AS TRNP_RLBR_FFMN_SRNO
+			 , SUBSTR(BL.CAG_MGMT_NO,1,16) AS MRN
+			 , BL.CAG_MGMT_NO
+			 , BL.BL_NO
+			 , CNTR.CNTR_NO AS CNTR_NO
+			 , CNTR.CNTR_TP_CD
+			 , CASE WHEN COALESCE(CNTR.CNTR_NO,'') != '' THEN CNTR.PCKG_GCNT ELSE BL.PCKG_GCNT END RLBR_PCKG_GCNT
+			 , CASE WHEN COALESCE(CNTR.CNTR_NO,'') != '' THEN CNTR.WGHT ELSE BL.WGHT END RLBR_WGHT
+		FROM TB_CARI_TRNP_BL BL
+		LEFT OUTER JOIN TB_CARI_TRNP_CNTR CNTR ON CNTR.BL_SRNO = BL.BL_SRNO AND CNTR.TRNP_RQST_NO = BL.TRNP_RQST_NO AND CNTR.DEL_YN = 'N'
+		WHERE 1=1
+		  AND BL.DEL_YN = 'N'
+		  AND BL.TRNP_RQST_NO = #{trnpRqstNo}                    /**  N° de demande de transfert  !== 운송신청번호 ==!  */
+	</select>
+
+	<!--
+		Sauvegarder le tableau de l'apurement de l'introduction/sortie(Transfert vers le DT)
+		!== 반출입 이행 저장(하선운송) ==!
+	-->
+	<insert id="insertCarTrnpRlbrFfmn" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpRlbrFfmnVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.insertCarTrnpRlbrFfmn */
+		INSERT INTO ALPASSINT.TB_CARI_TRNP_RLBR_FFMN (
+			  TRNP_RLBR_FFMN_MGMT_NO                  /** N° gestion de l'apurement de l'introduction/sortie du transfert  !== 운송반출입이행관리번호 ==! */
+			, TRNP_RLBR_FFMN_SRNO                     /** N° série de l'apurement de l'introduction/sortie du transfert    !== 운송반출입이행일련번호 ==! */
+			, MRN									  /** Mrn !== MRN ==! */
+			, CAG_MGMT_NO							  /** N° Demande De La Création De Crn !== 화물관리번호 ==! */
+			, BL_NO									  /**  N° de B/L !== BL번호 ==!  */
+			, CNTR_NO                                 /** N° du conteneur  !== 컨테이너번호 ==! */
+			, DPRP_IBOBZ_CD							  /**  Code De Zone Sous Douane De Départ  !== 출발지보세구역코드 ==!  */
+			, ARLC_IBOBZ_CD							  /** Code De Zone Sous Douane De Destination !== 도착지보세구역코드 ==! */
+			, CNTR_TP_CD                              /** Code de type de conteneur !== 컨테이너구분코드 ==! */
+			, RLBR_PCKG_GCNT                          /** Nombre de colis d'introduction/sortie !== 반출입포장개수 ==! */
+			, RLBR_WGHT                               /** Poids d'introduction/sortie !== 반출입중량 ==! */
+			, DEL_YN                                  /**  Suppression On                           !== 삭제여부 ==!  */
+			, FRST_REGST_ID                           /**  Id Du Premier Enregistrant               !== 최초등록자ID ==!  */
+			, FRST_RGSR_DTTM                          /**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, LAST_CHPR_ID                            /**  Id Du Modificateur Final                 !== 최종변경자ID ==!  */
+			, LAST_CHG_DTTM                           /**  Date Et Heure De Modification Finale     !== 최종변경일시 ==!  */
+			)
+		VALUES
+			(
+			  #{trnpRlbrFfmnMgmtNo}                   /** N° gestion de l'apurement de l'introduction/sortie du transfert  !== 운송반출입이행관리번호 ==! */
+			, #{trnpRlbrFfmnSrno}                     /** N° série de l'apurement de l'introduction/sortie du transfert    !== 운송반출입이행일련번호 ==! */
+			, #{mrn}								  /** Mrn !== MRN ==! */
+			, #{cagMgmtNo}							  /** N° Demande De La Création De Crn !== 화물관리번호 ==! */
+			, #{blNo}								  /**  N° de B/L !== BL번호 ==!  */
+			, #{cntrNo}                               /** N° du conteneur  !== 컨테이너번호 ==! */
+			, #{dprpIbobzCd}						  /**  Code De Zone Sous Douane De Départ  !== 출발지보세구역코드 ==!  */
+			, #{arlcIbobzCd}						  /** Code De Zone Sous Douane De Destination !== 도착지보세구역코드 ==! */
+			, #{cntrTpCd}                             /** Code de type de conteneur !== 컨테이너구분코드 ==! */
+			, #{rlbrPckgGcnt}                         /** Nombre de colis d'introduction/sortie !== 반출입포장개수 ==! */
+			, #{rlbrWght}                             /** Poids d'introduction/sortie !== 반출입중량 ==! */
+			, 'N'                                	  /**  Suppression On                           !== 삭제여부 ==!  */
+			, #{frstRegstId}                          /**  Id Du Premier Enregistrant               !== 최초등록자id ==!  */
+			, SYSTIMESTAMP                         	  /**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, #{lastChprId}                           /**  Id Du Modificateur Final                 !== 최종변경자id ==!  */
+			, SYSTIMESTAMP                            /**  Date Et Heure De Modification Finale     !== 최종변경일시 ==!  */
+			)
+	</insert>
+
+	
+	
+		<!--
+		Lors de l'autorisation du transfert, consulter les informations à sauvegarder dans la table Transfert_Introduction/Sortie_Apurement.(Transfert vers le DT)
+		!== 운송 승인시 운송_반출입_이행 테이블에 저장할 정보를 조회한다.(하선운송) ==!
+	-->
+	<select id="selectTrnpMdfyRlbrFfmnList" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpVo"  resultType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpRlbrFfmnVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.selectTrnpMdfyRlbrFfmnList */
+		SELECT BL.TRNP_RQST_NO AS TRNP_RLBR_FFMN_MGMT_NO
+			 , ROWNUM AS TRNP_RLBR_FFMN_SRNO
+			 , SUBSTR(BL.CAG_MGMT_NO,1,16) AS MRN
+			 , BL.CAG_MGMT_NO
+			 , BL.BL_NO
+			 , CNTR.CNTR_NO AS CNTR_NO
+			 , CNTR.CNTR_TP_CD
+			 , CASE WHEN COALESCE(CNTR.CNTR_NO,'') != '' THEN CNTR.PCKG_GCNT ELSE BL.PCKG_GCNT END RLBR_PCKG_GCNT
+			 , CASE WHEN COALESCE(CNTR.CNTR_NO,'') != '' THEN CNTR.WGHT ELSE BL.WGHT END RLBR_WGHT
+		FROM TB_CARI_TRNP_MDFY_BL BL
+		LEFT OUTER JOIN TB_CARI_TRNP_MDFY_CNTR CNTR ON CNTR.BL_SRNO = BL.BL_SRNO AND CNTR.TRNP_RQST_NO = BL.TRNP_RQST_NO AND CNTR.DEL_YN = 'N'
+		WHERE 1=1
+		  AND BL.DEL_YN = 'N'
+		  AND BL.TRNP_RQST_NO = #{trnpRqstNo}                    /**  N° de demande de transfert  !== 운송신청번호 ==!  */
+		  AND BL.MDFY_DGCNT = #{mdfyDgcnt}
+		  AND BL.CAG_MGMT_NO = #{cagMgmtNo}
+		 LIMIT 1
+	</select>
+	
+	
+	 	<!--
+		!== 반출입 이행 삭제(하선운송) ==!
+	-->
+	<insert id="deleteCarTrnpRlbrFfmn" parameterType="alpass.ipt.car.trnpcvy.trnp.vo.CarTrnpRlbrFfmnVo">
+		/* alpass.ipt.car.trnpcvy.trnp.mapper.CarTrnpMapper.deleteCarTrnpRlbrFfmn */
+		DELETE FROM ALPASSINT.TB_CARI_TRNP_RLBR_FFMN
+      WHERE TRNP_RLBR_FFMN_MGMT_NO = #{trnpRlbrFfmnMgmtNo} 
+      <if test="cagMgmtNo !=null and cagMgmtNo !=''">
+       AND CAG_MGMT_NO = #{cagMgmtNo} 
+						</if>
+	</insert>
+
+</mapper>

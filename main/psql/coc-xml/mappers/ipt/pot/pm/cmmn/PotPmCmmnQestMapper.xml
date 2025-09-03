@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.cmmn.mapper.PotPmCmmnQestMapper">
+
+    <!--
+        Consulter la liste de la gestion Q&R !==Q&A 관리 목록을 조회한다.==!
+    -->
+    <select id="selectQestList"
+            parameterType="alpass.ipt.pot.pm.cmmn.vo.PotPmCmmnQestManageVo"
+            resultType="alpass.ipt.pot.pm.cmmn.vo.PotPmCmmnQestManageVo">
+        /* selectQestList */
+        <include refid="pagination.header"/>
+        SELECT
+        A.QEST_SRNO
+        , A.APP_CLSF_CD AS APP_CLSF_CODE
+        , A.BSOP_CTGY_CD
+        , (SELECT COUNT(1) FROM TB_POTI_QEST_ANSW WHERE QEST_SRNO = A.QEST_SRNO AND DEL_YN = 'N') ANSW_CNT
+        , A.QEST_TTLE
+        , A.QEST_CN
+        , A.QEST_LQTY_CN
+        , A.MDPN_ID
+        , CASE
+        WHEN A.APP_CLSF_CD = 'IPT' THEN ( SELECT CONCAT(U.EMP_FMNM, ' ', U.EMP_NM)  FROM TB_POTI_EMP U WHERE PBSR_NO = A.MDPN_ID)
+        WHEN A.APP_CLSF_CD = 'EPT' THEN ( SELECT CONCAT(U.USER_FMNM, ' ', U.USER_NM) FROM TB_COM_CO_USER U WHERE USER_ID = A.MDPN_ID)
+        END AS MDPN_NM
+        , TO_CHAR(A.MAKE_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS MAKE_DTTM
+        , A.INQT_CNT
+        , A.OPPB_YN
+        , A.ATCH_FILE_ID
+        , A.DEL_YN
+        , A.FRST_REGST_ID
+        , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+        , A.LAST_CHPR_ID
+        , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+        FROM   TB_POTI_QEST A
+        WHERE  A.DEL_YN    = 'N'
+        <if test="appClsfCode != null and appClsfCode != '' and appClsfCode != 'all' ">
+            AND A.APP_CLSF_CD = #{appClsfCode}
+        </if>
+        <if test="qestTtle != null and qestTtle != '' ">
+            AND UPPER(A.QEST_TTLE) like '%' || UPPER(#{qestTtle}) || '%'
+        </if>
+        <if test="bsopCtgyCd != null and bsopCtgyCd != '' ">
+            AND A.BSOP_CTGY_CD like '%' || #{bsopCtgyCd} || '%'
+        </if>
+        <if test="searchKeywordFrom != null and searchKeywordFrom != '' ">
+            AND A.MAKE_DTTM BETWEEN TO_DATE(#{searchKeywordFrom}, 'DD/MM/YYYY') AND TO_DATE(#{searchKeywordTo}, 'DD/MM/YYYY') + 0.99999
+        </if>
+        <if test="searchLoginId != null and searchLoginId != '' ">
+            AND (
+            (A.OPPB_YN = 'N'
+            OR  A.MDPN_ID = #{searchLoginId}
+            )
+            OR A.OPPB_YN = 'Y'
+            )
+        </if>
+        ORDER BY A.QEST_SRNO DESC
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+        Consulter un article de la gestion de l'annonce !==공지사항 관리 게시물을 조회한다.==!
+    -->
+    <select id="selectQest"
+            parameterType="alpass.ipt.pot.pm.cmmn.vo.PotPmCmmnQestManageVo"
+            resultType="alpass.ipt.pot.pm.cmmn.vo.PotPmCmmnQestManageVo">
+        /* selectQest */
+        SELECT
+            A.QEST_SRNO
+             , A.APP_CLSF_CD AS APP_CLSF_CODE
+             , A.BSOP_CTGY_CD
+             , (SELECT PBSR_NO FROM TB_POTI_EMP WHERE ORGN_MGMT_CD = A.ORGN_MGMT_CD AND DEL_YN = 'N') AS PBSR_NO
+             , A.QEST_TTLE
+             , A.QEST_CN
+             , A.QEST_LQTY_CN
+             , A.MDPN_ID
+             , CASE
+                   WHEN A.APP_CLSF_CD = 'IPT' THEN ( SELECT U.EMP_NM FROM TB_POTI_EMP U WHERE PBSR_NO = A.MDPN_ID)
+                   WHEN A.APP_CLSF_CD = 'EPT' THEN ( SELECT U.USER_NM FROM TB_COM_CO_USER U WHERE USER_ID = A.MDPN_ID)
+            END AS MDPN_NM
+             , TO_CHAR(A.MAKE_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS MAKE_DTTM
+             , A.INQT_CNT
+             , A.OPPB_YN
+             , A.ATCH_FILE_ID
+             , A.DEL_YN
+             , A.FRST_REGST_ID
+             , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+             , A.LAST_CHPR_ID
+             , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+        FROM   TB_POTI_QEST A
+        WHERE  A.QEST_SRNO = #{qestSrno}
+          AND    A.DEL_YN    = 'N'
+    </select>
+
+    <!--
+        Consulter la liste des réponses de l'article du Q&A !==Q&A 관리 게시글 답변목록을 조회한다.==!
+    -->
+    <select id="selectQestAnsw"
+            parameterType="alpass.ipt.pot.pm.cmmn.vo.PotPmCmmnQestManageVo"
+            resultType="alpass.ipt.pot.pm.cmmn.vo.PotPmCmmnQestAnswManageVo">
+        /* selectQestAnsw */
+        SELECT
+            A.QEST_SRNO
+             , A.ANSW_SRNO
+             , A.ANSW_CN
+             , A.ANPN_ID
+             , CASE
+                   WHEN A.APP_CLSF_CD = 'IPT' THEN ( SELECT U.EMP_NM || '(' || N.ORGN_NM  || ')' FROM TB_POTI_EMP U, TB_POTI_ORGN N WHERE PBSR_NO = A.ANPN_ID AND U.ORGN_MGMT_CD = N.ORGN_MGMT_CD)
+                   WHEN A.APP_CLSF_CD = 'EPT' THEN ( SELECT U.USER_NM FROM TB_COM_CO_USER U WHERE USER_ID = A.ANPN_ID)
+            END AS ANPN_NM
+             , TO_CHAR(TO_DATE(A.ANSW_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS ANSW_DT
+             , A.DEL_YN AS ANSW_DEL_YN
+             , A.FRST_REGST_ID AS ANSW_FRST_REGST_ID
+             , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS ANSW_FRST_RGSR_DTTM
+             , A.LAST_CHPR_ID AS ANSW_LAST_CHPR_ID
+             , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS ANSW_LAST_CHG_DTTM
+        FROM   TB_POTI_QEST_ANSW A
+        WHERE  A.QEST_SRNO = #{qestSrno}
+          AND    A.DEL_YN    = 'N'
+        ORDER BY A.ANSW_SRNO
+    </select>
+
+    <!--
+        Modifier le nombre de vues de l'article de la gestion Q&R !==Q&A 관리 게시글 조회수를 수정한다.==!
+    -->
+    <update id="updateViewQest" parameterType="alpass.ipt.pot.pm.cmmn.vo.PotPmCmmnQestManageVo">
+        /* updateViewQest */
+        UPDATE  TB_POTI_QEST SET
+            INQT_CNT = INQT_CNT+1
+        WHERE	QEST_SRNO = #{qestSrno}
+    </update>
+
+    <!--
+        Enregistrer une réponse de l'article du Q&R !==Q&A 게시글 답변을 등록한다==!
+    -->
+    <insert id="insertQestAnsw" parameterType="alpass.ipt.pot.pm.cmmn.vo.PotPmCmmnQestAnswManageVo">
+        <selectKey keyProperty="answSrno" keyColumn="ANSW_SRNO" resultType="java.math.BigDecimal" order="BEFORE">
+            SELECT NVL(MAX(ANSW_SRNO),0) +1 FROM TB_POTI_QEST_ANSW WHERE QEST_SRNO = #{qestSrno}
+        </selectKey>
+        /* insertQestAnsw */
+        INSERT INTO TB_POTI_QEST_ANSW
+        (
+        QEST_SRNO
+        , APP_CLSF_CD
+        , ANSW_SRNO
+        , ANSW_CN
+        , ANPN_ID
+        , ANSW_DT
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM
+        )
+        VALUES
+        (
+        #{qestSrno}
+        , 'IPT'
+        , #{answSrno}
+        , #{answCn}
+        , #{anpnId}
+        , TO_CHAR(SYSTIMESTAMP,'YYYYMMDD')
+        , 'N'
+        , #{answFrstRegstId}
+        , SYSTIMESTAMP
+        , #{answLastChprId}
+        , SYSTIMESTAMP
+        )
+    </insert>
+
+    <!--
+      Modifier une réponse de l'article du Q&R !==Q&A 게시글 답변을 수정한다==!
+    -->
+    <update id="updateQestAnsw" parameterType="alpass.ipt.pot.pm.cmmn.vo.PotPmCmmnQestAnswManageVo">
+        /* updateQestAnsw */
+        UPDATE  TB_POTI_QEST_ANSW
+        <trim prefix="SET" prefixOverrides="," >
+            <if test="answCn != null and answCn != ''">, ANSW_CN = #{answCn}</if>
+            <if test="answLastChprId != null and answLastChprId != ''">, LAST_CHPR_ID = #{answLastChprId}</if>
+            <if test="answLastChprId != null and answLastChprId != ''">, LAST_CHG_DTTM = SYSTIMESTAMP</if>
+        </trim>
+        WHERE  QEST_SRNO = #{qestSrno}
+        AND    ANSW_SRNO = #{answSrno}
+    </update>
+
+    <!--
+      Supprimer une réponse de l'article du Q&R !==Q&A 게시글 답변을 삭제한다==!
+    -->
+    <update id="deleteQestAnsw" parameterType="alpass.ipt.pot.pm.cmmn.vo.PotPmCmmnQestAnswManageVo">
+        /* deleteQestAnsw */
+        UPDATE  TB_POTI_QEST_ANSW SET
+        DEL_YN = 'Y'
+        ,  LAST_CHPR_ID = #{answLastChprId}
+        ,  LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE  QEST_SRNO = #{qestSrno}
+        <if test="answSrno != null and answSrno != '' ">
+            AND    ANSW_SRNO = #{answSrno}
+        </if>
+    </update>
+
+    <!--
+      Distribuer la Q&A au service spécifique !==Q&A 관리 배부 조직 이력을 입력한다.==!
+    -->
+    <insert id="insertImpvQestOrgnH" parameterType="alpass.ipt.pot.pm.cmmn.vo.PotPmCmmnQestOrgnH">
+      <selectKey keyProperty="orgnSrno" keyColumn="ORGN_SRNO" resultType="java.math.BigDecimal" order="BEFORE">
+        SELECT NVL(MAX(ORGN_SRNO),0) +1 FROM TB_POTI_QEST_ORGN_H WHERE QEST_SRNO = ${qestSrno}
+      </selectKey>
+      /* insertImpvQestOrgnH */
+      INSERT INTO TB_POTI_QEST_ORGN_H
+      (
+      QEST_SRNO
+      , ORGN_SRNO
+      , ORGN_MGMT_CD
+      , PBSR_NO
+      , DEL_YN
+      , FRST_REGST_ID
+      , FRST_RGSR_DTTM
+      , LAST_CHPR_ID
+      , LAST_CHG_DTTM
+      )
+      VALUES
+      (
+      #{qestSrno}
+      , #{orgnSrno}
+      , #{orgnMgmtCd}
+      , #{pbsrNo}
+      , 'N'
+      , #{frstRegstId}
+      , SYSTIMESTAMP
+      , #{lastChprId}
+      , SYSTIMESTAMP
+      )
+    </insert>
+
+    <!--
+      Modifier un code de gestion de service de Q&A !==Q&A 관리 조직관리코드를 수정한다.==!
+    -->
+    <update id="updateImpvQestOrgnCd" parameterType="alpass.ipt.pot.pm.cmmn.vo.PotPmCmmnQestManageVo">
+      /* updateImpvQestOrgnCd */
+      UPDATE  TB_POTI_QEST
+      <trim prefix="SET" prefixOverrides="," >
+        <if test="orgnMgmtCd != null and orgnMgmtCd != '' ">, ORGN_MGMT_CD = #{orgnMgmtCd}</if>
+        <if test="pbsrNo != null and pbsrNo != '' ">, PBSR_NO = #{pbsrNo}</if>
+        <if test="lastChprId != null and lastChprId != '' ">, LAST_CHPR_ID = #{lastChprId}</if>
+        <if test="lastChprId != null and lastChprId != '' ">, LAST_CHG_DTTM = SYSTIMESTAMP</if>
+      </trim>
+      WHERE  QEST_SRNO = #{qestSrno}
+    </update>
+
+</mapper>

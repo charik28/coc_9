@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.pot.mp.sdbk.mapper.PotMpSdbkFaqMapper">
+
+  <!--
+		Consulter la liste de la FAQ !==FAQ 목록을 조회한다.==!
+	-->
+    <select id="selectFaqList" parameterType="alpass.ipt.pot.mp.sdbk.vo.PotMpSdbkFaqVo" resultType="alpass.ipt.pot.mp.sdbk.vo.PotMpSdbkFaqVo">
+        /* selectFaqList */
+        SELECT * FROM (
+			<include refid="pagination.header"/>
+	            SELECT
+	                  A.FAQ_SRNO                  
+	                , A.TRGT_APP_CLSF_CD         
+	                , A.FAQ_TP_CD                 
+	                , A.FAQ_TTLE                  
+	                , A.FAQ_CN                    
+	                , A.MDPN_ID                   
+	                , ( SELECT CONCAT(U.EMP_FMNM, ' ', U.EMP_NM) FROM TB_POTI_EMP U WHERE PBSR_NO = A.MDPN_ID) AS MDPN_NM
+	                , TO_CHAR(A.MAKE_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS MAKE_DTTM               
+	                , A.INQT_CNT                
+	                , A.PRTL_BLTN_YN            
+	                , A.ATCH_FILE_ID            
+	                , A.DEL_YN                  
+	                , A.FRST_REGST_ID           
+	                , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM       
+	                , A.LAST_CHPR_ID             
+	                , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS  LAST_CHG_DTTM         
+	            FROM   TB_POTI_FAQ A
+	           WHERE  A.DEL_YN = 'N'                             
+	           AND	  A.PRTL_BLTN_YN = 'Y'
+	           AND	  A.TRGT_APP_CLSF_CD = 'IPT'
+				<if test="searchKeywordFrom != null and searchKeywordFrom != '' ">
+		           <if test="searchKeywordTo != null and searchKeywordTo != '' ">
+           			AND TO_DATE(TO_CHAR(A.MAKE_DTTM , 'DD/MM/YYYYHH24MISS'),'DD/MM/YYYYHH24MISS')
+           				BETWEEN TO_DATE( #{searchKeywordFrom}||'000000' , 'DD/MM/YYYYHH24MISS')
+           				AND TO_DATE( #{searchKeywordTo}||'235959' , 'DD/MM/YYYYHH24MISS')
+					</if>
+				</if>
+				<if test="faqTtle != null and faqTtle != '' ">
+					AND UPPER(A.FAQ_TTLE) like '%' || UPPER(#{faqTtle})	 || '%'
+				</if>
+				<if test="faqTpCd != null and faqTpCd != '' ">
+					AND A.FAQ_TP_CD = #{faqTpCd}
+				</if>
+				ORDER BY TO_CHAR(A.MAKE_DTTM, 'YYYYMMDD HH24:mi:ss') DESC
+		<include refid="pagination.footer"/>
+	    )
+    </select>
+    
+	<!--
+		Consulter un article de la FAQ !==FAQ 게시물을 조회한다.==!
+	-->
+    <select id="selectFaq" parameterType="alpass.ipt.pot.mp.sdbk.vo.PotMpSdbkFaqVo" resultType="alpass.ipt.pot.mp.sdbk.vo.PotMpSdbkFaqVo">
+			/* selectFaq */
+    	SELECT    A.FAQ_SRNO                   
+                , A.TRGT_APP_CLSF_CD           
+                , A.FAQ_TP_CD                  
+                , A.FAQ_TTLE                   
+                , A.FAQ_CN                     
+                , A.MDPN_ID        
+                , ( SELECT U.EMP_NM FROM TB_POTI_EMP U WHERE PBSR_NO = A.MDPN_ID) AS MDPN_NM            
+                , TO_CHAR(A.MAKE_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS MAKE_DTTM                                 
+                , A.INQT_CNT
+                , A.PRTL_BLTN_YN
+                , A.ATCH_FILE_ID
+                , A.DEL_YN
+                , A.FRST_REGST_ID
+                , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+                , A.LAST_CHPR_ID             
+                , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS  LAST_CHG_DTTM
+        FROM   TB_POTI_FAQ A
+        WHERE A.FAQ_SRNO = #{faqSrno}
+        AND	  A.PRTL_BLTN_YN = 'Y'
+        AND	  A.TRGT_APP_CLSF_CD = 'IPT'	  
+    </select>
+
+	<!--
+		Modifier le nombre de vues de la FAQ  !==FAQ 조회수를 수정한다.==!
+	-->
+    <update id="updateFaqView" parameterType="alpass.ipt.pot.mp.sdbk.vo.PotMpSdbkFaqVo">
+        /* updateFaqView */
+        UPDATE  TB_POTI_FAQ SET 
+                INQT_CNT = INQT_CNT+1
+        WHERE	FAQ_SRNO = #{faqSrno}
+        AND		PRTL_BLTN_YN = 'Y'
+    </update>
+
+</mapper>

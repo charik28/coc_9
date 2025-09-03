@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.pot.pm.prsnetrsf.mapper.PotMpPrsneTrsfMapper">
+
+	<!--
+			Consulter la liste de la mutation !== 인사인동 목록 조회 ==!
+	-->
+	<select id="selectPrsneTrsfList" parameterType="alpass.ipt.pot.pm.prsnetrsf.vo.PotPmPrsneTrsfVo"
+			resultType="alpass.ipt.pot.pm.prsnetrsf.vo.PotPmPrsneTrsfVo">
+		/* selectPrsneTrsfList */
+		<include refid="pagination.header"/>
+		SELECT
+		    BWRK_MTR_MGMT_NO
+		     , PBSR_NO
+		     , FONC_CD
+		     , ORGN_MGMT_CD
+		     , (SELECT ORGN_CD FROM TB_POTI_ORGN C WHERE C.ORGN_MGMT_CD = TB_POTI_BWRK_MTR.ORGN_MGMT_CD) AS ORGN_NM
+		     , BF_ORGN_MGMT_CD
+		     , TO_CHAR(TO_DATE(PRSNE_TRSF_APPT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') as PRSNE_TRSF_APPT_DT
+		     , PRSNE_TRSF_DTRM_NO
+		     , TO_CHAR(TO_DATE(BWRK_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') as BWRK_STRT_DT
+				 , TO_CHAR(TO_DATE(BWRK_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') as BWRK_END_DT
+		     , BWRK_END_PV_NO
+		     , BWRK_STRT_PV_NO
+		     , BWRK_END_PV_ATCH_FILE_ID
+		     , BWRK_STRT_PV_ATCH_FILE_ID
+		     , BWRK_STTS_CD
+		     , DEL_YN
+		     , FRST_REGST_ID
+				 , TO_CHAR(FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+		     , LAST_CHPR_ID
+				 , TO_CHAR(LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+		FROM TB_POTI_BWRK_MTR
+		WHERE DEL_YN = 'N'
+		<if test="srchPbsrNo != null and srchPbsrNo != ''">
+			AND PBSR_NO = #{srchPbsrNo}
+		</if>
+		<if test="srchFoncCd != null and srchFoncCd != ''">
+			AND FONC_CD = #{srchFoncCd}
+		</if>
+		<if test="srchOrgnMgmtCd != null and srchOrgnMgmtCd != ''">
+			AND ORGN_MGMT_CD = #{srchOrgnMgmtCd}
+		</if>
+		<if test="srchBfOrgnMgmtCd != null and srchBfOrgnMgmtCd != ''">
+			AND BF_ORGN_MGMT_CD = #{srchBfOrgnMgmtCd}
+		</if>
+		<if test="srchBwrkSttsCd != null and srchBwrkSttsCd != ''">
+			AND BWRK_STTS_CD = #{srchBwrkSttsCd}
+		</if>
+		<if test="srchBwrkStrtDt != null and srchBwrkStrtDt != ''">
+			<![CDATA[
+			AND TO_CHAR(TO_DATE(#{srchBwrkStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') <= TO_CHAR(BWRK_END_DT, 'YYYYMMDD')
+			]]>
+		</if>
+		<if test="srchBwrkEndDt != null and srchBwrkEndDt != ''">
+			<![CDATA[
+		  AND TO_CHAR(TO_DATE(#{srchBwrkEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') >= TO_CHAR(BWRK_STRT_DT, 'YYYYMMDD')
+			]]>
+		</if>
+		ORDER BY FRST_RGSR_DTTM DESC
+		<include refid="pagination.footer"/>
+	</select>
+
+
+	<!--
+    Consulter la mutation !== 인사인동 조회 ==!
+-->
+	<select id="selectPrsneTrsf" parameterType="alpass.ipt.pot.pm.prsnetrsf.vo.PotPmPrsneTrsfVo"
+		resultType="alpass.ipt.pot.pm.prsnetrsf.vo.PotPmPrsneTrsfVo">
+		/* selectPrsneTrsfList */
+		SELECT
+			A.BWRK_MTR_MGMT_NO
+		 , A.PBSR_NO
+		 , A.FONC_CD
+		 , A.ORGN_MGMT_CD
+		 , A.BF_ORGN_MGMT_CD
+		 , TO_CHAR(TO_DATE(A.PRSNE_TRSF_APPT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PRSNE_TRSF_APPT_DT
+		 , A.PRSNE_TRSF_DTRM_NO
+		 , TO_CHAR(TO_DATE(A.BWRK_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS BWRK_STRT_DT
+		 , TO_CHAR(TO_DATE(A.BWRK_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS BWRK_END_DT
+		 , A.BWRK_END_PV_NO
+		 , A.BWRK_STRT_PV_NO
+		 , A.BWRK_END_PV_ATCH_FILE_ID
+		 , A.BWRK_STRT_PV_ATCH_FILE_ID
+		 , A.BWRK_STTS_CD
+		 , B.EMP_NM
+		 , B.EMP_FMNM
+		 , (
+				SELECT '['|| FONC_CD || '] ' || FONC_CD_NM
+				FROM TB_POTI_FONC_CD_LANG C
+				WHERE C.FONC_CD = B.FONC_CD
+					AND DEL_YN = 'N'
+					AND LANG_CD = #{langCd}
+			) AS FONC_NM
+		 , '[' || B.GRD_CD || '] ' || FN_GET_CD_VDVAL_NM('POT_0089', B.GRD_CD, #{langCd}) AS GRD_NM
+		 , C.ORGN_CD
+		 , C.ORGN_NM
+		 , D.ORGN_CD AS GB_ORGN_CD
+		 , D.ORGN_NM AS BF_ORGN_NM
+		 , A.DEL_YN
+		 , A.FRST_REGST_ID
+		 , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+		 , A.LAST_CHPR_ID
+		 , TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+		 , HIST_SRNO
+		FROM TB_POTI_BWRK_MTR A, TB_POTI_EMP B, TB_POTI_ORGN C, TB_POTI_ORGN D
+		WHERE A.PBSR_NO = B.PBSR_NO
+		  AND A.ORGN_MGMT_CD = C.ORGN_MGMT_CD
+			AND A.BF_ORGN_MGMT_CD = D.ORGN_MGMT_CD
+			AND A.DEL_YN = 'N'
+			AND A.BWRK_MTR_MGMT_NO = #{bwrkMtrMgmtNo}
+	</select>
+	<!--
+		  Enregistrer la mutation  !== 인사인동 등록 ==!
+	 -->
+	<insert id="insertPrsneTrsf" parameterType="alpass.ipt.pot.pm.prsnetrsf.vo.PotPmPrsneTrsfVo">
+		/** insertPrsneTrsf */
+		WITH UPSERT AS
+		(
+		UPDATE TB_POTI_BWRK_MTR
+		SET
+			PBSR_NO	= #{pbsrNo}
+			, FONC_CD = #{foncCd}
+			, ORGN_MGMT_CD	= #{orgnMgmtCd}
+			, BF_ORGN_MGMT_CD	= #{bfOrgnMgmtCd}
+			, PRSNE_TRSF_APPT_DT = TO_CHAR(TO_DATE(#{prsneTrsfApptDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+			, PRSNE_TRSF_DTRM_NO = #{prsneTrsfDtrmNo}
+			, BWRK_STRT_DT = TO_CHAR(TO_DATE(#{bwrkStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+			, BWRK_END_DT = TO_CHAR(TO_DATE(#{bwrkEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+			, BWRK_END_PV_NO = #{bwrkEndPvNo}
+			, BWRK_STRT_PV_NO = #{bwrkStrtPvNo}
+			, BWRK_END_PV_ATCH_FILE_ID = #{bwrkEndPvAtchFileId}
+			, BWRK_STRT_PV_ATCH_FILE_ID = #{bwrkStrtPvAtchFileId}
+			, BWRK_STTS_CD = #{bwrkSttsCd}
+		  , HIST_SRNO = #{histSrno}
+			, DEL_YN = 'N'
+			, LAST_CHPR_ID = #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+		WHERE BWRK_MTR_MGMT_NO = #{bwrkMtrMgmtNo}
+		RETURNING *
+		)
+		INSERT INTO TB_POTI_BWRK_MTR
+		(
+				BWRK_MTR_MGMT_NO
+			, PBSR_NO
+			, FONC_CD
+			, ORGN_MGMT_CD
+			, BF_ORGN_MGMT_CD
+			, PRSNE_TRSF_APPT_DT
+			, PRSNE_TRSF_DTRM_NO
+			, BWRK_STRT_DT
+			, BWRK_END_DT
+			, BWRK_END_PV_NO
+			, BWRK_STRT_PV_NO
+			, BWRK_END_PV_ATCH_FILE_ID
+			, BWRK_STRT_PV_ATCH_FILE_ID
+			, BWRK_STTS_CD
+			, DEL_YN
+			, FRST_REGST_ID
+			, FRST_RGSR_DTTM
+			, LAST_CHPR_ID
+			, LAST_CHG_DTTM
+		)
+		SELECT
+		#{newBwrkMtrMgmtNo}
+		, #{pbsrNo}
+		, #{foncCd}
+		, #{orgnMgmtCd}
+		, #{bfOrgnMgmtCd}
+		, TO_CHAR(TO_DATE(#{prsneTrsfApptDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		, #{prsneTrsfDtrmNo}
+		, TO_CHAR(TO_DATE(#{bwrkStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		, TO_CHAR(TO_DATE(#{bwrkEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		, #{bwrkEndPvNo}
+		, #{bwrkStrtPvNo}
+		, #{bwrkEndPvAtchFileId}
+		, #{bwrkStrtPvAtchFileId}
+		, 'M'
+		, 'N'
+		, #{frstRegstId}
+		, SYSTIMESTAMP
+		, #{lastChprId}
+		, SYSTIMESTAMP
+		WHERE NOT EXISTS(SELECT * FROM UPSERT)
+	</insert>
+
+	<!--
+		 Supprimer la mutation !== 인사인동 삭제 ==!
+	 -->
+	<update id="deletePrsneTrsf" parameterType="alpass.ipt.pot.pm.prsnetrsf.vo.PotPmPrsneTrsfVo">
+		/** deletePrsneTrsf */
+		UPDATE TB_POTI_BWRK_MTR
+		SET
+			  LAST_CHPR_ID = #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+			, DEL_YN = 'Y'
+		WHERE DEL_YN = 'N'
+		AND   BWRK_MTR_MGMT_NO = #{bwrkMtrMgmtNo}
+	</update>
+
+	<!--
+			  Consulter la liste des douaniers !==세관조직 직원 목록 조회==!
+	 -->
+	<select id="selectFoncHistList" parameterType="alpass.ipt.pot.pm.prsnetrsf.vo.PotPmPrsneTrsfVo"
+		resultType="alpass.ipt.pot.pm.prsnetrsf.vo.PotPmPrsneTrsfVo">
+		/** selectFoncHistList */
+		<include refid="pagination.header"/>
+		SELECT
+			B.PBSR_NO
+		  , A.EMP_FMNM
+		  , A.EMP_NM
+			, B.SRNO
+			, B.FONC_CD
+			, B.BF_FONC_CD
+			, B.BF_GRD_CD
+			, B.FONC_STTS_CD
+			, TO_CHAR(TO_DATE(B.APOT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS APOT_DT
+			, B.APOT_NO
+			, B.APOT_ATCH_FILE_ID
+			, B.APRV_ID
+			, B.PRCS_STTS_CD
+			, B.DEL_YN
+			, B.FRST_REGST_ID
+			, B.FRST_RGSR_DTTM
+			, B.LAST_CHPR_ID
+			, B.LAST_CHG_DTTM
+		FROM
+			TB_POTI_EMP A ,
+			TB_POTI_EMP_FONC_HIST B
+		WHERE A.PBSR_NO = B.PBSR_NO
+		  AND A.DEL_YN = 'N'
+		  AND B.DEL_YN = 'N'
+			AND A.ORGN_MGMT_CD IN
+			(
+				SELECT ORGN_MGMT_CD
+				FROM TB_POTI_ORGN START WITH ORGN_CD = #{orgnCd}
+				CONNECT BY PRIOR ORGN_MGMT_CD = UPR_ORGN_MGMT_CD AND DEL_YN='N'
+			)
+		<if test="srchPbsrNo != null and srchPbsrNo != ''">
+			AND B.PBSR_NO = #{srchPbsrNo}
+		</if>
+		<if test="srchFoncCd != null and srchFoncCd != ''">
+			AND B.FONC_CD = #{srchFoncCd}
+		</if>
+		<if test="srchOrgnMgmtCd != null and srchOrgnMgmtCd != ''">
+			AND A.ORGN_MGMT_CD = #{srchOrgnMgmtCd}
+		</if>
+		<if test="srchGrdCd != null and srchGrdCd != ''">
+			AND A.GRD_CD = #{srchGrdCd}
+		</if>
+		<if test="srchFoncSttsCd != null and srchFoncSttsCd != ''">
+			AND B.FONC_STTS_CD = #{srchFoncSttsCd}
+		</if>
+		<if test="srchBwrkStrtDt != null and srchBwrkStrtDt != ''">
+			<![CDATA[
+			AND TO_CHAR(TO_DATE(#{srchBwrkStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') <= B.APOT_DT
+			]]>
+		</if>
+		<if test="srchBwrkEndDt != null and srchBwrkEndDt != ''">
+			<![CDATA[
+		  AND TO_CHAR(TO_DATE(#{srchBwrkEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') >= B.APOT_DT
+			]]>
+		</if>
+		ORDER BY FRST_RGSR_DTTM
+		<include refid="pagination.footer"/>
+	</select>
+
+
+	<!--
+      Consulter la gestion des fonctions !== 직무관리 조회 ==!
+ -->
+	<select id="selectFoncHist" parameterType="alpass.ipt.pot.pm.prsnetrsf.vo.PotPmPrsneTrsfVo"
+		resultType="alpass.ipt.pot.pm.prsnetrsf.vo.PotPmPrsneTrsfVo">
+		/** selectFoncHist */
+		SELECT
+			B.PBSR_NO
+				 , A.EMP_FMNM
+				 , A.EMP_NM
+				 , B.SRNO
+				 , B.FONC_CD
+				 , B.BF_FONC_CD
+				 , B.BF_GRD_CD
+				 , B.FONC_STTS_CD
+				 , TO_CHAR(TO_DATE(B.APOT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS APOT_DT
+				 , B.APOT_NO
+				 , B.APOT_ATCH_FILE_ID
+				 , B.APRV_ID
+				 , B.PRCS_STTS_CD
+				 , B.DEL_YN
+				 , B.FRST_REGST_ID
+				 , B.FRST_RGSR_DTTM
+				 , B.LAST_CHPR_ID
+				 , B.LAST_CHG_DTTM
+				 , '[' || B.BF_GRD_CD || '] ' ||
+					 FN_GET_CD_VDVAL_NM('POT_0089', B.BF_GRD_CD, #{langCd}) AS GRD_NM
+				 , (SELECT '[' || FONC_CD || '] ' || FONC_CD_NM
+						FROM TB_POTI_FONC_CD_LANG C
+						WHERE C.FONC_CD = B.BF_FONC_CD
+							AND DEL_YN = 'N'
+							AND LANG_CD = #{langCd}) AS FONC_NM
+		FROM TB_POTI_EMP A,
+				 TB_POTI_EMP_FONC_HIST B
+		WHERE A.PBSR_NO = B.PBSR_NO
+			AND A.DEL_YN = 'N'
+			AND B.DEL_YN = 'N'
+			AND B.PBSR_NO = #{pbsrNo}
+			AND B.SRNO = #{srno}
+	</select>
+
+	<!--
+    Enregistrer la gestion des fonctions !== 직무관리 등록 ==!
+ -->
+	<insert id="insertFoncHist" parameterType="alpass.ipt.pot.pm.prsnetrsf.vo.PotPmPrsneTrsfVo">
+		/** insertFoncHist */
+		WITH UPSERT AS
+		(
+		UPDATE TB_POTI_EMP_FONC_HIST
+		<trim prefix="SET" prefixOverrides="," >
+			<if test="foncCd != null and foncCd != '' ">, FONC_CD = #{foncCd}</if>
+			<if test="bfFoncCd != null and bfFoncCd != '' ">, BF_FONC_CD = #{bfFoncCd}</if>
+			<if test="bfGrdCd != null and bfGrdCd != '' ">, BF_GRD_CD = #{bfGrdCd}</if>
+			<if test="foncSttsCd != null and foncSttsCd != '' ">, FONC_STTS_CD = #{foncSttsCd}</if>
+			<if test="apotDt != null and apotDt != '' ">, APOT_DT = TO_CHAR(TO_DATE(#{apotDt}, 'DD/MM/YYYY'), 'YYYYMMDD')</if>
+			<if test="apotNo != null and apotNo != '' ">, APOT_NO = #{apotNo}</if>
+			<if test="apotAtchFileId != null and apotAtchFileId != '' ">, APOT_ATCH_FILE_ID = #{apotAtchFileId}</if>
+			<if test="aprvId != null and aprvId != '' ">, APRV_ID = #{aprvId}</if>
+			<if test="prcsSttsCd != null and prcsSttsCd != '' ">, PRCS_STTS_CD = #{prcsSttsCd}</if>
+			<if test="lastChprId != null and lastChprId != '' ">, LAST_CHPR_ID = #{lastChprId}</if>
+			<if test="lastChprId != null and lastChprId != '' ">, LAST_CHG_DTTM = SYSTIMESTAMP</if>
+		</trim>
+		WHERE PBSR_NO = #{pbsrNo}
+			AND SRNO = #{srno}
+			RETURNING *
+		)
+		INSERT INTO TB_POTI_EMP_FONC_HIST
+		(
+			PBSR_NO
+			, SRNO
+			, FONC_CD
+			, BF_FONC_CD
+			, BF_GRD_CD
+			, FONC_STTS_CD
+			, APOT_DT
+			, APOT_NO
+			, APOT_ATCH_FILE_ID
+		, APRV_ID
+		, PRCS_STTS_CD
+		, DEL_YN
+		, FRST_REGST_ID
+		, FRST_RGSR_DTTM
+		, LAST_CHPR_ID
+		, LAST_CHG_DTTM
+		)
+		SELECT
+		#{pbsrNo}
+		, #{srno}
+		, #{foncCd}
+		, #{bfFoncCd}
+		, #{bfGrdCd}
+		, #{foncSttsCd}
+		, TO_CHAR(TO_DATE(#{apotDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		, #{apotNo}
+		, #{apotAtchFileId}
+		, #{aprvId}
+		, #{prcsSttsCd}
+		, 'N'
+				 , #{frstRegstId}
+				 , SYSTIMESTAMP
+				 , #{lastChprId}
+				 , SYSTIMESTAMP
+			WHERE NOT EXISTS(SELECT * FROM UPSERT)
+	</insert>
+
+	<!--
+   Supprimer la gestion des fonctions !== 직무관리 삭제 ==!
+ -->
+	<update id="deleteFoncHist" parameterType="alpass.ipt.pot.pm.prsnetrsf.vo.PotPmPrsneTrsfVo">
+		/** deleteFoncHist */
+		UPDATE TB_POTI_EMP_FONC_HIST
+		SET
+			LAST_CHPR_ID = #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+			, DEL_YN = 'Y'
+		WHERE PBSR_NO = #{pbsrNo}
+			AND SRNO = #{srno}
+	</update>
+
+
+	<!--
+   Enregistrer la gestion des fonctions !== 직무변경 등록 ==!
+ -->
+	<update id="updateFoncCd" parameterType="alpass.ipt.pot.pm.prsnetrsf.vo.PotPmPrsneTrsfVo">
+		/** updateFoncCd */
+		UPDATE TB_POTI_EMP
+		SET FONC_CD       = #{foncCd}
+			, LAST_CHPR_ID  = #{lastChprId}
+			, LAST_CHG_DTTM = SYSTIMESTAMP
+		WHERE PBSR_NO = #{pbsrNo}
+	</update>
+	<!--
+   Enregistrer la gestion des fonctions !== 직무관리 등록 ==!
+ -->
+	<select id="selectFoncHistMaxSrno" parameterType="alpass.ipt.pot.pm.prsnetrsf.vo.PotPmPrsneTrsfVo"
+		resultType="int">
+		/** selectFoncHist */
+		SELECT NVL(MAX(SRNO) + 1, 0)
+		FROM TB_POTI_EMP_FONC_HIST
+		WHERE PBSR_NO = #{pbsrNo}
+	</select>
+</mapper>

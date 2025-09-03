@@ -1,0 +1,575 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.clr.pdr.pad.mapper.ClrBfhnPermAudtMgmtMapper">
+    <select id="selectClrBfhnPermAudtList" parameterType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAudtVo" resultType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAudtVo">
+        <include refid="pagination.header" />
+        /** selectClrBfhnPermAudtList */
+        SELECT
+            A.BFHN_PERM_RQST_NO,
+            A.MDFY_DGCNT,
+            A.RQST_SBMT_CSTM_CD,
+            FN_GET_ORGN_NM(A.rqst_sbmt_cstm_cd) as RQST_SBMT_CSTM_NM,
+            A.RQST_SBMT_DEPT_CD,
+            A.BFHN_PERM_RQST_TP_CD,
+            A.APLC_TP_CD,
+            A.CSBR_APLC_ID,
+            A.CSBR_NM,
+            A.CSBR_PERM_NO,
+            A.CSBR_PERM_STTS_CD,
+            A.CSBR_MNDA_INFO,
+            A.CSBR_MNDA_STTS_CD,
+            A.CO_APLC_ID,
+            A.CO_NM,
+            A.CO_APLC_LGL_POSI_CD,
+            A.POTX_IDFY_NO,
+            A.NIF_STTS_CD,
+            A.CMRC_REGS_NO,
+            A.CMRC_REGS_STTS_CD,
+            A.CO_ADDR,
+            A.CO_OVRS_ADDR,
+            A.RCVR_FAX_NO,
+            A.RCVR_MOBL_NO,
+            A.RCVR_EML,
+            A.RQST_RSN,
+            A.PRCS_STTS_CD,
+            FN_GET_CD_VDVAL_NM('CLR_0103', A.PRCS_STTS_CD, #{langCd}) AS PRCS_STTS_NM,
+            A.ATCH_FILE_ID,
+            TO_CHAR(TO_DATE(A.RQST_DT, 'YYYYMMDD'), 'DD/MM/YYYY') RQST_DT,
+            A.LAST_YN,
+            B.BFHN_NO,
+            B.SPLM_QRY_CN,
+            B.SPLM_QRY_ANSW_CN,
+            B.BFHN_PERM_APRE_DT,
+            B.AUDT_EMP_ID,
+            B.DEPT_CD,
+            B.AUDT_RSLT_CD,
+            B.AUDT_RSLT_CN,
+            B.AUDT_PRCS_DTTM,
+            B.PRCS_STTS_CD,
+            B.RTNT_CN,
+            B.APRV_ID,
+            B.ADOR_HNOT_OPIN_CN
+        FROM ALPASSEXT.TB_CLRE_BFHN_PERM_RQST_COMN A,
+             ALPASSINT.TB_CLRI_BFHN_PERM_AUDT_COMN B
+        WHERE A.BFHN_PERM_RQST_NO = B.BFHN_PERM_RQST_NO
+        AND A.MDFY_DGCNT = B.MDFY_DGCNT
+        AND A.DEL_YN = 'N'
+        AND B.DEL_YN ='N'                               /** Suppression ON !== 삭제여부 ==! */
+        AND A.LAST_YN = 'Y'
+        AND B.LAST_YN = 'Y'
+        <if test="audtEmpId != null and audtEmpId != ''">
+            AND B.audt_emp_id = #{audtEmpId}
+        </if>
+        <choose>
+            <when test="prcsSttsCd != null and prcsSttsCd != ''">
+                AND A.prcs_stts_cd = #{prcsSttsCd}
+            </when>
+            <otherwise>
+                <choose>
+                    <when test='hnotYn != null and hnotYn != "" and hnotYn.equals("Y")'>
+                        AND A.prcs_stts_cd IN ('A04', 'A06', 'J02', 'D01', 'B02')
+                    </when>
+                    <otherwise>
+                        AND A.prcs_stts_cd IN ('B02', 'D02', 'D05', 'F01', 'I01', 'D08', 'D09')
+                    </otherwise>
+                </choose>
+            </otherwise>
+        </choose>
+        <if test="bfhnPermRqstNo != null and bfhnPermRqstNo != ''">
+            AND  A.BFHN_PERM_RQST_NO = #{bfhnPermRqstNo}
+        </if>
+        <if test="rqstSbmtDeptCd != null and rqstSbmtDeptCd != ''">
+            AND A.rqst_sbmt_Dept_cd = #{rqstSbmtDeptCd}
+        </if>
+        <if test="potxIdfyNo != null and potxIdfyNo != ''">
+            AND A.potx_idfy_no = #{potxIdfyNo}
+        </if>
+        <if test="rqstDtFrom != null and rqstDtFrom != '' and rqstDtTo != null and rqstDtTo != ''">
+            AND A.rqst_dt BETWEEN TO_CHAR(TO_DATE(#{rqstDtFrom}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{rqstDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        </if>
+        ORDER BY A.frst_rgsr_dttm desc
+        <include refid="pagination.footer" />
+    </select>
+
+    <select id="selectClrBfhnPermHnotList" parameterType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAudtVo" resultType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAudtVo">
+        <include refid="pagination.header" />
+        /** selectClrBfhnPermHnotList */
+        SELECT
+        A.BFHN_PERM_RQST_NO,
+        A.MDFY_DGCNT,
+        A.RQST_SBMT_CSTM_CD,
+        FN_GET_ORGN_NM(A.rqst_sbmt_cstm_cd) as rqst_sbmt_cstm_nm,
+        A.RQST_SBMT_DEPT_CD,
+        A.BFHN_PERM_RQST_TP_CD,
+        A.APLC_TP_CD,
+        A.CSBR_APLC_ID,
+        A.CSBR_NM,
+        A.CSBR_PERM_NO,
+        A.CSBR_PERM_STTS_CD,
+        A.CSBR_MNDA_INFO,
+        A.CSBR_MNDA_STTS_CD,
+        A.CO_APLC_ID,
+        A.CO_NM,
+        A.CO_APLC_LGL_POSI_CD,
+        A.POTX_IDFY_NO,
+        A.NIF_STTS_CD,
+        A.CMRC_REGS_NO,
+        A.CMRC_REGS_STTS_CD,
+        A.CO_ADDR,
+        A.CO_OVRS_ADDR,
+        A.RCVR_FAX_NO,
+        A.RCVR_MOBL_NO,
+        A.RCVR_EML,
+        A.RQST_RSN,
+        A.PRCS_STTS_CD,
+        FN_GET_CD_VDVAL_NM('CLR_0103', A.PRCS_STTS_CD, #{langCd}) AS PRCS_STTS_NM,
+        A.ATCH_FILE_ID,
+        TO_CHAR(TO_DATE(A.RQST_DT, 'YYYYMMDD'), 'DD/MM/YYYY') RQST_DT,
+        A.LAST_YN,
+        B.BFHN_NO,
+        B.SPLM_QRY_CN,
+        B.SPLM_QRY_ANSW_CN,
+        B.BFHN_PERM_APRE_DT,
+        B.AUDT_EMP_ID,
+        B.DEPT_CD,
+        B.AUDT_RSLT_CD,
+        B.AUDT_RSLT_CN,
+        B.AUDT_PRCS_DTTM,
+        B.PRCS_STTS_CD,
+        B.RTNT_CN,
+        B.APRV_ID,
+        B.ADOR_HNOT_OPIN_CN
+        FROM ALPASSEXT.TB_CLRE_BFHN_PERM_RQST_COMN A,
+        ALPASSINT.TB_CLRI_BFHN_PERM_AUDT_COMN B
+        WHERE A.BFHN_PERM_RQST_NO = B.BFHN_PERM_RQST_NO
+        AND A.MDFY_DGCNT = B.MDFY_DGCNT
+        AND A.DEL_YN = 'N'
+        AND B.DEL_YN ='N'                               /** Suppression ON !== 삭제여부 ==! */
+        AND A.LAST_YN = 'Y'
+        AND B.LAST_YN = 'Y'
+        <if test="prcsSttsCd != null and prcsSttsCd != ''">
+            AND A.prcs_stts_cd = #{prcsSttsCd}
+        </if>
+        <if test="bfhnPermRqstNo != null and bfhnPermRqstNo != ''">
+            AND  A.BFHN_PERM_RQST_NO = #{bfhnPermRqstNo}
+        </if>
+        <if test="rqstSbmtCstmCd != null and rqstSbmtCstmCd != ''">
+            AND A.rqst_sbmt_cstm_cd = #{rqstSbmtCstmCd}
+        </if>
+        <if test="potxIdfyNo != null and potxIdfyNo != ''">
+            AND A.potx_idfy_no = #{potxIdfyNo}
+        </if>
+        <if test="rqstDtFrom != null and rqstDtFrom != '' and rqstDtTo != null and rqstDtTo != ''">
+            AND A.rqst_dt BETWEEN TO_CHAR(TO_DATE(#{rqstDtFrom}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{rqstDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        </if>
+        ORDER BY A.frst_rgsr_dttm desc
+        <include refid="pagination.footer" />
+    </select>
+
+    <select id="selectBfhnPermAudtComnDtl" parameterType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAudtVo" resultType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAudtVo">
+        /** selectBfhnPermAudtComnDtl*/
+        SELECT
+            A.BFHN_PERM_RQST_NO,
+            A.MDFY_DGCNT,
+            A.RQST_SBMT_CSTM_CD,
+            A.RQST_SBMT_DEPT_CD,
+            A.BFHN_PERM_RQST_TP_CD,
+            A.APLC_TP_CD,
+            A.CSBR_APLC_ID,
+            A.CSBR_NM,
+            A.CSBR_PERM_NO,
+            A.CSBR_PERM_STTS_CD,
+            A.CSBR_MNDA_INFO,
+            A.CSBR_MNDA_STTS_CD,
+            A.CO_APLC_ID,
+            A.CO_NM,
+            A.CO_APLC_LGL_POSI_CD,
+            A.POTX_IDFY_NO,
+            A.NIF_STTS_CD,
+            A.CMRC_REGS_NO,
+            A.CMRC_REGS_STTS_CD,
+            A.CO_ADDR,
+            A.CO_OVRS_ADDR,
+            A.RCVR_MOBL_NO,
+            A.RCVR_EML,
+            A.RQST_RSN,
+            A.PRCS_STTS_CD,
+            FN_GET_CD_VDVAL_NM('CLR_0103', A.PRCS_STTS_CD, #{langCd}) AS PRCS_STTS_NM,
+            A.ATCH_FILE_ID,
+            TO_CHAR(TO_DATE(A.RQST_DT, 'YYYYMMDD'), 'DD/MM/YYYY') RQST_DT,
+            A.LAST_YN,
+            B.BFHN_NO,
+            B.SPLM_QRY_CN,
+            B.SPLM_QRY_ANSW_CN,
+            B.BFHN_PERM_APRE_DT,
+            B.AUDT_EMP_ID,
+            B.DEPT_CD,
+            B.AUDT_RSLT_CD,
+            B.AUDT_RSLT_CN,
+            B.AUDT_PRCS_DTTM,
+            B.PRCS_STTS_CD,
+            B.RTNT_CN,
+            B.APRV_ID,
+            B.ADOR_HNOT_OPIN_CN,
+            A.FRST_REGST_ID AS USER_ID
+        FROM ALPASSEXT.TB_CLRE_BFHN_PERM_RQST_COMN A,
+             ALPASSINT.TB_CLRI_BFHN_PERM_AUDT_COMN B
+        WHERE A.BFHN_PERM_RQST_NO = B.BFHN_PERM_RQST_NO
+          AND A.MDFY_DGCNT = B.MDFY_DGCNT
+          AND A.DEL_YN = 'N'
+          AND B.DEL_YN ='N'                               /** Suppression ON !== 삭제여부 ==! */
+          AND A.LAST_YN = 'Y'
+          AND B.LAST_YN = 'Y'
+          AND A.BFHN_PERM_RQST_NO = #{bfhnPermRqstNo}
+          <if test="mdfyDgcnt != null and mdfyDgcnt != ''">
+              AND A.MDFY_DGCNT = #{mdfyDgcnt}
+          </if>
+    </select>
+
+    <select id="selectBfhnPermAudtDtlList" parameterType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAudtVo" resultType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAudtDtlVo">
+        /** selectBfhnPermAudtDtlList */
+        SELECT
+            BFHN_PERM_RQST_NO,
+            MDFY_DGCNT,
+            SRNO,
+            CMDT_HS_CD,
+            CMDT_DTL_NM,
+            CMDT_QTY,
+            CAG_WGHT,
+            CMDT_PCKG_GCNT,
+            CMDT_ORCY_CD,
+            CMDT_PRC,
+            CMDT_FRCURR_PRC,
+            CMDT_AMT_CURR_CD,
+            TRNP_ISTM_NO,
+            TO_CHAR(TO_DATE(A.TRNP_ISTM_DT, 'YYYYMMDD'), 'DD/MM/YYYY') TRNP_ISTM_DT
+        FROM ALPASSEXT.TB_CLRE_BFHN_PERM_RQST_DTL A
+        WHERE A.BFHN_PERM_RQST_NO = #{bfhnPermRqstNo}
+        AND MDFY_DGCNT = #{mdfyDgcnt}
+    </select>
+
+    <insert id="mergeInsertClrBfhnAudt" parameterType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAudtVo" >
+        /** mergeInsertClrBfhnAudt*/
+         UPDATE ALPASSINT.TB_CLRI_BFHN_PERM_AUDT_COMN SET
+            BFHN_NO = #{bfhnNo},
+            SPLM_QRY_CN = #{splmQryCn},
+            SPLM_QRY_ANSW_CN = #{splmQryAnswCn},
+            BFHN_PERM_APRE_DT = DECODE(#{prcsSttsCd},'D08', TO_CHAR(SYSTIMESTAMP,'YYYYMMDD'),null),
+            DEPT_CD = #{deptCd},
+            AUDT_EMP_ID = #{audtEmpId},
+            AUDT_RSLT_CD = #{audtRsltCd},
+            AUDT_RSLT_CN = #{audtRsltCn},
+            AUDT_PRCS_DTTM = SYSTIMESTAMP,
+            PRCS_STTS_CD = #{prcsSttsCd},
+            RTNT_CN = #{rtntCn},
+            APRV_ID = #{aprvId},
+            ADOR_HNOT_OPIN_CN = #{adorHnotOpinCn},
+            DEL_YN = 'N',
+            LAST_CHPR_ID = #{lastChprId},
+            LAST_CHG_DTTM = SYSTIMESTAMP
+         WHERE BFHN_PERM_RQST_NO = #{bfhnPermRqstNo}
+        <if test="mdfyDgcnt != null and mdfyDgcnt != ''">
+         AND MDFY_DGCNT =#{mdfyDgcnt}
+        </if>
+         AND LAST_YN ='Y'
+    </insert>
+
+    <insert id="updateClrBfhnRqst" parameterType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAudtVo" >
+        /** updateClrBfhnRqst */
+         UPDATE ALPASSEXT.TB_CLRE_BFHN_PERM_RQST_COMN SET
+                  PRCS_STTS_CD = #{prcsSttsCd},
+                  LAST_CHPR_ID = #{lastChprId},
+                  LAST_CHG_DTTM = SYSTIMESTAMP
+         WHERE BFHN_PERM_RQST_NO = #{bfhnPermRqstNo}
+        <if test="mdfyDgcnt != null and mdfyDgcnt != ''">
+         AND MDFY_DGCNT =#{mdfyDgcnt}
+        </if>
+         AND LAST_YN ='Y'
+    </insert>
+
+    <update id="updateLastYnBfhnPermRqst" parameterType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAudtVo">
+       /** updateLastYnBfhnPermRqst */
+       UPDATE ALPASSEXT.TB_CLRE_BFHN_PERM_RQST_COMN SET
+              LAST_YN = 'N',
+              LAST_CHPR_ID = #{lastChprId},
+              LAST_CHG_DTTM = SYSTIMESTAMP
+       WHERE  BFHN_PERM_RQST_NO = #{bfhnPermRqstNo}
+       <if test="mdfyDgcnt != null and mdfyDgcnt != ''">
+       AND MDFY_DGCNT =#{mdfyDgcnt}
+       </if>
+       AND LAST_YN ='Y'
+    </update>
+
+    <update id="updateLastYnBfhnPermAudt" parameterType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAudtVo">
+        /** updateLastYnBfhnPermAudt */
+        UPDATE ALPASSINT.TB_CLRI_BFHN_PERM_AUDT_COMN SET
+               LAST_YN = 'N',
+               LAST_CHPR_ID = #{lastChprId},
+               LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE  BFHN_PERM_RQST_NO = #{bfhnPermRqstNo}
+        <if test="mdfyDgcnt != null and mdfyDgcnt != ''">
+            AND MDFY_DGCNT =#{mdfyDgcnt}
+        </if>
+        AND LAST_YN ='Y'
+    </update>
+
+
+    <insert id="insertSelectClrBfhnPermRqst" parameterType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAudtVo">
+        /**insertSelectClrBfhnPermRqst*/
+        INSERT INTO  ALPASSEXT.TB_CLRE_BFHN_PERM_RQST_COMN
+        (
+            BFHN_PERM_RQST_NO,
+            MDFY_DGCNT,
+            RQST_SBMT_CSTM_CD,
+            RQST_SBMT_DEPT_CD,
+            BFHN_PERM_RQST_TP_CD,
+            APLC_TP_CD,
+            CSBR_APLC_ID,
+            CSBR_NM,
+            CSBR_PERM_NO,
+            CSBR_PERM_STTS_CD,
+            CSBR_MNDA_INFO,
+            CSBR_MNDA_STTS_CD,
+            CO_APLC_ID,
+            CO_NM,
+            CO_APLC_LGL_POSI_CD,
+            POTX_IDFY_NO,
+            NIF_STTS_CD,
+            CMRC_REGS_NO,
+            CMRC_REGS_STTS_CD,
+            CO_ADDR,
+            CO_OVRS_ADDR,
+            RCVR_MOBL_NO,
+            RCVR_EML,
+            RQST_RSN,
+            PRCS_STTS_CD ,
+            ATCH_FILE_ID,
+            RQST_DT,
+            LAST_YN,
+            DEL_YN,
+            FRST_REGST_ID,
+            FRST_RGSR_DTTM,
+            LAST_CHPR_ID,
+            LAST_CHG_DTTM )
+        SELECT
+            A.BFHN_PERM_RQST_NO,
+            (A.MDFY_DGCNT+1),
+            A.RQST_SBMT_CSTM_CD,
+            A.RQST_SBMT_DEPT_CD,
+            A.BFHN_PERM_RQST_TP_CD,
+            A.APLC_TP_CD,
+            A.CSBR_APLC_ID,
+            A.CSBR_NM,
+            A.CSBR_PERM_NO,
+            A.CSBR_PERM_STTS_CD,
+            A.CSBR_MNDA_INFO,
+            A.CSBR_MNDA_STTS_CD,
+            A.CO_APLC_ID,
+            A.CO_NM,
+            A.CO_APLC_LGL_POSI_CD,
+            A.POTX_IDFY_NO,
+            A.NIF_STTS_CD,
+            A.CMRC_REGS_NO,
+            A.CMRC_REGS_STTS_CD,
+            A.CO_ADDR,
+            A.CO_OVRS_ADDR,
+            A.RCVR_MOBL_NO,
+            A.RCVR_EML,
+            A.RQST_RSN,
+            #{prcsSttsCd} ,
+            A.ATCH_FILE_ID,
+            A.RQST_DT,
+            'Y',
+            DEL_YN,
+            FRST_REGST_ID,
+            FRST_RGSR_DTTM,
+            #{lastChprId},
+            SYSTIMESTAMP
+        FROM ALPASSEXT.TB_CLRE_BFHN_PERM_RQST_COMN A
+        WHERE BFHN_PERM_RQST_NO = #{bfhnPermRqstNo}
+        AND MDFY_DGCNT =#{mdfyDgcnt}
+    </insert>
+    <insert id="insertSelectClrBfhnPermAudt" parameterType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAudtVo">
+        INSERT INTO ALPASSINT.TB_CLRI_BFHN_PERM_AUDT_COMN
+        (   BFHN_PERM_RQST_NO,
+            MDFY_DGCNT,
+            BFHN_NO,
+            BFHN_PERM_RQST_TP_CD,
+            RQST_DT,
+            CSBR_APLC_ID,
+            CO_APLC_ID,
+            SPLM_QRY_CN,
+            SPLM_QRY_ANSW_CN,
+            BFHN_PERM_APRE_DT,
+            AUDT_EMP_ID,
+            DEPT_CD,
+            AUDT_RSLT_CD,
+            AUDT_RSLT_CN,
+            AUDT_PRCS_DTTM,
+            PRCS_STTS_CD,
+            RTNT_CN,
+            ATCH_FILE_ID,
+            LAST_YN,
+            ADOR_HNOT_OPIN_CN,
+            APRV_ID,
+            DEL_YN,
+            FRST_REGST_ID,
+            FRST_RGSR_DTTM,
+            LAST_CHPR_ID,
+            LAST_CHG_DTTM
+        )
+        SELECT
+            BFHN_PERM_RQST_NO,
+            (MDFY_DGCNT+1) ,
+            BFHN_NO,
+            BFHN_PERM_RQST_TP_CD,
+            RQST_DT,
+            CSBR_APLC_ID,
+            CO_APLC_ID,
+            #{splmQryCn},
+            '',
+            BFHN_PERM_APRE_DT,
+            AUDT_EMP_ID,
+            DEPT_CD,
+            AUDT_RSLT_CD,
+            AUDT_RSLT_CN,
+            AUDT_PRCS_DTTM,
+            #{prcsSttsCd} ,
+            #{rtntCn},
+            ATCH_FILE_ID,
+            'Y',
+            ADOR_HNOT_OPIN_CN,
+            APRV_ID,
+            DEL_YN,
+            FRST_REGST_ID,
+            FRST_RGSR_DTTM,
+            #{lastChprId},
+            SYSTIMESTAMP
+        FROM ALPASSINT.TB_CLRI_BFHN_PERM_AUDT_COMN
+        WHERE BFHN_PERM_RQST_NO = #{bfhnPermRqstNo}
+        AND MDFY_DGCNT =#{mdfyDgcnt}
+    </insert>
+
+    <insert id="insertSelectClrBfhnPermRqstDtl" parameterType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAudtVo">
+        INSERT INTO ALPASSEXT.TB_CLRE_BFHN_PERM_RQST_DTL
+        (
+         BFHN_PERM_RQST_NO,
+         MDFY_DGCNT,
+         SRNO,
+         CMDT_HS_CD,
+         CMDT_DTL_NM,
+         CMDT_QTY,
+         CAG_WGHT,
+         CMDT_PCKG_GCNT,
+         CMDT_ORCY_CD,
+         CMDT_PRC,
+         CMDT_FRCURR_PRC,
+         CMDT_AMT_CURR_CD,
+         TRNP_ISTM_NO,
+         TRNP_ISTM_DT,
+         DEL_YN,
+         FRST_REGST_ID,
+         FRST_RGSR_DTTM,
+         LAST_CHPR_ID,
+         LAST_CHG_DTTM
+        )
+        SELECT
+            BFHN_PERM_RQST_NO,
+            (MDFY_DGCNT +1),
+            SRNO,
+            CMDT_HS_CD,
+            CMDT_DTL_NM,
+            CMDT_QTY,
+            CAG_WGHT,
+            CMDT_PCKG_GCNT,
+            CMDT_ORCY_CD,
+            CMDT_PRC,
+            CMDT_FRCURR_PRC,
+            CMDT_AMT_CURR_CD,
+            TRNP_ISTM_NO,
+            TRNP_ISTM_DT,
+            DEL_YN,
+            FRST_REGST_ID,
+            FRST_RGSR_DTTM,
+            LAST_CHPR_ID,
+            SYSTIMESTAMP
+        FROM ALPASSEXT.TB_CLRE_BFHN_PERM_RQST_DTL
+        WHERE BFHN_PERM_RQST_NO = #{bfhnPermRqstNo}
+        AND MDFY_DGCNT =#{mdfyDgcnt}
+    </insert>
+
+    <select id="selectBfhnPermAudtMdfyDgcnt" parameterType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAudtVo" resultType="int">
+        SELECT MDFY_DGCNT FROM ALPASSINT.TB_CLRI_BFHN_PERM_AUDT_COMN
+        WHERE BFHN_PERM_RQST_NO = #{bfhnPermRqstNo}
+          AND LAST_YN ='Y'
+    </select>
+
+    <select id="selectBfhnPermAdorChgBrkdList" parameterType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAdorChgVo" resultType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAdorChgVo">
+        /** selectBfhnPermAdorChgBrkdList !==심사자 변경이력 조회==!*/
+        SELECT
+            OTRQ_TP_CD
+           ,OTRQ_REFF_NO
+           ,ADOR_CHG_SRNO
+           ,BFCH_AUDT_EMP_ID
+           ,(SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.BFCH_AUDT_EMP_ID AND DEL_YN ='N') BFCH_AUDT_EMP_NM
+           ,AFCH_AUDT_EMP_ID
+           ,(SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.AFCH_AUDT_EMP_ID AND DEL_YN ='N') AFCH_AUDT_EMP_NM
+           ,ADOR_CHG_RSN_CD
+           ,ADOR_CHG_RSN_CN
+           ,ADOR_CHG_DT
+           ,CHG_EMP_ID
+           ,(SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.CHG_EMP_ID AND DEL_YN ='N') CHG_EMP_NM
+        FROM ALPASSINT.TB_CLRI_OTRQ_ADOR_CHG_BRKD A
+        WHERE OTRQ_TP_CD = #{otrqTpCd}
+        AND DEL_YN ='N'
+        AND OTRQ_REFF_NO = #{otrqReffNo}
+        ORDER BY ADOR_CHG_SRNO DESC
+    </select>
+
+    <insert id="insertBfhnPermAdorChgBrkd" parameterType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAdorChgVo">
+        /** insertBfhnPermAdorChgBrkd !== 심사자 변경 내역 등록 ==!*/
+        INSERT INTO TB_CLRI_OTRQ_ADOR_CHG_BRKD (
+                                                 ADOR_CHG_SRNO       /** N° séquentiel de la modification de l'inspecteur !== 심사자변경일련번호 ==! */
+                                               , OTRQ_TP_CD        /**  !== 기타신청구분코드 ==! */
+                                               , OTRQ_REFF_NO      /**  !== 기타신청참조번호 ==! */
+                                               , BFCH_AUDT_EMP_ID  /** ID de l'inspecteur avant la modification !== 변경전심사직원ID ==! */
+                                               , AFCH_AUDT_EMP_ID  /** ID de l'inspecteur après la modification !== 변경후심사직원ID ==! */
+                                               , ADOR_CHG_RSN_CD   /** Code de motif de la modification de l'inspecteur !== 심사자변경사유코드 ==! */
+                                               , ADOR_CHG_RSN_CN   /** Contenu de motif de la modification de l'inspecteur !== 심사자변경사유내용 ==! */
+                                               , ADOR_CHG_DT       /** Date de la modifcation de l'inspecteur !== 심사자변경일자 ==! */
+                                               , CHG_EMP_ID        /** ID de l'inspecteur faisant la modification !== 변경직원ID ==! */
+                                               , DEL_YN
+                                               , FRST_REGST_ID
+                                               , FRST_RGSR_DTTM
+                                               , LAST_CHPR_ID
+                                               , LAST_CHG_DTTM
+        ) VALUES (
+                     (SELECT NVL(MAX(ADOR_CHG_SRNO),0) + 1 FROM TB_CLRI_OTRQ_ADOR_CHG_BRKD WHERE OTRQ_TP_CD = #{otrqTpCd} AND OTRQ_REFF_NO = #{otrqReffNo})  /** N° séquentiel de la modification de l'inspecteur !== 심사자변경일련번호 ==! */
+                 , #{otrqTpCd} /**  !== 기타신청구분코드 ==! */
+                 , #{otrqReffNo} /**  !== 기타신청참조번호 ==! */
+                 , #{bfchAudtEmpId}  /** ID de l'inspecteur avant la modification !== 변경전심사직원ID ==! */
+                 , #{afchAudtEmpId}  /** ID de l'inspecteur après la modification !== 변경후심사직원ID ==! */
+                 , #{adorChgRsnCd} /** Code de motif de la modification de l'inspecteur !== 심사자변경사유코드 ==! */
+                 , #{adorChgRsnCn} /** Contenu de motif de la modification de l'inspecteur !== 심사자변경사유내용 ==! */
+                 , TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD') /** adorChgDt !== 심사자변경일자 ==! */
+                 , #{chgEmpId} /** ID de l'inspecteur faisant la modification !== 변경직원ID ==! */
+                 , 'N' /** Suppression ON !== 삭제여부 ==! */
+                 , #{frstRegstId}  /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                 , SYSTIMESTAMP  /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                 , #{lastChprId} /** ID du modificateur final !== 최종변경자ID ==! */
+                 , SYSTIMESTAMP  /** Date et heure de modification finale !== 최종변경일시 ==! */
+                 )
+    </insert>
+
+    <update id="updateBfhnPermAdor" parameterType="alpass.ipt.clr.pdr.pad.vo.ClrBfhnPermAdorChgVo">
+        /** updateBfhnPermAdor !== PAD 및 잠정신고서 심사테이블 심사자 변경==! */
+        UPDATE ALPASSINT.TB_CLRI_BFHN_PERM_AUDT_COMN
+            SET AUDT_EMP_ID = #{afchAudtEmpId},
+                LAST_CHPR_ID = #{lastChprId},
+                LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE  BFHN_PERM_RQST_NO = #{otrqReffNo}
+        AND LAST_YN ='Y'
+    </update>
+
+
+</mapper>

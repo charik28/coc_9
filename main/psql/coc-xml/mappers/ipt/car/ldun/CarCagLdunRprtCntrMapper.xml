@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.car.ldun.mapper.CarCagLdunRprtCntrMapper">
+	
+	<sql id ="selectCariLdunRprtCntrSelect">
+               SELECT T1.ldun_rprt_no                      AS ldun_rprt_no        /** N° De Rapport Sur Le Déchargement !== 하역보고번호 ==! */
+                    , PB.prcs_stts_cd                      AS prcs_stts_cd
+                    , T1.bl_no                             AS bl_no               /** N° De Bl !== BL번호 ==! */
+                    , T1.cntr_srno                         AS cntr_srno           /** N° De Séquence Du Conteneur !== 컨테이너일련번호 ==! */
+                    , T1.rprt_dgcnt                        AS rprt_dgcnt          /** N° ordre de rapport !== 보고차수 ==! */
+                    , T1.dscr_tp_cd                        AS dscr_tp_cd          /** Code de non-conformité !== 불일치구분코드 ==! */
+                    , FN_GET_CD_VDVAL_NM( 'CAR_0032'
+                                        , T1.dscr_tp_cd
+                                        , #{langCd}
+                                        )                  AS dscr_tp_nm
+                    , T1.cntr_no                           AS cntr_no             /** N° De Conteneur !== 컨테이너번호 ==! */
+                    , T1.cntr_tp_cd                        AS cntr_tp_cd          /** Code De Type De Conteneur !== 컨테이너구분코드 ==! */
+                    , FN_GET_CD_VDVAL_NM( 'CAR_0020'
+                                        , T1.CNTR_TP_CD
+                                        , #{langCd}
+                                        )                  AS cntr_tp_nm
+                    , T1.pckg_gcnt                         AS pckg_gcnt           /** Nombre De Colis !== 포장개수 ==! */
+                    , T1.pckg_ut_cd                        AS pckg_ut_cd          /** Code De L'Unité De Colis !== 포장단위코드 ==! */
+                    , FN_GET_CD_VDVAL_NM( 'CAR_0021'
+                                        , T1.PCKG_UT_CD
+                                        , #{langCd}
+                                        )                  AS pckg_ut_nm
+                    , T1.ttwg                              AS ttwg                /** Poids Brut !== 총중량 ==! */
+                    , T1.seal_no1                          AS seal_no1            /** N° De Scellé1 !== 봉인번호1 ==! */
+                    , T1.seal_no2                          AS seal_no2            /** N° De Scellé2 !== 봉인번호2 ==! */
+                    , T1.seal_no3                          AS seal_no3            /** N° De Scellé3 !== 봉인번호3 ==! */
+                    , T1.ibobz_cd                          AS ibobz_cd            /** Code de zone sous douane !== 보세구역코드 ==! */
+                    , DD.ibobz_nm                          AS ibobz_nm
+                    , T1.insc_cfrm_dt                      AS insc_cfrm_dt        /** Date de vérification de la visite !== 검사확인일자 ==! */
+                    , T1.apre_yn_cd                        AS apre_yn_cd          /** Autorisation O/N !== 승인여부코드 ==! */
+                    , T1.apre_yn_cd AS old_apre_yn_cd
+                    , FN_GET_CD_VDVAL_NM( 'COM_0002'
+                                        , T1.apre_yn_cd
+                                        , #{langCd}
+                                        )                  AS apre_yn_nm
+                    , T1.rtrn_rsn_cn                       AS rtrn_rsn_cn         /** Motif De Rejet !== 반려사유내용 ==! */
+                    , T1.del_yn                            AS del_yn              /** Suppression On !== 삭제여부 ==! */
+                    , T1.frst_regst_id                     AS frst_regst_id       /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                    , T1.last_chpr_id                      AS last_chpr_id        /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                    , T2.cag_mgmt_no                       AS cag_mgmt_no         /** N° Demande De La Création De Crn !== 화물관리번호 ==! */
+                    , T2.cntr_no                           AS bl_cntr_no          /** N° De Conteneur !== 컨테이너번호 ==! */
+                    , T2.bl_pt_cd                          AS bl_pt_cd            /** Code De Type De Bl !== BL유형코드 ==! */
+                    , T2.cntr_tp_cd                        AS bl_cntr_tp_cd       /** Code De Type De Conteneur !== 컨테이너구분코드 ==! */
+                    , FN_GET_CD_VDVAL_NM ( 'CAR_0020'
+                                         , T2.cntr_tp_cd
+                                         , #{langCd}
+                                         )                 AS bl_cntr_tp_nm
+                    , T2.pckg_gcnt                         AS bl_pckg_gcnt         /** Nombre De Colis !== 포장개수 ==! */
+                    , T2.pckg_ut_cd                        AS bl_pckg_ut_cd        /** Code De L'Unité De Colis !== 포장단위코드 ==! */
+                    , FN_GET_CD_VDVAL_NM( 'CAR_0021'
+                                        , T2.pckg_ut_cd
+                                        , #{langCd}
+                                        )                  AS bl_pckg_ut_nm
+                    , T2.ttwg                              AS bl_ttwg              /** Poids Brut !== 총중량 ==! */
+                    , T2.seal_no1                          AS bl_seal_no1          /** N° De Scellé1 !== 봉인번호1 ==! */
+                    , T2.seal_no2                          AS bl_seal_no2          /** N° De Scellé1 !== 봉인번호2 ==! */
+                    , T2.seal_no3                          AS bl_seal_no3          /** N° De Scellé1 !== 봉인번호3 ==! */
+                 FROM ( SELECT TT1.ldun_rprt_no                                           AS ldun_rprt_no        /** N° De Rapport Sur Le Déchargement !== 하역보고번호 ==! */
+                             , TT1.cag_rqst_tp_cd                                         AS cag_rqst_tp_cd      /** Code de classement du suivi du fret !== 화물신청구분코드 ==! */
+                             , TT1.mrn                                                    AS mrn                 /** Mrn !== MRN ==! */
+                             , TT2.bl_no                                                  AS bl_no               /** N° De Bl !== BL번호 ==! */
+                             , TT2.cntr_srno                                              AS cntr_srno           /** N° De Séquence Du Conteneur !== 컨테이너일련번호 ==! */
+                             , TT2.rprt_dgcnt                                             AS rprt_dgcnt          /** N° ordre de rapport !== 보고차수 ==! */
+                             , TT2.dscr_tp_cd                                             AS dscr_tp_cd          /** Code de non-conformité !== 불일치구분코드 ==! */
+                             , TT2.cntr_no                                                AS cntr_no             /** N° De Conteneur !== 컨테이너번호 ==! */
+                             , TT2.cntr_tp_cd                                             AS cntr_tp_cd          /** Code De Type De Conteneur !== 컨테이너구분코드 ==! */
+                             , TT2.pckg_gcnt                                              AS pckg_gcnt           /** Nombre De Colis !== 포장개수 ==! */
+                             , TT2.pckg_ut_cd                                             AS pckg_ut_cd          /** Code De L'Unité De Colis !== 포장단위코드 ==! */
+                             , TT2.ttwg                                                   AS ttwg                /** Poids Brut !== 총중량 ==! */
+                             , TT2.seal_no1                                               AS seal_no1            /** N° De Scellé1 !== 봉인번호1 ==! */
+                             , TT2.seal_no2                                               AS seal_no2            /** N° De Scellé2 !== 봉인번호2 ==! */
+                             , TT2.seal_no3                                               AS seal_no3            /** N° De Scellé3 !== 봉인번호3 ==! */
+                             , TT2.ibobz_cd                                               AS ibobz_cd            /** Code de zone sous douane !== 보세구역코드 ==! */
+                             , TO_CHAR(TO_DATE(TT2.insc_cfrm_dt,'DDMMYYYY'), 'DD/MM/YYYY')                     AS insc_cfrm_dt        /** Date de vérification de la visite !== 검사확인일자 ==! */
+                             , TT2.apre_yn_cd                                             AS apre_yn_cd          /** Autorisation O/N !== 승인여부코드 ==! */
+                             , TT2.rtrn_rsn_cn                                            AS rtrn_rsn_cn         /** Motif De Rejet !== 반려사유내용 ==! */
+                             , TT2.del_yn                                                 AS del_yn              /** Suppression On !== 삭제여부 ==! */
+                             , TT2.frst_regst_id                                          AS frst_regst_id       /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                             , TT2.last_chpr_id                                           AS last_chpr_id        /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                          FROM TB_CARI_LDUN_RPRT TT1
+                         INNER JOIN TB_CARI_LDUN_RPRT_CNTR TT2
+                            ON TT1.ldun_rprt_no = TT2.ldun_rprt_no
+                         WHERE 1=1
+                           AND TT1.ldun_rprt_no = #{ldunRprtNo}
+                           AND TT1.del_yn = 'N'                                         /** Suppression ON !== 삭제여부 ==! */
+                           AND TT2.del_yn = 'N'                                         /** Suppression ON !== 삭제여부 ==! */
+                      ) T1
+                 /* 결함관리663-하역보고 수정전은 화물신고서 정정 0차수 데이터 기준으로 수정
+                 LEFT JOIN ( SELECT TT2.bl_no                                                  AS bl_no               /** N° De Bl !== BL번호 ==! */
+                                  , TT1.mrn                                                    AS mrn                 /** Mrn !== MRN ==! */
+                                  , TT1.cag_mgmt_no                                            AS cag_mgmt_no         /** N° Demande De La Création De Crn !== 화물관리번호 ==! */
+                                  , TT1.cntr_srno                                              AS cntr_srno           /** N° De Séquence Du Conteneur !== 컨테이너일련번호 ==! */
+                                  , TT1.cntr_no                                                AS cntr_no             /** N° De Conteneur !== 컨테이너번호 ==! */
+                                  , TT1.cntr_tp_cd                                             AS cntr_tp_cd          /** Code De Type De Conteneur !== 컨테이너구분코드 ==! */
+                                  , TT1.pckg_gcnt                                              AS pckg_gcnt           /** Nombre De Colis !== 포장개수 ==! */
+                                  , TT1.pckg_ut_cd                                             AS pckg_ut_cd          /** Code De L'Unité De Colis !== 포장단위코드 ==! */
+                                  , TT1.ttwg                                                   AS ttwg                /** Poids Brut !== 총중량 ==! */
+                                  , TT1.seal_no1                                               AS seal_no1            /** N° De Scellé1 !== 봉인번호1 ==! */
+                                  , TT1.seal_no2                                               AS seal_no2            /** N° De Scellé2 !== 봉인번호2 ==! */
+                                  , TT1.seal_no3                                               AS seal_no3            /** N° De Scellé3 !== 봉인번호3 ==! */
+                               FROM TB_CARI_CAG_DCSH_BL_CNTR TT1
+                               LEFT JOIN TB_CARI_CAG_DCSH_BL TT2
+                                 ON TT1.mrn = TT2.mrn
+                                AND TT1.cag_mgmt_no = TT2.cag_mgmt_no
+                                AND TT2.bl_pt_cd = 'M'
+                      ) T2
+                   ON T1.mrn = T2.mrn
+                  AND T1.bl_no = T2.bl_no
+                  AND T1.cntr_no = T2.cntr_no
+                 */
+                 LEFT JOIN ( SELECT TT3.mrn                            AS mrn                      /** Mrn !== MRN ==! */
+                                  , TT3.cag_dcsh_mdfy_rqst_no          AS cag_dcsh_mdfy_rqst_no    /** Numéro de demande de correction de la déclaration de fret !== 화물신고서정정신청번호 ==! */
+                                  , TT2.bl_no                          AS bl_no                    /** N° De Bl !== BL번호 ==! */
+                                  , TT2.bl_pt_cd                       AS bl_pt_cd                 /** Code De Type De Bl !== BL유형코드 ==! */
+                                  , TT2.cag_mgmt_no                    AS cag_mgmt_no              /** N° Demande De La Création De Crn !== 화물관리번호 ==! */
+                                  , TT1.cntr_srno                      AS cntr_srno                /** N° De Séquence Du Conteneur !== 컨테이너일련번호 ==! */
+                                  , TT1.cntr_no                        AS cntr_no                  /** N° De Conteneur !== 컨테이너번호 ==! */
+                                  , TT1.cntr_tp_cd                     AS cntr_tp_cd               /** Code De Type De Conteneur !== 컨테이너구분코드 ==! */
+                                  , TT1.pckg_gcnt                      AS pckg_gcnt                /** Nombre De Colis !== 포장개수 ==! */
+                                  , TT1.pckg_ut_cd                     AS pckg_ut_cd               /** Code De L'Unité De Colis !== 포장단위코드 ==! */
+                                  , TT1.ttwg                           AS ttwg                     /** Poids Brut !== 총중량 ==! */
+                                  , TT1.seal_no1                       AS seal_no1                 /** N° De Scellé1 !== 봉인번호1 ==! */
+                                  , TT1.seal_no2                       AS seal_no2                 /** N° De Scellé2 !== 봉인번호2 ==! */
+                                  , TT1.seal_no3                       AS seal_no3                 /** N° De Scellé3 !== 봉인번호3 ==! */
+                               FROM tb_cari_cag_dcsh_mdfy TT3
+                              INNER JOIN tb_cari_cag_dcsh_mdfy_bl_cntr TT1
+                                 ON TT3.cag_dcsh_mdfy_rqst_no = TT1.cag_dcsh_mdfy_rqst_no
+                              INNER JOIN tb_cari_cag_dcsh_mdfy_bl TT2
+                                 ON TT3.cag_dcsh_mdfy_rqst_no = TT2.cag_dcsh_mdfy_rqst_no
+                                AND TT1.bl_srno = TT2.bl_srno
+                              WHERE 1=1
+                                AND TT3.mdfy_dgcnt = 0
+                                AND TT2.bl_pt_cd = 'M'
+                                AND TT1.DEL_YN = 'N'
+                                AND TT2.DEL_YN = 'N'
+                                AND TT3.DEL_YN = 'N'
+                      ) T2
+                   ON T1.mrn = T2.mrn
+                  AND T1.bl_no = T2.bl_no
+                  AND T1.cntr_srno = T2.cntr_srno
+                 LEFT JOIN TB_CARI_CAG_PRCS_BRKD PB
+                   ON T1.cag_rqst_tp_cd = PB.cag_rqst_tp_cd                        /** Code de type de demande de cargaison !==화물신청구분코드==! */
+                  AND T1.ldun_rprt_no = PB.cag_rqst_no
+                  AND T1.rprt_dgcnt = PB.rqst_dgcnt
+                  AND PB.del_yn = 'N'
+                 LEFT JOIN TB_CARI_IBOBZ DD
+                   ON DD.ibobz_cd = T1.ibobz_cd
+                  AND DD.del_yn = 'N'
+                WHERE 1=1
+	</sql>
+	
+	<sql id ="selectCariLdunRprtCntrWhere">
+                  AND T1.ldun_rprt_no = #{ldunRprtNo}     /** N° de séquence de rapport sur le déchargement !==하역보고일련번호==! */
+		<if test="blNo != null and blNo != ''">
+                  AND T1.bl_no LIKE '%'||#{blNo}||'%'     /** N° De Bl !== BL번호 ==! */
+		</if>
+		<if test="cntrNo != null and cntrNo != ''">
+                  AND T1.cntr_no LIKE '%'||#{cntrNo}||'%' /** N° De Conteneur !== 컨테이너번호 ==! */
+		</if>
+		<if test='nrmlYn != null and nrmlYn == "Y"'>
+                  AND T1.dscr_tp_cd = 'OK'                /** Déficit/Excédent != 불일치구분코드 =! */
+		</if>
+		<if test='nrmlYn != null and nrmlYn == "N"'>
+                  AND T1.dscr_tp_cd != 'OK'               /** Déficit/Excédent != 불일치구분코드 =! */
+		</if>
+	</sql>
+
+    <!-- Voir les détails de la Rapport de déchargement (Conteneur) !==하역 보고 컨테이너 조회한다.==! -->
+    <select id="selectCariLdunRprtCntrTotCnt"
+            parameterType="alpass.ipt.car.ldun.vo.CarCagLdunRprtCntrVo"
+            resultType="integer">
+        /* CarCagLdunRprt.selectCariLdunRprtCntrTotCnt */
+        SELECT COUNT(*) AS TOT_CNT
+          FROM (
+        <include refid="selectCariLdunRprtCntrSelect" ></include>
+        <include refid="selectCariLdunRprtCntrWhere" ></include>
+               ) SQLRSLT
+    </select>
+    
+    <select id="selectCariLdunRprtCntr"
+            parameterType="alpass.ipt.car.ldun.vo.CarCagLdunRprtCntrVo"
+            resultType="alpass.ipt.car.ldun.vo.CarCagLdunRprtCntrVo">
+               /* CarCagLdunRprt.selectCariLdunRprtCntr */
+        <if test="pagination != null and  pagination == true ">
+        SELECT #{totCnt} AS TOT_CNT
+             , SQLRSLT.*
+             , ROWNUM as RNUM
+          FROM (
+        </if>
+        <include refid="selectCariLdunRprtCntrSelect" ></include>
+        <include refid="selectCariLdunRprtCntrWhere" ></include>
+                ORDER BY CASE WHEN(T1.apre_yn_cd = 'O') THEN 3
+                              WHEN(T1.apre_yn_cd = 'T') THEN 2
+                              WHEN(T1.apre_yn_cd = 'N') THEN 1
+                              ELSE 0
+                         END, T1.bl_no, T1.cntr_no
+        <if test="pagination != null and  pagination == true ">
+        <include refid="pagination.footer" ></include>
+        </if>
+    </select>
+
+    <!--
+    Voir la liste des B/L !== B/L 목록 조회 ==!
+    (Lee KyoungSung)
+    -->
+    <select id="selectCarCagLdunRprtCntrList" parameterType="alpass.ipt.car.ldun.vo.CarCagLdunRprtCntrVo" resultType="alpass.ipt.car.ldun.vo.CarCagLdunRprtCntrVo">
+        /* CarCagLdunRprtCntrMapper.selectCarCagLdunRprtCntrList */
+        SELECT A.ldun_rprt_mgmt_no                                 AS ldun_rprt_mgmt_no  /** N° De Gestion De Rapport De Déchargement !== 하역보고관리번호 ==! */
+             , A.rprt_dgcnt                                        AS rprt_dgcnt         /** N° ordre de rapport !== 보고차수 ==! */
+             , A.BL_NO                                             AS BL_NO              /** N° De Bl !== BL번호 ==! */
+             , A.CNTR_SRNO                                         AS CNTR_SRNO          /** N° De Séquence Du Conteneur !== 컨테이너일련번호 ==! */
+             , A.dscr_tp_cd                                        AS dscr_tp_cd         /** Code de non-conformité !== 불일치구분코드 ==! */
+             , A.cntr_no                                           AS cntr_no            /** N° De Conteneur !== 컨테이너번호 ==! */
+             , A.cntr_tp_cd                                        AS cntr_tp_cd         /** Code De Type De Conteneur !== 컨테이너구분코드 ==! */
+             , A.pckg_gcnt                                         AS pckg_gcnt          /** Nombre De Colis !== 포장개수 ==! */
+             , A.pckg_ut_cd                                        AS pckg_ut_cd         /** Code De L'Unité De Colis !== 포장단위코드 ==! */
+             , A.ttwg                                              AS ttwg               /** Poids Brut !== 총중량 ==! */
+             , A.seal_no1                                          AS seal_no1           /** N° De Scellé1 !== 봉인번호1 ==! */
+             , A.seal_no2                                          AS seal_no2           /** N° De Scellé2 !== 봉인번호2 ==! */
+             , A.seal_no3                                          AS seal_no3           /** N° De Scellé3 !== 봉인번호3 ==! */
+             , A.IBOBZ_CD                                          AS IBOBZ_CD           /** Code de zone sous douane !== 보세구역코드 ==! */
+             , A.divd_ldun_last_yn                                 AS divd_ldun_last_yn  /** Dernier Déchargement Partiel On !== 분할하역최종여부 ==! */
+             , TO_CHAR(TO_DATE(A.insc_cfrm_dt , 'DD/MM/YYYY'),'DDMMYYYY')  AS insc_cfrm_dt       /** Date de vérification de la visite !== 검사확인일자 ==! */
+             , A.apre_yn_cd                                        AS apre_yn_cd         /** Autorisation O/N !== 승인여부코드 ==! */
+             , A.audt_opin_cn                                      AS audt_opin_cn       /** Contenu De L'Opinion À La Suite De La Vérification !== 반려사유내용 ==! */
+             , A.DEL_YN                                            AS DEL_YN             /** Suppression On !== 삭제여부 ==! */
+             , A.FRST_REGST_ID                                     AS FRST_REGST_ID      /** Id Du Premier Enregistrant !== 최초등록자ID ==! */
+             , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS')   AS FRST_RGSR_DTTM     /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+             , A.last_chpr_id                                      AS last_chpr_id       /** Id Du Modificateur Final !== 최종변경자ID ==! */
+             , TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS')    AS LAST_CHG_DTTM      /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+          FROM TB_CARE_LDUN_RPRT_CNTR A
+         WHERE 1=1
+           AND A.DEL_YN = 'N'
+           AND A.ldun_rprt_mgmt_no = #{ldunRprtMgmtNo}              /** N° De Gestion De Rapport De Déchargement !== 하역보고관리번호 ==! */
+           AND A.rprt_dgcnt = #{rprtDgcnt}                          /** N° ordre de rapport !== 보고차수 ==! */
+    </select>
+    
+    <!--
+    !==컨테이너에 실린 화물 심사의견을 적용한다.==!
+    (Im Jaewoo)
+    -->
+    <update id="apreYnCdCarLdunRprtCntr" parameterType="alpass.ipt.car.ldun.vo.CarCagLdunRprtCntrVo">
+        /* CarCagLdunRprtCntrMapper.apreYnCdCarLdunRprtCntr */
+        UPDATE TB_CARI_LDUN_RPRT_CNTR SET
+               del_yn = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+             , last_chpr_id = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+             , last_chg_dttm = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+             , divd_ldun_last_yn = #{divdLdunLastYn}          /** Dernier Déchargement Partiel On !== 분할하역최종여부 ==! */
+             , insc_cfrm_dt = TO_CHAR(TO_DATE( #{inscCfrmDt}, 'DD/MM/YYYY'),'DDMMYYYY')  /** Date de vérification de la visite !== 검사확인일자 ==! */
+             , apre_yn_cd = #{apreYnCd}                       /** Autorisation O/N !== 승인여부코드 ==! */
+             , rtrn_rsn_cn = #{rtrnRsnCn}                     /** Motif De Rejet !== 반려사유내용 ==! */
+         WHERE 1=1
+           AND ldun_rprt_no = #{ldunRprtNo}
+		<if test="aplyTp != null and aplyTp != ''">
+			<!-- 적용 -->
+			<if test="aplyTp == 'aply'">
+           AND bl_no = #{blNo}                        /** N° De Bl !== BL번호 ==! */
+           AND cntr_srno = #{cntrSrno}                /** N° De Séquence Du Conteneur !== 컨테이너일련번호 ==! */
+			</if>
+			<!-- 일괄적용 -->
+			<if test="aplyTp == 'bndlAply'">
+				<if test='nrmlYn != null and nrmlYn == "Y"'>
+           AND dscr_tp_cd = 'OK'                /** Déficit/Excédent != 불일치구분코드 =! */
+				</if>
+				<if test='nrmlYn != null and nrmlYn == "N"'>
+           AND dscr_tp_cd != 'OK'               /** Déficit/Excédent != 불일치구분코드 =! */
+				</if>
+			</if>
+		</if>
+    </update>
+    
+    <select id="selectCarLdunRprtCntrByApre" parameterType="alpass.ipt.car.ldun.vo.CarCagLdunRprtCntrVo"
+												resultType="alpass.ipt.car.ldun.vo.CarCagLdunRprtCntrVo">
+		/* CarCagLdunRprtCntrMapper.selectCarLdunRprtCntrByApre */
+		SELECT ldun_rprt_no
+		     , bl_no
+		     , cntr_no
+		     , cntr_srno
+		  FROM tb_cari_ldun_rprt_cntr
+		 WHERE 1=1
+		   AND del_yn = 'N'
+		   AND ldun_rprt_no = #{ldunRprtNo}
+		<if test="apreYnCd != null and apreYnCd != ''">
+		   AND apre_yn_cd = #{apreYnCd}     /** Autorisation O/N !== 승인여부코드 ==! */
+		</if>
+		<if test="apreYnCd == null or apreYnCd == ''">
+		   AND apre_yn_cd IS NULL
+		</if>
+		   AND ROWNUM = 1
+    </select>
+
+</mapper>

@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.psc.vhcl.cufr.rgsr.mapper.PscCufrXtnsMapper">
+
+ <!--
+  @TODO:번역필요 !== 무관세통관허가증연장신청 목록 조회 ==!
+  -->
+  <select id="selectPscCufrXtnsList"  
+    parameterType="alpass.ipt.psc.vhcl.cufr.rgsr.vo.PscCufrXtnsVo" 
+    resultType="alpass.ipt.psc.vhcl.cufr.rgsr.vo.PscCufrXtnsVo"> 
+      /* selectPscCufrXtnsList */
+      <include refid="pagination.header" ></include>
+          SELECT
+                  A.CUFR_CSCL_XTNS_TEMP_NO       /** Numéro temporaire de la prorogation de l'acquit à caution !== 무관세통관연장임시번호 ==! */
+                , A.CUFR_CSCL_XTNS_MGMT_NO       /** Numéro de getion de la prorogation de l'acquit à caution !== 무관세통관연장관리번호 ==! */
+                , A.CUFR_XTNS_RQST_STTS_CD       /** Code de statut de la demande de l'acquit à caution !== 무관세연장신청상태코드 ==! */
+                , A.CUFR_CSCL_WRPM_ID          /** Identifiant de l'acquit à caution  !== 무관세통관허가증ID ==! */
+                , A.REFF_NO                    /** N° De Référence !== 참조번호 ==! */
+                , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+                , A.XTNS_RQST_STRT_DT          /** @TODO : 번역필요 !== 연장기간시작일자 ==! */
+                , A.XTNS_RQST_END_DT           /** @TODO : 번역필요 !== 연장기간종료일자 ==! */
+                , A.XTNS_RQST_RSN_CN           /** Motif de demande de prorogation !== 연장신청사유내용 ==! */
+                , A.XTNS_RQST_DT               /** Date de demande de prorogation !== 연장신청일자 ==! */
+                , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+                , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+                , A.XTNS_MCNT				   /** Nombre de mois de prorogation !== 연장개월수 ==! */
+           FROM   ALPASSINT.TB_PSCI_CUFR_CSCL_XTNS_RQST A
+          WHERE   DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+            AND   A.CUFR_CSCL_XTNS_TEMP_NO = #{cufrCsclXtnsTempNo}       /** Numéro temporaire de la prorogation de l'acquit à caution !== 무관세통관연장임시번호 ==! */        
+         <if test="cufrXtnsRqstSttsCd != null and cufrXtnsRqstSttsCd != ''">
+         AND  A.CUFR_XTNS_RQST_STTS_CD = #{cufrXtnsRqstSttsCd}
+         </if>
+          <if test='(dclrDtFrom != null and !"".equals(dclrDtFrom)) and (dclrDtTo != null and !"".equals(dclrDtTo))'>
+          AND TO_CHAR(A.FRST_RGSR_DTTM, 'YYYYMMDD') BETWEEN TO_CHAR(TO_DATE(REPLACE(#{dclrDtFrom}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(REPLACE(#{dclrDtTo}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+          </if>
+         ORDER BY A.FRST_RGSR_DTTM DESC
+      <include refid="pagination.footer" ></include>
+  </select>
+
+
+  <!--
+  @TODO:번역필요 !== 무관세통관허가증 등록 ==!
+  (deKim)
+  -->
+  <insert id="insertPscCufrXtns" parameterType="alpass.ipt.psc.vhcl.cufr.rgsr.vo.PscCufrXtnsVo">
+      /* insertPscCufrXtns */
+        INSERT INTO ALPASSINT.TB_PSCI_CUFR_CSCL_XTNS_RQST
+        (
+           CUFR_CSCL_XTNS_TEMP_NO       /** Numéro temporaire de la prorogation de l'acquit à caution !== 무관세통관연장임시번호 ==! */
+         , CUFR_CSCL_XTNS_MGMT_NO       /** Numéro de getion de la prorogation de l'acquit à caution !== 무관세통관연장관리번호 ==! */
+         , CUFR_XTNS_RQST_STTS_CD       /** Code de statut de la demande de l'acquit à caution !== 무관세연장신청상태코드 ==! */
+         , CUFR_CSCL_WRPM_ID            /** Identifiant de l'acquit à caution  !== 무관세통관허가증ID ==! */
+         , REFF_NO                      /** N° De Référence !== 참조번호 ==! */
+         , CSTM_CD                      /** Code Du Bureau !== 세관코드 ==! */
+         , XTNS_RQST_STRT_DT            /** @TODO : 번역필요 !== 연장기간시작일자 ==! */
+         , XTNS_RQST_END_DT             /** @TODO : 번역필요 !== 연장기간종료일자 ==! */
+         , XTNS_RQST_RSN_CN             /** Motif de demande de prorogation !== 연장신청사유내용 ==! */
+         , XTNS_RQST_DT                 /** Date de demande de prorogation !== 연장신청일자 ==! */
+         , ATCH_FILE_ID                 /** Id Du Fichier Joint !== 첨부파일ID ==! */
+         , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+         , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+         , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+         , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+         , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+         , XTNS_MCNT				   /** Nombre de mois de prorogation !== 연장개월수 ==! */
+         )
+         VALUES
+         (
+           #{cufrCsclXtnsTempNo}        /** Numéro temporaire de la prorogation de l'acquit à caution !== 무관세통관연장임시번호 ==! */
+         , #{cufrCsclXtnsMgmtNo}        /** Numéro de getion de la prorogation de l'acquit à caution !== 무관세통관연장관리번호 ==! */
+         , #{cufrXtnsRqstSttsCd}        /** Code de statut de la demande de l'acquit à caution !== 무관세연장신청상태코드 ==! */
+         , #{cufrCsclWrpmId}            /** Identifiant de l'acquit à caution  !== 무관세통관허가증ID ==! */
+         , #{reffNo}                    /** N° De Référence !== 참조번호 ==! */
+         , #{cstmCd}                    /** Code Du Bureau !== 세관코드 ==! */
+         , #{xtnsRqstStrtDt}            /** @TODO : 번역필요 !== 연장기간시작일자 ==! */
+         , #{xtnsRqstEndDt}             /** @TODO : 번역필요 !== 연장기간종료일자 ==! */
+         , #{xtnsRqstRsnCn}             /** Motif de demande de prorogation !== 연장신청사유내용 ==! */
+         , TO_CHAR(SYSDATE, 'YYYYMMDD')                /** Date de demande de prorogation !== 연장신청일자 ==! */
+         , #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+         , 'N'                          /** Suppression On !== 삭제여부 ==! */
+         , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+         , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+         , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+         , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+         , #{xtnsMcnt}  		   		/** Nombre de mois de prorogation !== 연장개월수 ==! */
+         )
+  </insert>
+
+
+  <!--
+  @TODO:번역필요 !== 무관세통관허가증 수정 ==!
+  (deKim)
+  -->
+  <update id="updatePscCufrXtns" parameterType="alpass.ipt.psc.vhcl.cufr.rgsr.vo.PscCufrXtnsVo">
+      /* updatePscCufrXtns */                
+           UPDATE  ALPASSINT.TB_PSCI_CUFR_CSCL_XTNS_RQST SET 
+           		  LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+           		<if test="cufrCsclXtnsMgmtNo != null and cufrCsclXtnsMgmtNo != ''">
+                , CUFR_CSCL_XTNS_MGMT_NO = #{cufrCsclXtnsMgmtNo}  /** Numéro de getion de la prorogation de l'acquit à caution !== 무관세통관연장관리번호 ==! */
+                </if>  
+                <if test="cufrXtnsRqstSttsCd != null and cufrXtnsRqstSttsCd != ''">
+                , CUFR_XTNS_RQST_STTS_CD = #{cufrXtnsRqstSttsCd}  /** Code de statut de la demande de l'acquit à caution !== 무관세연장신청상태코드 ==! */
+                </if>  
+                <if test="cufrCsclWrpmId != null and cufrCsclWrpmId != ''">
+                , CUFR_CSCL_WRPM_ID = #{cufrCsclWrpmId}       /** Identifiant de l'acquit à caution  !== 무관세통관허가증ID ==! */
+                </if>  
+                <if test="reffNo != null and reffNo != ''">
+                , REFF_NO = #{reffNo}                         /** N° De Référence !== 참조번호 ==! */
+                </if>  
+                <if test="cstmCd != null and cstmCd != ''">
+                , CSTM_CD = #{cstmCd}                         /** Code Du Bureau !== 세관코드 ==! */
+                </if>  
+                <if test="xtnsRqstStrtDt != null and xtnsRqstStrtDt != ''">               
+                , XTNS_RQST_STRT_DT = #{xtnsRqstStrtDt}       /** @TODO : 번역필요 !== 연장기간시작일자 ==! */
+                </if>  
+                <if test="xtnsRqstEndDt != null and xtnsRqstEndDt != ''">
+                , XTNS_RQST_END_DT = #{xtnsRqstEndDt}         /** @TODO : 번역필요 !== 연장기간종료일자 ==! */
+                </if>  
+                <if test="xtnsRqstRsnCn != null and xtnsRqstRsnCn != ''">
+                , XTNS_RQST_RSN_CN = #{xtnsRqstRsnCn}         /** Motif de demande de prorogation !== 연장신청사유내용 ==! */
+                </if>  
+                <if test="xtnsRqstDt != null and xtnsRqstDt != ''">
+                , XTNS_RQST_DT = #{xtnsRqstDt}                /** Date de demande de prorogation !== 연장신청일자 ==! */
+                </if>  
+                <if test="atchFileId != null and atchFileId != ''">
+                , ATCH_FILE_ID = #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                </if>  
+                <if test="xtnsMcnt != null and xtnsMcnt != ''">
+                , XTNS_MCNT = #{xtnsMcnt}  		   		/** Nombre de mois de prorogation !== 연장개월수 ==! */
+                </if>  
+           WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+             AND  CUFR_CSCL_XTNS_TEMP_NO = #{cufrCsclXtnsTempNo}       /** Numéro temporaire de la prorogation de l'acquit à caution !== 무관세통관연장임시번호 ==! */
+  </update>
+
+
+  <!--
+  @TODO:번역필요 !== 무관세통관허가증 삭제 ==!
+  (deKim)
+  -->
+  <update id="deletePscCufrXtns" parameterType="alpass.ipt.psc.vhcl.cufr.rgsr.vo.PscCufrXtnsVo">
+      /* deletePscCufrXtns */
+      UPDATE  ALPASSINT.TB_PSCI_CUFR_CSCL_XTNS_RQST SET 
+              DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+           ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+           ,  LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+       WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+         AND  CUFR_CSCL_XTNS_TEMP_NO = #{cufrCsclXtnsTempNo}       /** Numéro temporaire de la prorogation de l'acquit à caution !== 무관세통관연장임시번호 ==! */
+  </update>
+	
+  <!--
+  @TODO:번역필요 !== 무관세통관허가증 목록 조회 ==!
+  -->
+  <select id="selectPscCufrBscs"  
+    parameterType="alpass.ipt.psc.vhcl.cufr.rgsr.vo.PscCufrBscsVo" 
+    resultType="alpass.ipt.psc.vhcl.cufr.rgsr.vo.PscCufrBscsVo"> 
+      /* selectPscCufrBscs */
+      <include refid="pagination.header" ></include>
+          SELECT
+                A.CUFR_CSCL_WRPM_ID          /** Identifiant de l'acquit à caution  !== 무관세통관허가증ID ==! */
+              , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+              , A.RQST_REGM_CD               /** Code de régime de demande !== 신청레짐코드 ==! */
+              , A.BFCY_FMNM                  /** @TODO : 번역필요 !== 수혜자성 ==! */
+              , A.BFCY_GVNM_NM               /** Prénom du bénéficiaire !== 수혜자이름명 ==! */
+              , A.BFCY_BRDY                  /** Date de naissance du bénéficiaire !== 수혜자생년월일 ==! */
+              , A.BFCY_BIRT_REGN_NM          /** Lieu de naissance du bénéficiaire !== 수혜자출생지역명 ==! */
+              , A.BFCY_PSPR_NO               /** Numéro de passeport du bénéficiaire !== 수혜자여권번호 ==! */
+              , A.BFCY_DZA_ADDR              /** Adresse du bénéficiaire en Algérie !== 수혜자알제리주소 ==! */
+              , A.BFCY_OVRS_ADDR             /** Adresse du bénéficiaire à l'étranger !== 수혜자해외주소 ==! */
+              , A.CUFR_CSCL_WRPM_PRID        /** Durée accordée de l'acquit à caution !== 무관세통관허가증기간 ==! */
+              , A.CUFR_CSCL_WRPM_TP_CD       /** Code de cadre de l'acquit à caution !== 무관세통관허가증구분코드 ==! */
+              , A.CUFR_CSCL_WRPM_DTRM_NO       /** @TODO : 번역필요 !== 무관세통관허가증결정번호 ==! */
+              , TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDD') AS CUFR_CSCL_WRPM_DTRM_DT       /** Date de décision de l'acquit à caution !== 무관세통관허가증결정일자 ==! */
+              , A.RCNT_LIPL_NO               /** Dernière immatriculation !== 최근번호판번호 ==! */
+              , A.SPEL_ADMN_PCDR_CN          /** @TODO : 번역필요 !== 특별행정절차내용 ==! */
+              , A.PERM_DOC_NM                /** Libellé de l'autorisation !== 허가문서명 ==! */
+              , A.PERM_DOC_ID                /** Identifiant de l'autorisation !== 허가문서ID ==! */
+              , A.PERM_DOC_ISS_DT            /** Date de délivrance de l'autorisation !== 허가문서발급일자 ==! */
+              , A.PERM_DOC_ISS_ITT_NM        /** Autorité de délivrance de l'autorisation !== 허가문서발급기관명 ==! */
+              , A.REFF_NO                    /** N° De Référence !== 참조번호 ==! */
+              , DECODE(A.REFF_NO,'','N',NULL,'N','Y') AS VHCL_YN
+              , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+              ,( SELECT EMP_NM
+                FROM TB_POTI_EMP
+                 WHERE  PBSR_NO = A.FRST_REGST_ID
+               ) AS FRST_REGST_ID  
+              , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM
+              , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+          FROM  ALPASSINT.TB_PSCI_CUFR_CSCL_BSCS A
+         WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */        
+           AND  A.CUFR_CSCL_WRPM_ID = #{cufrCsclWrpmId}       /** Identifiant de l'acquit à caution  !== 무관세통관허가증ID ==! */
+        
+  </select>
+  
+  <!--
+  @TODO:번역필요 !== 무관세통관허가증연장신청 상세내역 조회 ==!
+  -->
+  <select id="selectPscCufrXtns"  
+    parameterType="alpass.ipt.psc.vhcl.cufr.rgsr.vo.PscCufrXtnsVo" 
+    resultType="alpass.ipt.psc.vhcl.cufr.rgsr.vo.PscCufrXtnsVo"> 
+      /* selectPscCufrXtns */      
+          SELECT
+                  A.CUFR_CSCL_XTNS_TEMP_NO       /** Numéro temporaire de la prorogation de l'acquit à caution !== 무관세통관연장임시번호 ==! */
+                , A.CUFR_CSCL_XTNS_MGMT_NO       /** Numéro de getion de la prorogation de l'acquit à caution !== 무관세통관연장관리번호 ==! */
+                , A.CUFR_XTNS_RQST_STTS_CD       /** Code de statut de la demande de l'acquit à caution !== 무관세연장신청상태코드 ==! */
+                , A.CUFR_CSCL_WRPM_ID          /** Identifiant de l'acquit à caution  !== 무관세통관허가증ID ==! */
+                , A.REFF_NO                    /** N° De Référence !== 참조번호 ==! */
+                , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+                , A.XTNS_RQST_STRT_DT          /** @TODO : 번역필요 !== 연장기간시작일자 ==! */
+                , A.XTNS_RQST_END_DT           /** @TODO : 번역필요 !== 연장기간종료일자 ==! */
+                , A.XTNS_RQST_RSN_CN           /** Motif de demande de prorogation !== 연장신청사유내용 ==! */
+                , A.XTNS_RQST_DT               /** Date de demande de prorogation !== 연장신청일자 ==! */
+                , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+                , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+                , A.XTNS_MCNT				   /** Nombre de mois de prorogation !== 연장개월수 ==! */
+           FROM   ALPASSINT.TB_PSCI_CUFR_CSCL_XTNS_RQST A
+          WHERE   DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+            AND   A.CUFR_CSCL_XTNS_TEMP_NO = #{cufrCsclXtnsTempNo}       /** Numéro temporaire de la prorogation de l'acquit à caution !== 무관세통관연장임시번호 ==! */              
+  </select>
+  
+</mapper>

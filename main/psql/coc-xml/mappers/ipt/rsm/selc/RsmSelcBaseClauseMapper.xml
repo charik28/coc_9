@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.rsm.selc.mapper.RsmSelcBaseClauseMapper">
+
+    <!--
+    [Gérer les éléments de critère] Consulter les tables de la déclaration !== [기준항목관리] 신고서 테이블 조회 ==!
+    --> 
+	<select id="selectDcshTblList" parameterType="alpass.ipt.rsm.com.vo.RsmDcshTblMgmtVo" resultType="alpass.ipt.rsm.com.vo.RsmDcshTblMgmtVo">
+		/* RsmSelc_selectDcshTblList */
+		SELECT
+			  TBL_NM     			/* Nom de la table !== 테이블명 ==! */
+		    , TBL_DESC				/* Description de table !== 테이블설명 ==! */
+		    , DCSH_TP_CD            /* Code de type de déclaration !== 신고서구분코드 ==! */ 
+		FROM TB_RSMI_DCSH_TBL_MGMT 
+		WHERE 1 = 1
+		AND DEL_YN = 'N'
+		<if test="dcshTpCd != null and dcshTpCd != '' ">
+		AND DCSH_TP_CD = #{dcshTpCd}  /* Code de type de déclaration !== 신고서구분코드 ==! */
+		ORDER BY APLY_PROR_RNK ASC
+		</if>
+	</select>
+	
+	
+    <!--
+    [Gérer les éléments de critère] Consulter la liste
+    !== [기준항목관리] 목록조회 ==!
+    -->	
+	<select id="selectBaseClauseList" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcBaseClauseVo" resultType="alpass.ipt.rsm.selc.vo.RsmSelcBaseClauseVo">
+		/* selectBaseClauseList */
+		SELECT
+			  ROWNUM NO
+		    , A.TBL_NM     				/* Nom de la table !== 테이블명 ==! */
+		    , B.TBL_DESC				/* Description de table !== 테이블설명 ==! */
+		    , B.DCSH_TP_CD              /* Code de type de déclaration !== 신고서구분코드 ==! */
+		    , A.COL_NM     				/* Nom de la colonne !== 컬럼명 ==! */
+		    , A.COL_DTA_PT_NM     		/* Nom du type de données de colonne !== 컬럼데이터유형명 ==! */
+		    , A.COL_DTA_LEN     		/* Longueur de données de colonne !== 컬럼데이터길이 ==! */
+		    , A.COL_DESC     			/* Description de la colonne  !== 컬럼설명 ==! */
+		    , A.OPRN_APLY_YN     		/* Appliqué sur le système réel O/N !== 운영적용여부 ==! */
+		    , A.SMLT_APLY_YN     		/* Simulation en vigueur O/N !== 시뮬레이션적용여부 ==! */
+		    , A.REFF_TP_CD				/* Code de type de référence !== 참조구분코드 ==! */
+		    , A.RFER_CD     			/* Code de référence  !== 참조코드 ==! */
+		    , A.DEL_YN     				/* Suppression ON !== 삭제여부 ==! */
+		    , A.FRST_REGST_ID     		/* ID du premier enregistrant  !== 최초등록자ID ==! */
+		    , A.FRST_RGSR_DTTM     		/* Date et heure de premier enregistrement !== 최초등록일시 ==! */
+		    , A.LAST_CHPR_ID     		/* ID du modificateur final !== 최종변경자ID ==! */
+		    , A.LAST_CHG_DTTM     		/* Date et heure de modification finale !== 최종변경일시 ==! */
+		FROM TB_RSMI_DCSH_COL_MGMT A, TB_RSMI_DCSH_TBL_MGMT B
+		WHERE 1 = 1
+		AND A.DEL_YN = 'N'
+		AND A.TBL_NM = B.TBL_NM         /* Nom de la table !== 테이블명 ==! */  
+		AND A.TBL_NM = #{tblNm}         /* Nom de la table !== 테이블명 ==! */ 
+		<if test="dcshTpCd != null and dcshTpCd != '' ">
+		AND B.DCSH_TP_CD = #{dcshTpCd}  	/* Code de type de déclaration !== 신고서구분코드 ==! */
+		</if>
+		<if test="oprnAplyYn != null and oprnAplyYn != '' ">
+		AND A.OPRN_APLY_YN = #{oprnAplyYn}   /* Appliqué sur le système réel O/N !== 운영적용여부 ==! */
+		</if>
+		<if test="smltAplyYn != null and smltAplyYn != '' ">
+		AND A.SMLT_APLY_YN = #{smltAplyYn}   /* Simulation en vigueur O/N !== 시뮬레이션적용여부 ==! */
+		</if>
+		ORDER BY A.APLY_PROR_RNK ASC
+	</select>
+	
+    <!--
+    [Gérer les éléments de critère] Modifier !== [기준항목관리] 수정 ==!
+    -->
+	<update id="updateBaseClause" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcBaseClauseVo">
+		/* RsmSelc_updateBaseClause */
+		UPDATE TB_RSMI_DCSH_COL_MGMT SET
+		   	  COL_DESC = #{colDesc}     		/* Description de la colonne  !== 컬럼설명 ==! */
+		   	<if test="oprnAplyYn != null and oprnAplyYn != '' ">
+		    , OPRN_APLY_YN = #{oprnAplyYn}     	/* Appliqué sur le système réel O/N !== 운영적용여부 ==! */
+		    </if>
+		    <if test="smltAplyYn != null and smltAplyYn != '' ">
+		    , SMLT_APLY_YN = #{smltAplyYn}     	/* Simulation en vigueur O/N !== 시뮬레이션적용여부 ==! */
+		    </if>
+		    , LAST_CHPR_ID = #{lastChprId}     	/* ID du modificateur final !== 최종변경자ID ==! */
+  			, LAST_CHG_DTTM = SYSTIMESTAMP 		/* Date et heure de modification finale !== 최종변경일시 ==! */
+		WHERE 1 = 1
+		AND TBL_NM = #{tblNm}                   /* Nom de la table !== 테이블명 ==! */
+		AND COL_NM = #{colNm}                   /* Nom de la colonne !== 컬럼명 ==! */ 
+	</update>
+	
+	
+</mapper>

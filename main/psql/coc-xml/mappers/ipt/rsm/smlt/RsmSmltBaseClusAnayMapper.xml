@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  Mapper : Analyse de'articles de critère de simulation !== 모의 기준항목분석 Mapper ==!
+-->
+<mapper namespace="alpass.ipt.rsm.smlt.mapper.RsmSmltBaseClusAnayMapper">
+
+    <!--
+    Consulter la liste d'éléments de critère !== 기준항목 목록 조회 ==!
+    -->
+    <select id="selectSmltBaseClusAnayList" 
+        parameterType="alpass.ipt.rsm.smlt.vo.RsmSmltBaseClusAnayVo" 
+        resultType="alpass.ipt.rsm.smlt.vo.RsmSmltBaseClusAnayVo">
+        
+        /** selectSmltBaseClusAnayList */
+        
+        <include refid="pagination.header"/>
+        SELECT BASE_RGSR_NO             /** Numéro d'enregistrement !== 기준등록번호 ==! */
+             , RQST_BASE_CLSF_CD        /** Code De Classification Du Critère Renseigné !== 신청기준분류코드 ==! */
+             , BASE_RQST_TP_CD          /** Code de type de renseignement  !== 기준신청구분코드 ==!*/
+             , APLY_DT                  /** Date d'application !== 적용일자 ==! */
+             , BASE_DESC                /** Description de critère !== 기준설명 ==! */
+             , FRST_REGST_ID            /** ID du premier enregistrant !== 최초등록자ID ==! */
+             , ( SELECT Z.EMP_NM
+                 FROM   TB_POTI_EMP Z
+                 WHERE  Z.PBSR_NO = A.FRST_REGST_ID
+               ) AS FRST_REGST_NM       /** Nom du premier enregistrant  !== 최초등록자이름 ==! */
+         FROM (
+               SELECT M.BASE_RGSR_NO        /** Numéro d'enregistrement !== 기준등록번호 ==! */
+                    , M.BASE_RQST_TP_CD     /** Code de type de renseignement  !== 기준신청구분코드 ==!*/
+                    , M.RQST_BASE_CLSF_CD   /** Code De Classification Du Critère Renseigné !== 신청기준분류코드 ==! */
+                    , TO_CHAR (TO_DATE (M.APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') ||' - '||
+                      TO_CHAR (TO_DATE (M.APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS APLY_DT  /** Date d'application !== 적용일자 ==! */             
+                    , M.BASE_DESC           /** Description de critère !== 기준설명 ==! */
+                    , M.FRST_REGST_ID       /** ID du premier enregistrant !== 최초등록자ID ==! */
+                    , M.LAST_CHG_DTTM       /* Date et heure de modification finale !== 최종변경일시 ==! */
+               FROM   TB_RSMI_BASE_MGMT_COMN M, TB_RSMI_RLBS_BASE D
+               WHERE  M.BASE_RGSR_NO = D.BASE_RGSR_NO
+               AND    M.BASE_RQST_TP_CD = #{baseRqstTpCd}  /** Code de type de renseignement !== 기준신청구분코드  ==! */
+               AND    M.DCSH_TP_CD = #{dcshTpCd}           /** Code de type de déclaration !== 신고서구분코드  ==! */
+               <if test="(bsopTpCd != null and bsopTpCd != '')">
+               AND    M.BSOP_TP_CD = #{bsopTpCd}           /** Code de type de l'opération !== 업무구분코드 ==! */
+               </if>
+               <foreach item="baseClsfCd" collection="baseClsfCds" open="AND M.RQST_BASE_CLSF_CD IN (" close=")" separator=",">
+                    #{baseClsfCd}
+               </foreach>
+               <if test='(aplyStrtDt != null and !"".equals(aplyStrtDt)) and (aplyEndDt != null and !"".equals(aplyEndDt))'>
+               AND    M.APLY_STRT_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND M.APLY_END_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+               </if>
+               <if test="(tblNm != null and tblNm != '')">
+               AND    TBL_NM = #{tblNm}  /** Nom de la table !== 테이블명==! */
+               </if>
+               <if test="(colNm != null and colNm != '')">
+               AND    COL_NM = #{colNm}  /** Nom de la colonne !== 컬럼명 ==! */
+               </if>
+              ) A
+         ORDER BY A.LAST_CHG_DTTM DESC, A.BASE_RQST_TP_CD ASC, A.BASE_RGSR_NO DESC
+         /** GROUP BY BASE_RGSR_NO, BASE_RQST_TP_CD, RQST_BASE_CLSF_CD, APLY_DT, BASE_DESC, FRST_REGST_ID */
+        <include refid="pagination.footer"/>
+        
+    </select>
+    
+</mapper>

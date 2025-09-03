@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.mp.psnuse.mapper.PotMpPsnUseMapper">
+
+	<!--
+    Consulter la liste de demande d'utilisateur personnel !== 개인사용신청 목록을 조회한다 ==!
+  -->
+	<select id="selectPsnUseList" parameterType="alpass.ipt.pot.mp.psnuse.vo.PotMpPsnUseVo" resultType="alpass.ipt.pot.mp.psnuse.vo.PotMpPsnUseVo">
+		/** selectPsnUseList */
+		<include refid="pagination.header"/>
+		SELECT
+			A.USER_ID							/** Id D'Utilisateur !== 사용자ID ==! */
+			, A.USER_FMNM						/** Nom !== 사용자 성 ==! */
+			, A.USER_NM						/** Prénom !== 사용자 이름 ==! */
+			, A.GNDR_CD						/** Code De Sexe !== 성별 ==! */
+			, A.TLPH_NO						/** N° De Téléphone !== 전화번호 ==! */
+			, A.EML							/** Email !== 이메일 ==! */
+			, A.USER_ADDR						/** Adresse !== 주소  ==! */
+			, A.NAT_CD						/** Code De Nationalité !== 국적코드 ==! */
+			, A.CNTY_CD						/** Code De Pays !== 국가코드 ==! */
+			, A.EML_RCPN_YN					/** Réception D'Email O/N !== 이메일수신여부 ==! */
+			, A.SMS_RCPN_YN					/** Réception De Sms O/N !== sms수신여부 ==! */
+			, A.ORGN_MGMT_CD					/** Réception De Sms O/N !== 제출세관코드 ==! */
+			, A.ATCH_FILE_ID					/** Id Du Fichier Joint !== 첨부파일 ==! */
+			, A.DEL_YN						/** Suppression ON !== 삭제여부 ==! */
+			, A.FRST_REGST_ID                 /** ID du premier enregistrant  !== 최초등록자ID ==! */
+			, TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+			, A.LAST_CHPR_ID                  /** ID du modificateur final !== 최종변경자ID ==! */
+			, A.LAST_CHG_DTTM                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+			, A.POST_CD
+			, A.NATV_IDCR_TP_CD
+			, A.NATV_IDCR_NO
+			, TO_CHAR(TO_DATE(A.NATV_IDCR_VALD_STRT_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') AS NATV_IDCR_VALD_STRT_DT
+			, TO_CHAR(TO_DATE(A.NATV_IDCR_VALD_END_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') AS NATV_IDCR_VALD_END_DT
+			, A.FRGN_PSPR_NO
+			, TO_CHAR(TO_DATE(A.FRGN_PSPR_VALD_STRT_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') AS FRGN_PSPR_VALD_STRT_DT
+			, TO_CHAR(TO_DATE(A.FRGN_PSPR_VALD_END_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') AS FRGN_PSPR_VALD_END_DT
+			, A.FRGN_IDCR_NO
+			, TO_CHAR(TO_DATE(A.FRGN_IDCR_VALD_STRT_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') AS FRGN_IDCR_VALD_STRT_DT
+			, TO_CHAR(TO_DATE(A.FRGN_IDCR_VALD_END_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') AS FRGN_IDCR_VALD_END_DT
+      , A.NIN
+		  , A.FRGN_NIN
+			, A.NATV_IDCR_ISS_PLC_NM
+			, A.FRGN_IDCR_ISS_PLC_NM
+			, A.FRGN_PSPR_ISS_ITT_NM
+		FROM  TB_POTE_PSN_USER A
+		WHERE  A.DEL_YN = 'N'
+		<if test="srchUserId != null and srchUserId != ''">
+			AND A.USER_ID LIKE '%'||#{srchUserId}||'%'
+		</if>
+		<if test="srchGndrCd != null and srchGndrCd != ''">
+			AND A.GNDR_CD = #{srchGndrCd}
+		</if>
+		<if test="srchUserFmnm != null and srchUserFmnm != ''">
+			AND A.USER_FMNM LIKE '%'||#{srchUserFmnm}||'%'
+		</if>
+		<if test="srchUserNm != null and srchUserNm != ''">
+			AND A.USER_NM LIKE '%'||#{srchUserNm}||'%'
+		</if>
+		<if test="scrhRqstStrtDt != null and scrhRqstStrtDt != ''">
+			AND TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDD')  <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{scrhRqstStrtDt},'DD/MM/YYYY'),'YYYYMMDD')
+		</if>
+		<if test="scrhRqstEndDt != null and scrhRqstEndDt != ''">
+			AND TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDD') <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{scrhRqstEndDt},'DD/MM/YYYY'),'YYYYMMDD')
+		</if>
+		ORDER BY A.FRST_RGSR_DTTM DESC, USER_ID ASC
+		<include refid="pagination.footer"/>
+	</select>
+
+	<!--
+    Consulter le détail de demande d'utilisateur personnel !== 개인신청정보 상세정보를 조회한다 ==!
+  -->
+	<select id="selectPsnUse"
+			parameterType="alpass.ipt.pot.mp.psnuse.vo.PotMpPsnUseVo"
+			resultType="alpass.ipt.pot.mp.psnuse.vo.PotMpPsnUseVo">
+		/** selectPsnUse */
+		SELECT
+			A.USER_ID							/** Id D'Utilisateur !== 사용자ID ==! */
+				 , A.USER_FMNM						/** Nom !== 사용자 성 ==! */
+				 , A.USER_NM						/** Prénom !== 사용자 이름 ==! */
+				 , A.GNDR_CD						/** Code De Sexe !== 성별 ==! */
+				 , A.TLPH_NO						/** N° De Téléphone !== 전화번호 ==! */
+				 , A.EML							/** Email !== 이메일 ==! */
+				 , A.USER_ADDR						/** Adresse !== 주소  ==! */
+				 , A.NAT_CD						/** Code De Nationalité !== 국적코드 ==! */
+				 , A.CNTY_CD						/** Code De Pays !== 국가코드 ==! */
+				 , A.CNTY_CD						/** Code De Pays !== 국가코드 ==! */
+				 , A.EML_RCPN_YN					/** Réception D'Email O/N !== 이메일수신여부 ==! */
+				 , A.SMS_RCPN_YN					/** Réception De Sms O/N !== sms수신여부 ==! */
+				 , A.ORGN_MGMT_CD					/** Réception De Sms O/N !== 제출세관코드 ==! */
+				 , A.PHTO_IMGE_CN					/** Réception De Sms O/N !== 이미지파일 ==! */
+				 , A.ATCH_FILE_ID					/** Id Du Fichier Joint !== 첨부파일 ==! */
+				 , A.DEL_YN						/** Suppression ON !== 삭제여부 ==! */
+				 , A.FRST_REGST_ID                 /** ID du premier enregistrant  !== 최초등록자ID ==! */
+				 , A.FRST_RGSR_DTTM                /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+				 , A.LAST_CHPR_ID                  /** ID du modificateur final !== 최종변경자ID ==! */
+				 , A.LAST_CHG_DTTM                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+				 , A.POST_CD
+				 , A.DZA_RSDN_YN
+				 , A.NATV_IDCR_TP_CD
+				 , A.NATV_IDCR_NO
+				 , TO_CHAR(TO_DATE(A.NATV_IDCR_VALD_STRT_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') AS NATV_IDCR_VALD_STRT_DT
+				 , TO_CHAR(TO_DATE(A.NATV_IDCR_VALD_END_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') AS NATV_IDCR_VALD_END_DT
+				 , A.FRGN_PSPR_NO
+				 , TO_CHAR(TO_DATE(A.FRGN_PSPR_VALD_STRT_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') AS FRGN_PSPR_VALD_STRT_DT
+				 , TO_CHAR(TO_DATE(A.FRGN_PSPR_VALD_END_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') AS FRGN_PSPR_VALD_END_DT
+				 , A.FRGN_IDCR_NO
+				 , TO_CHAR(TO_DATE(A.FRGN_IDCR_VALD_STRT_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') AS FRGN_IDCR_VALD_STRT_DT
+				 , TO_CHAR(TO_DATE(A.FRGN_IDCR_VALD_END_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') AS FRGN_IDCR_VALD_END_DT
+				 , A.NIN
+				 , A.FRGN_NIN
+				 , CASE WHEN A.POST_CD = '' THEN '' ELSE '(' || A.POST_CD || ':' || ( SELECT POST_NM FROM ALPASSINT.TB_COM_WLY_POST_CD W where W.POST_CD = A.POST_CD ) || ')' END AS  POST_NM
+				 , (SELECT Y.CNTY_NM
+						FROM TB_COM_CNTY_CD X,
+								 TB_COM_CNTY_CD_LANG Y
+						WHERE X.CNTY_CD = Y.CNTY_CD
+							AND X.DEL_YN = 'N'
+							AND Y.DEL_YN = 'N'
+							AND Y.LANG_CD = #{langCd}
+							AND Y.CNTY_CD = A.CNTY_CD) AS CNTY_NM
+				 , A.NATV_IDCR_ISS_PLC_NM
+				 , A.FRGN_IDCR_ISS_PLC_NM
+				 , A.FRGN_PSPR_ISS_ITT_NM
+				 , A.FAR_NM
+				 , A.MOR_FMNM
+				 , A.MOR_NM
+				 , A.OVRS_ADDR
+				 , A.JOB_NM
+				 , A.IDCR_ATCH_FILE_ID
+				 , A.ITT_TP_CD
+				 , B.ACCT_LCKED_YN
+		FROM TB_POTE_PSN_USER A,
+				 TB_COM_USER_ACCT B
+		WHERE A.USER_ID = B.USER_ID
+			AND A.DEL_YN = 'N'
+			AND A.USER_ID = #{userId}
+			AND B.USER_CLSF_CD = 'P'
+	</select>
+
+</mapper>

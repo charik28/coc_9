@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.car.pvinf.adorbhnot.mapper.CarAdorBhnotMapper">
+
+	<!--
+    [Rechercher] Consulter la liste des "Gérer le critère de cotation à l'inspecteur" !== "심사자 배부 기준" 목록을 조회한다. ==!
+    (Yangjip Kim)
+  -->
+  <select id="selectAdorBhnotList" resultType="alpass.ipt.car.pvinf.adorbhnot.vo.CarAdorBhnotVo">
+    /* alpass.ipt.car.pvinf.adorbhnot.mapper.CarAdorBhnotMapper.selectAdorBhnotList */
+    <include refid="pagination.header" ></include>
+    SELECT
+        A.CAG_RQST_TP_CD				/**  Code de type de demande fret  !== 화물신청구분코드 ==!  */
+			, A.AUDT_ROLE_CD				/**  Code de rôle de contrôle  !== 심사역할코드 ==!  */
+    	, (SELECT B.ROLE_NM FROM TB_COM_ROLE_LANG B WHERE B.DEL_YN = 'N' AND B.ROLE_ID = A.AUDT_ROLE_CD AND B.LANG_CD = #{langCd}) AS AUDT_ROLE_NM
+			, A.AUDT_TODO_CD				/**  Code de contrôle à faire  !== 심사할일코드 ==!  */
+			, A.MGMT_ROLE_CD				/**  Code du rôle de gestion  !== 관리역할코드 ==!  */
+    	, (SELECT B.ROLE_NM FROM TB_COM_ROLE_LANG B WHERE B.DEL_YN = 'N' AND B.ROLE_ID = A.MGMT_ROLE_CD AND B.LANG_CD = #{langCd}) AS MGMT_ROLE_NM
+			, A.INSC_TODO_CD				/**  Code d'inspection à faire  !== 검사할일코드 ==!  */
+			, A.INSC_ROLE_CD				/**  Code de rôle d'inspection  !== 검사역할코드 ==!  */
+			, A.DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			, A.FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, A.LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		FROM TB_CARI_HNOT_BASE A
+    WHERE A.DEL_YN = 'N'
+	    <if test="cagRqstTpCd != null and cagRqstTpCd != ''">
+    		AND A.CAG_RQST_TP_CD = #{cagRqstTpCd} 			/**  N° De Demande De Cargaison  !== 화물신청번호 ==!  */
+	    </if>
+	    <if test="roleCd != null and roleCd != ''">
+    		AND A.AUDT_ROLE_CD || A.MGMT_ROLE_CD || A.INSC_ROLE_CD LIKE '%' || #{roleCd} || '%' 			/**  Code de type de demande fret  !== 화물신청구분코드 ==!  */
+	    </if>
+	    <if test="todoCd != null and todoCd != ''">
+    		AND A.AUDT_TODO_CD || A.INSC_TODO_CD LIKE '%' || #{todoCd} || '%' /**  Code de zone sous douane  !== 보세구역코드 ==!  */
+	    </if>
+		ORDER BY A.CAG_RQST_TP_CD
+    <include refid="pagination.footer" ></include>
+  </select>
+
+	<!--
+    Consulter le nombre de cas de gestion de critère de cotation à l'inspecteur !== 심사자 배부기준 관리 건수를 조회한다. ==!
+    (Yangjip Kim)
+  -->
+  <select id="selectAdorBhnotCnt" resultType="Integer">
+    /* alpass.ipt.car.pvinf.adorbhnot.mapper.CarAdorBhnotMapper.selectAdorBhnotCnt */
+    SELECT COUNT(1) CNT
+		FROM TB_CARI_HNOT_BASE A
+    WHERE A.DEL_YN = 'N'
+      AND A.CAG_RQST_TP_CD = #{cagRqstTpCd} 			/**  N° De Demande De Cargaison  !== 화물신청번호 ==!  */
+  </select>
+
+	<!--
+		[Enregistrer] Enregistrer & Modifier le critère de cotation à l'inspecteur.   !== 심사자 배부기준을 등록&수정 한다. ==!
+    (Yangjip Kim)
+	-->
+  <update id="mergeAdorBhnot" parameterType="alpass.ipt.car.pvinf.adorbhnot.vo.CarAdorBhnotVo">
+    /* alpass.ipt.car.pvinf.adorbhnot.mapper.CarAdorBhnotMapper.mergeAdorBhnot */
+		WITH UPSERT AS (
+			UPDATE TB_CARI_HNOT_BASE SET
+				  AUDT_ROLE_CD = #{audtRoleCd} 			/**  Code de rôle de contrôle  !== 심사역할코드 ==!  */
+				, AUDT_TODO_CD = #{audtTodoCd} 			/**  Code de contrôle à faire  !== 심사할일코드 ==!  */
+				, MGMT_ROLE_CD = #{mgmtRoleCd} 			/**  Code du rôle de gestion  !== 관리역할코드 ==!  */
+				, INSC_ROLE_CD = #{inscRoleCd} 			/**  Code de rôle d'inspection  !== 검사역할코드 ==!  */
+				, INSC_TODO_CD = #{inscTodoCd} 			/**  Code d'inspection à faire  !== 검사할일코드 ==!  */
+				, DEL_YN = 'N' 			/**  Suppression On  !== 삭제여부 ==!  */
+				, LAST_CHPR_ID = #{lastChprId} 			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+				, LAST_CHG_DTTM = SYSTIMESTAMP 	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+			WHERE CAG_RQST_TP_CD = #{cagRqstTpCd}  /**  Code de type de demande fret  !== 화물신청구분코드 ==!  */
+
+			RETURNING *
+		)
+		INSERT INTO TB_CARI_HNOT_BASE (
+		    CAG_RQST_TP_CD				/**  Code de type de demande fret  !== 화물신청구분코드 ==!  */
+			, AUDT_ROLE_CD				/**  Code de rôle de contrôle  !== 심사역할코드 ==!  */
+			, AUDT_TODO_CD				/**  Code de contrôle à faire  !== 심사할일코드 ==!  */
+			, MGMT_ROLE_CD				/**  Code du rôle de gestion  !== 관리역할코드 ==!  */
+			, INSC_ROLE_CD				/**  Code de rôle d'inspection  !== 검사역할코드 ==!  */
+			, INSC_TODO_CD				/**  Code d'inspection à faire  !== 검사할일코드 ==!  */
+			, DEL_YN				/**  Suppression On  !== 삭제여부 ==!  */
+			, FRST_REGST_ID				/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, FRST_RGSR_DTTM				/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, LAST_CHPR_ID				/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, LAST_CHG_DTTM				/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+   	)
+		SELECT
+		    #{cagRqstTpCd}			/**  Code de type de demande fret  !== 화물신청구분코드 ==!  */
+			, #{audtRoleCd}			/**  Code de rôle de contrôle  !== 심사역할코드 ==!  */
+			, #{audtTodoCd}			/**  Code de contrôle à faire  !== 심사할일코드 ==!  */
+			, #{mgmtRoleCd}			/**  Code du rôle de gestion  !== 관리역할코드 ==!  */
+			, #{inscRoleCd}			/**  Code de rôle d'inspection  !== 검사역할코드 ==!  */
+			, #{inscTodoCd}			/**  Code d'inspection à faire  !== 검사할일코드 ==!  */
+		  , 'N'			/**  Suppression On  !== 삭제여부 ==!  */
+		  , #{frstRegstId}			/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+		  , SYSTIMESTAMP 	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+		  , #{lastChprId}			/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+		  , SYSTIMESTAMP 	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+    WHERE NOT EXISTS(SELECT * FROM UPSERT)
+	</update>
+
+	<!--
+		Supprimer la "Critère de cotation à l'inspecteur"   !== 심사자 배부기준을 삭제처리한다.==!
+    (Yangjip Kim)
+	-->
+	<update id="deleteAdorBhnot" parameterType="alpass.ipt.car.pvinf.adorbhnot.vo.CarAdorBhnotVo">
+		/* alpass.ipt.car.pvinf.adorbhnot.mapper.CarAdorBhnotMapper.mergeAdorBhnot */
+		UPDATE TB_CARI_HNOT_BASE SET
+			  DEL_YN      			= 'Y'
+			, LAST_CHPR_ID      = #{lastChprId} /**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, LAST_CHG_DTTM     = SYSTIMESTAMP /**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+		WHERE CAG_RQST_TP_CD = #{cagRqstTpCd}  /**  Code de type de demande fret  !== 화물신청구분코드 ==!  */
+	</update>
+
+</mapper>

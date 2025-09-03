@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.car.load.mapper.CarLoadBlCntrMapper">
+
+    <!--
+    Voir la liste des Demande de Conteneur !==컨테이너 목록 조회==!
+    -->
+    <select id="selectCarLoadBlCntrList"
+            parameterType="alpass.ipt.car.load.vo.CarLoadBlCntrVo"
+            resultType="alpass.ipt.car.load.vo.CarLoadBlCntrVo">
+        /* selectCarLoadBlCntrList */
+        <if test="pagination != null and  pagination == true ">
+        SELECT #{totBlCntrCnt} AS TOT_CNT
+             , SQLRSLT.*
+             , ROWNUM as RNUM
+          FROM (
+        </if>
+        SELECT A.LOAD_RQST_NO			 /** !==적재신청번호==! */
+	         , A.BL_SRNO                 /** N° De Séquence De Ble !== BL일련번호 ==! */
+	         , A.CNTR_SRNO               /** N° De Séquence Du Conteneur !== 컨테이너일련번호 ==! */
+	         , A.CNTR_NO                 /** N° De Conteneur !== 컨테이너번호 ==! */
+	         , A.CNTR_TP_CD              /** Code De Type De Conteneur !== 컨테이너구분코드 ==! */
+	         , A.PCKG_GCNT               /** Nombre De Colis !== 포장개수 ==! */
+	         , A.PCKG_UT_CD              /** Code De L'Unité De Colis !== 포장단위코드 ==! */
+	         , A.ECNTR_WGHT              /** Tare De Conteneur(S) À Vide !== 공컨테이너중량 ==! */
+	         , A.TTWG                    /** Poids Brut !== 총중량 ==! */
+	         , A.SEAL_NO1                /** N° De Scellé1 !== 봉인번호1 ==! */
+	         , A.SEAL_NO2                /** N° De Scellé1 !== 봉인번호2 ==! */
+	         , A.SEAL_NO3                /** N° De Scellé3 !== 봉인번호3 ==! */
+	         , A.SEAL_CHPN1              /** Responsable de scellé 1 !== 봉인담당자1 ==! */
+	         , A.SEAL_CHPN2              /** Responsable de scellé 2 !== 봉인담당자2 ==! */
+	         , A.SEAL_CHPN3              /** Responsable de scellé 3 !== 봉인담당자3 ==! */
+	         , A.DEL_YN
+	         , A.FRST_REGST_ID
+	         , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+	         , A.LAST_CHPR_ID
+	         , TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+						FROM TB_CARI_LOAD_BL_CNTR A
+					    WHERE A.DEL_YN = 'N'
+						AND A.LOAD_RQST_NO = #{loadRqstNo}
+						<if test="blSrno != null and blSrno != ''">
+						AND	A.BL_SRNO = #{blSrno}
+						</if>
+						<if test="cntrNo != null and cntrNo != ''">
+				   AND	UPPER(A.CNTR_NO) LIKE UPPER(#{cntrNo})||'%'
+      </if>
+						ORDER BY A.CNTR_NO
+						<include refid="pagination.footer" ></include>
+    </select>
+
+    <!--
+    Enregistrement de la déclaration de Conteneur !==컨테이너 정보를 저장한다==!
+    -->
+    <insert id="insertCarLoadBlCntr" parameterType="alpass.ipt.car.load.vo.CarLoadBlCntrVo">
+        /* insertCarLoadBlCntr */
+        INSERT INTO TB_CARI_LOAD_BL_CNTR (
+        	  LOAD_RQST_NO       	  /** !== 적재신청번호 ==! */
+	        , BL_SRNO                 /** N° De Séquence De Ble !== BL일련번호 ==! */
+	        , CNTR_SRNO               /** N° De Séquence Du Conteneur !== 컨테이너일련번호 ==! */
+	        , CNTR_NO                 /** N° De Conteneur !== 컨테이너번호 ==! */
+	        , CNTR_TP_CD              /** Code De Type De Conteneur !== 컨테이너구분코드 ==! */
+	        , PCKG_GCNT               /** Nombre De Colis !== 포장개수 ==! */
+	        , PCKG_UT_CD              /** Code De L'Unité De Colis !== 포장단위코드 ==! */
+	        , ECNTR_WGHT              /** Tare De Conteneur(S) À Vide !== 공컨테이너중량 ==! */
+	        , TTWG                    /** Poids Brut !== 총중량 ==! */
+	        , SEAL_NO1                /** N° De Scellé1 !== 봉인번호1 ==! */
+	        , SEAL_NO2                /** N° De Scellé1 !== 봉인번호2 ==! */
+	        , SEAL_NO3                /** N° De Scellé3 !== 봉인번호3 ==! */
+	        , SEAL_CHPN1              /** Responsable de scellé 1 !== 봉인담당자1 ==! */
+	        , SEAL_CHPN2              /** Responsable de scellé 2 !== 봉인담당자2 ==! */
+	        , SEAL_CHPN3              /** Responsable de scellé 3 !== 봉인담당자3 ==! */
+	        , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+        ) VALUES (
+              #{loadRqstNo}
+			, #{blSrno}                       /** N° De Séquence De Ble !== BL일련번호 ==! */
+			, #{cntrSrno}                   /** N° De Séquence Du Conteneur !== 컨테이너일련번호 ==! */
+			, #{cntrNo}                     /** N° De Conteneur !== 컨테이너번호 ==! */
+			, #{cntrTpCd}                   /** Code De Type De Conteneur !== 컨테이너구분코드 ==! */
+			, #{pckgGcnt}                   /** Nombre De Colis !== 포장개수 ==! */
+			, #{pckgUtCd}                   /** Code De L'Unité De Colis !== 포장단위코드 ==! */
+			, #{ecntrWght}                  /** Tare De Conteneur(S) À Vide !== 공컨테이너중량 ==! */
+			, #{ttwg}                       /** Poids Brut !== 총중량 ==! */
+			, #{sealNo1}                    /** N° De Scellé1 !== 봉인번호1 ==! */
+			, #{sealNo2}                    /** N° De Scellé1 !== 봉인번호2 ==! */
+			, #{sealNo3}                    /** N° De Scellé3 !== 봉인번호3 ==! */
+			, #{sealChpn1}                  /** Responsable de scellé 1 !== 봉인담당자1 ==! */
+			, #{sealChpn2}                  /** Responsable de scellé 2 !== 봉인담당자2 ==! */
+			, #{sealChpn3}                  /** Responsable de scellé 3 !== 봉인담당자3 ==! */
+			, 'N'
+            , #{frstRegstId}
+            , SYSTIMESTAMP
+            , #{lastChprId}
+            , SYSTIMESTAMP
+        )
+    </insert>
+
+    <!--
+    Supprimer la  déclaration de Conteneur  !==컨테이너 정보를 삭제한다.==!
+    -->
+    <update id="deleteCarLoadBlCntr" parameterType="alpass.ipt.car.load.vo.CarLoadBlVo" >
+        /* deleteCarLoadBlCntr */
+        DELETE FROM TB_CARI_LOAD_BL_CNTR
+        WHERE DEL_YN = 'N'
+        AND LOAD_RQST_NO = #{loadRqstNo}
+        AND	BL_SRNO = #{blSrno}
+    </update>
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

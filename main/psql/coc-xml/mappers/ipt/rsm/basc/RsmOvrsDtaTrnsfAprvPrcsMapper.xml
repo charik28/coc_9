@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  Mapper : Transférer des demandes d’informations depuis l’étranger (Traitement des approval) !== 해외자료 이관 결재처리  Mapper ==!
+-->
+<mapper namespace="alpass.ipt.rsm.basc.mapper.RsmOvrsDtaTrnsfAprvPrcsMapper">
+
+    <!--
+    Traitement après l'approbation !== 결재 후처리 (해외데이터신청 처리상태코드 변경) ==!
+    -->
+    <update id="updateOvrsDtaPrcsSttsCd" parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaAprvPrcsVo">
+        /* updateOvrsDtaPrcsSttsCd */
+        UPDATE TB_RSMI_OVRS_DTA_RQST
+        SET
+            PRCS_STTS_CD = #{prcsSttsCd}            /* Code De Statut De Traitement !== 처리상태코드 ==! */
+          , APRV_ID = #{aprvId}                     /* ID d'approbation  !== 결재ID ==! */
+          , LAST_CHPR_ID = #{lastChprId}            /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM = SYSTIMESTAMP            /* Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE RQST_NO = #{rqstNo}                   /* N° De Demande !== 신청번호 ==! */
+
+    </update>
+
+    <!--
+      Copiez les demande (Demande d'informations de l'étranger) !== 해외데이터_신청 복사 (select insert) ==!
+    -->
+    <insert id="insertSelectOvrsDtaRqst" parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstVo">
+        /* insertSelectOvrsDtaRqst */
+        INSERT INTO TB_RSMI_OVRS_DTA_RQST
+        (
+              RQST_NO               /** N° De Demande !== 신청번호 ==! */
+            , DOC_TTLE              /** Nom Du Fichier !== 문서제목 ==! */
+            , RQST_TP_CD            /** Code De Type De Demande !== 신청구분코드 ==! */
+            , RQST_CSTM_CD          /** Code de bureau de douane !== 신청세관코드 ==! */
+            , RQST_CNTY_CD          /** Code du pays demandeur !== 신청국가코드 ==! */
+            , OVRS_CSTM_NM          /** Nom de la douane étrangère !== 해외세관명 ==! */
+            , RQST_DT               /** Date De Demande !== 신청일자 ==! */
+            , REGST_ID              /** Id De La Personne Enregistrant !== 등록자ID ==! */
+            , CSTM_CD               /** Code Du Bureau !== 세관코드 ==! */
+            , ANSW_DPHD_ID          /** ID du chef de service qui répond clairement aux questions !== 답변부서장ID ==! */
+            , RQST_CN               /** Contenu de la demande !== 신청내용 ==! */
+            , PRCS_STTS_CD          /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , APRV_ID               /** Id D'Approbation  !== 결재ID ==! */
+            , ATCH_FILE_ID          /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , RTRN_RSN_CN           /** Motif De Rejet !== 반려사유내용 ==! */
+            , TRNSF_RSN_CN          /** Raison du transfert !== 이관사유내용 ==! */
+            , SGNT_ATCH_FILE_ID     /** ID de pièce jointe signée !== 서명첨부파일ID ==! */
+            , ANSW_AL_YN            /** Tous les répondeurs !== 답변전체여부 ==! */
+            , OGNL_RQST_NO          /** N° de la demande initiale !== 원신청번호 ==! */
+            , DEL_YN                /** Suppression ON !== 삭제여부 ==! */
+            , FRST_REGST_ID         /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM        /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID          /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM         /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        SELECT
+              #{ovrsDtaRqstRgsrNo} as RQST_NO
+            , A.DOC_TTLE
+            , A.RQST_TP_CD
+            , A.RQST_CSTM_CD
+            , A.RQST_CNTY_CD
+            , A.OVRS_CSTM_NM
+            , A.RQST_DT
+            , A.REGST_ID
+            , A.CSTM_CD
+            , #{answDphdId} as ANSW_DPHD_ID
+            , A.RQST_CN
+            , 'J07' as PRCS_STTS_CD
+            , null as APRV_ID
+            , A.ATCH_FILE_ID
+            , A.RTRN_RSN_CN
+            , A.TRNSF_RSN_CN
+            , A.SGNT_ATCH_FILE_ID
+            , A.ANSW_AL_YN
+            , #{ognlRqstNo}
+            , A.DEL_YN
+            , #{frstRegstId} as FRST_REGST_ID
+            , A.FRST_RGSR_DTTM
+            , #{lastChprId} as LAST_CHPR_ID
+            , A.LAST_CHG_DTTM
+        FROM   TB_RSMI_OVRS_DTA_RQST A
+        WHERE  A.DEL_YN = 'N'
+        AND   A.RQST_NO = #{rqstNo}
+    </insert>
+
+    <!--
+      Copiez les données du chef de service qui répond clairement aux questions (Demande d'informations de l'étranger) !== 해외데이터_답변부서장 복사 (select insert) ==!
+    -->
+    <insert id="insertSelectOvrsDtaAnswDphd" parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaAnswDphdVo">
+        /* insertSelectOvrsDtaAnswDphd */
+        INSERT into TB_RSMI_OVRS_DTA_ANSW_DPHD
+        (
+              RQST_NO                       /** N° De Demande !== 신청번호 ==! */
+            , ANSW_DPHD_PT_CD               /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+            , ANSW_DPHD_EMP_ID              /** ID du chef du service répondeur !== 답변부서장직원ID ==! */
+            , DPHD_PT_CHG_TP_CD             /** Code de distinction de changement de type de chef du serivce !== 부서장유형변경구분코드 ==! */
+            , DEL_YN                        /** Suppression ON !== 삭제여부 ==! */
+            , FRST_REGST_ID                 /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM                /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                  /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        SELECT
+              #{ovrsDtaRqstRgsrNo} as RQST_NO
+            , A.ANSW_DPHD_PT_CD
+            , A.ANSW_DPHD_EMP_ID
+            , A.DPHD_PT_CHG_TP_CD
+            , A.DEL_YN
+            , #{frstRegstId} as FRST_REGST_ID
+            , A.FRST_RGSR_DTTM
+            , #{lastChprId} as LAST_CHPR_ID
+            , A.LAST_CHG_DTTM
+        FROM   TB_RSMI_OVRS_DTA_ANSW_DPHD A
+        WHERE  A.DEL_YN = 'N'
+        AND    A.RQST_NO = #{rqstNo}
+    </insert>
+
+    <!--
+      Copier les données d'origine (Demande d'informations de l'étranger)  !== 해외데이터_원산지 복사 (select insert) ==!
+    -->
+    <insert id="insertSelectOvrsDtaRqstOrcy" parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstOrcyVo">
+        /* insertSelectOvrsDtaRqstOrcy */
+        INSERT into TB_RSMI_OVRS_DTA_RQST_ORCY
+        (
+              RQST_NO           /** N° De Demande !== 신청번호 ==! */
+            , ORCY_CD           /** Pays Origine Code  !== 원산지코드 ==! */
+            , DEL_YN            /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID     /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM    /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID      /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM     /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        SELECT
+              #{ovrsDtaRqstRgsrNo} as RQST_NO
+            , A.ORCY_CD
+            , A.DEL_YN
+            , #{frstRegstId} as FRST_REGST_ID
+            , A.FRST_RGSR_DTTM
+            , #{lastChprId} as LAST_CHPR_ID
+            , A.LAST_CHG_DTTM
+        FROM   TB_RSMI_OVRS_DTA_RQST_ORCY A
+        WHERE  A.DEL_YN = 'N'
+        AND   A.RQST_NO = #{rqstNo}
+    </insert>
+
+    <!--
+      Copier les données HS (Demande d'informations de l'étranger) !== 해외데이터_HS 복사 (select insert) ==!
+    -->
+    <insert id="insertSelectOvrsDtaHs" parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstHsVo">
+        /* insertSelectOvrsDtaHs */
+        INSERT into TB_RSMI_OVRS_DTA_RQST_HS
+        (
+              RQST_NO           /** N° De Demande !== 신청번호 ==! */
+            , HS_CD             /** Code Sh !== HS코드 ==! */
+            , DEL_YN            /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID     /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM    /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID      /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM     /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        SELECT
+              #{ovrsDtaRqstRgsrNo} as RQST_NO
+            , A.HS_CD
+            , A.DEL_YN
+            , #{frstRegstId} as FRST_REGST_ID
+            , A.FRST_RGSR_DTTM
+            , #{lastChprId} as LAST_CHPR_ID
+            , A.LAST_CHG_DTTM
+        FROM   TB_RSMI_OVRS_DTA_RQST_HS A
+        WHERE  DEL_YN = 'N'
+        AND  A.RQST_NO = #{rqstNo}
+    </insert>
+
+    <!--
+      Copier les données du déclarant (Demande d'informations de l'étranger) !== 해외데이터_신고인 복사 (select insert) ==!
+    -->
+    <insert id="insertSelectOvrsDtaDcer" parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstDcerVo">
+        /* insertSelectOvrsDtaDcer */
+        INSERT into TB_RSMI_OVRS_DTA_RQST_DCER
+        (
+              RQST_NO           /** N° De Demande !== 신청번호 ==! */
+            , NIF               /** Numéro d’identification fiscale !== 납세식별번호 ==! */
+            , DEL_YN            /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID     /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM    /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID      /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM     /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        SELECT
+              #{ovrsDtaRqstRgsrNo} as RQST_NO
+            , A.NIF
+            , A.DEL_YN
+            , #{frstRegstId} as FRST_REGST_ID
+            , A.FRST_RGSR_DTTM
+            , #{lastChprId} as LAST_CHPR_ID
+            , A.LAST_CHG_DTTM
+        FROM   TB_RSMI_OVRS_DTA_RQST_DCER A
+        WHERE  DEL_YN = 'N'
+        AND  A.RQST_NO = #{rqstNo}
+    </insert>
+
+    <!--
+      Copier les données du Particulier (Demande d'informations de l'étranger) !== 해외데이터_개인 복사 (select insert) ==!
+    -->
+    <insert id="insertSelectOvrsDtaPsn" parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstPsnVo">
+        /* insertSelectOvrsDtaPsn */
+        INSERT into TB_RSMI_OVRS_DTA_RQST_PSN
+        (
+              RQST_NO               /** N° De Demande !== 신청번호 ==! */
+            , DTL_SRNO              /** N° De Séquence Du Détail !== 상세일련번호 ==! */
+            , NTNAL_IDFY_NO         /** Nin !== 자국민식별번호 ==! */
+            , NTNAL_FMNM_NM         /** Nom du citoyen !== 자국민성명 ==! */
+            , NTNAL_GVNM_NM         /** Prénom du citoyen !== 자국민이름명 ==! */
+            , BLNG_ITT_NM           /** Nom du groupe d'appartenance !== 소속기관명 ==! */
+            , RELA_DOC_NO           /** N° Document Associé !== 관련문서번호 ==! */
+            , NTNAL_BRDY            /** Date De Naissance du citoyen !== 자국민생년월일 ==! */
+            , DEL_YN                /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID         /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM        /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID          /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM         /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+
+        )
+        SELECT
+              #{ovrsDtaRqstRgsrNo} as RQST_NO
+            , A.DTL_SRNO
+            , A.NTNAL_IDFY_NO
+            , A.NTNAL_FMNM_NM
+            , A.NTNAL_GVNM_NM
+            , A.BLNG_ITT_NM
+            , A.RELA_DOC_NO
+            , A.NTNAL_BRDY
+            , A.DEL_YN
+            , #{frstRegstId} as FRST_REGST_ID
+            , A.FRST_RGSR_DTTM
+            , #{lastChprId} as LAST_CHPR_ID
+            , A.LAST_CHG_DTTM
+        FROM   TB_RSMI_OVRS_DTA_RQST_PSN A
+        WHERE  DEL_YN = 'N'
+        AND  A.RQST_NO = #{rqstNo}
+    </insert>
+
+    <!--
+      Copier les données du Code de coopération données (Demande d'informations de l'étranger) !== 해외데이터_정보협력코드 복사 (select insert) ==!
+    -->
+    <insert id="insertSelectOvrsInfoClabCd" parameterType="alpass.ipt.rsm.com.vo.RsmInfoClabCdVo">
+        /* insertSelectOvrsInfoClabCd */
+        INSERT into TB_RSMI_INFO_CLAB_CD
+        (
+              RQST_NO               /** N° De Demande !== 신청번호 ==! */
+            , DAT_EXCG_TP_CD        /** Code de type d'échange d'information !== 자료교환구분코드 ==! */
+            , INFO_CLAB_CD          /** Code de coopération  !== 정보협력코드 ==! */
+            , DEL_YN                /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID         /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM        /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID          /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM         /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        SELECT
+              #{ovrsDtaRqstRgsrNo} as RQST_NO
+            , A.DAT_EXCG_TP_CD
+            , A.INFO_CLAB_CD
+            , A.DEL_YN
+            , #{frstRegstId} as FRST_REGST_ID
+            , A.FRST_RGSR_DTTM
+            , #{lastChprId} as LAST_CHPR_ID
+            , A.LAST_CHG_DTTM
+        FROM   TB_RSMI_INFO_CLAB_CD A
+        WHERE  A.DEL_YN = 'N'
+        AND  A.RQST_NO = #{rqstNo}
+    </insert>
+
+    <!--
+      Copier les données du code de coopération nationale par organisme répondeur (Demande d'informations de l'étranger) !== 해외데이터_국가기관정보협력코드 복사 (select insert) ==!
+    -->
+    <insert id="insertSelectOvrsCntyInfoClabCd" parameterType="alpass.ipt.rsm.com.vo.RsmCntyIttInfoClabCdVo">
+        /* insertSelectOvrsCntyInfoClabCd */
+        INSERT into TB_RSMI_CNTY_ITT_INFO_CLAB_CD
+        (
+              RQST_NO                   /** N° De Demande !== 신청번호 ==! */
+            , DAT_EXCG_TP_CD            /** Code de type d'échange d'information !== 자료교환구분코드 ==! */
+            , INFO_CLAB_ITT_CD          /** Code d'organisme engagé dans la coopération !== 정보협력기관코드 ==! */
+            , INFO_CLAB_CD              /** Code de coopération  !== 정보협력코드 ==! */
+            , DEL_YN                    /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID             /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM            /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID              /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM             /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        SELECT
+              #{ovrsDtaRqstRgsrNo} as RQST_NO
+            , A.DAT_EXCG_TP_CD
+            , A.INFO_CLAB_ITT_CD
+            , A.INFO_CLAB_CD
+            , A.DEL_YN
+            , #{frstRegstId} as FRST_REGST_ID
+            , A.FRST_RGSR_DTTM
+            , #{lastChprId} as LAST_CHPR_ID
+            , A.LAST_CHG_DTTM
+        FROM   TB_RSMI_CNTY_ITT_INFO_CLAB_CD A
+        WHERE  A.DEL_YN = 'N'
+        AND  A.RQST_NO = #{rqstNo}
+        <if test='infoClabIttCd != null and infoClabIttCd != "" '>
+            AND A.INFO_CLAB_ITT_CD = #{infoClabIttCd}
+        </if>
+        AND  A.DAT_EXCG_TP_CD = 'B'
+
+    </insert>
+
+    <!--
+      Copier les données du historique d'approbation des informations de base (Demande d'informations de l'étranger) !== 해외데이터_기초정보결재이력 복사 (select insert) ==!
+    -->
+    <insert id="insertSelectBaseInfoAprvH" parameterType="alpass.ipt.rsm.basc.vo.RsmBascInfoAprvHVo">
+        /* insertSelectBaseInfoAprvH */
+        INSERT INTO TB_RSMI_BASC_INFO_APRV_H (
+              BASC_INFO_RELA_NO               /* N° relatif à l'information de base !== 기초정보관련번호 ==! */
+            , HIST_SRNO                       /* N° de séquence de l'histoire  !== 이력일련번호 ==! */
+            , BASC_INFO_PT_CD                 /* Code de type d'information de base !== 기초정보유형코드 ==! */
+            , APRV_ID                         /* ID d'approbation  !== 결재ID ==! */
+            , PRCS_STTS_CD                    /* CODE DE STATUT DE CRITÈRE  !== 처리상태코드 ==! */
+            , PRCS_OPIN_CN                    /* AVIS DU CHEF  !== 처리의견내용 ==! */
+            , DEL_YN                          /* Suppression ON !== 삭제여부 ==! */
+            , FRST_REGST_ID                   /* ID du premier enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM                  /* Date et heure de premier enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                    /* ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                   /* Date et heure de modification finale !== 최종변경일시 ==! */
+        )
+        SELECT
+              #{ovrsDtaRqstRgsrNo} as BASC_INFO_RELA_NO
+            , HIST_SRNO
+            , BASC_INFO_PT_CD
+            , APRV_ID
+            , PRCS_STTS_CD
+            , PRCS_OPIN_CN
+            , 'N' as DEL_YN
+            , #{frstRegstId} as FRST_REGST_ID
+            , SYSTIMESTAMP as  FRST_RGSR_DTTM
+            , #{lastChprId} as LAST_CHPR_ID
+            , SYSTIMESTAMP as  LAST_CHG_DTTM
+        FROM TB_RSMI_BASC_INFO_APRV_H
+        WHERE DEL_YN ='N'
+        AND BASC_INFO_RELA_NO = #{bascInfoRelaNo}
+    </insert>
+
+
+</mapper>

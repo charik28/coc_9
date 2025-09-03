@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  Mapper : traitement d'approbation des facteurs de risque !== 위험요소 결재처리  Mapper ==!
+-->
+<mapper namespace="alpass.ipt.rsm.basc.mapper.RsmRskFtorAprvPrcsMapper">
+
+   <!--
+       Traitement après l'approbation !== 결재 후처리 (위험요소 처리상태코드 수정) ==!
+   -->
+    <update id="processAprvAfJob" parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorAprvPrcsVo">
+        /* processAprvAfJob */
+        UPDATE TB_RSMI_RSK_FTOR
+        SET
+              PRCS_STTS_CD = #{prcsSttsCd}              /* Code De Statut De Traitement !== 처리상태코드 ==! */
+            , APRV_ID = #{aprvId}                       /* ID d'approbation  !== 결재ID ==! */
+            , APRV_BSOP_TP_CD = #{aprvBsopTpCd}         /* Code de type d'approbation !== 결재업무구분코드 ==! */
+            , LAST_CHPR_ID = #{lastChprId}              /* Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP              /* Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE DEL_YN = 'N'
+        AND RSK_FTOR_NO = #{rskFtorNo}                  /* Numéro d'élément de risque !== 위험요소번호 ==! */
+
+    </update>
+
+    <!--
+       @TODO 번역필요 !== 위험요소 테이블 '위험요소적용여부' 컬럼 'Y' 업데이트 ==!
+    -->
+    <update id="updateRskFtorAplyYnY" parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorAprvPrcsVo">
+        /* updateRskFtorAplyYnY */
+        UPDATE TB_RSMI_RSK_FTOR
+        SET  RSK_FTOR_APLY_YN = 'Y'                    /* Facteur de risque appliqué O/N !== 위험요소적용여부 ==! */
+          ,  LAST_CHPR_ID = #{lastChprId}              /* Id Du Modificateur Final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM = SYSTIMESTAMP               /* Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE DEL_YN = 'N'
+        AND RSK_FTOR_NO = #{rskFtorNo}                 /* Numéro d'élément de risque !== 위험요소번호 ==! */
+
+    </update>
+
+    <!--
+       Facteur de risque (Appliqué O/N ) Modifier !== 위험요소 테이블 '위험요소적용여부' 컬럼 업데이트 ==!
+    -->
+    <update id="updateRskFtorAplyYn" parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorAprvPrcsVo">
+        /* updateRskFtorAplyYn */
+        UPDATE TB_RSMI_RSK_FTOR
+        SET  RSK_FTOR_APLY_YN = #{rskFtorAplyYn}      /* Facteur de risque appliqué O/N !== 위험요소적용여부 ==! */
+           , LAST_CHPR_ID = #{lastChprId}             /* Id Du Modificateur Final !== 최종변경자ID ==! */
+           , LAST_CHG_DTTM = SYSTIMESTAMP             /* Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE DEL_YN = 'N'
+        AND RSK_FTOR_NO = #{rskFtorNo}                /* Numéro d'élément de risque !== 위험요소번호 ==! */
+
+    </update>
+
+</mapper>

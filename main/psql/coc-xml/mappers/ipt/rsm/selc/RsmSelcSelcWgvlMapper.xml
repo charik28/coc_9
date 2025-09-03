@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.rsm.selc.mapper.RsmSelcSelcWgvlMapper">
+
+    <!--
+    [Pondérateur de séléctivité] Enregistrer !== [선별가중치관리] 등록 ==!
+    -->
+    <insert id="insertSelcWgvl" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcSelcWgvlVo">
+
+    /* insertSelcWgvl */
+    INSERT INTO TB_RSMI_SELC_WGVL_BASE
+    (
+          BASE_RGSR_NO                      /* Numéro d'enregistrement !== 기준등록번호 ==! */
+        , LBCR_BASE_CSTM_TP_CD              /* Code de type de bureau pour le critère à haut risque !== 우범기준세관구분코드 ==! */
+        , LBCR_BASE_WGVL_VAL                /* Pondérateur du critère à haut risque !== 우범기준가중치값 ==! */
+        , FRST_BASE_CSTM_TP_CD              /* Code de type de bureau pour le premier critère !== 최조기준세관구분코드 ==! */
+        , FRST_BASE_WGVL_VAL                /* Valeur du pondérateur pour le premier cirtère !== 최초기준가중치값 ==! */
+        , DEL_YN                            /* Suppression ON !== 삭제여부 ==! */
+        , FRST_REGST_ID                     /* ID du premier enregistrant  !== 최초등록자ID ==! */
+        , FRST_RGSR_DTTM                    /* Date et heure de premier enregistrement !== 최초등록일시 ==! */
+        , LAST_CHPR_ID                      /* ID du modificateur final !== 최종변경자ID ==! */
+        , LAST_CHG_DTTM                     /* Date et heure de modification finale !== 최종변경일시 ==! */
+    ) VALUES (
+          #{baseRgsrNo}                     /* Numéro d'enregistrement !== 기준등록번호 ==! */
+        , #{lbcrBaseCstmTpCd}               /* Code de type de bureau pour le critère à haut risque !== 우범기준세관구분코드 ==! */
+        , #{lbcrBaseWgvlVal}                /* Pondérateur du critère à haut risque !== 우범기준가중치값 ==! */
+        , #{frstBaseCstmTpCd}               /* Code de type de bureau pour le premier critère !== 최조기준세관구분코드 ==! */
+        , #{frstBaseWgvlVal}                /* Valeur du pondérateur pour le premier cirtère !== 최초기준가중치값 ==! */
+        , #{delYn}                          /* Suppression ON !== 삭제여부 ==! */
+        , #{frstRegstId}                    /* ID du premier enregistrant  !== 최초등록자ID ==! */
+        , SYSTIMESTAMP                      /* Date et heure de premier enregistrement !== 최초등록일시 ==! */
+        , #{lastChprId}                     /* ID du modificateur final !== 최종변경자ID ==! */
+        , SYSTIMESTAMP                      /* Date et heure de modification finale !== 최종변경일시 ==! */
+    )
+
+    </insert>
+
+    <!--
+    [Pondérateur de séléctivité] Consulter les détails !== [선별가중치관리] 상세조회 ==!
+    -->
+    <select id="selectSelcWgvl" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcSelcWgvlVo" resultType="alpass.ipt.rsm.com.vo.RsmSelcWgvlBaseVo">
+
+    /* selectSelcWgvl */
+    SELECT
+          BASE_RGSR_NO                      /* Numéro d'enregistrement !== 기준등록번호 ==! */
+        , LBCR_BASE_CSTM_TP_CD              /* Code de type de bureau pour le critère à haut risque !== 우범기준세관구분코드 ==! */
+        , LBCR_BASE_WGVL_VAL                /* Pondérateur du critère à haut risque !== 우범기준가중치값 ==! */
+        , FRST_BASE_CSTM_TP_CD              /* Code de type de bureau pour le premier critère !== 최조기준세관구분코드 ==! */
+        , FRST_BASE_WGVL_VAL                /* Valeur du pondérateur pour le premier cirtère !== 최초기준가중치값 ==! */
+        , DEL_YN                            /* Suppression ON !== 삭제여부 ==! */
+        , FRST_REGST_ID                     /* ID du premier enregistrant  !== 최초등록자ID ==! */
+        , FRST_RGSR_DTTM                    /* Date et heure de premier enregistrement !== 최초등록일시 ==! */
+        , LAST_CHPR_ID                      /* ID du modificateur final !== 최종변경자ID ==! */
+        , LAST_CHG_DTTM                     /* Date et heure de modification finale !== 최종변경일시 ==! */
+    FROM  TB_RSMI_SELC_WGVL_BASE
+    WHERE DEL_YN = 'N'                      /* Suppression ON !== 삭제여부 ==! */
+    AND   BASE_RGSR_NO = #{baseRgsrNo}      /* Numéro d'enregistrement !== 기준등록번호 ==! */
+
+    </select>
+
+    <!--
+    [Pondérateur de séléctivité] Modifier !== [선별가중치관리] 수정 ==!
+    -->
+    <update id="updateSelcWgvl" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcSelcWgvlVo">
+
+    /* updateSelcWgvl */
+    UPDATE TB_RSMI_SELC_WGVL_BASE
+    SET    LBCR_BASE_CSTM_TP_CD     = #{lbcrBaseCstmTpCd}               /* Code de type de bureau pour le critère à haut risque !== 우범기준세관구분코드 ==! */
+         , LBCR_BASE_WGVL_VAL       = #{lbcrBaseWgvlVal}                /* Pondérateur du critère à haut risque !== 우범기준가중치값 ==! */
+         , FRST_BASE_CSTM_TP_CD     = #{frstBaseCstmTpCd}               /* Code de type de bureau pour le premier critère !== 최조기준세관구분코드 ==! */
+         , FRST_BASE_WGVL_VAL       = #{frstBaseWgvlVal}                /* Valeur du pondérateur pour le premier cirtère !== 최초기준가중치값 ==! */
+         , DEL_YN                   = #{delYn}                          /* Suppression ON !== 삭제여부 ==! */
+         , LAST_CHPR_ID             = #{lastChprId}                     /* ID du modificateur final !== 최종변경자ID ==! */
+         , LAST_CHG_DTTM            = SYSTIMESTAMP                      /* Date et heure de modification finale !== 최종변경일시 ==! */
+    WHERE  BASE_RGSR_NO = #{baseRgsrNo}                                 /* Numéro d'enregistrement !== 기준등록번호 ==! */
+
+    </update>
+
+    <!--
+    [Pondérateur de séléctivité] Supprimer !== [선별가중치관리] 삭제 ==!
+    -->
+    <update id="updateSelcWgvlToDelete" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcSelcWgvlVo">
+
+    /* updateSelcWgvlToDelete */
+    UPDATE TB_RSMI_SELC_WGVL_BASE
+    SET    DEL_YN                   = 'Y'                               /* Suppression ON !== 삭제여부 ==! */
+         , LAST_CHPR_ID             = #{lastChprId}                     /* ID du modificateur final !== 최종변경자ID ==! */
+         , LAST_CHG_DTTM            = SYSTIMESTAMP                      /* Date et heure de modification finale !== 최종변경일시 ==! */
+    WHERE  BASE_RGSR_NO = #{baseRgsrNo}                                 /* Numéro d'enregistrement !== 기준등록번호 ==! */
+
+    </update>
+
+</mapper>

@@ -1,0 +1,600 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="alpass.ipt.col.sale.mapper.ColSaleWtnncMgmtMapper">
+
+    <!--
+    Consulter la liste de la gestion du procès-verbal de vente !==판매조서관리 목록을 조회한다==!
+    -->
+    <select id="selectColSaleWtnncMgmtList" parameterType="alpass.ipt.col.sale.vo.ColSaleWtnncMgmtVo" resultType="alpass.ipt.col.sale.vo.ColSaleWtnncMgmtVo">
+        /** ColSaleWtnncMgmtMapper_selectColSaleWtnncMgmtList **/
+        <include refid="pagination.header" />
+        SELECT
+        WTNNC.SALE_WTNNC_NO
+        , WTNNC.LOT_NO
+        , WTNNC.INVN_MGMT_NO
+        , WTNNC.CSTM_CD
+        , FN_GET_ORGN_NM(WTNNC.CSTM_CD) AS CSTM_NM								/** Nom Du Bureau !== 세관명 ==! */
+        , WTNNC.DEPT_CD
+        , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = UPPER(WTNNC.DEPT_CD)) AS DEPT_NM
+        , PCDN.REFF_NO
+        , WTNNC.SCBR_IDFY_NO_TP_CD
+        , WTNNC.SCBR_IDFY_NO
+        , WTNNC.SCBR_NM
+        , WTNNC.ADDR
+        , WTNNC.CAG_CN
+        , WTNNC.CNTR_NO
+        , WTNNC.QTY
+        , WTNNC.PURE_ERN
+        , WTNNC.RGSR_TRIF
+        , WTNNC.TAMT
+        , WTNNC.WORD_AMT_VAL
+        , WTNNC.PBAC_PLC_NM
+        , TO_CHAR(TO_DATE(WTNNC.PBAC_DT,'YYYYMMDD'),'DD/MM/YYYY') AS PBAC_DT
+        , WTNNC.RECP_NO
+        , TO_CHAR(TO_DATE(WTNNC.RECP_DT,'YYYYMMDD'),'DD/MM/YYYY') AS RECP_DT
+        , WTNNC.SCBD_APRE_EMP_ID
+        , WTNNC.SCBD_DT
+        , TO_CHAR(TO_DATE(WTNNC.SCBD_DT,'YYYYMMDD'),'DD/MM/YYYY') AS SCBD_DT
+        , WTNNC.RMRK_CN
+        , TO_CHAR(TO_DATE(WTNNC.RGSR_DT,'YYYYMMDD'),'DD/MM/YYYY') AS RGSR_DT
+        , WTNNC.CMRC_REGS_NO
+        , WTNNC.ATCH_FILE_ID
+        , DTL.LAST_USG_CD
+        , WTNNC.FRST_REGST_ID								    				/** ID du premier enregistrant !== 최초등록자ID ==! */
+        , WTNNC.FRST_RGSR_DTTM									    			/** Date et heure de premier enregistrement !== 생성일자 ==! */
+        , WTNNC.LAST_CHPR_ID														/** ID du modificateur final !== 최종변경자ID ==! */
+        , WTNNC.LAST_CHG_DTTM													/** Date et heure de modification finale !== 최종변경일시 ==! */
+        FROM TB_COLI_SALE_WTNNC WTNNC
+        LEFT JOIN TB_COLI_CMDT_INVN_PCDN_DTL DTL ON DTL.INVN_MGMT_NO = WTNNC.INVN_MGMT_NO AND DTL.PDLS_SRNO = WTNNC.PDLS_SRNO
+             ,TB_COLI_CMDT_INVN_PCDN PCDN
+        WHERE  WTNNC.DEL_YN = 'N'
+        AND WTNNC.INVN_MGMT_NO = PCDN.INVN_MGMT_NO
+        <if test="sctrCd != null and sctrCd != ''">
+            AND  WTNNC.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+        </if>
+        <if test="uprOrgnCd != null and uprOrgnCd != ''">
+            AND  WTNNC.CSTM_CD = #{uprOrgnCd}
+        </if>
+        <if test="orgnCd != null and orgnCd != ''">
+            AND (WTNNC.DEPT_CD = #{orgnCd} OR WTNNC.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                           OR WTNNC.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}))))
+        </if>
+        <if test='cstmCd != null and cstmCd !="" '>
+            AND    WTNNC.CSTM_CD = #{cstmCd}
+        </if>
+        <if test="deptCd != null and deptCd != ''">
+            AND (WTNNC.DEPT_CD = #{deptCd} OR WTNNC.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                           OR WTNNC.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+            OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+        </if>
+        <if test='cagMgmtNo != null and cagMgmtNo !="" '>
+            AND    PCDN.CAG_MGMT_NO = #{cagMgmtNo}
+        </if>
+        <if test='saleWtnncNo != null and saleWtnncNo !="" '>
+            AND    WTNNC.SALE_WTNNC_NO = #{saleWtnncNo}
+        </if>
+        <if test='rgsrDtFrom != null and rgsrDtFrom !="" and rgsrDtTo != null and rgsrDtTo !="" '>
+            AND    WTNNC.RGSR_DT BETWEEN TO_CHAR(TO_DATE(#{rgsrDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{rgsrDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+        </if>
+        ORDER BY WTNNC.PBAC_DT desc, WTNNC.SALE_WTNNC_NO ASC
+        <include refid="pagination.footer" />
+    </select>
+
+    <!--
+    Consulter les détails de la gestion du procès-verbal de vente !==판매조서관리 상세를 조회한다==!
+    -->
+    <select id="selectColSaleWtnncMgmt" parameterType="alpass.ipt.col.sale.vo.ColSaleWtnncMgmtVo" resultType="alpass.ipt.col.sale.vo.ColSaleWtnncMgmtVo">
+        /** ColSaleWtnncMgmtMapper_selectColSaleWtnncMgmt **/
+        SELECT
+        WTNNC.SALE_WTNNC_NO
+        , WTNNC.LOT_NO
+        , WTNNC.INVN_MGMT_NO
+        , WTNNC.CSTM_CD
+        , FN_GET_ORGN_NM(WTNNC.CSTM_CD) AS CSTM_NM								/** Nom Du Bureau !== 세관명 ==! */
+        , WTNNC.DEPT_CD
+        , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = UPPER(WTNNC.DEPT_CD)) AS DEPT_NM
+        , WTNNC.SCBR_IDFY_NO_TP_CD
+        , WTNNC.SCBR_IDFY_NO
+        , WTNNC.SCBR_NM
+        , WTNNC.ADDR
+        , WTNNC.CAG_CN
+        , WTNNC.CNTR_NO
+        , WTNNC.QTY
+        , WTNNC.PURE_ERN
+        , WTNNC.RGSR_TRIF
+        , WTNNC.TAMT
+        , WTNNC.WORD_AMT_VAL
+        , WTNNC.PBAC_PLC_NM
+        , TO_CHAR(TO_DATE(WTNNC.PBAC_DT,'YYYYMMDD'),'DD/MM/YYYY') AS PBAC_DT
+        , WTNNC.RECP_NO
+        , TO_CHAR(TO_DATE(WTNNC.RECP_DT,'YYYYMMDD'),'DD/MM/YYYY') AS RECP_DT
+        , WTNNC.SCBD_APRE_EMP_ID
+        , WTNNC.SCBD_DT
+        , TO_CHAR(TO_DATE(WTNNC.SCBD_DT,'YYYYMMDD'),'DD/MM/YYYY') AS SCBD_DT
+        , WTNNC.RMRK_CN
+        , TO_CHAR(TO_DATE(WTNNC.RGSR_DT,'YYYYMMDD'),'DD/MM/YYYY') AS RGSR_DT
+        , WTNNC.CMRC_REGS_NO
+        , WTNNC.ATCH_FILE_ID
+        , WTNNC.FRST_REGST_ID								    				/** ID du premier enregistrant !== 최초등록자ID ==! */
+        , WTNNC.FRST_RGSR_DTTM									    			/** Date et heure de premier enregistrement !== 생성일자 ==! */
+        , WTNNC.LAST_CHPR_ID														/** ID du modificateur final !== 최종변경자ID ==! */
+        , WTNNC.LAST_CHG_DTTM													/** Date et heure de modification finale !== 최종변경일시 ==! */
+        FROM TB_COLI_SALE_WTNNC WTNNC
+        ,TB_COLI_CMDT_INVN_PCDN PCDN
+        WHERE  WTNNC.DEL_YN = 'N'
+        AND WTNNC.INVN_MGMT_NO = PCDN.INVN_MGMT_NO
+        <if test='cagMgmtNo != null and cagMgmtNo !="" '>
+            AND    PCDN.CAG_MGMT_NO = #{cagMgmtNo}
+        </if>
+        <if test='saleWtnncNo != null and saleWtnncNo !="" '>
+            AND    WTNNC.SALE_WTNNC_NO = #{saleWtnncNo}
+        </if>
+    </select>
+
+    <!--
+    Ajouter la gestion du procès-verbal de vente !==판매조서관리를 추가한다==!
+    -->
+    <insert id="insertColSaleWtnncMgmt" parameterType="alpass.ipt.col.sale.vo.ColSaleWtnncMgmtVo">
+        /** ColSaleWtnncMgmtMapper_insertColSaleWtnncMgmt **/
+        INSERT INTO TB_COLI_SALE_WTNNC (
+            SALE_WTNNC_NO
+            , LOT_NO
+            , INVN_MGMT_NO
+            , PDLS_SRNO
+            , CSTM_CD                                                           /** Code du bureau !== 세관코드 ==! */
+            , DEPT_CD
+            , SCBR_IDFY_NO_TP_CD
+            , SCBR_IDFY_NO
+            , SCBR_NM
+            , ADDR
+            , CAG_CN
+            , CNTR_NO
+            , QTY
+            , PURE_ERN
+            , RGSR_TRIF
+            , TAMT
+            , WORD_AMT_VAL
+            , PBAC_PLC_NM
+            , PBAC_DT
+            , SCBD_APRE_EMP_ID
+            , SCBD_DT
+            , RMRK_CN
+            , ATCH_FILE_ID
+            , RGSR_DT
+            , CMRC_REGS_NO
+            , DEL_YN							    						/** Suppression ON !== 삭제여부  ==! */
+            , FRST_REGST_ID								    				/** ID du premier enregistrant !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM									    			/** Date et heure de premier enregistrement !== 생성일자 ==! */
+            , LAST_CHPR_ID														/** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM													/** Date et heure de modification finale !== 최종변경일시 ==! */
+            , RECP_NO
+            , RECP_DT
+        ) VALUES (
+            #{saleWtnncNo}
+            , #{lotNo}
+            , #{invnMgmtNo}
+            , #{pdlsSrno}
+            , #{cstmCd}
+            , #{deptCd}
+            , #{scbrIdfyNoTpCd}
+            , #{scbrIdfyNo}
+            , #{scbrNm}
+            , #{addr}
+            , #{cagCn}
+            , #{cntrNo}
+            , #{qty}
+            , #{pureErn}
+            , #{rgsrTrif}
+            , #{tamt}
+            , #{wordAmtVal}
+            , #{pbacPlcNm}
+            , TO_CHAR(TO_DATE(#{pbacDt} , 'DD/MM/YYYY'), 'YYYYMMDD')
+            , #{scbdApreEmpId}
+            , TO_CHAR(TO_DATE(#{scbdDt} , 'DD/MM/YYYY'), 'YYYYMMDD')
+            , #{rmrkCn}
+            , #{atchFileId}
+            , TO_CHAR(TO_DATE(#{rgsrDt} , 'DD/MM/YYYY'), 'YYYYMMDD')
+            , #{cmrcRegsNo}
+            , 'N'
+            , #{frstRegstId}
+            , SYSTIMESTAMP
+            , #{lastChprId}
+            , SYSTIMESTAMP
+            , #{recpNo}
+            , TO_CHAR(TO_DATE(#{recpDt} , 'DD/MM/YYYY'), 'YYYYMMDD')
+        )
+    </insert>
+
+    <!--
+    Ajouter le procès-verbal de vente suite à la modification !==판매조서관리를 수정에의한 추가한다==!
+    -->
+    <insert id="updateInsertColSaleWtnncMgmt" parameterType="alpass.ipt.col.sale.vo.ColSaleWtnncMgmtVo">
+        /** ColSaleWtnncMgmtMapper_updateInsertColSaleWtnncMgmt **/
+        INSERT INTO TB_COLI_SALE_WTNNC (
+             SALE_WTNNC_NO
+           , LOT_NO
+           , INVN_MGMT_NO
+           , PDLS_SRNO
+           , CSTM_CD                                                           /** Code du bureau !== 세관코드 ==! */
+           , DEPT_CD
+           , SCBR_IDFY_NO_TP_CD
+           , SCBR_IDFY_NO
+           , SCBR_NM
+           , ADDR
+           , CAG_CN
+           , CNTR_NO
+           , QTY
+           , PURE_ERN
+           , RGSR_TRIF
+           , TAMT
+           , WORD_AMT_VAL
+           , PBAC_PLC_NM
+           , PBAC_DT
+           , SCBD_APRE_EMP_ID
+           , SCBD_DT
+           , RMRK_CN
+           , ATCH_FILE_ID
+           , RGSR_DT
+           , CMRC_REGS_NO
+           , DEL_YN							    						/** Suppression ON !== 삭제여부  ==! */
+           , FRST_REGST_ID								    				/** ID du premier enregistrant !== 최초등록자ID ==! */
+           , FRST_RGSR_DTTM									    			/** Date et heure de premier enregistrement !== 생성일자 ==! */
+           , LAST_CHPR_ID														/** ID du modificateur final !== 최종변경자ID ==! */
+           , LAST_CHG_DTTM													/** Date et heure de modification finale !== 최종변경일시 ==! */
+           , RECP_NO
+           , RECP_DT
+        ) VALUES (
+             #{saleWtnncNo}
+         , #{lotNo}
+         , #{invnMgmtNo}
+         , #{pdlsSrno}
+         , #{cstmCd}
+         , #{deptCd}
+         , #{scbrIdfyNoTpCd}
+         , #{scbrIdfyNo}
+         , #{scbrNm}
+         , #{addr}
+         , #{cagCn}
+         , #{cntrNo}
+         , #{qty}
+         , #{pureErn}
+         , #{rgsrTrif}
+         , #{tamt}
+         , #{wordAmtVal}
+         , #{pbacPlcNm}
+         , TO_CHAR(TO_DATE(#{pbacDt} , 'DD/MM/YYYY'), 'YYYYMMDD')
+         , #{scbdApreEmpId}
+         , TO_CHAR(TO_DATE(#{scbdDt} , 'DD/MM/YYYY'), 'YYYYMMDD')
+         , #{rmrkCn}
+         , #{atchFileId}
+         , TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD')
+         , #{cmrcRegsNo}
+         , 'N'
+         , #{frstRegstId}
+         , SYSTIMESTAMP
+         , #{lastChprId}
+         , SYSTIMESTAMP
+         , #{recpNo}
+         , TO_CHAR(TO_DATE(#{recpDt} , 'DD/MM/YYYY'), 'YYYYMMDD')
+         )
+    </insert>
+
+    <!--
+    Modifier la gestion du procès-verbal de vente !==판매조서관리를 수정한다==!
+    -->
+    <update id="updateColSaleWtnncMgmt" parameterType="alpass.ipt.col.sale.vo.ColSaleWtnncMgmtVo">
+        /** ColSaleWtnncMgmtMapper_updateColSaleWtnncMgmt **/
+        UPDATE  TB_COLI_SALE_WTNNC SET
+            INVN_MGMT_NO = #{invnMgmtNo}
+            , CNTR_NO = #{cntrNo}
+            , CAG_CN = #{cagCn}
+            , QTY = #{qty}
+            , CMRC_REGS_NO = #{cmrcRegsNo}
+            , SCBR_IDFY_NO = #{scbrIdfyNo}
+            , SCBR_NM = #{scbrNm}
+            , ADDR = #{addr}
+            , PURE_ERN = #{pureErn}
+            , RGSR_TRIF = #{rgsrTrif}
+            , TAMT = #{tamt}
+            , WORD_AMT_VAL = #{wordAmtVal}
+            , PBAC_PLC_NM = #{pbacPlcNm}
+            , PBAC_DT = TO_CHAR(TO_DATE(#{pbacDt} , 'DD/MM/YYYY'), 'YYYYMMDD')
+            , RECP_NO = #{recpNo}
+            , RECP_DT = TO_CHAR(TO_DATE(#{recpDt} , 'DD/MM/YYYY'), 'YYYYMMDD')
+            , RMRK_CN = #{rmrkCn}
+            , DEL_YN = 'N'
+            , LAST_CHPR_ID = #{lastChprId}
+            , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE SALE_WTNNC_NO = #{saleWtnncNo}
+        AND LOT_NO = #{lotNo}
+    </update>
+
+    <!--
+    Supprimer la gestion du procès-verbal de vente !==판매조서관리를 삭제한다==!
+    -->
+    <update id="deleteColSaleWtnncMgmt" parameterType="alpass.ipt.col.sale.vo.ColSaleWtnncMgmtVo">
+        /** ColSaleWtnncMgmtMapper_deleteColSaleWtnncMgmt **/
+        UPDATE  TB_COLI_SALE_WTNNC SET
+            DEL_YN = 'Y'
+            , LAST_CHPR_ID = #{lastChprId}
+            , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE SALE_WTNNC_NO = #{saleWtnncNo}
+          AND LOT_NO = #{lotNo}
+    </update>
+
+    <!--
+    Supprimer la gestion du procès-verbal de vente !==판매조서관리를 삭제한다==!
+    -->
+    <update id="deleteColSaleWtnncMgmtSaleWtnncNo" parameterType="alpass.ipt.col.sale.vo.ColSaleWtnncMgmtVo">
+        /** ColSaleWtnncMgmtMapper_deleteColSaleWtnncMgmtSaleWtnncNo **/
+        UPDATE  TB_COLI_SALE_WTNNC SET
+            DEL_YN = 'Y'
+            , LAST_CHPR_ID = #{lastChprId}
+            , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE SALE_WTNNC_NO = #{saleWtnncNo}
+    </update>
+
+    <!--
+    Consulter la liste des fol enchérisseurs !==블랙리스트 목록을 조회한다==!
+    -->
+    <select id="selectColSaleAbnrBidrMgmtList" parameterType="alpass.ipt.col.com.vo.ColAbnrBidrMgmtVo" resultType="alpass.ipt.col.com.vo.ColAbnrBidrMgmtVo">
+        /** ColSaleWtnncMgmtMapper_selectColSaleAbnrBidrMgmtList **/
+        SELECT
+        BIDR.SALE_WTNNC_NO
+        , BIDR.LOT_NO
+        , BIDR.DTL_SRNO
+        , BIDR.CSTM_CD
+        , FN_GET_ORGN_NM(BIDR.CSTM_CD) AS CSTM_NM
+        , BIDR.DEPT_CD
+        , BIDR.BIDR_IDFY_NO_TP_CD
+        , BIDR.BIDR_IDFY_NO
+        , BIDR.BIDR_NM
+        , BIDR.RMRK_CN
+        , BIDR.RGSR_EMP_ID
+        , BIDR.FRST_REGST_ID								    				/** ID du premier enregistrant !== 최초등록자ID ==! */
+        , BIDR.FRST_RGSR_DTTM									    			/** Date et heure de premier enregistrement !== 생성일자 ==! */
+        , BIDR.LAST_CHPR_ID														/** ID du modificateur final !== 최종변경자ID ==! */
+        , BIDR.LAST_CHG_DTTM													/** Date et heure de modification finale !== 최종변경일시 ==! */
+        FROM   TB_COLI_ABNR_BIDR_MGMT BIDR
+        WHERE  BIDR.DEL_YN = 'N'
+        <if test='saleWtnncNo != null and saleWtnncNo !="" '>
+            AND    BIDR.SALE_WTNNC_NO = #{saleWtnncNo}
+        </if>
+        <if test='lotNo != null and lotNo !="" '>
+            AND    BIDR.LOT_NO = #{lotNo}
+        </if>
+        ORDER BY BIDR.SALE_WTNNC_NO desc, BIDR.LOT_NO desc, BIDR.DTL_SRNO ASC
+    </select>
+
+    <!--
+    Supprimer la fol enchérisseurs !==블랙리스트를 삭제한다==!
+    -->
+    <update id="deleteColSaleAbnrBidrMgmt" parameterType="alpass.ipt.col.com.vo.ColAbnrBidrMgmtVo">
+        /** ColSaleWtnncMgmtMapper_deleteColSaleAbnrBidrMgmt **/
+        UPDATE  TB_COLI_ABNR_BIDR_MGMT SET
+            DEL_YN = 'Y'
+            , LAST_CHPR_ID = #{lastChprId}
+            , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE SALE_WTNNC_NO = #{saleWtnncNo}
+          AND LOT_NO = #{lotNo}
+    </update>
+
+    <!--
+    Ajouter la fol enchérisseurs !==블랙리스트를 추가한다==!
+    -->
+    <insert id="insertColSaleAbnrBidrMgmt" parameterType="alpass.ipt.col.com.vo.ColAbnrBidrMgmtVo">
+        /** ColSaleWtnncMgmtMapper_insertColSaleAbnrBidrMgmt **/
+        INSERT INTO TB_COLI_ABNR_BIDR_MGMT (
+             SALE_WTNNC_NO
+            , LOT_NO
+            , DTL_SRNO
+            , CSTM_CD                                                           /** Code du bureau !== 세관코드 ==! */
+            , DEPT_CD
+            , BIDR_IDFY_NO_TP_CD
+            , BIDR_IDFY_NO
+            , BIDR_NM
+            , RMRK_CN
+            , RGSR_EMP_ID
+            , DEL_YN							    						/** Suppression ON !== 삭제여부  ==! */
+            , FRST_REGST_ID								    				/** ID du premier enregistrant !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM									    			/** Date et heure de premier enregistrement !== 생성일자 ==! */
+            , LAST_CHPR_ID														/** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM													/** Date et heure de modification finale !== 최종변경일시 ==! */
+        ) VALUES (
+            #{saleWtnncNo}
+            , #{lotNo}
+            , (SELECT NVL(MAX(DTL_SRNO), 0) + 1 FROM TB_COLI_ABNR_BIDR_MGMT WHERE SALE_WTNNC_NO = #{saleWtnncNo} AND LOT_NO = #{lotNo})
+            , #{cstmCd}
+            , #{deptCd}
+            , #{bidrIdfyNoTpCd}
+            , #{bidrIdfyNo}
+            , #{bidrNm}
+            , #{rmrkCn}
+            , #{rgsrEmpId}
+            , 'N'
+            , #{frstRegstId}
+            , SYSTIMESTAMP
+            , #{lastChprId}
+            , SYSTIMESTAMP
+            )
+    </insert>
+
+    <!--
+    Ajouter et modifier le fol enchérisseur !==블랙리스트를 추가 및 수정한다==!
+    -->
+    <insert id="insertColSaleAbnrBidrMgmtAdd" parameterType="alpass.ipt.col.com.vo.ColAbnrBidrMgmtVo">
+        /* ColSaleWtnncMgmtMapper_insertColSaleAbnrBidrMgmtAdd */
+        MERGE INTO TB_COLI_ABNR_BIDR_MGMT BIDR
+            USING DUAL ON (BIDR.SALE_WTNNC_NO = #{saleWtnncNo}
+                        AND BIDR.LOT_NO = #{lotNo}
+                        AND BIDR.DTL_SRNO = #{dtlSrno})
+            WHEN MATCHED THEN
+                UPDATE SET
+                    BIDR_IDFY_NO_TP_CD  = #{bidrIdfyNoTpCd}
+                    , BIDR_IDFY_NO      = #{bidrIdfyNo}
+                    , BIDR_NM           = #{bidrNm}
+                    , RMRK_CN           = #{rmrkCn}
+                    , DEL_YN            = 'N'
+                    , LAST_CHPR_ID      = #{lastChprId}
+                    , LAST_CHG_DTTM     = SYSTIMESTAMP
+            WHEN NOT MATCHED THEN
+                INSERT (
+                        SALE_WTNNC_NO
+                        , LOT_NO
+                        , DTL_SRNO
+                        , CSTM_CD                                                           /** Code du bureau !== 세관코드 ==! */
+                        , DEPT_CD
+                        , BIDR_IDFY_NO_TP_CD
+                        , BIDR_IDFY_NO
+                        , BIDR_NM
+                        , RMRK_CN
+                        , RGSR_EMP_ID
+                        , DEL_YN							    						/** Suppression ON !== 삭제여부  ==! */
+                        , FRST_REGST_ID								    				/** ID du premier enregistrant !== 최초등록자ID ==! */
+                        , FRST_RGSR_DTTM									    			/** Date et heure de premier enregistrement !== 생성일자 ==! */
+                        , LAST_CHPR_ID														/** ID du modificateur final !== 최종변경자ID ==! */
+                        , LAST_CHG_DTTM													/** Date et heure de modification finale !== 최종변경일시 ==! */
+                    ) VALUES (
+                        #{saleWtnncNo}
+                        , #{lotNo}
+                        , (SELECT NVL(MAX(DTL_SRNO), 0) + 1 FROM TB_COLI_ABNR_BIDR_MGMT WHERE SALE_WTNNC_NO = #{saleWtnncNo} AND LOT_NO = #{lotNo})
+                        , #{cstmCd}
+                        , #{deptCd}
+                        , #{bidrIdfyNoTpCd}
+                        , #{bidrIdfyNo}
+                        , #{bidrNm}
+                        , #{rmrkCn}
+                        , #{rgsrEmpId}
+                        , 'N'
+                        , #{frstRegstId}
+                        , SYSTIMESTAMP
+                        , #{lastChprId}
+                        , SYSTIMESTAMP
+                    )
+    </insert>
+
+    <!--
+    Modifier la fol enchérisseurs !==블랙리스트를 수정한다==!
+    -->
+    <update id="updateColSaleAbnrBidrMgmt" parameterType="alpass.ipt.col.com.vo.ColAbnrBidrMgmtVo">
+        /* ColSaleWtnncMgmtMapper_updateColSaleAbnrBidrMgmt */
+        UPDATE TB_COLI_ABNR_BIDR_MGMT SET
+            BIDR_IDFY_NO_TP_CD  = #{bidrIdfyNoTpCd}
+            , BIDR_IDFY_NO      = #{bidrIdfyNo}
+            , BIDR_NM           = #{bidrNm}
+            , RMRK_CN           = #{rmrkCn}
+            , DEL_YN            = 'N'
+            , LAST_CHPR_ID      = #{lastChprId}
+            , LAST_CHG_DTTM     = SYSTIMESTAMP
+        WHERE SALE_WTNNC_NO = #{saleWtnncNo}
+          AND LOT_NO = #{lotNo}
+          AND DTL_SRNO = #{dtlSrno}
+    </update>
+
+    <!--
+    Consulter la liste de la gestion du procès-verbal de vente !==판매조서관리 목록을 조회한다==!
+    -->
+    <select id="selectColSaleWtnnMgmtInvnMgmtNo" parameterType="alpass.ipt.col.sale.vo.ColSaleWtnncMgmtVo" resultType="alpass.ipt.col.sale.vo.ColSaleWtnncMgmtVo">
+        /** ColSaleWtnncMgmtMapper_selectColSaleWtnnMgmtInvnMgmtNo **/
+        SELECT
+        WTNNC.SALE_WTNNC_NO
+        , WTNNC.LOT_NO
+        , WTNNC.INVN_MGMT_NO
+        , WTNNC.CSTM_CD
+        , FN_GET_ORGN_NM(WTNNC.CSTM_CD) AS CSTM_NM								/** Nom Du Bureau !== 세관명 ==! */
+        , WTNNC.DEPT_CD
+        , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = UPPER(WTNNC.DEPT_CD)) AS DEPT_NM
+        , WTNNC.SCBR_IDFY_NO_TP_CD
+        , WTNNC.SCBR_IDFY_NO
+        , WTNNC.SCBR_NM
+        , WTNNC.ADDR
+        , WTNNC.CAG_CN
+        , WTNNC.CNTR_NO
+        , WTNNC.QTY
+        , WTNNC.PURE_ERN
+        , WTNNC.RGSR_TRIF
+        , WTNNC.TAMT
+        , WTNNC.WORD_AMT_VAL
+        , WTNNC.PBAC_PLC_NM
+        , TO_CHAR(TO_DATE(WTNNC.PBAC_DT,'YYYYMMDD'),'DD/MM/YYYY') AS PBAC_DT
+        , WTNNC.RECP_NO
+        , TO_CHAR(TO_DATE(WTNNC.RECP_DT,'YYYYMMDD'),'DD/MM/YYYY') AS RECP_DT
+        , WTNNC.SCBD_APRE_EMP_ID
+        , WTNNC.SCBD_DT
+        , TO_CHAR(TO_DATE(WTNNC.SCBD_DT,'YYYYMMDD'),'DD/MM/YYYY') AS SCBD_DT
+        , WTNNC.RMRK_CN
+        , TO_CHAR(TO_DATE(WTNNC.RGSR_DT,'YYYYMMDD'),'DD/MM/YYYY') AS RGSR_DT
+        , WTNNC.CMRC_REGS_NO
+        , WTNNC.ATCH_FILE_ID
+        , WTNNC.FRST_REGST_ID								    				/** ID du premier enregistrant !== 최초등록자ID ==! */
+        , WTNNC.FRST_RGSR_DTTM									    			/** Date et heure de premier enregistrement !== 생성일자 ==! */
+        , WTNNC.LAST_CHPR_ID														/** ID du modificateur final !== 최종변경자ID ==! */
+        , WTNNC.LAST_CHG_DTTM													/** Date et heure de modification finale !== 최종변경일시 ==! */
+        FROM TB_COLI_SALE_WTNNC WTNNC
+        WHERE  WTNNC.DEL_YN = 'N'
+        AND WTNNC.INVN_MGMT_NO = #{invnMgmtNo}
+        ORDER BY WTNNC.SALE_WTNNC_NO ASC
+    </select>
+
+    <!--
+    Consulter la liste de la gestion du procès-verbal de vente !==판매조서관리 목록을 조회한다==!
+    -->
+    <select id="selectColSaleWtnncNo" parameterType="alpass.ipt.col.sale.vo.ColSaleWtnncMgmtVo" resultType="alpass.ipt.col.sale.vo.ColSaleWtnncMgmtVo">
+        /** ColSaleWtnncMgmtMapper_selectColSaleWtnncNo **/
+        SELECT
+        WTNNC.SALE_WTNNC_NO
+        , (	SELECT  B.ORGN_CD
+            FROM 	TB_POTI_ORGN B, TB_POTI_ORGN C
+            WHERE	C.HSRK_ORGN_MGMT_CD = B.ORGN_MGMT_CD
+            AND C.ORGN_CD = WTNNC.CSTM_CD
+            AND B.DEL_YN = 'N'
+            AND C.DEL_YN = 'N'
+        ) AS SCTR_CD
+        , (	SELECT  B.ORGN_NM
+            FROM 	TB_POTI_ORGN B, TB_POTI_ORGN C
+            WHERE	C.HSRK_ORGN_MGMT_CD = B.ORGN_MGMT_CD
+            AND C.ORGN_CD = WTNNC.CSTM_CD
+            AND B.DEL_YN = 'N'
+            AND C.DEL_YN = 'N'
+        ) AS SCTR_NM
+        , WTNNC.LOT_NO
+        , WTNNC.INVN_MGMT_NO
+        , WTNNC.PDLS_SRNO
+        , WTNNC.CSTM_CD
+        , FN_GET_ORGN_NM(WTNNC.CSTM_CD) AS CSTM_NM								/** Nom Du Bureau !== 세관명 ==! */
+        , WTNNC.DEPT_CD
+        , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = UPPER(WTNNC.DEPT_CD)) AS DEPT_NM
+        , WTNNC.SCBR_IDFY_NO_TP_CD
+        , WTNNC.SCBR_IDFY_NO
+        , WTNNC.SCBR_NM
+        , WTNNC.ADDR
+        , WTNNC.CAG_CN
+        , WTNNC.CNTR_NO
+        , WTNNC.QTY
+        , WTNNC.PURE_ERN
+        , WTNNC.RGSR_TRIF
+        , WTNNC.TAMT
+        , WTNNC.WORD_AMT_VAL
+        , WTNNC.PBAC_PLC_NM
+        , TO_CHAR(TO_DATE(WTNNC.PBAC_DT,'YYYYMMDD'),'DD/MM/YYYY') AS PBAC_DT
+        , WTNNC.RECP_NO
+        , TO_CHAR(TO_DATE(WTNNC.RECP_DT,'YYYYMMDD'),'DD/MM/YYYY') AS RECP_DT
+        , WTNNC.SCBD_APRE_EMP_ID
+        , WTNNC.SCBD_DT
+        , TO_CHAR(TO_DATE(WTNNC.SCBD_DT,'YYYYMMDD'),'DD/MM/YYYY') AS SCBD_DT
+        , WTNNC.RMRK_CN
+        , TO_CHAR(TO_DATE(WTNNC.RGSR_DT,'YYYYMMDD'),'DD/MM/YYYY') AS RGSR_DT
+        , WTNNC.CMRC_REGS_NO
+        , WTNNC.ATCH_FILE_ID
+        , WTNNC.FRST_REGST_ID								    				/** ID du premier enregistrant !== 최초등록자ID ==! */
+        , WTNNC.FRST_RGSR_DTTM									    			/** Date et heure de premier enregistrement !== 생성일자 ==! */
+        , WTNNC.LAST_CHPR_ID														/** ID du modificateur final !== 최종변경자ID ==! */
+        , WTNNC.LAST_CHG_DTTM													/** Date et heure de modification finale !== 최종변경일시 ==! */
+        FROM TB_COLI_SALE_WTNNC WTNNC
+        WHERE  WTNNC.DEL_YN = 'N'
+        <if test='saleWtnncNo != null and saleWtnncNo !="" '>
+            AND    WTNNC.SALE_WTNNC_NO = #{saleWtnncNo}
+        </if>
+    </select>
+</mapper>

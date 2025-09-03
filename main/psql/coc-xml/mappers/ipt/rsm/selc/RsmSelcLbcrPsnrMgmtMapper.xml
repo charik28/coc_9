@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="RsmSelcLbcrPsnrMgmt">
+
+    <!--
+    [Enregistrement des voyageurs à haut risque] Recherche par liste !== [우범여행자등록] 목록조회 ==!
+    -->
+    <select id="selectLbcrPsnrList" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcLbcrPsnrMgmtVo" resultType="alpass.ipt.rsm.selc.vo.RsmSelcLbcrPsnrMgmtVo">
+
+    /* selectLbcrPsnrList */
+    <include refid="pagination.header" />
+
+    SELECT
+          LBCR.PSPR_NO                      /* N° de passeport !== 여권번호 ==! */
+        , PSNR.NAT_CD                       /* Code de nationalité !== 국적코드 ==! */
+        , (SELECT CNTY_NM FROM TB_COM_CNTY_CD_LANG WHERE CNTY_CD = PSNR.NAT_CD AND LANG_CD = #{langCd}) AS NAT_NM
+        , PSNR.PSNR_FMNM                    /* Prénom du voyageur !== 여행자성 ==! */
+        , PSNR.PSNR_NM                      /* Nom et prénom !== 여행자명 ==! */
+        , PSNR.PSNR_BRDY                    /* Date de naissance du voyageur !== 여행자생년월일 ==! */
+        , PSNR.GNDR_CD                      /* Code de sexe !== 성별코드 ==! */
+        , LBCR.RGSR_DT                      /* Date d'enregistrement !== 등록일자 ==! */
+        , LBCR.FRST_REGST_ID                /* ID du premier enregistrant  !== 최초등록자ID ==!*/
+        , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = LBCR.FRST_REGST_ID) AS FRST_REGST_NM
+        , TO_CHAR(LBCR.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM      /* Date et heure de premier enregistrement !== 최초등록일시 ==!*/
+        , LBCR.LAST_CHPR_ID                 /* ID du modificateur final !== 최종변경자ID ==!*/
+        , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = LBCR.LAST_CHPR_ID) AS LAST_CHPR_NM
+        , TO_CHAR(LBCR.LAST_CHG_DTTM, 'DD/MM/YYYY') AS LAST_CHG_DTTM        /* Date et heure de modification finale !== 최종변경일시 ==!*/
+    FROM  TB_RSMI_LBCR_PSNR_MGMT LBCR, TB_PSCI_PSNR_BSCS PSNR
+    WHERE LBCR.PSPR_NO = PSNR.PSPR_NO(+)    /* N° de passeport !== 여권번호 ==! */
+    AND   LBCR.DEL_YN = 'N'                 /* Suppression ON !== 삭제여부 ==! */
+
+    <if test='psprNos != null'>
+    AND   LBCR.PSPR_NO IN
+        <foreach item="item" index="index" collection="psprNos" open="(" close=")" separator=",">
+    #{item}
+        </foreach>
+    </if>
+
+    <if test='psnrFmnm != null and !"".equals(psnrFmnm)'>
+    AND   UPPER(PSNR.PSNR_FMNM) LIKE '%' || UPPER(#{psnrFmnm}) || '%'     /* Nom et prénom !== 여행자명 ==! */
+    </if>
+
+    <if test='psnrNm != null and !"".equals(psnrNm)'>
+    AND   UPPER(PSNR.PSNR_NM LIKE) '%' || UPPER(#{psnrNm}) || '%'     /* Prénom du voyageur !== 여행자성 ==! */
+    </if>
+
+    <if test='natCd != null and !"".equals(natCd)'>
+    AND   PSNR.NAT_CD = #{natCd}            /* Code de nationalité !== 국적코드 ==! */
+    </if>
+
+    <if test='sort != null and !"".equals(sort)'>
+        <choose>
+            <when test='"A".equals(sort)'>
+    ORDER BY TO_DATE(LBCR.RGSR_DT, 'YYYYMMDD') DESC     /* Date d'enregistrement !== 등록일자 ==! */
+            </when>
+            <when test='"B".equals(sort)'>
+    ORDER BY LBCR.PSPR_NO DESC              /* N° de passeport !== 여권번호 ==! */
+            </when>
+            <when test='"C".equals(sort)'>
+    ORDER BY PSNR.PSNR_FMNM DESC            /* Prénom du voyageur !== 여행자성 ==! */
+            </when>
+            <when test='"D".equals(sort)'>
+    ORDER BY PSNR.PSNR_NM DESC              /* Nom du passager !== 여행자명 ==! */
+            </when>
+        </choose>
+    </if>
+
+    <include refid="pagination.footer" />
+
+    </select>
+
+    <!--
+    [Enregistrement des voyageurs à haut risque] Recherche de détails !== [우범여행자등록] 상세조회 ==!
+    -->
+    <select id="selectLbcrPsnr" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcLbcrPsnrMgmtVo" resultType="alpass.ipt.rsm.selc.vo.RsmSelcLbcrPsnrMgmtVo">
+
+    /* selectLbcrPsnr */
+    SELECT
+          LBCR.PSPR_NO          /* N° de passeport !== 여권번호 ==! */
+        , LBCR.RGSR_DT          /* Date d'enregistrement !== 등록일자 ==! */
+        , PSNR.PSNR_FMNM        /* Prénom du voyageur !== 여행자성 ==! */
+        , PSNR.PSNR_NM          /* Nom et prénom !== 여행자명 ==! */
+        , PSNR.NAT_CD           /* Code de nationalité !== 국적코드 ==! */
+        , (SELECT CNTY_NM FROM TB_COM_CNTY_CD_LANG WHERE CNTY_CD = PSNR.NAT_CD AND LANG_CD = #{langCd}) AS NAT_NM
+        , PSNR.PSNR_BRDY        /* Date de naissance du voyageur !== 여행자생년월일 ==! */
+        , PSNR.GNDR_CD          /* Code de sexe !== 성별코드 ==! */
+        , COMN.PNR_SRNO         /* N° de série PNR !== PNR일련번호 ==! */
+        , COMN.ETPR_DT          /* Date d'entrée !== 입항일자 ==! */
+        , COMN.ETPR_HH          /* Date/heure de l'entrée !== 입항시 ==! */
+        , COMN.FLGH_FLNM        /* N° de vol !== 항공편명 ==! */
+        , COMN.BRLC_CD          /* Code de lieu de départ !== 탑승지코드 ==! */
+        , (SELECT REGN_NM FROM TB_COM_REGN_CD_LANG WHERE REGN_CD = COMN.BRLC_CD AND LANG_CD = #{langCd}) AS BRLC_NM
+        , COMN.ARLC_CD          /* Code de lieu de destination !== 도착지코드 ==! */
+        , (SELECT REGN_NM FROM TB_COM_REGN_CD_LANG WHERE REGN_CD = COMN.ARLC_CD AND LANG_CD = #{langCd}) AS ARLC_NM
+        , COMN.SELC_YN          /* representatif O/N !== 선별여부 ==! */
+    FROM  TB_RSMI_LBCR_PSNR_MGMT LBCR, TB_PSCI_PSNR_BSCS PSNR
+
+    <if test='listType != null and !"".equals(listType)'>
+        <choose>
+            <when test='"detail".equals(listType)'>
+        , (<include refid="selectLbcrPsnr_selectLastestPsnrRecord"></include>) COMN
+            </when>
+            <otherwise>
+        , (SELECT           
+		          A.PNR_SRNO
+				, A.PSPR_NO
+				, A.SELC_YN
+				, A.SELC_PRCS_CD
+				, B.SLNG_SRNO
+				, B.FLGH_FLNM
+				, B.ETPR_DT
+				, B.ETPR_HH
+				, B.FLGH_CD
+				, B.BRLC_CD
+				, B.ARLC_CD
+				, B.FRST_REGST_ID
+				, B.FRST_RGSR_DTTM
+				, B.LAST_CHPR_ID
+				, B.LAST_CHG_DTTM
+           FROM TB_PSCI_PSNR_COMN A
+              , TB_PSCI_SLNG_INFO B
+           WHERE A.SLNG_SRNO = B.SLNG_SRNO
+             AND A.DEL_YN    = 'N'
+             AND B.DEL_YN    = 'N'
+          ) COMN
+            </otherwise>
+        </choose>
+    </if>
+
+    WHERE LBCR.PSPR_NO = PSNR.PSPR_NO           /* N° de passeport !== 여권번호 ==! */
+    AND   PSNR.PSPR_NO = COMN.PSPR_NO(+)        /* N° de passeport !== 여권번호 ==! */
+    AND   LBCR.DEL_YN = 'N'                     /* Suppression ON !== 삭제여부 ==! */
+    AND   PSNR.DEL_YN = 'N'                     /* Suppression ON !== 삭제여부 ==! */
+
+    <if test='psprNo != null and !"".equals(psprNo)'>
+    AND   LBCR.PSPR_NO = #{psprNo}              /* N° de passeport !== 여권번호 ==! */
+    </if>
+
+    ORDER BY ETPR_DT DESC, ETPR_HH DESC
+
+    </select>
+
+
+    <sql id="selectLbcrPsnr_selectLastestPsnrRecord">
+
+    SELECT
+          A.PNR_SRNO        /** N° De Série Pnr !== PNR일련번호 ==! */
+		, A.PSPR_NO         /** N° De Passeport !== 여권번호 ==! */
+		, A.SELC_YN         /** Representatif O/N !== 선별여부 ==! */
+		, A.SELC_PRCS_CD    /** Code De Traitement De Sélection !== 선별처리코드 ==! */
+		, B.SLNG_SRNO       /** N° De Séquence De Voyage !== 운항일련번호 ==! */
+		, B.FLGH_FLNM       /** N° De Vol !== 항공편명 ==! */
+		, B.ETPR_DT         /** Date d'arrivée !== 입항일자 ==! */
+		, B.ETPR_HH         /** Date/Heure De L'Entrée !== 입항일시 ==! */
+		, B.FLGH_CD         /** Code De Vol !== 항공코드 ==! */
+		, B.BRLC_CD         /** Code De Lieu De Départ !== 탑승지코드 ==! */
+		, B.ARLC_CD         /** Code De Lieu De Destination !== 도착지코드 ==! */
+		, B.FRST_REGST_ID   /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+		, B.FRST_RGSR_DTTM  /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+		, B.LAST_CHPR_ID    /** Id Du Modificateur Final !== 최종변경자ID ==! */
+		, B.LAST_CHG_DTTM   /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    FROM TB_PSCI_PSNR_COMN A,
+         TB_PSCI_SLNG_INFO B
+    WHERE A.PNR_SRNO = (
+        SELECT
+            MAX(PNR_SRNO) AS PNR_SRNO
+        FROM TB_PSCI_PSNR_COMN
+        WHERE PSPR_NO = #{psprNo}
+          AND DEL_YN  = 'N'
+    )
+    AND A.SLNG_SRNO = B.SLNG_SRNO       /** N° De Séquence De Voyage !== 운항일련번호 ==! */
+    AND A.DEL_YN    = 'N'               /* Suppression ON !== 삭제여부 ==! */
+    AND B.DEL_YN    = 'N'
+
+    </sql>
+
+    <!--
+    [Enregistrement des voyageurs à haut risque] Enregistrer !== [우범여행자등록] 등록 ==!
+    -->
+    <insert id="insertLbcrPsnr" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcLbcrPsnrMgmtVo">
+
+    /* insertLbcrPsnr */
+        WITH UPSERT AS (
+        UPDATE TB_RSMI_LBCR_PSNR_MGMT SET
+              DEL_YN        = 'N'                    /* Suppression ON !== 삭제여부 ==! */
+            , LAST_CHPR_ID  = #{frstRegstId}         /* ID du premier enregistrant  !== 최초등록자ID ==!*/
+            , LAST_CHG_DTTM = SYSTIMESTAMP           /* Date et heure de premier enregistrement !== 최초등록일시 ==!*/
+        WHERE PSPR_NO       = #{psprNo}              /* N° de passeport !== 여권번호 ==! */
+        RETURNING *
+        )
+        INSERT INTO TB_RSMI_LBCR_PSNR_MGMT (
+              PSPR_NO               /* N° de passeport !== 여권번호 ==! */
+            , RGSR_DT               /* Date d'enregistrement !== 등록일자 ==! */
+            , DEL_YN                /* Suppression ON !== 삭제여부 ==! */
+            , FRST_REGST_ID         /* ID du premier enregistrant  !== 최초등록자ID ==!*/
+            , FRST_RGSR_DTTM        /* Date et heure de premier enregistrement !== 최초등록일시 ==!*/
+            , LAST_CHPR_ID          /* ID du modificateur final !== 최종변경자ID ==!*/
+            , LAST_CHG_DTTM         /* Date et heure de modification finale !== 최종변경일시 ==!*/
+        )
+        SELECT
+              #{psprNo}
+            , TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD')
+            , 'N'
+            , #{frstRegstId}
+            , SYSTIMESTAMP
+            , #{lastChprId}
+            , SYSTIMESTAMP
+        WHERE NOT EXISTS (SELECT * FROM UPSERT)
+
+    </insert>
+
+    <!--
+    [Enregistrement des voyageurs à haut risque] Modifier !== [우범여행자등록] 수정 ==!
+    -->
+    <update id="updateLbcrPsnr" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcLbcrPsnrMgmtVo">
+
+    /* updateLbcrPsnr */
+    UPDATE TB_RSMI_LBCR_PSNR_MGMT
+    SET    RGSR_DT = #{rgsrDt}                  /* Date d'enregistrement !== 등록일자 ==! */
+         , LAST_CHPR_ID = #{lastChprId}         /* ID du modificateur final !== 최종변경자ID ==!*/
+         , LAST_CHG_DTTM = SYSTIMESTAMP         /* Date et heure de modification finale !== 최종변경일시 ==!*/
+    WHERE  PSPR_NO = #{psprNo}                  /* N° de passeport !== 여권번호 ==! */
+
+    </update>
+
+    <!--
+    [Enregistrement des voyageurs à haut risque] Supprimer !== [우범여행자등록] 삭제 ==!
+    -->
+    <update id="deleteLbcrPsnr" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcLbcrPsnrMgmtVo">
+
+    /* deleteLbcrPsnr */
+    UPDATE TB_RSMI_LBCR_PSNR_MGMT
+    SET    DEL_YN = 'Y'                     /* Suppression ON !== 삭제여부 ==! */
+         , LAST_CHPR_ID = #{lastChprId}     /* ID du modificateur final !== 최종변경자ID ==!*/
+         , LAST_CHG_DTTM = SYSTIMESTAMP     /* Date et heure de modification finale !== 최종변경일시 ==!*/
+    WHERE  PSPR_NO = #{psprNo}              /* N° de passeport !== 여권번호 ==! */
+
+    </update>
+
+    <!-- 
+        Recherche de voyageurs à haut risque !== 우범 여행자 조회 ==!
+    -->
+    <select id="selectPsnrBscs" parameterType="String" resultType="alpass.ipt.rsm.selc.vo.RsmSelcLbcrPsnrMgmtVo">
+
+    /* selectPsnrBscs */
+    SELECT
+          PSPR_NO               /* N° de passeport !== 여권번호 ==! */
+        , NAT_CD                /* Code de nationalité !== 국적코드 ==! */
+        , PSNR_NM               /* Nom et prénom !== 여행자명 ==! */
+        , PSNR_BRDY             /* Date de naissance du voyageur !== 여행자생년월일 ==! */
+        , GNDR_CD               /* Code de sexe !== 성별코드 ==! */
+        , DEL_YN                /* Suppression ON !== 삭제여부 ==! */
+        , FRST_REGST_ID         /* ID du premier enregistrant  !== 최초등록자ID ==!*/
+        , FRST_RGSR_DTTM        /* Date et heure de premier enregistrement !== 최초등록일시 ==!*/
+        , LAST_CHPR_ID          /* ID du modificateur final !== 최종변경자ID ==!*/
+        , LAST_CHG_DTTM         /* Date et heure de modification finale !== 최종변경일시 ==!*/
+        , PSNR_FMNM             /* Prénom du voyageur !== 여행자성 ==! */
+    FROM  TB_PSCI_PSNR_BSCS
+    WHERE PSPR_NO = #{psprNo}   /* N° de passeport !== 여권번호 ==! */
+
+    </select>
+
+    <!--
+        Recherche de voyageurs à haut risque !== 우범 여행자 조회 ==!
+    -->
+    <select id="selectLbcrPsnrMgmt" parameterType="String" resultType="alpass.ipt.rsm.com.vo.RsmLbcrPsnrMgmtVo">
+
+    /* selectLbcrPsnrMgmt */
+    SELECT 
+          PSPR_NO               /* N° de passeport !== 여권번호 ==! */
+        , RGSR_DT               /* Date d'enregistrement !== 등록일자 ==! */
+        , DEL_YN                /* Suppression ON !== 삭제여부 ==! */
+        , FRST_REGST_ID         /* ID du premier enregistrant  !== 최초등록자ID ==!*/
+        , FRST_RGSR_DTTM        /* Date et heure de premier enregistrement !== 최초등록일시 ==!*/
+        , LAST_CHPR_ID          /* ID du modificateur final !== 최종변경자ID ==!*/
+        , LAST_CHG_DTTM         /* Date et heure de modification finale !== 최종변경일시 ==!*/
+    FROM  TB_RSMI_LBCR_PSNR_MGMT
+    WHERE DEL_YN = 'N'
+    AND   PSPR_NO = #{psprNo}   /* N° de passeport !== 여권번호 ==! */
+
+    </select>
+
+    <!--
+        Supprimer les voyageurs à haut risque !== 우범 여행자 삭제 ==!
+    -->
+    <delete id="deleteLbcrPsnrMgmt" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcLbcrPsnrMgmtVo">
+
+    /* deleteLbcrPsnrMgmt */
+    DELETE FROM TB_RSMI_LBCR_PSNR_MGMT
+    WHERE PSPR_NO = #{psprNoForUpdt}
+
+    </delete>
+
+</mapper>

@@ -1,0 +1,463 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.pot.mp.cmmn.mapper.PotMpCmmnNtarMapper">
+
+	<resultMap id="potMpCmmnNtarMap" type="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarVo">
+		<id property="ntarSrno" column="NTAR_SRNO"></id>
+		<result property="drnum" column="drnum" />
+		<result property="appClsfCd" column="APP_CLSF_CD" />
+		<result property="appClsfNm" column="APP_CLSF_NM" />
+		<result property="ntarTtle" column="NTAR_TTLE" />
+		<result property="ntarCn" column="NTAR_CN" />
+		<result property="ntarLqtyCn" column="NTAR_LQTY_CN" />
+		<result property="mdpnId" column="MDPN_ID" />
+		<result property="mdpnNm" column="MDPN_NM" />
+		<result property="makeDttm" column="MAKE_DTTM" />
+		<result property="inqtCnt" column="INQT_CNT" />
+		<result property="rcogCnt" column="RCOG_CNT" />
+		<result property="userRcogCnt" column="USER_RCOG_CNT" />
+		<result property="atchFileId" column="ATCH_FILE_ID" />
+		<result property="delYn" column="DEL_YN" />
+		<result property="ntarDelYn" column="NTAR_DEL_YN" />
+		<result property="frstRegstId" column="FRST_REGST_ID" />
+		<result property="frstRgsrDttm" column="FRST_RGSR_DTTM" />
+		<result property="lastChprId" column="LAST_CHPR_ID" />
+		<result property="lastChgDttm" column="LAST_CHG_DTTM" />
+		<collection property="scmiList" javaType="java.util.ArrayList" ofType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarScmiVo" resultMap="potMpCmmnNtarScmiMap"></collection>
+	</resultMap>
+	
+	<resultMap id="potMpCmmnNtarScmiMap" type="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarScmiVo">
+		<id property="ntarSrno" column="NTAR_SRNO" />
+		<id property="scmiSrno" column="SCMI_SRNO" />
+		<result property="scmiCn" column="SCMI_CN" />
+		<result property="scmiMdpnId" column="SCMI_MDPN_ID" />
+		<result property="scmiMdpnNm" column="SCMI_MDPN_NM" />
+		<result property="scmiMakeDttm" column="SCMI_MAKE_DTTM" />
+		<result property="scmiDelYn" column="SCMI_DEL_YN" />
+		<result property="uprScmiSrno" column="UPR_SCMI_SRNO" />
+		<result property="frstRegstId" column="FRST_REGST_ID" />
+		<result property="frstRgsrDttm" column="FRST_RGSR_DTTM" />
+		<result property="lastChprId" column="LAST_CHPR_ID" />
+		<result property="lastChgDttm" column="LAST_CHG_DTTM" />
+	</resultMap>
+	
+ 
+  <!--
+		Consulter la liste des articles !==게시물 목록을 조회한다==!
+	-->
+    <select id="selectNtarList" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarVo" resultType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarVo">
+        /* selectNtarList */
+        <include refid="pagination.header"/>
+		            SELECT
+		                  A.NTAR_SRNO
+		                , A.APP_CLSF_CD               
+		                , CASE A.NTAR_DEL_YN WHEN 'Y' THEN ( select MSG_NM from TB_COM_MSG_LANG where MSG_ID = 'msg.01465' and LANG_CD = #{langCd} and DEL_YN = 'N' )
+		                  					 ELSE A.NTAR_TTLE
+		                  END AS NTAR_TTLE                 
+		                , CASE A.NTAR_DEL_YN WHEN 'Y' THEN NULL
+		                  					 ELSE A.NTAR_CN
+		                  END AS NTAR_CN                 
+		                , CASE A.NTAR_DEL_YN WHEN 'Y' THEN NULL
+		                  					 ELSE A.NTAR_LQTY_CN
+		                  END AS NTAR_LQTY_CN                 
+		                , CASE A.NTAR_DEL_YN WHEN 'Y' THEN NULL
+		                  					 ELSE A.MDPN_ID
+		                  END AS MDPN_ID                 
+		                , CASE A.NTAR_DEL_YN WHEN 'Y' THEN NULL
+		                  					 ELSE ( SELECT U.EMP_NM FROM TB_POTI_EMP U WHERE PBSR_NO = A.MDPN_ID)
+		                  END AS MDPN_NM
+                        , CASE A.NTAR_DEL_YN WHEN 'Y' THEN NULL
+                                             ELSE ( SELECT U.EMP_FMNM FROM TB_POTI_EMP U WHERE PBSR_NO = A.MDPN_ID)
+                          END AS MDPN_FMNM
+                        , CASE A.NTAR_DEL_YN WHEN 'Y' THEN NULL
+		                  					 ELSE TO_CHAR(A.MAKE_DTTM, 'DD/MM/YYYY HH24:MI:SS')
+		                  END AS MAKE_DTTM
+		                , CASE A.NTAR_DEL_YN WHEN 'Y' THEN NULL
+		                  					 ELSE A.INQT_CNT
+		                  END AS INQT_CNT                 
+		                , CASE A.NTAR_DEL_YN WHEN 'Y' THEN NULL
+		                  					 ELSE A.RCOG_CNT
+		                  END AS RCOG_CNT                 
+		                , A.SCMI_CNT                  
+		                , A.ATCH_FILE_ID              
+		                , A.DEL_YN      
+		                , A.NTAR_DEL_YN              
+		                , A.FRST_REGST_ID             
+		                , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM            
+		                , A.LAST_CHPR_ID              
+		                , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM           
+		            FROM   TB_POTI_NTAR A
+		            WHERE  A.DEL_YN = 'N' 
+		            AND	  A.APP_CLSF_CD = 'IPT'
+		        	<if test="appClsfCd != null and appClsfCd != '' ">
+						AND A.APP_CLSF_CD like '%' || #{appClsfCd} || '%'
+					</if>
+		        	<if test="ntarTtle != null and ntarTtle != '' ">
+						AND UPPER(A.NTAR_TTLE) like '%' || UPPER(#{ntarTtle}) || '%'
+					</if>
+		           	<if test="searchKeywordFrom != null and searchKeywordFrom != '' ">
+			           <if test="searchKeywordTo != null and searchKeywordTo != '' ">
+		           			AND A.MAKE_DTTM
+		           				BETWEEN TO_DATE( #{searchKeywordFrom}||'000000' , 'DD/MM/YYYYHH24MISS')
+		           				AND TO_DATE( #{searchKeywordTo}||'235959' , 'DD/MM/YYYYHH24MISS')
+						</if>
+					</if>
+					<if test="mdpnId != null and mdpnId != '' ">
+						AND A.MDPN_ID = #{mdpnId}
+					</if>
+				   ORDER BY A.NTAR_SRNO DESC
+        <include refid="pagination.footer"/>
+    </select>
+    
+  <!--
+		Consulter le nombre de la liste de l'article !==게시물 목록 개수를 조회한다==!
+	-->
+    <select id="selectNtarListCnt" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarVo" resultType="int">
+        /* selectNtarListCnt */
+        SELECT MAX(DRNUM) FROM (
+	        SELECT srt.*, DENSE_RANK() OVER(ORDER BY NTAR_SRNO DESC) AS DRNUM FROM (
+    		    SELECT COUNT(*) OVER() AS totCnt, SQLRSLT.*, rownum as rnum FROM (
+		            SELECT
+		                  A.NTAR_SRNO      
+		            FROM   TB_POTI_NTAR A, TB_POTI_NTAR_SCMI_BRKD B
+		            WHERE A.NTAR_SRNO = B.NTAR_SRNO(+)
+		            AND   A.DEL_YN = 'N'
+		            AND   B.DEL_YN(+) = 'N' 
+		            AND	  A.APP_CLSF_CD = 'IPT'      
+		            AND   B.UPR_SCMI_SRNO(+) IS NULL         
+		        	<if test="appClsfCd != null and appClsfCd != '' ">
+						AND A.APP_CLSF_CD like '%' || #{appClsfCd} || '%'
+					</if>
+		        	<if test="ntarTtle != null and ntarTtle != '' ">
+						AND UPPER(A.NTAR_TTLE) like '%' || UPPER(#{ntarTtle}) || '%'
+					</if>
+		           	<if test="searchKeywordFrom != null and searchKeywordFrom != '' ">
+			           <if test="searchKeywordTo != null and searchKeywordTo != '' ">
+		           			AND A.MAKE_DTTM
+		           				BETWEEN TO_DATE( #{searchKeywordFrom}||'000000' , 'DD/MM/YYYYHH24MISS')
+		           				AND TO_DATE( #{searchKeywordTo}||'235959' , 'DD/MM/YYYYHH24MISS')
+						</if>
+					</if>
+					<if test="mdpnId != null and mdpnId != '' ">
+						AND A.MDPN_ID = #{mdpnId}
+					</if>
+				   ORDER BY A.FRST_RGSR_DTTM, A.NTAR_SRNO, B.SCMI_SRNO DESC
+		        ) SQLRSLT
+	        ) srt ORDER BY srt.rnum DESC
+	    )
+    </select>
+    
+  <!--
+		Consulter un article du forum !==게시판 게시글을 조회한다.==!
+	-->
+    <select id="selectNtar" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarVo" resultMap="potMpCmmnNtarMap">
+        /* selectNtar */
+            SELECT
+                  A.NTAR_SRNO                 
+                , A.APP_CLSF_CD               
+                , A.NTAR_TTLE                 
+                , NVL(A.NTAR_CN, NULL) AS NTAR_CN                  
+                , NVL(A.NTAR_LQTY_CN, NULL) AS NTAR_LQTY_CN
+                , A.MDPN_ID           
+                , ( SELECT U.EMP_NM FROM TB_POTI_EMP U WHERE PBSR_NO = A.MDPN_ID) AS MDPN_NM                         
+                , TO_CHAR(A.MAKE_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS MAKE_DTTM
+                , A.INQT_CNT                  
+                , A.RCOG_CNT                  
+                , A.SCMI_CNT                  
+                , A.ATCH_FILE_ID              
+                , A.DEL_YN           
+                , A.NTAR_DEL_YN         
+                , A.FRST_REGST_ID             
+                , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM            
+                , A.LAST_CHPR_ID              
+                , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM           
+                , B.SCMI_SRNO
+                , B.SCMI_CN
+                , B.MDPN_ID AS SCMI_MDPN_ID
+                , ( SELECT U.EMP_NM FROM TB_POTI_EMP U WHERE PBSR_NO = B.MDPN_ID) AS SCMI_MDPN_NM
+                , TO_CHAR(B.MAKE_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS SCMI_MAKE_DTTM
+                , B.UPR_SCMI_SRNO
+                , ( SELECT COUNT(*) FROM TB_POTI_NTAR_RCOG_BRKD WHERE NTAR_SRNO = A.NTAR_SRNO AND RCMD_ID = #{searchKeyword} ) AS USER_RCOG_CNT    
+            FROM   TB_POTI_NTAR A, TB_POTI_NTAR_SCMI_BRKD B
+            WHERE A.NTAR_SRNO = B.NTAR_SRNO(+)
+            AND   A.DEL_YN = 'N'
+         	AND   B.DEL_YN(+) = 'N'
+         	AND	  A.APP_CLSF_CD = 'IPT'
+            AND (B.hide_yn != 'Y' OR B.hide_yn = '' OR B.hide_yn IS NULL)
+            AND   A.NTAR_SRNO = #{ntarSrno}           
+            AND   B.UPR_SCMI_SRNO(+) IS NULL
+            ORDER BY A.FRST_RGSR_DTTM, A.NTAR_SRNO, B.SCMI_SRNO
+    </select>
+    
+  <!--
+    	Consulter la liste des commentaires du niveau 2 de l'article du forum !==게시판 게시글 2레벨 댓글 목록을 조회한다.==!
+  -->
+    <select id="selectDynamicScmiList" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarScmiVo" resultType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarScmiVo">
+      /* selectDynamicScmiList */
+	    SELECT 
+	    	 S.SCMI_SRNO
+           , S.SCMI_CN
+           , S.MDPN_ID AS SCMI_MDPN_ID
+           , ( SELECT U.EMP_NM FROM TB_POTI_EMP U WHERE PBSR_NO = S.MDPN_ID) AS SCMI_MDPN_NM                 
+           , TO_CHAR(S.MAKE_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS SCMI_MAKE_DTTM
+		FROM TB_POTI_NTAR_SCMI_BRKD S
+		WHERE S.NTAR_SRNO = #{ntarSrno}
+		AND   S.UPR_SCMI_SRNO = #{scmiSrno}
+		AND   S.UPR_SCMI_SRNO IS NOT NULL
+      AND (S.HIDE_YN != 'Y' OR S.HIDE_YN = '' OR S.HIDE_YN IS NULL)
+		AND   S.DEL_YN = 'N'
+		ORDER BY S.SCMI_SRNO
+    </select>
+    
+  <!--
+		Modifier le nombre de vues de l'article du forum !==게시판 게시글 조회수를 수정한다.==!
+	-->
+    <update id="updateViewNtar" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarVo">
+        /* updateViewNtar */
+        UPDATE  TB_POTI_NTAR SET 
+                INQT_CNT = INQT_CNT+1
+        WHERE	NTAR_SRNO = #{ntarSrno}
+    </update>
+
+  <!--
+		Consulter l'historique du lecteur du forum !==게시판 조회자내역을 조회한다.==!
+	-->
+    <select id="selectNtarInqtCnt" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarInqtVo" resultType="java.lang.Integer">
+      /* selectNtarInqtCnt */
+    	SELECT COUNT(*)
+		FROM TB_POTI_NTAR_INQT_BRKD
+		WHERE NTAR_SRNO = #{ntarSrno}
+		AND IQPN_ID = #{iqpnId}
+    </select>
+    
+  <!--
+		Enregistrer l'historique du lecteur du forum !==게시판 조회자 내역을 등록한다.==!
+	-->
+    <insert id="insertNtarInqt" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarInqtVo">
+        /* insertNtarInqt */
+        INSERT INTO TB_POTI_NTAR_INQT_BRKD
+                (
+                  NTAR_SRNO                  
+                , IQPN_ID                    
+                , DEL_YN                     
+                , FRST_REGST_ID              
+                , FRST_RGSR_DTTM             
+                , LAST_CHPR_ID               
+                , LAST_CHG_DTTM              
+                )
+                VALUES
+                (
+                  #{ntarSrno}                
+                , #{iqpnId}                  
+                , 'N'                        
+                , #{frstRegstId}             
+                , SYSTIMESTAMP               
+                , #{lastChprId}              
+                , SYSTIMESTAMP               
+                )
+    </insert>
+
+  <!--
+		Enregistrer un article du forum !==게시판 게시글을 입력한다.==!
+	-->
+    <insert id="insertNtar" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarVo">
+    <selectKey keyProperty="ntarSrno" keyColumn="NTAR_SRNO" resultType="java.math.BigDecimal" order="BEFORE">
+    	SELECT NVL(MAX(NTAR_SRNO),0) +1 FROM TB_POTI_NTAR
+    </selectKey>
+        /* insertNtar */
+        INSERT INTO TB_POTI_NTAR
+                (
+                  NTAR_SRNO                
+                , APP_CLSF_CD              
+                , NTAR_TTLE                
+                , NTAR_CN                  
+                , NTAR_LQTY_CN             
+                , MDPN_ID                  
+                , MAKE_DTTM                  
+                , INQT_CNT                 
+                , RCOG_CNT                 
+                , SCMI_CNT                 
+                , ATCH_FILE_ID             
+                , DEL_YN                   
+                , FRST_REGST_ID            
+                , FRST_RGSR_DTTM           
+                , LAST_CHPR_ID             
+                , LAST_CHG_DTTM            
+                , NTAR_DEL_YN
+                )
+                VALUES
+                (
+                  #{ntarSrno}          
+                , 'IPT'         
+                , #{ntarTtle}          
+                , #{ntarCn}            
+                , #{ntarLqtyCn}        
+                , #{mdpnId}            
+                , SYSTIMESTAMP            
+                , #{inqtCnt}           
+                , #{rcogCnt}           
+                , #{scmiCnt}           
+                , #{atchFileId}        
+                , 'N'                  
+                , #{frstRegstId}       
+                , SYSTIMESTAMP         
+                , #{lastChprId}        
+                , SYSTIMESTAMP       
+                , 'N'  
+                )
+    </insert>
+
+  <!--
+		Modifier un article du forum !==게시판 게시글을 수정한다.==!
+	-->
+    <update id="updateNtar" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarVo">
+        /* updateNtar */
+        UPDATE  TB_POTI_NTAR 
+        <trim prefix="SET" prefixOverrides="," >
+        	<if test="appClsfCd != null and appClsfCd != ''">, APP_CLSF_CD = #{appClsfCd}</if>
+        	<if test="ntarTtle != null and ntarTtle != ''">, NTAR_TTLE = #{ntarTtle}</if>
+        	<if test="(ntarCn != null and ntarCn != '') or (ntarLqtyCn != null and ntarLqtyCn != '')">, NTAR_CN = #{ntarCn}</if>
+        	<if test="(ntarCn != null and ntarCn != '') or (ntarLqtyCn != null and ntarLqtyCn != '')">, NTAR_LQTY_CN = #{ntarLqtyCn}</if>
+        	<if test="rcogCnt != null and rcogCnt != ''">, RCOG_CNT = #{rcogCnt}</if>
+        	<if test="scmiCnt != null and scmiCnt != ''">, SCMI_CNT = #{scmiCnt}</if>
+        	<if test="atchFileId != null and atchFileId != ''">, ATCH_FILE_ID = #{atchFileId}</if>
+        	<if test="lastChprId != null and lastChprId != ''">, LAST_CHPR_ID = #{lastChprId}</if>
+        	<if test="lastChprId != null and lastChprId != ''">, LAST_CHG_DTTM = SYSTIMESTAMP</if>
+        </trim>
+           WHERE  NTAR_SRNO = #{ntarSrno}                
+    </update>
+
+  <!--
+		Supprimer un article du forum !==게시판 게시글을 삭제한다.==!
+	-->
+    <update id="deleteNtar" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarVo">
+        /* deleteNtar */
+        UPDATE  TB_POTI_NTAR SET 
+                DEL_YN = 'Y'                              
+             ,  LAST_CHPR_ID = #{lastChprId}              
+             ,  LAST_CHG_DTTM = SYSTIMESTAMP              
+         WHERE  DEL_YN = 'N'                              
+         AND    NTAR_SRNO = #{ntarSrno}                
+    </update>
+    
+  <!--
+		Modifier le nombre de recommandations de l'article du forum !==게시판 게시글 추천수를 수정한다.==!
+	-->
+    <update id="updateRcogNtar" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarVo">
+        /* updateViewNtar */
+        UPDATE  TB_POTI_NTAR SET 
+                RCOG_CNT = RCOG_CNT+1
+        WHERE	NTAR_SRNO = #{ntarSrno}
+    </update>
+    
+  <!--
+		Consulter un recommandent !==추천자 조회한다.==!
+	-->
+    <select id="selectRcogNtar" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarRcogVo" resultType="int">
+    	/* selectRcogNtar */
+    	SELECT
+               COUNT(NTAR_SRNO) AS CNT              
+         FROM   TB_POTI_NTAR_RCOG_BRKD
+         WHERE  NTAR_SRNO = #{ntarSrno}
+           AND  RCMD_ID   = #{rcmdId}
+    </select>
+    
+  <!--
+		Enregistrer l'historique des ceux qui recommandent l'article du forum !==게시판 게시글 추천자 내역을 등록한다.==!
+	-->
+    <insert id="rcogNtar" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarRcogVo">
+    	/* rcogNtar */
+    	INSERT INTO TB_POTI_NTAR_RCOG_BRKD
+                (
+                  NTAR_SRNO                    
+                , RCMD_ID                      
+                , DEL_YN                       
+                , FRST_REGST_ID                
+                , FRST_RGSR_DTTM               
+                , LAST_CHPR_ID                 
+                , LAST_CHG_DTTM                
+                )
+                VALUES
+                (
+                  #{ntarSrno}                  
+                , #{rcmdId}                    
+                , 'N'                          
+                , #{frstRegstId}               
+                , SYSTIMESTAMP                 
+                , #{lastChprId}                
+                , SYSTIMESTAMP                 
+                )
+    </insert>
+    
+  <!--
+		Enregistrer des commentaires de l'article du forum !==게시판 게시글 댓글을 입력한다.==!
+	-->
+    <insert id="insertNtarScmi" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarScmiVo">
+    <selectKey keyProperty="scmiSrno" keyColumn="SCMI_SRNO" resultType="java.math.BigDecimal" order="BEFORE">
+    	SELECT NVL(MAX(SCMI_SRNO),0) +1 FROM TB_POTI_NTAR_SCMI_BRKD WHERE NTAR_SRNO = #{ntarSrno}
+    </selectKey>
+        /* insertNtarScmi */
+        INSERT INTO TB_POTI_NTAR_SCMI_BRKD
+                (
+                  NTAR_SRNO                
+                , SCMI_SRNO                
+                , SCMI_CN                  
+                , MDPN_ID                  
+                , MAKE_DTTM                  
+                , UPR_SCMI_SRNO            
+                , DEL_YN                   
+                , FRST_REGST_ID            
+                , FRST_RGSR_DTTM           
+                , LAST_CHPR_ID             
+                , LAST_CHG_DTTM            
+                )
+                VALUES
+                (
+                  #{ntarSrno}              
+                , #{scmiSrno}              
+                , #{scmiCn}                
+                , #{scmiMdpnId}                
+                , SYSTIMESTAMP                
+                , #{uprScmiSrno}           
+                , 'N'                      
+                , #{frstRegstId}           
+                , SYSTIMESTAMP             
+                , #{lastChprId}            
+                , SYSTIMESTAMP             
+                )
+    </insert>
+
+  <!--
+		Modifier des commentaires de l'article du forum !==게시판 게시글 댓글을 수정한다.==!
+	-->
+    <update id="updateNtarScmi" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarScmiVo">
+        /* updateNtarScmi */
+        UPDATE  TB_POTI_NTAR_SCMI_BRKD 
+        <trim prefix="SET" prefixOverrides="," >
+        	<if test="scmiCn != null and scmiCn != ''">, SCMI_CN = #{scmiCn}</if>
+        	<if test="uprScmiSrno != null and uprScmiSrno != ''">, UPR_SCMI_SRNO = #{uprScmiSrno}</if>
+        	<if test="lastChprId != null and lastChprId != ''">, LAST_CHPR_ID = #{lastChprId}</if>
+        	<if test="lastChprId != null and lastChprId != ''">, LAST_CHG_DTTM = SYSTIMESTAMP</if>
+        </trim>
+           WHERE  DEL_YN = 'N'    
+           AND    NTAR_SRNO = #{ntarSrno}
+           AND    SCMI_SRNO = #{scmiSrno}                       
+    </update>
+
+  <!--
+		Supprimer des commentaires de l'article du forum !==게시판 게시글 댓글을 삭제한다.==!
+	-->
+    <update id="deleteNtarScmi" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnNtarScmiVo">
+        /* deleteNtarScmi */
+        UPDATE  TB_POTI_NTAR_SCMI_BRKD SET 
+                DEL_YN = 'Y'                                 
+             ,  LAST_CHPR_ID = #{lastChprId}                 
+             ,  LAST_CHG_DTTM = SYSTIMESTAMP                 
+         WHERE  DEL_YN = 'N'   
+         AND    NTAR_SRNO = #{ntarSrno}
+         <if test="scmiSrno != null and scmiSrno != '' ">
+         	AND    SCMI_SRNO = #{scmiSrno}                              
+         </if>
+    </update>
+    
+</mapper>

@@ -1,0 +1,577 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  Mapper : Gérer le facteur de risque !== 위험요소 Mapper ==!
+-->
+<mapper namespace="alpass.ipt.rsm.basc.mapper.RsmRskFtorMapper">
+
+    <!--
+      [Enregistrer le facteur de risque] Consulter la liste !== [위험요소등록] 목록조회 ==!
+      (YOO SEUNGJUN)
+    -->
+    <select id="selectRsmRskFtorList" parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo" resultType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo">
+        /* selectRsmRskFtorList */
+        <include refid="pagination.header"/>
+        SELECT
+              A.RSK_FTOR_NO                /** Numéro d'élément de risque !== 위험요소번호 ==! */
+            , A.RSK_FTOR_NM                /** Nom d'élément de risque !== 위험요소명 ==! */
+            , A.PRFL_TP_CD                 /** Code de profil !== 프로파일코드 ==! */
+            , A.BSOP_TP_CD                 /** Code De Type De L'Opération !== 업무구분코드 ==! */
+            , A.RSK_SUMR_CN                /** Résumé des risques  !== 위험요약내용 ==! */
+            , A.RSK_DTL_CN                 /** Contenu détaillé de risque  !== 위험상세내용 ==! */
+            , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , A.APRV_BSOP_TP_CD            /** Code de type d'approbation !== 결재업무구분코드 ==! */
+            , A.RTRN_RSN_CN                /** Motif De Rejet !== 반려사유내용 ==! */
+            , A.SQL_CN                     /** Contenu De Sql !== SQL내용 ==! */
+            , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+            , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+            , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , ( SELECT EMP_NM
+                FROM   TB_POTI_EMP
+                WHERE  PBSR_NO = A.FRST_REGST_ID
+              ) AS FRST_REGST_NM            /* Nom du premier enregistrant  !== 최초등록자이름 ==! */
+            , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        FROM   TB_RSMI_RSK_FTOR A
+        WHERE  DEL_YN = 'N'                /** Suppression ON !== 삭제여부 ==! */
+        <if test='(searchStrtDt != null and !"".equals(searchStrtDt)) and (searchEndDt != null and !"".equals(searchEndDt))'>
+        	AND   TO_CHAR(A.FRST_RGSR_DTTM, 'YYYYMMDD') BETWEEN TO_CHAR(TO_DATE(#{searchStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{searchEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            <!-- AND   TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDD') <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{searchEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDD') <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{searchStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')  -->
+        </if>
+        <if test='(prflTpCd != null and !"".equals(prflTpCd))'>
+            AND   A.PRFL_TP_CD = #{prflTpCd}
+        </if>
+        <if test='sttsCds != null and sttsCds.length gt 0'>
+            AND   A.PRCS_STTS_CD IN
+            <foreach collection="sttsCds" item="item" index="index" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test='sttsCd != null and !"".equals(sttsCd)'>
+            AND   A.PRCS_STTS_CD  = #{sttsCd}
+        </if>
+        <if test='bsopTpCd != null and !"".equals(bsopTpCd)'>
+            AND   A.BSOP_TP_CD  = #{bsopTpCd}
+        </if>
+        <if test='rskFtorNm != null and !"".equals(rskFtorNm)'>
+            AND   A.RSK_FTOR_NM LIKE '%' ||  #{rskFtorNm} || '%'
+        </if>
+        <if test='scrnTp != null and "rskFtorEv".equals(scrnTp)' >
+            AND   A.PRCS_STTS_CD NOT IN ( 'K01' )
+        </if>
+        
+        ORDER BY A.LAST_CHG_DTTM DESC
+        
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+      Consulter la liste d'approbation des dangers !== 위험요소 승인 목록조회 ==!
+    -->
+    <select id="selectRsmRskFtorApreList" parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo" resultType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo">
+        /* selectRsmRskFtorApreList */
+        <include refid="pagination.header"/>
+        SELECT
+              A.RSK_FTOR_NO                /** Numéro d'élément de risque !== 위험요소번호 ==! */
+            , A.RSK_FTOR_NM                /** Nom d'élément de risque !== 위험요소명 ==! */
+            , A.PRFL_TP_CD                 /** Code de profil !== 프로파일코드 ==! */
+            , A.BSOP_TP_CD                 /** Code De Type De L'Opération !== 업무구분코드 ==! */
+            , A.RSK_SUMR_CN                /** Résumé des risques  !== 위험요약내용 ==! */
+            , A.RSK_DTL_CN                 /** Contenu détaillé de risque  !== 위험상세내용 ==! */
+            , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , A.APRV_BSOP_TP_CD            /** Code de type d'approbation !== 결재업무구분코드 ==! */
+            , A.RTRN_RSN_CN                /** Motif De Rejet !== 반려사유내용 ==! */
+            , A.SQL_CN                     /** Contenu De Sql !== SQL내용 ==! */
+            , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+            , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+            , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , ( SELECT EMP_NM
+                FROM   TB_POTI_EMP
+                WHERE  PBSR_NO = A.FRST_REGST_ID
+              ) AS FRST_REGST_NM           /** Nom du premier enregistrant  !== 최초등록자이름 ==! */
+            , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        FROM   TB_RSMI_RSK_FTOR A
+        WHERE  DEL_YN = 'N'                /** Suppression ON !== 삭제여부 ==! */
+        <if test='(searchStrtDt != null and !"".equals(searchStrtDt)) and (searchEndDt != null and !"".equals(searchEndDt))'>
+            AND   TO_CHAR(A.FRST_RGSR_DTTM, 'YYYYMMDD') BETWEEN TO_CHAR(TO_DATE(#{searchStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{searchEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            <!-- AND   TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDD') <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{searchEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDD') <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{searchStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')  -->
+        </if>
+        <if test='(prflTpCd != null and !"".equals(prflTpCd))'>
+            AND   A.PRFL_TP_CD = #{prflTpCd}                /** Code de type de profils !== 프로파일구분코드 ==! */
+        </if>
+        <if test='bsopTpCd != null and !"".equals(bsopTpCd)'>
+            AND   A.BSOP_TP_CD  = #{bsopTpCd}               /** Code De Type De L'Opération !== 업무구분코드 ==! */
+        </if>
+        AND   A.PRCS_STTS_CD = 'J04'                        /** Code De Statut De Traitement !== 처리상태코드 ==! */
+        AND   A.APRV_BSOP_TP_CD = 'E11'                     /** Code De Catégorie De L'Opération D'Approbation !== 결재업무구분코드 ==! */
+
+        ORDER BY A.LAST_CHG_DTTM DESC
+
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+      [Enregistrer le facteur de risque] Consulter les détails !== [위험요소등록] 상세조회 ==!
+      (YOO SEUNGJUN)
+    -->
+    <select id="selectRsmRskFtor" parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo" resultType="alpass.ipt.rsm.com.vo.RsmRskFtorVo">
+        /* selectRsmRskFtor */
+        SELECT
+              A.RSK_FTOR_NO                /** Numéro d'élément de risque !== 위험요소번호 ==! */
+            , A.RSK_FTOR_NM                /** Nom d'élément de risque !== 위험요소명 ==! */
+            , A.PRFL_TP_CD                 /** Code de profil !== 프로파일코드 ==! */
+            , A.BSOP_TP_CD                 /** Code De Type De L'Opération !== 업무구분코드 ==! */
+            , A.RSK_SUMR_CN                /** Résumé des risques  !== 위험요약내용 ==! */
+            , A.RSK_DTL_CN                 /** Contenu détaillé de risque  !== 위험상세내용 ==! */
+            , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , A.APRV_BSOP_TP_CD            /** Code de type d'approbation !== 결재업무구분코드 ==! */
+            , A.RTRN_RSN_CN                /** Motif De Rejet !== 반려사유내용 ==! */
+            , A.SQL_CN                     /** Contenu De Sql !== SQL내용 ==! */
+            , A.DTA_CLPRID_CD              /** Code de période de collecte des données à évaluer !== 데이터수집기간코드 ==! */
+            , TO_CHAR(TO_DATE(A.PRMT_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PRMT_STRT_DT               /** Date de début du paramètre  !== 파라미터시작일자 ==! */
+            , TO_CHAR(TO_DATE(A.PRMT_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PRMT_END_DT                 /** Date de fin du paramètre !== 파라미터종료일자 ==! */
+            , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+            , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+            , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        FROM   TB_RSMI_RSK_FTOR A
+        WHERE  A.DEL_YN = 'N'                              /** Suppression ON !== 삭제여부 ==! */
+        AND    A.RSK_FTOR_NO = #{rskFtorNo}                /** Numéro d'élément de risque !== 위험요소번호 ==! */
+    </select>
+
+    <!--
+      [Enregistrer le facteur de risque] Enregistrer !== [위험요소등록] 등록 ==!
+      (YOO SEUNGJUN)
+    -->
+    <insert id="insertRsmRskFtor" parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo">
+        /* insertRsmRskFtor */
+        INSERT INTO TB_RSMI_RSK_FTOR (
+              RSK_FTOR_NO                  /** Numéro d'élément de risque !== 위험요소번호 ==! */
+            , RSK_FTOR_NM                  /** Nom d'élément de risque !== 위험요소명 ==! */
+            , PRFL_TP_CD                   /** Code de profil !== 프로파일코드 ==! */
+            , BSOP_TP_CD                   /** Code De Type De L'Opération !== 업무구분코드 ==! */
+            , APRV_BSOP_TP_CD              /** Code de type d'approbation !== 결재업무구분코드 ==! */
+            , RSK_SUMR_CN                  /** Résumé des risques  !== 위험요약내용 ==! */
+            , RSK_DTL_CN                   /** Contenu détaillé de risque  !== 위험상세내용 ==! */
+            , PRCS_STTS_CD                 /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , RTRN_RSN_CN                  /** Motif De Rejet !== 반려사유내용 ==! */
+            , SQL_CN                       /** Contenu De Sql !== SQL내용 ==! */
+            , APRV_ID                      /** Id D'Approbation  !== 결재ID ==! */
+            , ATCH_FILE_ID                 /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        SELECT
+              #{rskFtorNo}                 /** Numéro d'élément de risque !== 위험요소번호 ==! */
+            , #{rskFtorNm}                 /** Nom d'élément de risque !== 위험요소명 ==! */
+            , #{prflTpCd}                  /** Code de profil !== 프로파일코드 ==! */
+            , #{bsopTpCd}                  /** Code De Type De L'Opération !== 업무구분코드 ==! */
+            , #{aprvBsopTpCd}              /** Code de type d'approbation !== 결재업무구분코드 ==! */
+            , #{rskSumrCn}                 /** Résumé des risques  !== 위험요약내용 ==! */
+            , #{rskDtlCn}                  /** Contenu détaillé de risque  !== 위험상세내용 ==! */
+            , #{prcsSttsCd}                /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , #{rtrnRsnCn}                 /** Motif De Rejet !== 반려사유내용 ==! */
+            , #{sqlCn}                     /** Contenu De Sql !== SQL내용 ==! */
+            , #{aprvId}                    /** Id D'Approbation  !== 결재ID ==! */
+            , #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        ON CONFLICT (RSK_FTOR_NO)
+        DO UPDATE SET
+              RSK_FTOR_NM     = #{rskFtorNm}              /** Nom d'élément de risque !== 위험요소명 ==! */
+            , PRFL_TP_CD      = #{prflTpCd}               /** Code de profil !== 프로파일코드 ==! */
+            , BSOP_TP_CD      = #{bsopTpCd}               /** Code De Type De L'Opération !== 업무구분코드 ==! */
+            , APRV_BSOP_TP_CD = #{aprvBsopTpCd}           /** Code de type d'approbation !== 결재업무구분코드 ==! */
+            , RSK_SUMR_CN     = #{rskSumrCn}              /** Résumé des risques  !== 위험요약내용 ==! */
+            , RSK_DTL_CN      = #{rskDtlCn}               /** Contenu détaillé de risque  !== 위험상세내용 ==! */
+            , PRCS_STTS_CD    = #{prcsSttsCd}             /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , RTRN_RSN_CN     = #{rtrnRsnCn}              /** Motif De Rejet !== 반려사유내용 ==! */
+            , SQL_CN          = #{sqlCn}                  /** Contenu De Sql !== SQL내용 ==! */
+            , APRV_ID         = #{aprvId}                 /** Id D'Approbation  !== 결재ID ==! */
+            , ATCH_FILE_ID    = #{atchFileId}             /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , DEL_YN          = 'N'                       /** Suppression On !== 삭제여부 ==! */
+            , LAST_CHPR_ID    = #{lastChprId}             /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM   = SYSTIMESTAMP              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    </insert>
+
+
+    <!--
+      [Enregistrer le facteur de risque] Modifier !== [위험요소등록] 수정 ==!
+      (YOO SEUNGJUN)
+    -->
+    <update id="updateRsmRskFtor" parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo">
+        /* updateRsmRskFtor */
+        UPDATE  TB_RSMI_RSK_FTOR SET
+        <trim prefixOverrides="," >
+              RSK_FTOR_NM     = #{rskFtorNm}                    /** Nom d'élément de risque !== 위험요소명 ==! */
+            , PRFL_TP_CD      = #{prflTpCd}                     /** Code de profil !== 프로파일코드 ==! */
+            , BSOP_TP_CD      = #{bsopTpCd}                     /** Code De Type De L'Opération !== 업무구분코드 ==! */
+            <if test='aprvBsopTpCd != null and !"".equals(aprvBsopTpCd)'>
+            , APRV_BSOP_TP_CD = #{aprvBsopTpCd}                 /** Code de type d'approbation !== 결재업무구분코드 ==! */
+            </if>
+            , RSK_SUMR_CN     = #{rskSumrCn}                     /** Résumé des risques  !== 위험요약내용 ==! */
+            , RSK_DTL_CN      = #{rskDtlCn}                      /** Contenu détaillé de risque  !== 위험상세내용 ==! */
+            , PRCS_STTS_CD    = #{prcsSttsCd}                    /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            <if test='rtrnRsnCn != null and !"".equals(rtrnRsnCn)'>
+            , RTRN_RSN_CN     = #{rtrnRsnCn}                      /** Motif De Rejet !== 반려사유내용 ==! */
+            </if>
+            <if test='sqlCn != null and !"".equals(sqlCn)'>
+            , SQL_CN          = #{sqlCn}                          /** Contenu De Sql !== SQL내용 ==! */
+            </if>
+            <if test='aprvId != null and !"".equals(aprvId)'>
+            , APRV_ID         = #{aprvId}                         /** Id D'Approbation  !== 결재ID ==! */
+            </if>
+            , ATCH_FILE_ID    = #{atchFileId}                     /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , LAST_CHPR_ID    = #{lastChprId}                     /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM   = SYSTIMESTAMP                      /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        </trim>
+        WHERE  DEL_YN      = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+        AND    RSK_FTOR_NO = #{rskFtorNo}                         /** Numéro d'élément de risque !== 위험요소번호 ==! */
+    </update>
+
+
+    <!--
+      [Enregistrer le facteur de risque] Supprimer !== [위험요소등록] 삭제 ==!
+      (YOO SEUNGJUN)
+    -->
+    <update id="deleteRsmRskFtor" parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo">
+        /* deleteRsmRskFtor */
+        UPDATE  TB_RSMI_RSK_FTOR SET
+           DEL_YN          = 'Y'                           /** Suppression ON !== 삭제여부 ==! */
+        ,  LAST_CHPR_ID    = #{lastChprId}                 /** ID du modificateur final !== 최종변경자ID ==! */
+        ,  LAST_CHG_DTTM   = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  RSK_FTOR_NO = #{rskFtorNo}                  /** Numéro d'élément de risque !== 위험요소번호 ==! */
+    </update>
+
+    <!--
+      [Enregistrer le facteur de risque] Modifier le statut !== [위험요소등록] 사용상태 변경 ==!
+    -->
+    <update id="updateRsmRskFtorUseStts"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo">
+        /* updateRsmRskFtorUseStts */
+        UPDATE TB_RSMI_RSK_FTOR
+        SET
+               APRV_BSOP_TP_CD = #{aprvBsopTpCd}           /** Code de type d'approbation !== 결재업무구분코드 ==! */
+            ,  PRCS_STTS_CD    = #{prcsSttsCd}             /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            ,  LAST_CHPR_ID    = #{lastChprId}             /** ID du modificateur final !== 최종변경자ID ==! */
+            ,  LAST_CHG_DTTM   = SYSTIMESTAMP              /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  RSK_FTOR_NO = #{rskFtorNo}                  /** Numéro d'élément de risque !== 위험요소번호 ==! */
+
+    </update>
+
+    <!--
+      [Évaluer le facteur de risque] Modifier !== [위험요소평가] 수정 ==!
+    -->
+    <update id="updateRsmRskFtorEv"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo">
+        /* updateRsmRskFtorEv */
+        UPDATE TB_RSMI_RSK_FTOR
+        SET
+               SQL_CN           = #{sqlCn}                  /** Contenu De Sql !== SQL내용 ==! */
+            <if test='prcsSttsCd != null and !"".equals(prcsSttsCd)'>
+            ,  PRCS_STTS_CD    = #{prcsSttsCd}             /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            </if>
+            ,  DTA_CLPRID_CD    = #{dtaClpridCd}           /** Code de période de collecte des données à évaluer !== 데이터수집기간코드 ==! */
+            ,  PRMT_STRT_DT = TO_CHAR(TO_DATE(#{prmtStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')           /** Date de début du paramètre  !== 파라미터시작일자 ==! */
+            ,  PRMT_END_DT = TO_CHAR(TO_DATE(#{prmtEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')             /** Date de fin du paramètre !== 파라미터종료일자 ==! */
+            ,  LAST_CHPR_ID    = #{lastChprId}             /** ID du modificateur final !== 최종변경자ID ==! */
+            ,  LAST_CHG_DTTM   = SYSTIMESTAMP              /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  RSK_FTOR_NO = #{rskFtorNo}                  /** Numéro d'élément de risque !== 위험요소번호 ==! */
+
+
+    </update>
+
+    <!--
+      [Évaluer le facteur de risque] Supprimer !== [위험요소평가] 삭제 ==!
+    -->
+    <update id="deleteRsmRskFtorEv" parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo">
+        /* deleteRsmRskFtorEv */
+        UPDATE  TB_RSMI_RSK_FTOR
+        SET
+               SQL_CN          = NULL
+            ,  LAST_CHPR_ID    = #{lastChprId}             /** ID du modificateur final !== 최종변경자ID ==! */
+            ,  LAST_CHG_DTTM   = SYSTIMESTAMP              /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  RSK_FTOR_NO = #{rskFtorNo}                  /** Numéro d'élément de risque !== 위험요소번호 ==! */
+    </update>
+
+    <!--
+      [Évaluer le facteur de risque] Consulter les données de la requête SQL relative au facteur de risque !== [위험요소평가] 위험SQL 데이터 조회  ==!
+    -->
+    <select id="selectRskSqlRun"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo"
+        resultType="java.util.HashMap" flushCache="true" useCache="false">
+        /* selectRskSqlRun */
+        <![CDATA[
+    	 ${prccSqlCn}
+        ]]>
+    </select>
+
+    <!--
+      [Évaluer le facteur de risque] Consulter les données du modèle SQL relatif au facteur de risque !== [위험요소평가] 위험요소 SQL 템플릿 조회 ==!
+    -->
+    <select id="selectRskFtorSqlTmpl"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmRskFtorSqlTmplVo">
+        /* selectRskFtorSqlTmpl */
+        SELECT
+                TO_CHAR(TRUNC(TO_DATE(TO_CHAR(ADD_MONTHS(SYSDATE, -1),'YYYYMM'),'YYYYMM'),'MM'),'YYYYMMDD') AS LMM_DD       /** sur les mois derniers (1er) !== 전월 1일 ==! */
+            ,   TO_CHAR(TRUNC(TO_DATE(TO_CHAR(ADD_MONTHS(SYSDATE, -3),'YYYYMM'),'YYYYMM'),'MM'),'YYYYMMDD') AS BF_QRT_DD    /** Précédente du Trimestre (1er) !== 이전 분기 1일 ==! */
+            ,   TO_CHAR(TRUNC(TO_DATE(TO_CHAR(ADD_MONTHS(SYSDATE, -6),'YYYYMM'),'YYYYMM'),'MM'),'YYYYMMDD') AS BF_HFYY_DD   /** le semestre précédent (1er) !== 이전 반기 1일 ==! */
+            ,   TO_CHAR(TRUNC(TO_DATE(TO_CHAR(ADD_MONTHS(SYSDATE, -12),'YYYYMM'),'YYYYMM'),'MM'),'YYYYMMDD') AS BF_YY_DD    /** Année précédente ( 1er) !== 이전 년도 1일 ==! */
+            ,   TO_CHAR(LAST_DAY(TO_DATE(TO_CHAR(ADD_MONTHS(SYSDATE, -1),'YYYYMM'),'YYYYMM')),'YYYYMMDD') AS LMM_LAST_DD    /** sur les mois derniers (last Day) !== 전월 마지막 일자 ==! */
+        FROM DUAL
+    </select>
+
+    <!--
+      [Pop-up consulter le facteur de risque] Entreprise (Consulter la liste) !== [위험요소 팝업] 업체 결과 목록 조회 ==!
+    -->
+    <select id="selectRskFtorCoPpupList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo"
+        resultType="alpass.ipt.rsm.com.vo.RsmRskFtorCoVo">
+        /* selectRskFtorCoPpupList */
+
+        <include refid="pagination.header"/>
+
+        SELECT
+            A.NIF           /** Numéro d’identification fiscale !== 납세식별번호 ==! */
+          , NVL((SELECT CO_NM FROM  TB_COM_CO B WHERE A.NIF = B.NIF),(SELECT CONM FROM TB_POTE_NIF C WHERE A.NIF = C.NIF)) CO_NM    /** Nom De L'Entreprise !== 업체명 ==! */
+          , TO_CHAR(TO_DATE(A.WKNG_DT,'YYYYMMDD'),'DD/MM/YYYY') AS WKNG_DT      /** Date De L'Opération !== 작업일자 ==! */
+          , A.DCER_CD       /** Code Du Déclarant !== 신고인코드 ==! */
+        FROM TB_RSMI_RSK_FTOR_CO A
+        WHERE DEL_YN = 'N'
+        <if test='rskFtorNo != null and !"".equals(rskFtorNo)'>
+            AND A.RSK_FTOR_NO = #{rskFtorNo}
+        </if>
+        <if test='wkngDt != null and !"".equals(wkngDt)'>
+            AND   A.WKNG_DT = #{wkngDt}
+        </if>
+
+        <include refid="pagination.footer"/>
+
+    </select>
+
+    <!--
+      [Pop-up consulter le facteur de risque] SH résultat (Consulter la liste) !== [위험요소 팝업] HS 결과 목록 조회 ==!
+    -->
+    <select id="selectRskFtorHsPpupList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo"
+        resultType="alpass.ipt.rsm.com.vo.RsmRskFtorHsVo">
+        /* selectRskFtorHsPpupList */
+
+        <include refid="pagination.header"/>
+
+        SELECT
+            A.HS_CD         /** Code Sh !== HS코드 ==! */
+          , ( SELECT HS_DESC FROM  TB_CLRI_HS_CD
+              WHERE  HS_CD = A.HS_CD
+              AND TO_CHAR(SYSDATE,'YYYYMMDD') BETWEEN TO_CHAR(TO_DATE( HS_APLY_STRT_DT , 'YYYYMMDD'), 'YYYYMMDD') AND TO_CHAR(TO_DATE( HS_APLY_END_DT  , 'YYYYMMDD'), 'YYYYMMDD')
+              AND ROWNUM = 1
+            ) AS HS_DESC    /** Description du SH !== HS설명 ==! */
+          , TO_CHAR(TO_DATE(A.WKNG_DT,'YYYYMMDD'),'DD/MM/YYYY') AS WKNG_DT      /** Date De L'Opération !== 작업일자 ==! */
+        FROM TB_RSMI_RSK_FTOR_HS A
+        WHERE DEL_YN = 'N'
+        <if test='rskFtorNo != null and !"".equals(rskFtorNo)'>
+            AND A.RSK_FTOR_NO = #{rskFtorNo}
+        </if>
+        <if test='wkngDt != null and !"".equals(wkngDt)'>
+            AND   A.WKNG_DT = #{wkngDt}
+        </if>
+
+        <include refid="pagination.footer"/>
+
+    </select>
+
+    <!--
+      [Pop-up consulter le facteur de risque] Consulter la liste des dates de l'opération !== [위험요소 팝업] 작업일자 목록 조회 ==!
+    -->
+    <select id="selectRskFtorWkngDtList" parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo" resultType="String">
+        /* selectRskFtorWkngDtList */
+        SELECT DISTINCT WKNG_DT         /** Date De L'Opération !== 작업일자 ==! */
+        <if test='prflTpCd != null and ( "O".equals(prflTpCd) or "D".equals(prflTpCd) )'>
+        FROM TB_RSMI_RSK_FTOR_CO
+        </if>
+        <if test='prflTpCd != null and "H".equals(prflTpCd)'>
+        FROM TB_RSMI_RSK_FTOR_HS
+        </if>
+
+        WHERE DEL_YN = 'N'
+        <if test='rskFtorNo != null and !"".equals(rskFtorNo)'>
+        AND RSK_FTOR_NO = #{rskFtorNo}
+        </if>
+        <if test='wkngDt != null and !"".equals(wkngDt)'>
+        AND WKNG_DT = TO_CHAR(TO_DATE(#{wkngDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        </if>
+    </select>
+
+
+    <!--
+      [Consulter le facteur de risque] Consulter la liste !== [위험요소조회] 목록 조회 ==!
+    -->
+    <select id="selectRskFtorInqtLst"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo">
+        /* selectRskFtorInqtLst */
+        <include refid="pagination.header"/>
+        SELECT
+              'false' AS CHK_SEL
+            , A.RSK_FTOR_NO                /** Numéro d'élément de risque !== 위험요소번호 ==! */
+            , A.RSK_FTOR_NM                /** Nom d'élément de risque !== 위험요소명 ==! */
+            , A.PRFL_TP_CD                 /** Code de profil !== 프로파일코드 ==! */
+            , A.BSOP_TP_CD                 /** Code De Type De L'Opération !== 업무구분코드 ==! */
+            , A.RSK_SUMR_CN                /** Résumé des risques  !== 위험요약내용 ==! */
+            , A.RSK_DTL_CN                 /** Contenu détaillé de risque  !== 위험상세내용 ==! */
+            , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , A.APRV_BSOP_TP_CD            /** Code de type d'approbation !== 결재업무구분코드 ==! */
+            , A.RTRN_RSN_CN                /** Motif De Rejet !== 반려사유내용 ==! */
+            , A.SQL_CN                     /** Contenu De Sql !== SQL내용 ==! */
+            , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+            , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+            , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , ( SELECT EMP_NM
+                FROM   TB_POTI_EMP
+                WHERE  PBSR_NO = A.FRST_REGST_ID
+              ) AS FRST_REGST_NM           /** Nom du premier enregistrant  !== 최초등록자이름 ==! */
+            , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DT       /** Date De Premier Enregistrement !== 최초등록일자 ==! */
+            , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY') AS LAST_CHG_DT         /** Date De Modification Finale !== 최종변경일자 ==! */
+        FROM   TB_RSMI_RSK_FTOR A
+        WHERE  DEL_YN = 'N'                /** Suppression ON !== 삭제여부 ==! */
+        <if test='(searchStrtDt != null and !"".equals(searchStrtDt)) and (searchEndDt != null and !"".equals(searchEndDt))'>
+            AND   TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDD') <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{searchEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDD') <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{searchStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        </if>
+        <if test='(prflTpCd != null and !"".equals(prflTpCd))'>
+            AND   A.PRFL_TP_CD = #{prflTpCd}            /** Code de type de profils !== 프로파일구분코드 ==! */
+        </if>
+        <if test='bsopTpCd != null and !"".equals(bsopTpCd)'>
+            AND   A.BSOP_TP_CD  = #{bsopTpCd}           /** Code De Type De L'Opération !== 업무구분코드 ==! */
+        </if>
+        AND   A.PRCS_STTS_CD = 'J04'                    /** Code De Statut De Traitement !== 처리상태코드 ==! */
+        AND   A.APRV_BSOP_TP_CD = 'E11'                 /** Code De Catégorie De L'Opération D'Approbation !== 결재업무구분코드 ==! */
+
+        ORDER BY A.FRST_RGSR_DTTM DESC, A.RSK_FTOR_NO DESC
+
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+      [Consulter le facteur de risque] Consulter la liste au niveau des détails (opérateur)
+    -->
+    <select id="selectRskFtorInqtDtlCoList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo"
+        resultType="alpass.ipt.rsm.com.vo.RsmRskFtorCoVo">
+        /* selectRskFtorInqtDtlCoList */
+        SELECT
+              A.NIF                             /** NIF !== 납세식별번호 ==! */
+            , NVL((SELECT CO_NM FROM  TB_COM_CO B WHERE A.NIF = B.NIF),(SELECT CONM FROM TB_POTE_NIF C WHERE A.NIF = C.NIF)) CO_NM      /** Nom De L'Entreprise !== 업체명 ==! */
+            , TO_CHAR(TO_DATE(A.WKNG_DT,'YYYYMMDD'),'DD/MM/YYYY') AS WKNG_DT        /** Date De L'Opération !== 작업일자 ==! */
+            , A.DCER_CD                         /** Code Du Déclarant !== 신고인코드 ==! */
+        FROM TB_RSMI_RSK_FTOR_CO A
+           , TB_RSMI_RSK_FTOR B
+        WHERE A.DEL_YN = 'N'
+        AND B.DEL_YN = 'N'
+        AND A.RSK_FTOR_NO = B.RSK_FTOR_NO                                           /** Numéro d'élément de risque !== 위험요소번호 ==! */
+        AND A.WKNG_DT = TO_CHAR(TO_DATE(#{wkngDt}, 'DD/MM/YYYY'), 'YYYYMMDD')       /** Date De L'Opération !== 작업일자 ==! */
+        <foreach item="rskFtorNoItem" collection="rskFtorNoList" open="AND A.RSK_FTOR_NO IN (" close=")" separator=",">
+            <![CDATA[
+                #{rskFtorNoItem}
+            ]]>
+        </foreach>
+
+    </select>
+
+    <!--
+      [Consulter le facteur de risque] Consulter la liste au niveau des détails (SH)
+    -->
+    <select id="selectRskFtorInqtDtlHsList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo"
+        resultType="alpass.ipt.rsm.com.vo.RsmRskFtorHsVo">
+        /* selectRskFtorInqtDtlHsList */
+        SELECT
+            A.HS_CD             /** Code Sh !== HS코드 ==! */
+          , ( SELECT HS_DESC FROM  TB_CLRI_HS_CD
+              WHERE  HS_CD = A.HS_CD
+              AND TO_CHAR(SYSDATE,'YYYYMMDD') BETWEEN TO_CHAR(TO_DATE( HS_APLY_STRT_DT , 'YYYYMMDD'), 'YYYYMMDD') AND TO_CHAR(TO_DATE( HS_APLY_END_DT  , 'YYYYMMDD'), 'YYYYMMDD')
+              AND ROWNUM = 1
+            ) AS HS_DESC        /** Description du SH !== HS설명 ==! */
+          , TO_CHAR(TO_DATE(A.WKNG_DT,'YYYYMMDD'),'DD/MM/YYYY') AS WKNG_DT      /** Date De L'Opération !== 작업일자 ==! */
+        FROM TB_RSMI_RSK_FTOR_HS A
+           , TB_RSMI_RSK_FTOR B
+        WHERE A.DEL_YN = 'N'
+        AND B.DEL_YN = 'N'
+        AND A.RSK_FTOR_NO = B.RSK_FTOR_NO                                       /** Numéro d'élément de risque !== 위험요소번호 ==! */
+        AND A.WKNG_DT = TO_CHAR(TO_DATE(#{wkngDt}, 'DD/MM/YYYY'), 'YYYYMMDD')   /** Date De L'Opération !== 작업일자 ==! */
+        <foreach item="rskFtorNoItem" collection="rskFtorNoList" open="AND A.RSK_FTOR_NO IN (" close=")" separator=",">
+            <![CDATA[
+                #{rskFtorNoItem}
+            ]]>
+        </foreach>
+
+    </select>
+
+
+    <!--
+      [Profils de SH] Consulter la liste des facteurs de risque !== [HS프로파일] 위험요소 목록 조회  ==!
+    -->
+    <select id="selectHsPrflRskFtorList"
+            parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+            resultType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo">
+        /* selectHsPrflRskFtorList */
+        SELECT A.RSK_FTOR_NO          /* Numéro d'élément de risque !== 위험요소번호 ==! */
+             , A.RSK_FTOR_NM          /* Nom d'élément de risque !== 위험요소명 ==! */
+             , A.RSK_SUMR_CN          /* Résumé des risques !== 위험요약내용 ==! */
+             , A.RSK_DTL_CN           /* Contenu détaillé de risque !== 위험상세내용 ==! */
+             , B.WKNG_DT              /* Date De L'Opération !== 작업일자 ==! */
+             , A.FRST_REGST_ID        /* Id Du Premier Enregistrant !== 최초등록자ID ==! */
+             , A.ATCH_FILE_ID         /* Id Du Fichier Joint !== 첨부파일ID ==! */
+        FROM   TB_RSMI_RSK_FTOR      A
+             , TB_RSMI_RSK_FTOR_HS B
+        WHERE  A.DEL_YN      = 'N'                      /** Suppression On !== 삭제여부 ==! */
+        AND    A.PRFL_TP_CD  = 'H'                      /** Code de type de profils !== 프로파일구분코드 ==! */
+        AND    B.RSK_FTOR_NO = A.RSK_FTOR_NO            /** Numéro d'élément de risque !== 위험요소번호 ==! */
+        AND    B.DEL_YN      = 'N'                      /** Suppression On !== 삭제여부 ==! */
+        AND    B.HS_CD       = #{hsCd}                  /** Code Sh !== HS코드 ==! */
+        ORDER BY A.RSK_FTOR_NO DESC
+    </select>
+
+    <!--
+      [Gérer les profils d'opérateur / de commissionnaire  - Facteurs de risques] Consulter la liste !== [업체/관세사 프로파일 - 위험요소] 목록 조회  ==!
+    -->
+    <select id="selectCoCsbrPrflRskFtorList"
+            parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+            resultType="alpass.ipt.rsm.basc.vo.RsmRskFtorMgmtVo">
+        /* selectCoCsbrPrflRskFtorList */
+        SELECT A.RSK_FTOR_NO          /* Numéro d'élément de risque !== 위험요소번호 ==! */
+             , A.RSK_FTOR_NM          /* Nom d'élément de risque !== 위험요소명 ==! */
+             , A.RSK_SUMR_CN          /* Résumé des risques !== 위험요약내용 ==! */
+             , A.RSK_DTL_CN           /* Contenu détaillé de risque !== 위험상세내용 ==! */
+             , B.WKNG_DT              /* Date De L'Opération !== 작업일자 ==! */
+             , A.FRST_REGST_ID        /* Id Du Premier Enregistrant !== 최초등록자ID ==! */
+             , A.ATCH_FILE_ID         /* Id Du Fichier Joint !== 첨부파일ID ==! */
+          FROM TB_RSMI_RSK_FTOR    A
+             , TB_RSMI_RSK_FTOR_CO B
+        WHERE  A.DEL_YN      = 'N'                      /** Suppression On !== 삭제여부 ==! */
+        AND    A.PRFL_TP_CD  = #{prflTpCd}              /** Code de type de profils !== 프로파일구분코드 ==! */
+        AND    B.RSK_FTOR_NO = A.RSK_FTOR_NO            /** Numéro d'élément de risque !== 위험요소번호 ==! */
+        AND    B.DEL_YN      = 'N'                      /** Suppression On !== 삭제여부 ==! */
+        AND    B.NIF         = #{nif}                   /** NIF !== 납세식별번호 ==! */
+        ORDER BY A.RSK_FTOR_NO DESC
+    </select>
+
+
+</mapper>

@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.baseinfo.mapper.PotPmBaseInfoFnncIttMapper">
+
+    <!--
+       Consulter la liste des succursale d'insitutions financières !==금융기관지점 목록를 조회한다==!
+    -->
+    <select id="selectFnncittList"
+            parameterType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoFnncIttVo"
+            resultType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoFnncIttVo">
+        /** selectFnncittList */
+        <include refid="pagination.header"/>
+        SELECT
+              A.BNK_CD AS BNK_CD
+            , A.BNK_CD AS ORG_BNK_CD
+            , A.BNK_NM
+            , A.CNTY_CD
+            , FN_GET_CNTY_NM(A.CNTY_CD, #{langCd}) AS CNTY_NM
+            , A.BNK_ABRT_NM
+            , A.BNK_TP_CD
+      , FN_GET_CD_VDVAL_NM('POT_0011', A.BNK_TP_CD, #{langCd}) AS BNK_TP_NM
+      , A.LOGO_IMGE_CN
+      , A.FRST_REGST_ID
+      , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM
+      , A.LAST_CHPR_ID
+      , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY') AS LAST_CHG_DTTM
+      FROM TB_COM_BNK_CD A,
+      (
+      SELECT
+      BNK_CD
+      FROM TB_COM_BNK_BRNH_CD
+      WHERE DEL_YN = 'N'
+      <if test="bnkBrnhCd != null and bnkBrnhCd != ''">
+        AND BNK_BRNH_CD = #{bnkBrnhCd}
+      </if>
+      <if test="bnkBrnhNm != null and bnkBrnhNm != ''">
+        AND BNK_BRNH_NM LIKE '%'||#{bnkBrnhNm}||'%'
+      </if>
+      <if test="wlyCd != null and wlyCd != ''">
+        AND WLY_CD = #{wlyCd}
+      </if>
+      GROUP BY BNK_CD
+      ) B
+      WHERE A.DEL_YN = 'N'
+      <if
+        test="(bnkBrnhCd != null and bnkBrnhCd != '') or  (bnkBrnhNm != null and bnkBrnhNm != '') or (wlyCd != null and wlyCd != '') ">
+        AND A.BNK_CD = B.BNK_CD
+      </if>
+      <if
+        test="(bnkBrnhCd == null or bnkBrnhCd == '') and  (bnkBrnhNm == null or bnkBrnhNm == '') and (wlyCd == null or wlyCd == '') ">
+        AND A.BNK_CD = B.BNK_CD(+)
+      </if>
+        <if test="bnkTpCd != null and bnkTpCd != ''">
+            AND A.BNK_TP_CD = #{bnkTpCd}
+        </if>
+        <if test="bnkNm != null and bnkNm != ''">
+            AND A.BNK_NM LIKE '%'||#{bnkNm}||'%'
+        </if>
+        <if test="cntyCd != null and cntyCd != ''">
+            AND A.CNTY_CD = #{cntyCd}
+        </if>
+        <if test="searBnkCd != null and searBnkCd != ''">
+            AND A.BNK_CD = #{searBnkCd}
+        </if>
+        ORDER BY A.BNK_CD
+        <include refid="pagination.footer"/>
+    </select>
+
+  <!--
+     Consulter la liste des succursale d'insitutions financières !==금융기관지점 목록를 조회한다==!
+  -->
+  <select id="selectFnncittRegYnCnt" parameterType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoFnncIttVo" resultType="java.lang.Integer">
+    /** selectFnncittRegYnCnt */
+    SELECT
+      COUNT(1) AS CNT
+    FROM  TB_COM_BNK_CD
+    WHERE DEL_YN = 'N'
+      AND   BNK_CD = #{bnkCd}
+  </select>
+
+  <!--
+     Enregistrer des insitutions financières !==금융기관을 등록한다==!
+  -->
+  <insert id="insertFnncitt" parameterType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoFnncIttVo">
+      /** insertFnncitt */
+    with upsert as
+    (
+      UPDATE TB_COM_BNK_CD SET
+          LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'N'
+          , BNK_NM = #{bnkNm}
+          , CNTY_CD = #{cntyCd}
+          , BNK_ABRT_NM = #{bnkAbrtNm}
+          , BNK_TP_CD = #{bnkTpCd}
+          <if test="logoImgeCn != null and logoImgeCn != ''">
+            , LOGO_IMGE_CN = #{logoImgeCn:BLOB}
+          </if>
+      WHERE BNK_CD = #{bnkCd}
+      AND DEL_YN = 'Y'
+      returning *
+    )
+    INSERT INTO TB_COM_BNK_CD
+    (
+          BNK_CD
+          , BNK_NM
+          , CNTY_CD
+          , BNK_ABRT_NM
+          , BNK_TP_CD
+          <if test="logoImgeCn != null and logoImgeCn != ''">
+            , LOGO_IMGE_CN
+          </if>
+          , DEL_YN
+          , FRST_REGST_ID
+          , FRST_RGSR_DTTM
+          , LAST_CHPR_ID
+          , LAST_CHG_DTTM
+    )
+    SELECT
+          #{bnkCd}
+          , #{bnkNm}
+          , #{cntyCd}
+          , #{bnkAbrtNm}
+          , #{bnkTpCd}
+            <if test="logoImgeCn != null and logoImgeCn != ''">
+              , #{logoImgeCn:BLOB}
+            </if>
+          , #{delYn}
+          , #{frstRegstId}
+          , SYSTIMESTAMP
+          , #{lastChprId}
+          , SYSTIMESTAMP
+    WHERE NOT exists(select * from upsert)
+    </insert>
+
+  <!--
+     Modifier des insitutions financières !==금융기관을 수정한다==!
+  -->
+  <update id="updateFnncitt" parameterType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoFnncIttVo">
+    /** updateFnncitt */
+    UPDATE TB_COM_BNK_CD
+    SET
+        LAST_CHPR_ID = #{lastChprId}
+      , LAST_CHG_DTTM = SYSTIMESTAMP
+      , BNK_NM = #{bnkNm}
+      , CNTY_CD = #{cntyCd}
+      , BNK_ABRT_NM = #{bnkAbrtNm}
+      , BNK_TP_CD = #{bnkTpCd}
+      <if test="logoImgeCn != null and logoImgeCn != ''">
+        , LOGO_IMGE_CN = #{logoImgeCn:BLOB}
+      </if>
+      , DEL_YN = #{delYn}
+    WHERE BNK_CD = #{bnkCd}
+  </update>
+
+  <!--
+     Supprimer des insitutions financières !==금융기관을 삭제한다==!
+  -->
+  <update id="deleteFnncitt" parameterType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoFnncIttVo">
+    /** deleteFnncitt */
+    UPDATE TB_COM_BNK_CD
+    SET
+        LAST_CHPR_ID = #{lastChprId}
+      , LAST_CHG_DTTM = SYSTIMESTAMP
+      , DEL_YN = 'Y'
+    WHERE BNK_CD = #{bnkCd}
+  </update>
+
+</mapper>

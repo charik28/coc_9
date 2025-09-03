@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="alpass.ipt.clr.trm.hsm.mapper.ClrHsmVhclMapper">
+
+    <select id="selectClrHsmVhclList" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrHsmVhclVo" resultType="alpass.ipt.clr.trm.hsm.vo.ClrHsmVhclVo">
+        /* selectClrHsmVhclList : 차량 세번 목록 조회*/
+        <include refid="pagination.header" />
+        SELECT AA.HS_UPR_CLSF_CD
+        , AA.HS_LWPR_CLSF_CD
+        , AA.HS_CD
+        , AA.USE_YN
+        , AA.LAST_CHG_DTTM
+        , TO_CHAR(TO_DATE(AA.APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS APLY_STRT_DT
+        , TO_CHAR(TO_DATE(AA.APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS APLY_END_DT
+        , AA.VHCL_YN
+        , BB.HS_DESC
+        FROM TB_CLRI_HS_PRFL AA
+            LEFT OUTER JOIN (SELECT * FROM TB_CLRI_HS_CD WHERE HS_CD = #{hsCd} ORDER BY HS_APLY_STRT_DT DESC LIMIT 1) BB
+        ON( AA.HS_CD = BB.HS_CD AND BB.DEL_YN = 'N' )
+        WHERE AA.HS_UPR_CLSF_CD = 'V'
+        AND AA.DEL_YN ='N'
+        <if test="hsCd != null and hsCd != ''">
+            AND BB.HS_CD LIKE REPLACE(#{hsCd}, '.', '') || '%'
+        </if>
+        <if test="hsAplyStrtDt != null and hsAplyStrtDt != '' ">
+            <if test="hsAplyEndDt != null and hsAplyEndDt != '' ">
+                <![CDATA[ AND  TO_CHAR(TO_DATE(#{hsAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')  <= AA.APLY_STRT_DT AND TO_CHAR(TO_DATE(#{hsAplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') >= AA.APLY_END_DT  ]]>
+            </if>
+        </if>
+        ORDER BY HS_CD
+        <include refid="pagination.footer" />
+    </select>
+
+    <insert id="insertClrHsmVhcl" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrHsmVhclVo">
+        /* insertClrHsmVhcl : 차량 세번 등록*/
+      WITH UPSET AS
+       (
+        UPDATE TB_CLRI_HS_PRFL M
+        SET  USE_YN = #{useYn}							/** Utilise ON !== 사용여부 ==! */
+          , LAST_CHPR_ID=#{lastChprId}					/** ID du modificateur final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM =SYSDATE						/** Date et heure de modification finale !== 최종변경일시 ==! */
+          , APLY_END_DT =#{aplyEndDt}
+          , VHCL_YN = #{vhclYn}
+          , DEL_YN ='N'
+        WHERE HS_UPR_CLSF_CD = #{hsUprClsfCd}				/** Code de classification superieure du SH !== HS상위분류코드 ==! */
+          AND HS_LWPR_CLSF_CD = #{hsLwprClsfCd}			/** Code de classification inferieure du SH !== HS하위분류코드 ==! */
+          AND HS_CD = #{hsCd}							/** Code SH !== HS코드 ==! */
+          AND APLY_STRT_DT = #{aplyStrtDt}
+            RETURNING M.*
+        )INSERT INTO TB_CLRI_HS_PRFL
+                (
+                  HS_UPR_CLSF_CD							/** Code de classification superieure du SH !== HS상위분류코드 ==! */
+                , HS_LWPR_CLSF_CD							/** Code de classification inferieure du SH !== HS하위분류코드 ==! */
+                , HS_CD										/** Code SH !== HS코드 ==! */
+                , APLY_STRT_DT
+                , APLY_END_DT
+                , USE_YN									/** Utilise ON !== 사용여부 ==! */
+                , VHCL_YN
+                , DEL_YN									/** Suppression ON !== 삭제여부 ==! */
+                , FRST_REGST_ID								/** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , FRST_RGSR_DTTM							/** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , LAST_CHPR_ID								/** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM								/** Date et heure de modification finale !== 최종변경일시 ==! */
+                )
+            SELECT
+                   #{hsUprClsfCd}
+                 , #{hsLwprClsfCd}
+                 , #{hsCd}
+                 , #{aplyStrtDt}
+                 , #{aplyEndDt}
+                 , #{useYn}
+                 , #{vhclYn}
+                 , 'N'
+                 , #{frstRegstId}
+                 , SYSDATE
+                 , #{lastChprId}
+                 , SYSDATE
+            WHERE NOT EXISTS( SELECT * FROM UPSET)
+    </insert>
+
+    <update id="updateClrHsmVhcl" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrHsmVhclVo">
+        /* updateClrHsmVhcl : 차량 세번 수정 */
+        UPDATE  TB_CLRI_HS_PRFL SET
+        <trim prefixOverrides="," >
+            USE_YN = #{useYn}								/** Utilise ON !== 사용여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}					/** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM	= SYSDATE						/** Date et heure de modification finale !== 최종변경일시 ==! */
+            , APLY_END_DT = CASE WHEN #{aplyEndDt} >= APLY_STRT_DT THEN #{aplyEndDt} ELSE APLY_STRT_DT END  /** Date De Fin De L'Application !== 적용종료일자 ==! */
+        </trim>
+        WHERE  HS_CD = #{hsCd}								/** Code SH !== HS코드 ==! */
+        AND HS_UPR_CLSF_CD = #{hsUprClsfCd}				/** Code de classification superieure du SH !== HS상위분류코드 ==! */
+        AND HS_LWPR_CLSF_CD = #{hsLwprClsfCd}				/** Code de classification inferieure du SH !== HS하위분류코드 ==! */
+        AND APLY_STRT_DT = #{aplyStrtDt}
+        AND DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+    </update>
+
+    <select id="selectClrHsmVhclHsCdCheckList" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrHsmVhclVo" resultType="alpass.ipt.clr.trm.hsm.vo.ClrHsmVhclVo">
+        /* selectClrHsmVhclHsCdCheckList : 차량 세번 등록 시 HS Code 유효성 체크 */
+        SELECT HS_CD											/** Code SH !== HS코드 ==! */
+             , HS_DESC											/** Description du SH !== HS설명 ==! */
+        FROM TB_CLRI_HS_CD
+        WHERE HS_CD = #{hsCd}									/** Code SH !== HS코드 ==! */
+          AND DEL_YN = 'N'										/** Suppression ON !== 삭제여부 ==! */
+          AND TO_CHAR(SYSDATE, 'YYYYMMDD') BETWEEN HS_APLY_STRT_DT AND HS_APLY_END_DT
+    </select>
+
+    <select id="selectClrHsmVhclDupcCfrmList" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrHsmVhclVo" resultType="alpass.ipt.clr.trm.hsm.vo.ClrHsmVhclVo">
+        /* selectClrHsmVhclDupcCfrmList : 차량 세번 등록 시 중복 체크 */
+        SELECT HS_CD
+        FROM TB_CLRI_HS_PRFL
+        WHERE HS_UPR_CLSF_CD = 'V'					/** Code de classification superieure du SH !== HS상위분류코드 ==! */
+          AND HS_LWPR_CLSF_CD = 'V'					/** Code de classification inferieure du SH !== HS하위분류코드 ==! */
+          AND HS_CD = #{hsCd}									/** Code SH !== HS코드 ==! */
+          AND DEL_YN = 'N'
+          AND ( ( ( TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN   APLY_STRT_DT AND  APLY_END_DT
+            OR TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN   APLY_STRT_DT AND  APLY_END_DT))
+            OR ( TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') >=  APLY_STRT_DT AND APLY_END_DT >= TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') )  )
+    </select>
+
+</mapper>

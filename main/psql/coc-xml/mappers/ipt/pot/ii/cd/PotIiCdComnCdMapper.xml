@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.ii.cd.mapper.PotIiCdComnCdMapper">
+
+  <!--
+   Consulter la liste des codes de devise !==공통코드 목록을 조회한다==!
+  -->
+  <select id="selectComnCdList"
+    resultType="alpass.ipt.pot.ii.cd.vo.PotIiCdComnCdVo">
+    <include refid="pagination.header"/>
+    /** selectComnCdList */
+    SELECT A.COMN_CD,
+    A.COMN_CD AS ORG_COMN_CD,
+    FN_GET_COMN_CD_NM(A.COMN_CD, #{langCd}) AS COMN_CD_NM,
+    A.BSOP_CLSF_CD,
+    A.UPR_COMN_CD,
+    FN_GET_COMN_CD_NM(A.UPR_COMN_CD, #{langCd}) AS UPR_COMN_CD_NM,
+    A.CD_DESC,
+    A.XTRN_OFR_YN,
+    A.USE_YN,
+    FN_GET_CD_VDVAL_NM('COM_0016', A.USE_YN, #{langCd}) AS USE_YN_NM,
+    (SELECT B.CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG B WHERE B.COMN_CD = 'COM_0022' AND B.LANG_CD = #{langCd} AND B.CD_VDVAL = A.BSOP_CLSF_CD) AS BSOP_CLSF_CD_NM,
+    A.FRST_REGST_ID,
+    TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM,
+    A.LAST_CHPR_ID,
+    TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY') AS LAST_CHG_DTTM
+    FROM TB_COM_COMN_CD A
+    WHERE A.DEL_YN = 'N'
+    AND   A.XTRN_OFR_YN = 'Y'
+    <if test="searComnCd != null and searComnCd != ''">
+      AND A.COMN_CD LIKE '%'||#{searComnCd}||'%'
+    </if>
+    <if test="searComnCdNm != null and searComnCdNm != ''">
+      AND A.COMN_CD IN (SELECT B.COMN_CD
+      FROM TB_COM_COMN_CD_LANG B
+      WHERE B.DEL_YN = 'N'
+      AND UPPER(B.COMN_CD_NM) LIKE '%' || UPPER(#{searComnCdNm}) || '%')
+    </if>
+    <if test="searCdVdval != null and searCdVdval != ''">
+      AND A.COMN_CD IN (SELECT B.COMN_CD
+      FROM TB_COM_COMN_CD_D B
+      WHERE B.DEL_YN = 'N'
+      AND B.CD_VDVAL LIKE '%' || #{searCdVdval} || '%')
+    </if>
+    <if test="searCdVdvalNm != null and searCdVdvalNm != ''">
+      AND A.COMN_CD IN (SELECT B.COMN_CD
+      FROM TB_COM_COMN_CD_D_LANG B
+      WHERE B.DEL_YN = 'N'
+      AND UPPER(B.CD_VDVAL_NM) LIKE '%' || UPPER(#{searCdVdvalNm}) || '%')
+    </if>
+    <if test="searBsopClsfCd != null and searBsopClsfCd != ''">
+      AND A.BSOP_CLSF_CD =  #{searBsopClsfCd}
+    </if>
+    ORDER BY COMN_CD,
+    BSOP_CLSF_CD,
+    UPR_COMN_CD,
+    CD_DESC,
+    XTRN_OFR_YN,
+    USE_YN,
+    FRST_REGST_ID,
+    FRST_RGSR_DTTM,
+    LAST_CHPR_ID,
+    LAST_CHG_DTTM
+    <include refid="pagination.footer"/>
+  </select>
+
+  <!--
+     Consulter la liste des codes de devise !==공통코드 목록(상세)을 조회한다==!
+  -->
+  <select id="selectComnCdLangList"
+    parameterType="alpass.ipt.pot.ii.cd.vo.PotIiCdComnCdVo"
+    resultType="alpass.ipt.pot.ii.cd.vo.PotIiCdComnCdLangVo">
+    SELECT B.COMN_CD,
+           A.CD_VDVAL   AS LANG_CD,
+           B.COMN_CD_NM AS LANG_CN
+    FROM TB_COM_COMN_CD_D A,
+         TB_COM_COMN_CD_LANG B
+    WHERE A.COMN_CD = 'COM_0057'
+      AND B.DEL_YN(+) = 'N'
+      AND B.COMN_CD(+) = #{comnCd}
+      AND A.CD_VDVAL = B.LANG_CD(+)
+    ORDER BY TO_NUMBER(A.SORT_ORDR) ASC
+  </select>
+
+  <!--
+     Consulter la liste des codes communs détaillés !==공통코드상세 목록을 조회한다==!
+  -->
+  <select id="selectComnCdDtlList"
+    resultType="alpass.ipt.pot.ii.cd.vo.PotIiCdComnCdDtlVo">
+    <include refid="pagination.header"/>
+    /** selectComnCdDtlList */
+    SELECT A.COMN_CD AS DETL_COMN_CD,
+    A.CD_VDVAL AS DETL_CD_VDVAL,
+    A.CD_VDVAL AS ORG_CD_VDVAL,
+    FN_GET_CD_VDVAL_NM(A.COMN_CD, A.CD_VDVAL, #{langCd}) AS CD_VDVAL_NM,
+    A.USE_YN AS DETL_USE_YN,
+    FN_GET_CD_VDVAL_NM('COM_0016', A.USE_YN, #{langCd}) AS DETL_USE_YN_NM,
+    A.UPR_COMN_CD AS DETL_UPR_COMN_CD,
+    A.UPR_CD_VDVAL AS DETL_UPR_CD_VDVAL,
+    FN_GET_CD_VDVAL_NM(A.UPR_COMN_CD, A.UPR_CD_VDVAL, #{langCd}) AS DETL_UPR_CD_VDVAL_NM,
+    TO_CHAR(TO_DATE(A.VALD_STRT_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS DETL_VALD_STRT_DT,
+    TO_CHAR(TO_DATE(A.VALD_END_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS DETL_VALD_END_DT,
+    A.SORT_ORDR AS DETL_SORT_ORDR,
+    A.SORT_ORDR AS ORG_DETL_SORT_ORDR,
+    A.USER_DEFN_VDVAL1,
+    A.USER_DEFN_VDVAL2,
+    A.USER_DEFN_VDVAL3,
+    A.FRST_REGST_ID,
+    TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM,
+    A.LAST_CHPR_ID,
+    TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY') AS LAST_CHG_DTTM
+    FROM TB_COM_COMN_CD_D A
+    WHERE A.DEL_YN = 'N'
+    AND A.COMN_CD = #{comnCd}
+    ORDER BY DETL_SORT_ORDR
+    <include refid="pagination.footer"/>
+  </select>
+  <!--
+    Consulter la liste des codes communs détaillés !==공통코드상세 목록을 조회한다==!
+    -->
+  <select id="selectComnCdDtlLangList"
+    parameterType="alpass.ipt.pot.ii.cd.vo.PotIiCdComnCdDtlVo"
+    resultType="alpass.ipt.pot.ii.cd.vo.PotIiCdComnCdDtlLangVo">
+    /** selectComnCdDtlLangList */
+    SELECT B.COMN_CD,
+           B.CD_VDVAL,
+           A.CD_VDVAL AS LANG_CD,
+           B.CD_VDVAL_NM AS LANG_CN
+    FROM TB_COM_COMN_CD_D A,
+         TB_COM_COMN_CD_D_LANG B
+    WHERE A.COMN_CD = 'COM_0057'
+      AND B.DEL_YN(+) = 'N'
+      AND B.COMN_CD(+) = #{detlComnCd}
+      AND B.CD_VDVAL(+) = #{detlCdVdval}
+      AND A.CD_VDVAL = B.LANG_CD(+)
+    ORDER BY TO_NUMBER(A.SORT_ORDR) ASC
+  </select>
+
+</mapper>

@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.pot.mp.cmmn.mapper.PotMpCmmnImpvOpinMapper">
+
+	<resultMap id="potMpCmmnImpvOpinMap" type="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnImpvOpinVo" >
+		<id property="impvOpinSrno" column="IMPV_OPIN_SRNO"></id>
+		<result property="drnum" column="drnum" />
+		<result property="appClsfCd" column="APP_CLSF_CD" />
+		<result property="bsopCtgyCd" column="BSOP_CTGY_CD" />
+		<result property="impvOpinTpCd" column="IMPV_OPIN_TP_CD" />
+		<result property="impvOpinTtle" column="IMPV_OPIN_TTLE" />
+		<result property="impvOpinCn" column="IMPV_OPIN_CN" />
+		<result property="impvOpinLqtyCn" column="IMPV_OPIN_LQTY_CN" />
+		<result property="mdpnId" column="MDPN_ID" />
+		<result property="mdpnNm" column="MDPN_NM" />
+		<result property="makeDt" column="MAKE_DT" />
+		<result property="inqtCnt" column="INQT_CNT" />
+		<result property="atchFileId" column="ATCH_FILE_ID" />
+		<result property="prcsSttsCd" column="PRCS_STTS_CD" />
+		<result property="delYn" column="DEL_YN" />
+		<result property="frstRegstId" column="FRST_REGST_ID" />
+		<result property="frstRgsrDttm" column="FRST_RGSR_DTTM" />
+		<result property="lastChprId" column="LAST_CHPR_ID" />
+		<result property="lastChgDttm" column="LAST_CHG_DTTM" />
+		<collection property="answList" javaType="java.util.ArrayList" ofType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnImpvOpinAnswVo" resultMap="potMpCmmnImpvOpinAnswMap"></collection>
+	</resultMap>
+	
+	<resultMap id="potMpCmmnImpvOpinAnswMap" type="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnImpvOpinAnswVo">
+		<id property="impvOpinSrno" column="IMPV_OPIN_SRNO" />
+		<id property="answSrno" column="ANSW_SRNO" />
+		<result property="answCn" column="ANSW_CN" />
+		<result property="anpnId" column="ANPN_ID" />
+		<result property="anpnNm" column="ANPN_NM" />
+		<result property="answDt" column="ANSW_DT" />
+		<result property="answDelYn" column="ANSW_DEL_YN" />
+		<result property="answFrstRegstId" column="ANSW_FRST_REGST_ID" />
+		<result property="answFrstRgsrDttm" column="ANSW_FRST_RGSR_DTTM" />
+		<result property="answLastChprId" column="ANSW_LAST_CHPR_ID" />
+		<result property="answLastChgDttm" column="ANSW_LAST_CHG_DTTM" />
+	</resultMap>
+	
+  <!--
+		Consulter la liste de l'avis d'amélioration !==개선의견 목록을 조회한다.==!
+	-->
+    <select id="selectImpvOpinList" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnImpvOpinVo" resultType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnImpvOpinVo">
+        /* selectImpvOpinList */
+        <include refid="pagination.header"/>
+                    SELECT
+		                  A.IMPV_OPIN_SRNO            
+						, A.APP_CLSF_CD
+        		, A.BSOP_CTGY_CD
+						, A.IMPV_OPIN_TP_CD            
+						, A.IMPV_OPIN_TTLE            
+						, NVL(A.IMPV_OPIN_CN, NULL) IMPV_OPIN_CN        
+						, NVL(A.IMPV_OPIN_LQTY_CN, NULL) IMPV_OPIN_LQTY_CN           
+						, A.MDPN_ID           
+						, ( SELECT CONCAT(U.EMP_FMNM, ' ', U.EMP_NM) FROM TB_POTI_EMP U WHERE PBSR_NO = A.MDPN_ID) AS MDPN_NM
+		                , TO_CHAR(A.MAKE_DTTM,'DD/MM/YYYY HH24:MI:SS') AS MAKE_DT
+						, A.INQT_CNT            
+						, A.ATCH_FILE_ID            
+						, A.PRCS_STTS_CD            
+						, A.DEL_YN            
+						, A.FRST_REGST_ID            
+		                , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+						, A.LAST_CHPR_ID            
+		                , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS  LAST_CHG_DTTM	
+		            FROM   TB_POTI_IMPV_OPIN A 
+		           WHERE  A.DEL_YN = 'N'     
+		           AND	  A.APP_CLSF_CD = 'IPT'       
+		           AND	  (A.MDPN_ID = #{mdpnId})
+		           <if test="searchKeywordFrom != null and searchKeywordFrom != '' ">
+			           <if test="searchKeywordTo != null and searchKeywordTo != '' ">
+		           			AND A.MAKE_DTTM
+		           				BETWEEN TO_DATE( #{searchKeywordFrom}||'000000' , 'DD/MM/YYYYHH24MISS')
+		           				AND TO_DATE( #{searchKeywordTo}||'235959' , 'DD/MM/YYYYHH24MISS')
+						</if>
+					</if>
+					<if test="impvOpinTtle != null and impvOpinTtle != '' ">
+						AND UPPER(A.IMPV_OPIN_TTLE) like '%' || UPPER(#{impvOpinTtle}) || '%'
+					</if>
+					<if test="impvOpinTpCd != null and impvOpinTpCd != '' ">
+						AND A.IMPV_OPIN_TP_CD = #{impvOpinTpCd}
+					</if>             
+					<if test="prcsSttsCd != null and prcsSttsCd != '' ">
+						AND A.PRCS_STTS_CD = #{prcsSttsCd}
+					</if>
+		            ORDER BY A.FRST_RGSR_DTTM DESC, A.IMPV_OPIN_SRNO  DESC
+        <include refid="pagination.footer"/>
+		  </select>
+    
+  <!--
+		Consulter le nombre de la liste de l'avis d'amélioration !==개선의견 목록 개수를 조회한다.==!
+	-->
+    <select id="selectImpvOpinListCnt" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnImpvOpinVo" resultType="int">
+        /* selectImpvOpinListCnt */
+        SELECT MAX(DRNUM) FROM (
+	        SELECT srt.*, DENSE_RANK() OVER(ORDER BY IMPV_OPIN_SRNO DESC) AS DRNUM FROM (
+    		    SELECT COUNT(*) OVER() AS totCnt, SQLRSLT.*, rownum as rnum FROM (
+		            SELECT
+		                  A.IMPV_OPIN_SRNO
+		            FROM   TB_POTI_IMPV_OPIN A, TB_POTI_IMPV_OPIN_ANSW B
+		           WHERE  A.IMPV_OPIN_SRNO = B.IMPV_OPIN_SRNO(+)
+		           AND    A.DEL_YN = 'N'    
+		           AND    B.DEL_YN(+) = 'N'
+		           AND	  A.APP_CLSF_CD = 'IPT'   
+		           AND	  (A.MDPN_ID = #{mdpnId} OR A.PRCS_STTS_CD = '003')    
+		            AND	  (A.MDPN_ID = #{mdpnId} OR A.PRCS_STTS_CD = '003') 
+		           <if test="searchKeywordFrom != null and searchKeywordFrom != '' ">
+			           <if test="searchKeywordTo != null and searchKeywordTo != '' ">
+		           			AND A.MAKE_DTTM
+		           				BETWEEN TO_DATE( #{searchKeywordFrom}||'000000' , 'DD/MM/YYYYHH24MISS')
+		           				AND TO_DATE( #{searchKeywordTo}||'235959' , 'DD/MM/YYYYHH24MISS')
+						</if>
+					</if>
+					<if test="impvOpinTtle != null and impvOpinTtle != '' ">
+						AND UPPER(A.IMPV_OPIN_TTLE) like '%' || UPPER(#{impvOpinTtle}) || '%'
+					</if>
+					<if test="impvOpinTpCd != null and impvOpinTpCd != '' ">
+						AND A.IMPV_OPIN_TP_CD = #{impvOpinTpCd}
+					</if>             
+					<if test="prcsSttsCd != null and prcsSttsCd != '' ">
+						AND A.PRCS_STTS_CD = #{prcsSttsCd}
+					</if>            
+		           ORDER BY A.FRST_RGSR_DTTM, A.IMPV_OPIN_SRNO, B.ANSW_SRNO DESC
+		        ) SQLRSLT
+        	) srt ORDER BY srt.rnum DESC
+        )
+    </select>
+    
+  <!--
+		Consulter des réponses de l'avis d'amélioration !==개선의견을 조회한다==!
+	-->
+    <select id="selectImpvOpin" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnImpvOpinVo" resultMap="potMpCmmnImpvOpinMap">
+			/* selectImpvOpin */
+    	SELECT
+                  A.IMPV_OPIN_SRNO            
+				, A.APP_CLSF_CD
+    	  , A.BSOP_CTGY_CD
+				, A.IMPV_OPIN_TP_CD            
+				, A.IMPV_OPIN_TTLE            
+				, NVL(A.IMPV_OPIN_CN, NULL) AS IMPV_OPIN_CN   
+				, NVL(A.IMPV_OPIN_LQTY_CN, NULL) AS IMPV_OPIN_LQTY_CN          
+				, A.MDPN_ID            
+				, ( SELECT U.EMP_NM FROM TB_POTI_EMP U WHERE PBSR_NO = A.MDPN_ID) AS MDPN_NM                 
+                , TO_CHAR(A.MAKE_DTTM,'DD/MM/YYYY HH24:MI:SS') AS MAKE_DT
+				, A.INQT_CNT            
+				, A.ATCH_FILE_ID            
+				, A.PRCS_STTS_CD            
+				, A.DEL_YN            
+				, A.FRST_REGST_ID            
+                , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+				, A.LAST_CHPR_ID            
+                , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS  LAST_CHG_DTTM
+                , B.ANSW_SRNO		
+				, B.ANSW_CN			
+				, B.ANPN_ID
+    	  , B.HIDE_YN
+				, ( SELECT U.EMP_NM FROM TB_POTI_EMP U WHERE PBSR_NO = B.ANPN_ID) AS ANPN_NM	
+				, TO_CHAR(B.ANSW_DTTM,'DD/MM/YYYY HH24:MI:SS') AS ANSW_DT		
+				, B.DEL_YN AS ANSW_DEL_YN		
+				, B.FRST_REGST_ID AS ANSW_FRST_REGST_ID			
+                , TO_CHAR(B.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS ANSW_FRST_RGSR_DTTM
+				, B.LAST_CHPR_ID AS ANSW_LAST_CHPR_ID			
+				, TO_CHAR(B.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS ANSW_LAST_CHG_DTTM
+         FROM   TB_POTI_IMPV_OPIN A, TB_POTI_IMPV_OPIN_ANSW B
+         WHERE  A.IMPV_OPIN_SRNO = B.IMPV_OPIN_SRNO(+)
+         AND    A.DEL_YN = 'N'    
+         AND    B.DEL_YN(+) = 'N'
+					 AND (B.hide_yn != 'Y' OR B.hide_yn = '' OR B.hide_yn IS NULL)
+         AND	A.APP_CLSF_CD = 'IPT'
+         AND	A.IMPV_OPIN_SRNO = #{impvOpinSrno}
+         ORDER BY A.FRST_RGSR_DTTM , A.IMPV_OPIN_SRNO , B.ANSW_SRNO
+    </select>
+    
+  <!--
+		Modifier le nombre de vues de l'avis d'amélioration !==개선의견 조회수를 수정한다.==!
+	-->
+    <update id="updateViewImpvOpin" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnImpvOpinVo">
+        /* updateViewImpvOpin */
+        UPDATE  TB_POTI_IMPV_OPIN SET 
+                INQT_CNT = INQT_CNT+1
+        WHERE	IMPV_OPIN_SRNO = #{impvOpinSrno}
+    </update>
+    
+  <!--
+		Enregistrer une réponse de l'avis d'amélioration !==개선의견을 등록한다==!
+	-->
+    <insert id="insertImpvOpin" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnImpvOpinVo">
+    <selectKey keyProperty="impvOpinSrno" keyColumn="IMPV_OPIN_SRNO" resultType="java.math.BigDecimal" order="BEFORE">
+    	SELECT NVL(MAX(IMPV_OPIN_SRNO),0) +1 FROM TB_POTI_IMPV_OPIN
+    </selectKey>
+			/* insertImpvOpin */
+    	INSERT INTO TB_POTI_IMPV_OPIN
+    		(
+    			  IMPV_OPIN_SRNO            
+				, APP_CLSF_CD
+				, BSOP_CTGY_CD
+				, IMPV_OPIN_TP_CD            
+				, IMPV_OPIN_TTLE            
+				, IMPV_OPIN_CN            
+				, IMPV_OPIN_LQTY_CN            
+				, MDPN_ID            
+				, MAKE_DTTM            
+				, INQT_CNT            
+				, ATCH_FILE_ID            
+				, PRCS_STTS_CD            
+				, DEL_YN            
+				, FRST_REGST_ID            
+				, FRST_RGSR_DTTM            
+				, LAST_CHPR_ID            
+				, LAST_CHG_DTTM
+			)
+    		VALUES
+    		(
+    			  #{impvOpinSrno}            
+				, 'IPT'
+    		, #{bsopCtgyCd}
+				, #{impvOpinTpCd}            
+				, #{impvOpinTtle}            
+				, #{impvOpinCn}            
+				, #{impvOpinLqtyCn}            
+				, #{mdpnId}            
+				, SYSDATE            
+				, #{inqtCnt}            
+				, #{atchFileId}            
+				, '001'            
+				, 'N'      
+				, #{frstRegstId}            
+				, SYSTIMESTAMP            
+				, #{lastChprId}            
+				, SYSTIMESTAMP
+    		)
+    </insert>
+    
+  <!--
+		Modifier une réponse de l'avis d'amélioration !==개선의견을 수정한다==!
+	-->
+    <update id="updateImpvOpin" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnImpvOpinVo">
+        /* updateImpvOpin */
+        UPDATE  TB_POTI_IMPV_OPIN 
+        <trim prefix="SET" prefixOverrides="," >
+        	<if test="impvOpinTpCd != null and impvOpinTpCd != '' ">, IMPV_OPIN_TP_CD = #{impvOpinTpCd}</if>
+        	<if test="bsopCtgyCd != null and bsopCtgyCd != '' ">, BSOP_CTGY_CD = #{bsopCtgyCd}</if>
+        	<if test="impvOpinTtle != null and impvOpinTtle != '' ">, IMPV_OPIN_TTLE = #{impvOpinTtle}</if>
+        	<if test="(impvOpinCn != null and impvOpinCn != '') or (impvOpinLqtyCn != null and impvOpinLqtyCn != '') ">, IMPV_OPIN_CN = #{impvOpinCn}</if>
+        	<if test="(impvOpinCn != null and impvOpinCn != '') or (impvOpinLqtyCn != null and impvOpinLqtyCn != '')">, IMPV_OPIN_LQTY_CN = #{impvOpinLqtyCn}</if>
+        	<if test="atchFileId != null and atchFileId != '' ">, ATCH_FILE_ID = #{atchFileId}</if>
+        	<if test="lastChprId != null and lastChprId != '' ">, LAST_CHPR_ID = #{lastChprId}</if>
+        	<if test="lastChprId != null and lastChprId != '' ">, LAST_CHG_DTTM = SYSTIMESTAMP</if>
+        </trim>
+           WHERE  DEL_YN = 'N'                          
+           AND    IMPV_OPIN_SRNO = #{impvOpinSrno}
+    </update>
+    
+  <!--
+		Supprimer une réponse de l'avis d'amélioration !==개선의견을 삭제한다==!
+	-->
+    <update id="deleteImpvOpin" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnImpvOpinVo">
+        /* deleteImpvOpin */
+        UPDATE  TB_POTI_IMPV_OPIN SET 
+                DEL_YN = 'Y'                           
+             ,  LAST_CHPR_ID = #{lastChprId}           
+             ,  LAST_CHG_DTTM = SYSTIMESTAMP           
+         WHERE  IMPV_OPIN_SRNO = #{impvOpinSrno}
+    </update>
+    
+  <!--
+		Supprimer une réponse de l'avis d'amélioration !==개선의견 답변 게시물을 삭제한다.==!
+	-->
+    <update id="deleteImpvOpinAnsw" parameterType="alpass.ipt.pot.mp.cmmn.vo.PotMpCmmnImpvOpinVo">
+			/* deleteImpvOpinAnsw */
+    	UPDATE  TB_POTI_IMPV_OPIN_ANSW SET 
+                DEL_YN = 'Y'                           
+             ,  LAST_CHPR_ID = #{lastChprId}           
+             ,  LAST_CHG_DTTM = SYSTIMESTAMP           
+         WHERE  DEL_YN = 'N'                           
+         AND    IMPV_OPIN_SRNO = #{impvOpinSrno}
+    </update>
+    
+</mapper>

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.sm.gsn.mapper.PotSmGsnMapper">
+	
+	<!-- 
+		 Consulter la liste de la numérotation !== 채번 목록 조회 ==!
+	 -->
+	<select id="selectGsnList" parameterType="alpass.ipt.pot.sm.gsn.vo.PotSmGsnVo" resultType="alpass.ipt.pot.sm.gsn.vo.PotSmGsnVo">
+		/** selectGsnList */
+    	<include refid="pagination.header"/>
+		SELECT 
+		       GSN_CD AS ORG_GSN_CD 
+		     , GSN_CD  
+		     , BSOP_CLSF_CD 
+		     , GSN_NM
+		     , SRNO_LEN 
+		     , SRNO_SYTM_CN
+		     , GSN_DESC_CN 
+		     , USE_YN
+		     , DEL_YN
+             , TO_CHAR(FRST_RGSR_DTTM, 'DD/MM/YYYY') AS frstRgsrDttm 
+             , FRST_REGST_ID 
+             , TO_CHAR(LAST_CHG_DTTM, 'DD/MM/YYYY') AS lastChgDttm 
+             , LAST_CHPR_ID		   
+		FROM 
+			TB_COM_SRNO_GSN
+		WHERE DEL_YN = 'N'
+		<if test="searGsnCd != null and searGsnCd != ''">
+		AND   UPPER(GSN_CD)  LIKE '%'||UPPER(#{searGsnCd})||'%'
+		</if>		
+		<if test="searBsopClsfCd != null and searBsopClsfCd != ''">
+		AND   BSOP_CLSF_CD =  #{searBsopClsfCd}
+		</if>		
+		<if test="searGsnNm != null and searGsnNm != ''">
+		AND   UPPER(GSN_NM) LIKE '%'||UPPER(#{searGsnNm})||'%'
+		</if>		
+		<if test="searGsnDescCn != null and searGsnDescCn != ''">
+		AND   UPPER(GSN_DESC_CN) LIKE '%'||UPPER(#{searGsnDescCn})||'%'
+		</if>		
+		ORDER BY BSOP_CLSF_CD, GSN_CD
+    <include refid="pagination.footer"/>
+	</select>
+	
+	<!-- 
+		 Consulter la liste de l'historique de la numérotation !== 채번이력 목록 조회 ==!
+	 -->
+	<select id="selectGsnHistList" parameterType="alpass.ipt.pot.sm.gsn.vo.PotSmGsnVo" resultType="alpass.ipt.pot.sm.gsn.vo.PotSmGsnVo">
+		/** selectGsnHistList */
+    	<include refid="pagination.header"/>
+		SELECT 
+		       GSN_CD
+		     , GSN_TP_VAL
+		     , GSN_LAST_SRNO
+	    FROM  
+			TB_COM_SRNO_GSN_D
+		WHERE GSN_CD = #{gsnCd}
+		AND DEL_YN = 'N'
+		ORDER BY GSN_TP_VAL
+    	<include refid="pagination.footer"/> 
+	</select>
+	
+	<!-- 
+		 Consulter le comptage de la numérotation !== 채번 카운트 조회 ==!
+	 -->
+	<select id="selectGsnCdCnt" parameterType="alpass.ipt.pot.sm.gsn.vo.PotSmGsnVo" resultType="java.lang.Integer">
+		/** selectGsnCdCnt */
+		SELECT 
+		       COUNT(1) AS CNT
+		FROM  
+			TB_COM_SRNO_GSN
+		WHERE GSN_CD =  #{gsnCd}
+		AND   DEL_YN = 'N'
+	</select>
+		
+	<!-- 
+		 Consulter le comptage de vérification des services en cours de la numérotation !== 채번 업무진행 확인 카운트 조회 ==!
+	 -->
+	<select id="selectGsnCdBusiCnt" parameterType="alpass.ipt.pot.sm.gsn.vo.PotSmGsnVo" resultType="java.lang.Integer">
+		/** selectGsnCdBusiCnt */
+	    SELECT 
+	           COUNT(1) AS CNT
+	    FROM 
+			TB_COM_SRNO_GSN A, TB_COM_SRNO_GSN_D B
+	    WHERE A.GSN_CD = b.GSN_CD 
+	    AND   A.USE_YN = 'Y'
+	    AND   A.DEL_YN = 'N'
+	    AND   B.DEL_YN = 'N'
+	    AND   A.GSN_CD = #{gsnCd}
+	</select>
+				
+	<!-- 
+		 Enregistrer la numérotation !== 채번 등록 ==!
+	 -->
+	<insert id="insertGsn" parameterType="alpass.ipt.pot.sm.gsn.vo.PotSmGsnVo">
+		/** insertGsn */
+	    <selectKey keyProperty="gsnCd" resultType="string" order="BEFORE">
+			SELECT 
+			      #{bsopClsfCd}||LPAD( (NVL( (TO_NUMBER(REPLACE(MAX(GSN_CD) ,TRANSLATE(MAX(GSN_CD) ,'X0123456789.','X'),''))) , 0) + 1), 3, '0') AS GSN_CD
+			FROM  
+				TB_COM_SRNO_GSN 
+			WHERE BSOP_CLSF_CD = #{bsopClsfCd}
+			AND   DEL_YN = 'N'
+	    </selectKey>
+		 WITH UPSERT AS (
+			UPDATE TB_COM_SRNO_GSN 
+			SET LAST_CHPR_ID = #{lastChprId}
+			     , LAST_CHG_DTTM = SYSTIMESTAMP
+			     , DEL_YN = 'N'			   
+			     , BSOP_CLSF_CD = #{bsopClsfCd}
+			     , GSN_NM = #{gsnNm}
+			     , SRNO_LEN = #{srnoLen}
+			     , SRNO_SYTM_CN = #{srnoSytmCn}
+			     , GSN_DESC_CN = #{gsnDescCn}
+			     , USE_YN = 'Y'
+			WHERE GSN_CD = #{gsnCd} AND DEL_YN = 'Y'	
+			RETURNING *
+		)
+		INSERT
+			INTO TB_COM_SRNO_GSN
+		SELECT #{gsnCd}
+			    , #{bsopClsfCd}
+			    , #{gsnNm}
+			    , #{srnoLen}
+			    , #{srnoSytmCn}
+			    , #{gsnDescCn}
+			    , #{useYn}
+			    , 'N'
+			    , #{frstRegstId}
+			    , SYSTIMESTAMP
+			    , #{lastChprId}
+			    , SYSTIMESTAMP
+		WHERE 
+			NOT EXISTS(SELECT * FROM UPSERT) 
+	</insert>
+				
+	<!-- 
+		 Modifier la numérotation !== 채번 수정 ==!
+	 -->
+	<update id="updateGsn" parameterType="alpass.ipt.pot.sm.gsn.vo.PotSmGsnVo">
+		/** updateGsn */
+		UPDATE
+			TB_COM_SRNO_GSN
+		SET  
+		     LAST_CHPR_ID = #{lastChprId}
+		    , LAST_CHG_DTTM = SYSTIMESTAMP
+		    , BSOP_CLSF_CD = #{bsopClsfCd}
+		    , GSN_NM = #{gsnNm}
+		    , SRNO_LEN = #{srnoLen}
+		    , SRNO_SYTM_CN = #{srnoSytmCn}
+		    , GSN_DESC_CN = #{gsnDescCn}
+		    , USE_YN = #{useYn}
+        WHERE GSN_CD = #{orgGsnCd}
+        AND   DEL_YN = 'N'
+	</update>
+	
+	<!-- 
+		 Supprimer la numérotation !== 채번 삭제 ==!
+	 -->
+	<update id="deleteGsn" parameterType="alpass.ipt.pot.sm.gsn.vo.PotSmGsnVo">
+		/** deleteGsn */
+		UPDATE
+			TB_COM_SRNO_GSN
+		SET  
+		     LAST_CHPR_ID = #{lastChprId}
+		   , LAST_CHG_DTTM = SYSTIMESTAMP
+		   , DEL_YN = 'Y' 
+        WHERE GSN_CD = #{orgGsnCd}
+	</update>
+	
+	<!-- 
+		 Créer le code de numérotation  !== 채번 코드 생성 ==!
+	 -->
+	<select id="selectGsnCdCreate" parameterType="alpass.ipt.pot.sm.gsn.vo.PotSmGsnVo" resultType="alpass.ipt.pot.sm.gsn.vo.PotSmGsnVo">
+		/** selectGsnCdCreate */
+		SELECT 
+		      #{bsopClsfCd}||LPAD( (NVL( (TO_NUMBER(REPLACE(MAX(GSN_CD) ,TRANSLATE(MAX(GSN_CD) ,'X0123456789.','X'),''))) , 0) + 1), 3, '0') AS GSN_CD
+		FROM
+			TB_COM_SRNO_GSN
+		WHERE BSOP_CLSF_CD = #{bsopClsfCd}
+		AND   DEL_YN = 'N'
+	</select>	
+	
+</mapper>

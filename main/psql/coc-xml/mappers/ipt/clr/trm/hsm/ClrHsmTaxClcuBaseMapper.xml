@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+세금코드별 세금산정기준 관리
+-->
+<mapper namespace="alpass.ipt.clr.trm.hsm.mapper.ClrHsmTaxClcuBaseMapper">
+
+	<sql id="sqlSearchQuery">
+		<if test="baseSrno != null and baseSrno != ''">
+		AND			BASE_SRNO = #{baseSrno}
+		</if>
+		<if test="aplyStrtDt != null and aplyStrtDt != ''">
+		<![CDATA[
+		AND			APLY_STRT_DT >= TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		]]>
+		</if>
+		<if test="aplyEndDt != null and aplyEndDt != ''">
+		<![CDATA[
+		AND			APLY_END_DT <= TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		]]>
+		</if>
+	</sql>
+
+	<sql id="sqlSelectQuery">
+		SELECT
+					A.TAX_CD
+					, B.TAX_CD_NM
+					, B.TAX_CTGY_CD
+		     		, B.TRIF_RT_TP_CD
+					, B.APLY_PROR_RNK
+					, A.BASE_SRNO
+					, A.APLY_STRT_DT
+					, A.APLY_END_DT
+					, A.TAX_CLCU_BASE_CN
+					, A.USE_YN
+					, A.DEL_YN
+		     		, A.RMRK_CN
+		     		, A.LSPR_TXBS_CN
+		     		, A.CRLN_TXBS_CN
+					, A.FRST_REGST_ID
+					, A.FRST_RGSR_DTTM
+					, A.LAST_CHPR_ID
+					, A.LAST_CHG_DTTM
+		FROM		TB_CLRI_TAX_CLCU_BASE A
+					, TB_CLRI_TAX_CD B
+		WHERE		A.TAX_CD = #{taxCd}
+		AND			A.TAX_CD = B.TAX_CD
+		AND			A.DEL_YN = 'N'
+		AND			B.DEL_YN = 'N'
+	</sql>
+
+	<select id="selectClrTaxClcuBaseCnt" parameterType="alpass.ipt.clr.com.vo.ClrTaxClcuBaseVo" resultType="int">
+		/** selectClriTaxClcuBaseCnt : 세금산정기준 카운트 조회 **/
+		SELECT COUNT(*) AS CNT FROM (
+			<include refid="sqlSelectQuery" />
+			<include refid="sqlSearchQuery" />
+		)
+	</select>
+
+	<select id="selectClrTaxClcuBaseList" parameterType="alpass.ipt.clr.com.vo.ClrTaxClcuBaseVo" resultType="alpass.ipt.clr.com.vo.ClrTaxClcuBaseVo">
+		/** selectClriTaxClcuBaseList : 세금산정기준 페이징 목록 조회 **/
+		<include refid="pagination.header"/>
+		SELECT
+				A.TAX_CD
+				, A.TAX_CD_NM
+				, A.TAX_CTGY_CD
+				, A.APLY_PROR_RNK
+				, A.BASE_SRNO
+				, TO_CHAR(TO_DATE(A.APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APLY_STRT_DT
+				, TO_CHAR(TO_DATE(A.APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APLY_END_DT
+				, A.TAX_CLCU_BASE_CN
+		     	, A.RMRK_CN
+				, A.USE_YN
+				, (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COM_0016' AND LANG_CD = #{langCd} AND CD_VDVAL = A.USE_YN) USE_YN_NM
+				, A.DEL_YN
+				, A.LSPR_TXBS_CN
+				, A.CRLN_TXBS_CN
+				, A.FRST_REGST_ID
+				, A.FRST_RGSR_DTTM
+				, A.LAST_CHPR_ID
+				, A.LAST_CHG_DTTM
+		FROM (
+			<include refid="sqlSelectQuery" />
+			<include refid="sqlSearchQuery" />
+		) A
+		ORDER BY	DECODE(A.TAX_CTGY_CD, 'G', 1, 'I', 2, 'P', 3, 'O', 4) ASC, TO_NUMBER(A.APLY_PROR_RNK) ASC, A.TAX_CD ASC
+		<include refid="pagination.footer" />
+	</select>
+
+	<select id="selectAplyClrTaxClcuBaseCnt" parameterType="alpass.ipt.clr.com.vo.ClrTaxClcuBaseVo" resultType="Integer">
+		/** selectAplyClriTaxClcuBaseCnt : 세금산정기준 중복 데이터 카운트 조회 **/
+		<![CDATA[
+		SELECT
+					COUNT(*)
+		FROM
+					TB_CLRI_TAX_CLCU_BASE
+		WHERE		TAX_CD = #{taxCd}
+		AND			DEL_YN = 'N'
+		AND			APLY_STRT_DT <= TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		AND			APLY_END_DT >= TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		]]>
+		<if test="baseSrno != null and baseSrno != 0">
+		<![CDATA[
+		AND			BASE_SRNO <> #{baseSrno}
+		]]>
+		</if>
+	</select>
+
+	<insert id="insertClrTaxClcuBase" parameterType="alpass.ipt.clr.com.vo.ClrTaxClcuBaseVo">
+		/** ClriHsmgntTaxClcuBaseSvc_insertClriTaxClcuBase : 세금산정기준 정보 저장 **/
+		<selectKey keyProperty="baseSrno" order="BEFORE" resultType="BigDecimal">
+			SELECT NVL(MAX(BASE_SRNO), 0) + 1 BASE_SRNO FROM TB_CLRI_TAX_CLCU_BASE WHERE TAX_CD = #{taxCd}
+		</selectKey>
+        /** insertClriTaxClcuBase */
+        INSERT INTO	TB_CLRI_TAX_CLCU_BASE (
+					TAX_CD
+					, BASE_SRNO
+					, APLY_STRT_DT
+					, APLY_END_DT
+					, TAX_CLCU_BASE_CN
+					, USE_YN
+					, DEL_YN
+					, RMRK_CN
+					, LSPR_TXBS_CN
+					, CRLN_TXBS_CN
+					, FRST_REGST_ID
+					, FRST_RGSR_DTTM
+					, LAST_CHPR_ID
+					, LAST_CHG_DTTM
+		) VALUES (
+					#{taxCd}
+					, #{baseSrno}
+					, TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+					, TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+					, #{taxClcuBaseCn}
+					, #{useYn}
+					, 'N'
+		    		, #{rmrkCn}
+		    		, #{lsprTxbsCn}
+		      		, #{crlnTxbsCn}
+					, #{frstRegstId}
+					, SYSTIMESTAMP
+					, #{lastChprId}
+					, SYSTIMESTAMP
+		)
+    </insert>
+
+    <update id="updatePrevClrTaxClcuBase" parameterType="alpass.ipt.clr.com.vo.ClrTaxClcuBaseVo">
+    	/** updatePrevClriTaxClcuBase : 세금산정기준 적용종료일자 정보 변경 **/
+    	UPDATE		TB_CLRI_TAX_CLCU_BASE
+    	SET
+    				APLY_END_DT = TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY') - 1, 'YYYYMMDD')
+    	WHERE		TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN APLY_STRT_DT AND APLY_END_DT
+    	AND			TAX_CD = #{taxCd}
+	</update>
+
+    <update id="updateClrTaxClcuBase" parameterType="alpass.ipt.clr.com.vo.ClrTaxClcuBaseVo">
+        /** updateClriTaxClcuBase : 세금산정기준 정보 변경 **/
+		UPDATE		TB_CLRI_TAX_CLCU_BASE
+		SET
+        <trim prefixOverrides="," >
+					  APLY_STRT_DT = TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+					, APLY_END_DT = TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+					, TAX_CLCU_BASE_CN = #{taxClcuBaseCn}
+		  			, RMRK_CN = #{rmrkCn}
+					, LSPR_TXBS_CN = #{lsprTxbsCn}
+					, CRLN_TXBS_CN = #{crlnTxbsCn}
+					, USE_YN = #{useYn}
+					, LAST_CHPR_ID = #{lastChprId}
+					, LAST_CHG_DTTM = SYSTIMESTAMP
+        </trim>
+		WHERE		DEL_YN = 'N'
+		AND			TAX_CD = #{taxCd}
+		AND			BASE_SRNO = #{baseSrno}
+    </update>
+
+    <delete id="deleteClrTaxClcuBase" parameterType="alpass.ipt.clr.com.vo.ClrTaxClcuBaseVo">
+    	/** deleteClriTaxClcuBase : 세금산정기준 삭제 **/
+    	DELETE FROM TB_CLRI_TAX_CLCU_BASE
+    	WHERE		TAX_CD = #{taxCd}
+    	AND			BASE_SRNO = #{baseSrno}
+    </delete>
+
+</mapper>

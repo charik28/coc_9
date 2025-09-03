@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.rsm.selc.mapper.RsmSelcPrcScpMgmtMapper">
+
+    <!-- [Gérer les valeurs fourchettes] Consulter la liste !== [가격범위관리] 목록조회 ==! -->
+    <select id="selectPrcScpMgmtList" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcPrcScpMgmtVo" resultType="alpass.ipt.rsm.selc.vo.RsmSelcPrcScpMgmtVo">
+    /* selectPrcScpMgmtList */
+    <include refid="pagination.header" />
+    SELECT  A.PRC_SCP_NO                    /** N° Valeur fourchette !== 가격범위번호 ==! */
+          , A.PRC_SCP_NM                    /** Nom de la valeur fourchette !== 가격범위명 ==! */
+          , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS REGST_DT                             /** Date d'enregistrement !== 등록일자 ==! */
+          , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.FRST_REGST_ID) AS REGST       /** Enregistré(e) par !== 등록자 ==! */
+    FROM    TB_RSMI_PRC_SCP_BSCS A
+          , ( SELECT  PRC_SCP_NO
+              FROM    TB_RSMI_PRC_SCP_D
+              WHERE   DEL_YN = 'N'
+              <if test='hsCd != null and !"".equals(hsCd)'>
+              AND     HS_CD = #{hsCd}
+              </if>
+              GROUP   BY PRC_SCP_NO ) B
+    WHERE   A.PRC_SCP_NO = B.PRC_SCP_NO
+    AND     A.DEL_YN = 'N'
+    <if test='prcScpNm != null and !"".equals(prcScpNm)'>
+    AND     A.PRC_SCP_NM LIKE '%' || #{prcScpNm} || '%'                /* Nom de la valeur fourchette  !== 가격범위명 ==! */
+    </if>
+    ORDER BY A.FRST_RGSR_DTTM DESC                                     /* Date et heure de premier enregistrement !== 최초등록일시 ==!*/
+    <include refid="pagination.footer" />
+    </select>
+
+    <!-- [Gérer les valeurs fourchettes] Consulter les détails !== [가격범위관리] 상세조회 ==! -->
+    <select id="selectPrcScpMgmtDetailList" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcPrcScpMgmtVo" resultType="alpass.ipt.rsm.com.vo.RsmPrcScpDVo">
+    /* selectPrcScpMgmtDetailList */
+    SELECT  A.PRC_SCP_NO                /** N° Valeur fourchette !== 가격범위번호 ==! */
+          , A.PRC_SCP_DTL_SRNO          /** Numéro de série du détail de la valeur fourchette !== 가격범위상세일련번호 ==! */
+          , A.HS_CD                     /** Code Sh !== HS코드 ==! */
+          , A.HS_PRC_DESC               /** Description de la valeur du code SH !== HS가격설명 ==! */
+          , A.MIN_PRC                   /** Valeur minimale !== 최소가격 ==! */
+          , A.MAX_PRC                   /** Valeur maximale !== 최대가격 ==! */
+          , A.CURR_CD                   /** Code De Devise !== 통화코드 ==! */
+    FROM    TB_RSMI_PRC_SCP_D A
+    WHERE   DEL_YN = 'N'                /** Suppression ON !== 삭제여부 ==! */
+    AND     A.PRC_SCP_NO = #{prcScpNo}  /** N° Valeur fourchette !== 가격범위번호 ==! */
+    ORDER   BY A.PRC_SCP_DTL_SRNO
+    </select>
+
+    <!-- [TB_RSMI_PRC_SCP_BSCS] Enregistrer !== [RSMI_가격범위기본] 등록 ==! -->
+    <insert id="insertPrcScpBscs" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcPrcScpMgmtVo">
+    /* insertPrcScpBscs */
+    <selectKey keyProperty="prcScpNo" resultType="java.lang.String" order="BEFORE">
+        SELECT CAST(COALESCE(MAX(CAST(PRC_SCP_NO AS NUMERIC)), 0) + 1 AS VARCHAR) AS PRC_SCP_NO FROM TB_RSMI_PRC_SCP_BSCS
+    </selectKey>
+    INSERT INTO TB_RSMI_PRC_SCP_BSCS
+    (   PRC_SCP_NO               /** N° Valeur fourchette !== 가격범위번호 ==! */
+      , PRC_SCP_NM               /** Nom de la valeur fourchette !== 가격범위명 ==! */
+      , DEL_YN                   /** Suppression On !== 삭제여부 ==! */
+      , FRST_REGST_ID            /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+      , FRST_RGSR_DTTM           /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+      , LAST_CHPR_ID             /** Id Du Modificateur Final !== 최종변경자ID ==! */
+      , LAST_CHG_DTTM            /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    )
+    VALUES
+    (   #{prcScpNo}
+      , #{prcScpNm}
+      , 'N'
+      , #{frstRegstId}
+      , SYSTIMESTAMP
+      , #{lastChprId}
+      , SYSTIMESTAMP
+    )
+    </insert>
+
+    <!-- [TB_RSMI_PRC_SCP_BSCS] Modifier !== [RSMI_가격범위기본] 수정 ==! -->
+    <update id="updatePrcScpBscs" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcPrcScpMgmtVo">
+    /* updatePrcScpBscs */
+    UPDATE  TB_RSMI_PRC_SCP_BSCS
+    SET     PRC_SCP_NM = #{prcScpNm}        /** Nom de la valeur fourchette !== 가격범위명 ==! */
+          , LAST_CHPR_ID = #{lastChprId}    /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM = SYSTIMESTAMP    /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    WHERE   DEL_YN = 'N'
+    AND     PRC_SCP_NO = #{prcScpNo}        /** N° Valeur fourchette !== 가격범위번호 ==! */
+    </update>
+
+    <!-- [TB_RSMI_PRC_SCP_BSCS] Supprimer !== [RSMI_가격범위기본] 삭제 ==! -->
+    <update id="deletePrcScpBscs" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcPrcScpMgmtVo">
+    /* deletePrcScpBscs */
+    UPDATE  TB_RSMI_PRC_SCP_BSCS
+    SET     DEL_YN = 'Y'                    /** Suppression On !== 삭제여부 ==! */
+          , LAST_CHPR_ID = #{lastChprId}    /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM = SYSTIMESTAMP    /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    WHERE   DEL_YN = 'N'
+    AND     PRC_SCP_NO = #{prcScpNo}        /** N° Valeur fourchette !== 가격범위번호 ==! */
+    </update>
+
+    <!-- [TB_RSMI_PRC_SCP_D] Enregistrer !== [RSMI_가격범위상세] 등록 ==! -->
+    <insert id="insertPrcScpD" parameterType="alpass.ipt.rsm.com.vo.RsmPrcScpDVo">
+    /* insertPrcScpD */
+    <selectKey keyProperty="prcScpDtlSrno" resultType="java.lang.Integer" order="BEFORE">
+        SELECT COALESCE(MAX(PRC_SCP_DTL_SRNO), 0) + 1 AS PRC_SCP_DTL_SRNO FROM TB_RSMI_PRC_SCP_D WHERE PRC_SCP_NO = #{prcScpNo}
+    </selectKey>
+    INSERT INTO TB_RSMI_PRC_SCP_D
+    (   PRC_SCP_NO              /** N° Valeur fourchette !== 가격범위번호 ==! */
+      , PRC_SCP_DTL_SRNO        /** Numéro de série du détail de la valeur fourchette !== 가격범위상세일련번호 ==! */
+      , HS_CD                   /** Code Sh !== HS코드 ==! */
+      , HS_PRC_DESC             /** Description de la valeur du code SH !== HS가격설명 ==! */
+      , MIN_PRC                 /** Valeur minimale !== 최소가격 ==! */
+      , MAX_PRC                 /** Valeur maximale !== 최대가격 ==! */
+      , CURR_CD                 /** Code De Devise !== 통화코드 ==! */
+      , DEL_YN                  /** Suppression On !== 삭제여부 ==! */
+      , FRST_REGST_ID           /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+      , FRST_RGSR_DTTM          /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+      , LAST_CHPR_ID            /** Id Du Modificateur Final !== 최종변경자ID ==! */
+      , LAST_CHG_DTTM           /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    )
+    VALUES
+    (   #{prcScpNo}
+      , #{prcScpDtlSrno}
+      , #{hsCd}
+      , #{hsPrcDesc}
+      , NVL(#{minPrc}, 0)
+      , NVL(#{maxPrc}, 0)
+      , #{currCd}
+      , 'N'
+      , #{frstRegstId}
+      , SYSTIMESTAMP
+      , #{lastChprId}
+      , SYSTIMESTAMP
+    )
+    </insert>
+
+    <!-- [TB_RSMI_PRC_SCP_D] Supprimer !== [RSMI_가격범위상세] 삭제 ==! -->
+    <delete id="deletePrcScpD" parameterType="alpass.ipt.rsm.selc.vo.RsmSelcPrcScpMgmtVo">
+    /* deletePrcScpD */
+    DELETE FROM TB_RSMI_PRC_SCP_D
+    WHERE   PRC_SCP_NO = #{prcScpNo}        /** N° Valeur fourchette !== 가격범위번호 ==! */
+    </delete>
+
+    <!-- [Gérer les valeurs fourchettes] Consulter l’historique !== [가격범위관리] 이력조회 ==! -->
+    <select id="selectPrcScpMgmtHistList" parameterType="alpass.ipt.rsm.com.vo.RsmPrcScpDVo" resultType="alpass.ipt.rsm.com.vo.RsmPrcScpDVo">
+    /* selectPrcScpMgmtHistList */
+    SELECT  A.PRC_SCP_NO        /** N° Valeur fourchette !== 가격범위번호 ==! */
+          , A.PRC_SCP_NM        /** Nom de la valeur fourchette !== 가격범위명 ==! */
+          , B.HS_CD             /** Code Sh !== HS코드 ==! */
+          , B.HS_PRC_DESC       /** Description de la valeur du code SH !== HS가격설명 ==! */
+          , B.MIN_PRC           /** Valeur minimale !== 최소가격 ==! */
+          , B.MAX_PRC           /** Valeur maximale !== 최대가격 ==! */
+          , B.CURR_CD           /** Code De Devise !== 통화코드 ==! */
+          , TO_CHAR(A.FRST_RGSR_DTTM, 'YYYYMMDD') AS FRST_RGSR_DTTM         /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+    FROM    TB_RSMI_PRC_SCP_BSCS A
+          , TB_RSMI_PRC_SCP_D B
+    WHERE   A.PRC_SCP_NO = B.PRC_SCP_NO         /** N° Valeur fourchette !== 가격범위번호 ==! */
+    AND     A.DEL_YN = 'N'                      /** Suppression On !== 삭제여부 ==! */
+    AND     B.HS_CD = #{hsCd}                   /** Code Sh !== HS코드 ==! */
+    ORDER   BY A.FRST_RGSR_DTTM DESC
+    FETCH FIRST 10 ROWS ONLY
+    </select>
+</mapper>

@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<!--
+Mapper : COC repport
+(DEBOUB HALIM)
+-->
+
+<mapper namespace="alpass.ipt.coc.rprt.mapper.CocRprtIncMapper">
+
+
+    <!--
+             Consulter la liste des Incidents !== 파라미터 목록 조회 ==!
+         -->
+    <select id="selectRprtIncList" parameterType="alpass.ipt.coc.rprt.vo.CocRprtIncVo" resultType="alpass.ipt.coc.rprt.vo.CocRprtIncVo">
+        /* selectRprtIncList */
+        <include refid="pagination.header"/>
+        SELECT
+          'false' AS chkSel
+        , B.rprt_inc_ref_no
+        , B.orgn_cd
+        , B.rprt_inc_tp_cd
+        , B.rprt_inc_dttm
+        , B.rprt_inc_ttl
+        , B.rprt_inc_desc
+        , B.atch_file_id
+        , B.oprn_ref_no
+        , B.del_yn
+        , B.use_yn
+        , B.frst_regst_id
+        , TO_CHAR(B.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS  frst_rgsr_dttm
+        , B.last_chpr_id
+        , TO_CHAR(B.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+
+        FROM tb_coc_rprt_inc B
+        JOIN TB_POTI_ORGN A ON A.ORGN_CD = B.ORGN_CD
+        WHERE B.DEL_YN = 'N'
+        AND (
+        #{orgnCd} IN ('000000000', '308000000')
+        OR A.ORGN_CD = #{orgnCd}
+        OR A.ORGN_MGMT_CD IN (
+        SELECT ORGN_MGMT_CD
+        FROM TB_POTI_ORGN
+        WHERE DEL_YN = 'N'
+        START WITH ORGN_CD = #{orgnCd}
+        CONNECT BY PRIOR ORGN_MGMT_CD = UPR_ORGN_MGMT_CD
+        )
+        )
+        <if test="srchOrgnCd != null and srchOrgnCd != ''">
+            AND A.ORGN_MGMT_CD IN (
+            SELECT ORGN_MGMT_CD
+            FROM alpassint.TB_POTI_ORGN
+            WHERE DEL_YN = 'N'
+            START WITH ORGN_CD = #{srchOrgnCd}
+            CONNECT BY PRIOR ORGN_MGMT_CD = UPR_ORGN_MGMT_CD
+            )
+        </if>
+        <if test="srchRprtIncRefNo != null and srchRprtIncRefNo != ''">
+            AND   UPPER(B.rprt_inc_ref_no) LIKE '%'||UPPER(#{srchRprtIncRefNo})||'%'
+        </if>
+        <if test="srchRprtIncTpCd != null and srchRprtIncTpCd != ''">
+            AND   UPPER(B.rprt_inc_tp_cd) LIKE '%'||UPPER(#{srchRprtIncTpCd})||'%'
+        </if>
+        <if test="srchrprtIncDttm != null and srchrprtIncDttm != ''">
+            AND B.rprtIncDttm = #{srchrprtIncDttm}
+        </if>
+        <if test="rprtRqstDtFrom != null and rprtRqstDtFrom != '' and rprtRqstDtTo != null and rprtRqstDtTo != ''">
+            AND TO_CHAR(B.FRST_RGSR_DTTM, 'YYYYMMDD') <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{rprtRqstDtFrom}, 'DD/MM/YYYY'),
+            'YYYYMMDD')
+            AND TO_CHAR(B.FRST_RGSR_DTTM, 'YYYYMMDD') <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{rprtRqstDtTo}, 'DD/MM/YYYY'),
+            'YYYYMMDD')
+        </if>
+        ORDER BY TO_CHAR(B.FRST_RGSR_DTTM,'YYYYMMDD') DESC
+        <include refid="pagination.footer"/>
+    </select>
+
+
+
+    <!--
+
+         Vérifier l'enregistrement de l'incident
+     -->
+    <select id="selectOprnRprtIncCnt" parameterType="alpass.ipt.coc.rprt.vo.CocRprtIncVo" resultType="java.lang.Integer">
+        /* selectOprnRprtIncCnt */
+        SELECT
+        COUNT(*) AS CNT
+        FROM tb_coc_rprt_inc
+        WHERE DEL_YN = 'N'
+        AND   oprn_ref_no = #{oprnRefNo}
+    </select>
+    <select id="selectRprtInc" parameterType="alpass.ipt.coc.rprt.vo.CocRprtIncVo" resultType="alpass.ipt.coc.rprt.vo.CocRprtIncVo">
+        SELECT
+               B.rprt_inc_ref_no
+             , B.orgn_cd
+             , B.rprt_inc_tp_cd
+             , TO_CHAR(B.rprt_inc_dttm, 'DD/MM/YYYY') AS  rprt_inc_dttm
+             , B.rprt_inc_ttl
+             , B.rprt_inc_desc
+             , B.atch_file_id
+             , B.oprn_ref_no
+             , B.del_yn
+             , B.use_yn
+             , B.frst_regst_id
+             , TO_CHAR(B.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS  frst_rgsr_dttm
+             , B.last_chpr_id
+             , TO_CHAR(B.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+        FROM tb_coc_rprt_inc B
+        WHERE B.rprt_inc_ref_no = #{rprtIncRefNo}
+        AND B.DEL_YN = 'N'
+
+    </select>
+    <insert id="insertRprtInc" parameterType="alpass.ipt.coc.rprt.vo.CocRprtIncVo">
+        /* insertRprtInc */
+        with upsert as
+        (
+        UPDATE TB_COC_RPRT_INC SET
+        rprt_inc_tp_cd = #{rprtIncTpCd},
+        rprt_inc_dttm = TO_TIMESTAMP(#{rprtIncDttm}, 'DD/MM/YYYY HH24:MI:SS'),
+        rprt_inc_ttl = #{rprtIncTtl},
+        rprt_inc_desc = #{rprtIncDesc},
+        atch_file_id = #{atchFileId},
+        oprn_ref_no = #{oprnRefNo},
+        orgn_cd = #{orgnCd},
+        USE_YN = #{useYn},
+        DEL_YN = #{delYn},
+        FRST_REGST_ID = #{frstRegstId},
+        FRST_RGSR_DTTM = SYSTIMESTAMP,
+        LAST_CHPR_ID = #{lastChprId},
+        LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE RPRT_INC_REF_NO = #{rprtIncRefNo}
+        returning *
+        )
+        INSERT INTO TB_COC_RPRT_INC
+        (
+        rprt_inc_ref_no,
+        rprt_inc_tp_cd,
+        rprt_inc_dttm,
+        rprt_inc_ttl,
+        rprt_inc_desc,
+        atch_file_id,
+        oprn_ref_no,
+        orgn_cd,
+        del_yn,
+        use_yn,
+        frst_regst_id,
+        frst_rgsr_dttm,
+        last_chpr_id,
+        last_chg_dttm
+        )
+        SELECT
+        #{rprtIncRefNo},
+        #{rprtIncTpCd},
+        TO_TIMESTAMP(#{rprtIncDttm}, 'DD/MM/YYYY HH24:MI:SS'),
+        #{rprtIncTtl},
+        #{rprtIncDesc},
+        #{atchFileId},
+        #{oprnRefNo},
+        #{orgnCd},
+        #{delYn},
+        #{useYn},
+        #{frstRegstId},
+        SYSTIMESTAMP,
+        #{lastChprId},
+        SYSTIMESTAMP
+        WHERE NOT exists(select * from upsert)
+    </insert>
+
+    <!--
+         Modifier un Incident !== 파라미터 수정 ==!
+     -->
+    <update id="updateRprtInc" parameterType="alpass.ipt.coc.rprt.vo.CocRprtIncVo">
+        /* updateRprtInc */
+        UPDATE TB_COC_RPRT_INC
+        SET
+        LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        , RPRT_INC_REF_NO = #{rprtIncRgsrNo}
+        , RPRT_INC_STTS = #{rprtIncStts}
+        , RPRT_INC_CND_CD = #{rprtIncCndCd}
+        , RPRT_INC_KND_CD = #{rprtIncKndCd}
+        , RPRT_INC_CHSS_NO = #{rprtIncChssNo}
+        , RPRT_INC_BRND_CD = #{rprtIncBrndCd}
+        , RPRT_INC_MDL_CD = #{rprtIncMdlCd}
+        , RPRT_INC_MNFC_YY = #{rprtIncMnfcYy}
+        WHERE RPRT_INC_REF_NO = #{rprtIncRefNo}
+        AND   DEL_YN = 'N'
+    </update>
+
+    <!--
+     Supprimer un Incident !== 파라미터 삭제 ==!
+    -->
+    <update id="deleteRprtInc" parameterType="alpass.ipt.coc.rprt.vo.CocRprtIncVo">
+        /* deleteRprtInc */
+        UPDATE TB_COC_RPRT_INC
+        SET
+        LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        , DEL_YN = 'Y'
+        WHERE RPRT_INC_REF_NO = #{rprtIncRefNo}
+    </update>
+
+
+
+</mapper>

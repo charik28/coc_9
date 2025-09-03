@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.car.dcsh.mapper.CarCagDcshBlItemVhclMapper">
+
+    <sql id ="selectItem">
+           SELECT A.mrn                                                    AS mrn                 /** Mrn !== MRN ==! */
+                , A.cag_mgmt_no                                            AS cag_mgmt_no         /** N° Demande De La Création De Crn !== 화물관리번호 ==! */
+                , A.vhcl_srno                                              AS vhcl_srno           /** Numéro De Séquence De Véhicule !== 차량일련번호 ==! */
+                , A.chss_no                                                AS chss_no             /** N° De Châssis !== 차대번호 ==! */
+                , A.vhcl_rgsr_no                                           AS vhcl_rgsr_no        /** VOYAGE VEHICULES VEHICULE NUMERO_IMMATRICULATION !== 차량등록번호 ==! */
+                , A.vhcl_mnur_cd                                           AS vhcl_mnur_cd        /** Code De Fabricant Du Véhicule !== 차량제조사코드 ==! */
+                , (SELECT MNUR.vhcl_mnur_nm 
+                     FROM TB_COM_VHCL_MNUR MNUR 
+                    WHERE A.vhcl_mnur_cd = MNUR.vhcl_mnur_cd)              AS vhcl_mnur_nm
+                , A.vhcl_mdl_cd                                            AS vhcl_mdl_cd         /** Code De Modèle Du Véhicule !== 차량모델코드 ==! */
+                , (SELECT MDL.vhcl_mdl_nm 
+                     FROM TB_COM_VHCL_MDL MDL
+                    WHERE A.vhcl_mdl_cd = MDL.vhcl_mdl_cd
+                      AND MDL.vhcl_mnur_cd = A.vhcl_mnur_cd)               AS vhcl_mdl_nm
+                , A.vhcl_knd_nm                                            AS vhcl_knd_nm         /** Type De Véhicule !== 차량종류명 ==! */
+                , A.vhcl_mnfc_yy                                           AS vhcl_mnfc_yy        /** Année De Fabrication De Véhicule !== 차량제조년도 ==! */
+                , A.engn_clnd_gcnt                                         AS engn_clnd_gcnt      /** Nombre De Cylindres De Moteur !== 엔진기통개수 ==! */
+                , A.vhcl_totl_wght                                         AS vhcl_totl_wght      /** Poids total en charge !== 차량총중량 ==! */
+                , A.del_yn                                                 AS del_yn              /** Suppression On !== 삭제여부 ==! */
+                , A.frst_regst_id                                          AS frst_regst_id       /** Id Du Premier Enregistrant !== 최초등록자ID ==! */
+                , TO_CHAR(A.frst_rgsr_dttm,'DD/MM/YYYY HH24:MI:SS')        AS frst_rgsr_dttm      /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , A.last_chpr_id                                           AS last_chpr_id        /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , TO_CHAR(A.last_chg_dttm,'DD/MM/YYYY HH24:MI:SS')         AS last_chg_dttm       /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+             FROM TB_CARI_CAG_DCSH_BL_VHCL A
+            WHERE A.del_yn = 'N'                                         /** Suppression ON !== 삭제여부 ==! */
+    </sql>
+    
+    <sql id ="selectItemWhere">
+              AND A.mrn = #{mrn}       /** Mrn !== MRN ==! */
+             <if test="cagMgmtNo != null and cagMgmtNo !=''">
+              AND A.cag_mgmt_no = #{cagMgmtNo}           /** N° Demande De La Création De Crn !== 화물관리번호 ==! */
+             </if>
+    </sql>
+
+    <!--
+    Voir la liste des  véhicule !== 차량 목록 조회 ==!
+    (Lee KyoungSung)
+    -->
+    <select id="selectCarCagDcshBlItemVhclListTotCnt" parameterType="alpass.ipt.car.com.vo.CarCagDcshBlVhclVo" resultType="integer">
+        /* CarCagDcshBlItemVhcl_selectCarCagDcshBlItemVhclListTotCnt */
+        SELECT COUNT(*) AS TOT_CNT
+          FROM (
+           <include refid="selectItem"/>
+           <include refid="selectItemWhere"/>
+               ) SQLRSLT
+    </select>
+    <!--
+    Voir la liste des  véhicule !== 차량 목록 조회 ==!
+    (Lee KyoungSung)
+    -->
+    <select id="selectCarCagDcshBlItemVhclList" parameterType="alpass.ipt.car.com.vo.CarCagDcshBlVhclVo" resultType="alpass.ipt.car.com.vo.CarCagDcshBlVhclVo">
+        /* CarCagDcshBlItemVhcl_selectCarCagDcshBlItemVhclList */
+        <if test="pagination != null and pagination == true ">
+        SELECT #{totCnt} AS TOT_CNT
+             , SQLRSLT.*
+             , ROWNUM as RNUM
+          FROM (
+        </if>
+           <include refid="selectItem"/>
+           <include refid="selectItemWhere"/>
+            ORDER BY A.chss_no, A.mrn, A.cag_mgmt_no ASC
+        <if test="pagination != null and pagination == true ">
+        <include refid="pagination.footer" />
+        </if>
+    </select>
+
+</mapper>

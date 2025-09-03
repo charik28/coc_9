@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+TODO [PSC]Mapper : 번역필요 !== [PSC 공통] 이의신청 Mapper ==!
+(deKim)
+-->
+<mapper namespace="alpass.ipt.psc.com.mapper.PscComObjtRqstMapper">
+
+    <!--
+    TODO [PSC][Rechercher] 번역필요 liste à une "demande de recours" !== 이의신청 목록을 조회한다.==!
+    -->
+	<select id="selectPscComObjtRqstList"
+	    parameterType="alpass.ipt.psc.com.vo.PscComObjtRqstVo"
+	    resultType="alpass.ipt.psc.com.vo.PscComObjtRqstVo">
+		/* selectPscComObjtRqstList */
+	    <include refid="pagination.header"/>
+		SELECT
+                  A.REFF_NO                    /** N° De Référence !== 참조번호 ==! */
+                , A.OBJT_RQST_DGCNT            /** Nombre de fois de recours !== 이의신청차수 ==! */
+                , A.REFS_YN                    /** Rejeter (Oui/Non) !== 거절여부 ==! */
+                , A.OBJT_RQST_CN               /** Contenus de demande de recours !== 이의신청내용 ==! */
+                , TO_CHAR(A.RQST_DTTM, 'DD/MM/YYYY') AS RQST_DTTM                  /** Date Et Heure De La Demande !== 신청일시 ==! */
+                , A.RESP_CSTM_CD               /** Code de bureau de douane compétent !== 담당세관코드 ==! */
+                , (SELECT ORGN_NM FROM  TB_POTI_ORGN WHERE ORGN_MGMT_CD = UPPER(A.RESP_CSTM_CD)) AS RESP_CSTM_NM               /** Code de bureau de douane compétent !== 담당세관코드 ==! */
+                , A.CHPN_DEPT_CD               /** Code De Service En Charge !== 담당부서코드 ==! */
+                , (SELECT ORGN_NM FROM  TB_POTI_ORGN WHERE ORGN_MGMT_CD = UPPER(A.CHPN_DEPT_CD)) AS CHPN_DEPT_NM               /** Code De Service En Charge !== 담당부서코드 ==! */
+                , A.CHPN_ID                    /** Id Du Responsable !== 담당자ID ==! */
+                , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.CHPN_ID) AS CHPN_NM                    /** Id Du Responsable !== 담당자ID ==! */
+                , A.OBJT_RQST_ANSW_CN          /** Contenus de réponse de demande de recours !== 이의신청답변내용 ==! */
+                , TO_CHAR(A.ANSW_DTTM, 'DD/MM/YYYY') AS ANSW_DTTM                  /** Date/Heure De Réponse !== 답변일시 ==! */
+                , A.RMRK                       /** Remarque !== 비고 ==! */
+                , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+                , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+				, (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.FRST_REGST_ID) AS FRST_REGST_NM
+				, TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY hh24:mi:ss') AS frstRgsrDttm			/** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+				, A.LAST_CHPR_ID				/** Id Du Modificateur Final !== 최종변경자ID ==! */
+				, (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.LAST_CHPR_ID) AS LAST_CHPR_NM
+				, TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY hh24:mi:ss') AS lastChgDttm				/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		  FROM
+		  		  TB_PSCI_OBJT_RQST A
+		 WHERE
+		 		  A.DEL_YN = 'N'									/** Suppression ON !== 삭제여부 ==! */
+           AND	  A.REFF_NO = #{reffNo}       		/** N° De Référence !== 참조번호 ==! */
+         ORDER BY A.OBJT_RQST_DGCNT DESC
+		<include refid="pagination.footer"/>
+	</select>
+	
+    <!--
+    [Enregistrer] demande de recours !==이의신청을 저장한다.==!
+    -->
+	<insert id="insertPscComObjtRqst" parameterType="alpass.ipt.psc.com.vo.PscComObjtRqstVo">
+		/* insertPscComObjtRqst */
+
+		INSERT INTO TB_PSCI_OBJT_RQST (
+                  REFF_NO                    /** N° De Référence !== 참조번호 ==! */
+                , OBJT_RQST_DGCNT            /** Nombre de fois de recours !== 이의신청차수 ==! */
+                , REFS_YN                    /** Rejeter (Oui/Non) !== 거절여부 ==! */
+                , OBJT_RQST_CN                 	/** Contenus de demande de recours !== 이의신청내용 ==! */
+                , RMRK                         	/** Remarque !== 비고 ==! */
+                , RQST_DTTM                     /** Date Et Heure De La Demande !== 신청일시 ==! */
+                , DEL_YN                       	/** Suppression On !== 삭제여부 ==! */
+        				, FRST_REGST_ID					/** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+        				, FRST_RGSR_DTTM				/** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+        				, LAST_CHPR_ID					/** Id Du Modificateur Final !== 최종변경자ID ==! */
+        				, LAST_CHG_DTTM					/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		)
+		SELECT
+				          #{reffNo}            	                /** N° De Référence !== 참조번호 ==! */
+                , #{objtRqstDgcnt}             	 /** Nombre de fois de recours !== 이의신청차수 ==! */
+                , #{refsYn}                      /** Rejeter (Oui/Non) !== 거절여부 ==! */
+                , #{objtRqstCn}                	/** Contenus de demande de recours !== 이의신청내용 ==! */
+                , #{rmrk}                      	/** Remarque !== 비고 ==! */
+                , CURRENT_TIMESTAMP                   /** Date Et Heure De La Demande !== 신청일시 ==! */
+                , 'N'                          	/** Suppression On !== 삭제여부 ==! */
+        				, #{frstRegstId}          		/** Id Du Premier Enregistrant  !== 최초등록자ID ==! */              
+        				, CURRENT_TIMESTAMP          	/** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */   
+        				, #{lastChprId}          		/** Id Du Modificateur Final !== 최종변경자ID ==! */                 
+        				, CURRENT_TIMESTAMP          	/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */      
+        				
+	</insert>
+
+    <!--
+    [Modifier] demande de recours !==이의신청을 수정한다.==!
+    -->
+	<update id="updatePscComObjtRqst"
+		parameterType="alpass.ipt.psc.com.vo.PscComObjtRqstVo">
+		/* updatePscComObjtRqst */
+		UPDATE	  TB_PSCI_OBJT_RQST
+		   SET
+				  LAST_CHPR_ID = #{lastChprId}          		/** Id Du Modificateur Final !== 최종변경자ID ==! */            
+				, LAST_CHG_DTTM = CURRENT_TIMESTAMP				/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */ 
+                , OBJT_RQST_ANSW_CN = #{objtRqstAnswCn}         /** Contenus de réponse de demande de recours !== 이의신청답변내용 ==! */
+                , ANSW_DTTM = CURRENT_TIMESTAMP                 /** Date/Heure De Réponse !== 답변일시 ==! */
+                , REFS_YN    =        #{refsYn}                 /** Rejeter (Oui/Non) !== 거절여부 ==! */
+	    	<if test='respCstmCd != null and !"".equals(respCstmCd)'>
+                , RESP_CSTM_CD = #{respCstmCd}                	/** Code de bureau de douane compétent !== 담당세관코드 ==! */
+            </if>
+	    	<if test='chpnDeptCd != null and !"".equals(chpnDeptCd)'>
+                , CHPN_DEPT_CD = #{chpnDeptCd}                	/** Code De Service En Charge !== 담당부서코드 ==! */
+            </if>
+	    	<if test='chpnId != null and !"".equals(chpnId)'>
+                , CHPN_ID = #{chpnId}                         	/** Id Du Responsable !== 담당자ID ==! */
+            </if>
+	    	<if test='rmrk != null and !"".equals(rmrk)'>
+                , RMRK = #{rmrk}                              	/** Remarque !== 비고 ==! */
+            </if>
+		 WHERE
+           		  DEL_YN = 'N'                                	/** Suppression ON !== 삭제여부 ==! */
+           AND	  REFF_NO = #{reffNo}                         /** N° De Référence !== 참조번호 ==! */
+           AND	  OBJT_RQST_DGCNT = #{objtRqstDgcnt}          /** Nombre de fois de recours !== 이의신청차수 ==! */
+	</update>
+
+    <!--
+    [Supprimer] demande de recours !==이의신청을 삭제한다.==!
+    -->
+	<update id="deletePscComObjtRqst"
+		parameterType="alpass.ipt.psc.com.vo.PscComObjtRqstVo">
+		  /* deletePscComObjtRqst */
+		  UPDATE  TB_PSCI_OBJT_RQST
+		     SET
+				  LAST_CHPR_ID = #{lastChprId}          		/** Id Du Modificateur Final !== 최종변경자ID ==! */            
+				, LAST_CHG_DTTM = CURRENT_TIMESTAMP				/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */ 
+		  		, DEL_YN = 'Y'									/** Suppression On !== 삭제여부 ==! */ 
+		   WHERE
+		  		  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+       AND  REFF_NO = #{reffNo}                         /** N° De Référence !== 참조번호 ==! */
+       AND  OBJT_RQST_DGCNT = #{objtRqstDgcnt}          /** Nombre de fois de recours !== 이의신청차수 ==! */
+	</update>
+
+
+</mapper>

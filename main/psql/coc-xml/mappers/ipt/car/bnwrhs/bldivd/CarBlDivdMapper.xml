@@ -1,0 +1,452 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.car.bnwrhs.bldivd.mapper.CarBlDivdMapper">
+
+  	<!--
+      Voir la liste des éclatement B/L. !==BL분할 목록조회==!
+    -->
+    <select id="selectCarBlDivdList" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdVo" resultType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdVo">
+        /* selectCarBlDivdList */
+        <include refid="pagination.header" />
+          SELECT A.BL_DIVD_RQST_NO                            AS BL_DIVD_RQST_NO    , /** N° De Demande D'éclatement Bl !== BL분할신청번호 ==! */
+                 A.BL_DIVD_RQST_TP_CD                         AS BL_DIVD_RQST_TP_CD , /** Code De Type De Demande D'éclatement Bl !== BL분할신청구분코드 ==! */
+                 A.BF_BL_DIVD_RQST_NO                         AS BF_BL_DIVD_RQST_NO , /** N° De Demande D'éclatement Bl Précédente !== 이전BL분할신청번호 ==! */
+                 A.JRSD_ORGN_CD                               AS JRSD_ORGN_CD       , /** Code D'Unité Compétente !== 관할조직코드 ==! */
+                 A.IBOBZ_CD                                   AS IBOBZ_CD           , /** Code de zone sous douane !== 보세구역코드 ==! */
+                 A.BL_DIVD_RQST_RSN_CN                        AS BL_DIVD_RQST_RSN_CN, /** Motif De Demande D'éclatement Bl !== BL분할신청사유내용 ==! */
+                 A.CAG_MGMT_NO                                AS CAG_MGMT_NO        , /** Crn !== 화물관리번호 ==! */
+                 A.BL_NO                                      AS BL_NO              , /** N° De Bl !== BL번호 ==! */
+                 A.PCKG_GCNT                                  AS PCKG_GCNT          , /** Nombre De Colis !== 포장개수 ==! */
+                 A.WGHT                                       AS WGHT               , /** Poids !== 중량 ==! */
+                 TO_CHAR(A.TRSN_DTTM,'DD/MM/YYYY')            AS TRSN_DTTM          ,
+                 A.TRSN_CO_CD                                 AS TRSN_CO_CD         , /** Code d'entreprise transmettrice !== 전송업체코드 ==! */
+                 TO_CHAR(A.AUDT_DTTM,'DD/MM/YYYY')            AS AUDT_DTTM          ,
+                 A.AUDT_PT_CD                                 AS AUDT_PT_CD         , /** Code De Type De Contréle !== 심사유형코드 ==! */
+                 A.AUDT_RSLT_CN                               AS AUDT_RSLT_CN       , /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+                 A.DEL_YN                                     AS DEL_YN             , /** Suppression On !== 삭제여부 ==! */
+                 A.FRST_REGST_ID                              AS FRST_REGST_ID      , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                 TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDDHH24MISS') AS FRST_RGSR_DTTM     ,         
+                 A.LAST_CHPR_ID                               AS LAST_CHPR_ID       , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                 TO_CHAR(A.LAST_CHG_DTTM,'YYYYMMDDHH24MISS')  AS LAST_CHG_DTTM      ,
+                 <!-- B.JRSD_ORGN_CD                               AS JRSD_ORGN_CD       , -->
+                 B.PRCS_STTS_CD                               AS PRCS_STTS_CD       ,
+                 B.AUDT_EMP_ID                                AS AUDT_EMP_ID        ,
+                 (SELECT LTRIM(CONCAT(L.EMP_FMNM,' ',L.EMP_NM))
+                    FROM TB_POTI_EMP L
+                   WHERE L.DEL_YN = 'N'
+                     AND L.PBSR_NO = B.AUDT_EMP_ID)           AS AUDT_EMP_NM        ,
+                 TO_CHAR(B.PRCS_DTTM,'DD/MM/YYYY')            AS PRCS_DTTM          ,
+                 C.CO_NM                                      AS TRSN_CO_NM         ,
+                 C.RPRS_TLPH_NO                               AS TRSN_CO_TLPH_NO    ,
+                 C.CO_ADDR                                    AS TRSN_CO_ADDR          
+            FROM TB_CARI_BL_DIVD       A
+                 LEFT JOIN TB_CARI_CAG_PRCS_BRKD B 
+                        ON     A.BL_DIVD_RQST_NO = B.CAG_RQST_NO
+                           AND B.CAG_RQST_TP_CD  IN ('BCE', 'BCC')
+                           AND B.RQST_DGCNT      = 0
+                 LEFT OUTER JOIN (SELECT K1.CO_NM       ,
+                                         K1.RPRS_TLPH_NO,
+                                         K1.CO_ADDR     ,
+                                         K2.CO_DCLR_CD  
+                                    FROM TB_COM_CO         K1,
+                                         TB_COM_CO_DCLR_CD K2
+                                   WHERE K1.NIF = K2.NIF
+                                     AND K1.DEL_YN = 'N'
+                                     AND K2.DEL_YN = 'N'
+                                     AND K2.USE_YN = 'Y') C
+                              ON A.TRSN_CO_CD = C.CO_DCLR_CD
+           WHERE A.DEL_YN          = 'N'
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(trsnDttmFrom)">
+             AND A.TRSN_DTTM BETWEEN TO_DATE(#{trsnDttmFrom}, 'DD/MM/YYYY') AND TO_DATE(#{trsnDttmTo}, 'DD/MM/YYYY') + 0.99999
+             </if>
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(prcsSttsCd)">
+             AND B.PRCS_STTS_CD = #{prcsSttsCd}                        /** Code de statut de traitement !==처리상태코드==! */
+             </if>
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(blDivdRqstTpCd)">
+             AND A.BL_DIVD_RQST_TP_CD = #{blDivdRqstTpCd}                        /** Code d'entrepét !== 보세창고코드 ==! */
+             </if>
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(blDivdRqstNo)">
+             AND A.BL_DIVD_RQST_NO LIKE #{blDivdRqstNo} || '%'        /** N° de demande !==신청번호  ==! */
+             </if>
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(cagMgmtNo)">
+             AND A.CAG_MGMT_NO LIKE #{cagMgmtNo} || '%'        /** CRN !== 화물관리번호  ==! */
+             </if>
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(blNo)">
+             AND A.BL_NO LIKE #{blNo} || '%'        /** N° de B/L !== BL번호  ==! */
+             </if>
+             <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(ibobzCd)">
+             AND A.IBOBZ_CD            = #{ibobzCd} 
+             </if>
+             <choose>
+               <when test="@alpass.ipt.car.com.util.CarMyBatisUtil@isEqualsStr(scrnTp,'1')">
+                 AND B.PRCS_STTS_CD IN ('B02', 'D06', 'D08', 'D09', 'D10', 'D36')
+                 AND B.AUDT_EMP_ID  = #{pbsrNo}
+               </when>
+               <otherwise>
+                 AND B.PRCS_STTS_CD IN ('B02', 'D01', 'D06', 'D08', 'D09', 'D10', 'D36')
+		             AND A.JRSD_ORGN_CD LIKE SUBSTR(#{jrsdOrgnCd}, 1, 5) || '%'
+               </otherwise>
+             </choose>
+        ORDER BY B.PRCS_DTTM DESC   
+        <include refid="pagination.footer" />
+    </select>
+
+  	<!--
+      Voir les détails de éclatement B/L. !==BL분할 상세==!
+    -->
+    <select id="selectCarBlDivd" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdVo" resultType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdVo">
+        /* selectCarBlDivdList */
+        <include refid="pagination.header" />
+        SELECT A.BL_DIVD_RQST_NO                            AS BL_DIVD_RQST_NO    , /** N° De Demande D'éclatement Bl !== BL분할신청번호 ==! */
+        	   (SELECT BL_DIVD_RQST_MGMT_NO FROM ALPASSEXT.TB_CARE_BL_DIVD T WHERE A.BL_DIVD_RQST_NO = T.BL_DIVD_RQST_NO AND T.DEL_YN = 'N') AS BL_DIVD_RQST_MGMT_NO,	
+               A.BL_DIVD_RQST_TP_CD                         AS BL_DIVD_RQST_TP_CD , /** Code De Type De Demande D'éclatement Bl !== BL분할신청구분코드 ==! */
+               A.BF_BL_DIVD_RQST_NO                         AS BF_BL_DIVD_RQST_NO , /** N° De Demande D'éclatement Bl Précédente !== 이전BL분할신청번호 ==! */
+               A.JRSD_ORGN_CD                               AS JRSD_ORGN_CD       , /** Code D'Unité Compétente !== 관할조직코드 ==! */
+               D.ORGN_NM                                    AS JRSD_ORGN_NM       , /** Service compétent !== 관할조직 ==! */
+               D.JRSD_CSTM_CD                               AS JRSD_CSTM_CD       ,
+               D.JRSD_CSTM_NM                               AS JRSD_CSTM_NM       ,
+               A.IBOBZ_CD                                   AS IBOBZ_CD           , /** Code de zone sous douane !== 보세구역코드 ==! */
+               (SELECT IBOBZ_NM
+                  FROM TB_CARI_IBOBZ L
+                 WHERE L.IBOBZ_CD     = A.IBOBZ_CD
+                   AND L.OPRN_CESE_YN = 'N'
+                   AND L.ATPM_WDRL_YN = 'N')               AS IBOBZ_NM           ,
+               A.BL_DIVD_RQST_RSN_CN                        AS BL_DIVD_RQST_RSN_CN, /** Motif De Demande D'éclatement Bl !== BL분할신청사유내용 ==! */
+               A.CAG_MGMT_NO                                AS CAG_MGMT_NO        , /** Crn !== 화물관리번호 ==! */
+               A.BL_NO                                      AS BL_NO              , /** N° De Bl !== BL번호 ==! */
+               P.HBL_NO                                     AS HBL_NO             , /** N° de sous BL !==HBL번호==! */
+               A.PCKG_GCNT                                  AS PCKG_GCNT          , /** Nombre De Colis !== 포장개수 ==! */
+               A.WGHT                                       AS WGHT               , /** Poids !== 중량 ==! */
+               TO_CHAR(A.TRSN_DTTM,'DD/MM/YYYY')            AS TRSN_DTTM          ,
+               A.TRSN_CO_CD                                 AS TRSN_CO_CD         , /** Code d'entreprise transmettrice !== 전송업체코드 ==! */
+               TO_CHAR(A.AUDT_DTTM,'DD/MM/YYYY')            AS AUDT_DTTM          ,
+               A.AUDT_PT_CD                                 AS AUDT_PT_CD         , /** Code De Type De Contréle !== 심사유형코드 ==! */
+               A.AUDT_RSLT_CN                               AS AUDT_RSLT_CN       , /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+               A.DEL_YN                                     AS DEL_YN             , /** Suppression On !== 삭제여부 ==! */
+               A.FRST_REGST_ID                              AS FRST_REGST_ID      , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+               TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDDHH24MISS') AS FRST_RGSR_DTTM     ,         
+               A.LAST_CHPR_ID                               AS LAST_CHPR_ID       , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+               TO_CHAR(A.LAST_CHG_DTTM,'YYYYMMDDHH24MISS')  AS LAST_CHG_DTTM      ,
+               B.PRCS_STTS_CD                               AS PRCS_STTS_CD       ,
+               B.AUDT_EMP_ID                                AS AUDT_EMP_ID        ,
+               (SELECT EMP_NM
+                  FROM TB_POTI_EMP L
+                 WHERE L.DEL_YN = 'N'
+                   AND L.PBSR_NO = B.AUDT_EMP_ID)           AS AUDT_EMP_NM        ,
+               TO_CHAR(B.PRCS_DTTM,'DD/MM/YYYY HH24:MI')    AS PRCS_DTTM          ,
+               C.CO_NM                                      AS TRSN_CO_NM         ,
+               C.RPRS_TLPH_NO                               AS TRSN_CO_TLPH_NO    ,
+               C.CO_ADDR                                    AS TRSN_CO_ADDR       ,
+               P.MRN                                        AS MRN                ,
+               P.MSN                                        AS MSN                ,
+               P.PCKG_UT_CD                                 AS PCKG_UT_CD         ,
+               (SELECT G.BL_DIVD_RQST_MGMT_NO
+                  FROM TB_CARE_BL_DIVD G
+                 WHERE G.DEL_YN = 'N'
+                   AND G.BL_DIVD_RQST_NO = A.BL_DIVD_RQST_NO) AS BL_DIVD_RQST_MGMT_NO
+          FROM TB_CARI_BL_DIVD A
+               LEFT JOIN TB_CARI_CAG_PRCS_BRKD B 
+                      ON     A.BL_DIVD_RQST_NO = B.CAG_RQST_NO
+                         AND B.CAG_RQST_TP_CD  IN ('BCE', 'BCC')
+                         AND B.RQST_DGCNT      = 0
+               LEFT OUTER JOIN (SELECT K1.CO_NM       ,
+                                       K1.RPRS_TLPH_NO,
+                                       K1.CO_ADDR     ,
+                                       K2.CO_DCLR_CD  
+                                  FROM TB_COM_CO         K1,
+                                       TB_COM_CO_DCLR_CD K2
+                                 WHERE K1.NIF = K2.NIF
+                                   AND K1.DEL_YN = 'N'
+                                   AND K2.DEL_YN = 'N'
+                                   AND K2.USE_YN = 'Y') C
+                            ON A.TRSN_CO_CD = C.CO_DCLR_CD
+               LEFT OUTER JOIN TB_CARI_CAG_DCSH_BL P
+                            ON     P.DEL_YN = 'N'
+                               AND P.CAG_MGMT_NO = A.CAG_MGMT_NO
+               LEFT JOIN (SELECT
+                              C1.ORGN_CD
+                            , C1.ORGN_NM
+                            , C2.ORGN_CD AS JRSD_CSTM_CD
+                            , C2.ORGN_NM AS JRSD_CSTM_NM
+                          FROM TB_POTI_ORGN C1
+                            LEFT JOIN TB_POTI_ORGN C2
+                              ON C1.UPR_ORGN_MGMT_CD = C2.ORGN_MGMT_CD
+                          WHERE C1.DEL_YN = 'N'
+                         ) D
+                 ON A.JRSD_ORGN_CD = D.ORGN_CD
+         WHERE A.DEL_YN          = 'N'
+           AND A.BL_DIVD_RQST_NO = #{blDivdRqstNo}
+        <include refid="pagination.footer" />
+    </select>
+
+  	<!--
+      Consulter les informations sur la cargaison d'éclatement B/L. !== BL분할 화물 정보을 조회한다.==!
+    -->
+    <select id="selectCarBlDivdCagList" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo" resultType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+        /* selectCarBlDivdCagList */
+          SELECT A.BL_DIVD_RQST_NO                            AS BL_DIVD_RQST_NO , /** N° De Demande D'éclatement Bl !== BL분할신청번호 ==! */
+                 A.DIVD_CAG_SRNO                              AS DIVD_CAG_SRNO   , /** N° Série De Remorque Pour Marchandises Fractionnées !== 분할화물트레일러일련번호 ==! */
+                 A.DIVD_MRN                                   AS DIVD_MRN        , /** Eclatement MRN !== 분할MRN ==! */
+                 A.DIVD_MSN                                   AS DIVD_MSN        , /** Eclatement MSN !== 분할MSN ==! */
+                 A.DIVD_HSN                                   AS DIVD_HSN        , /** Eclatement Hsn !== 분할HSN ==! */
+                 A.DIVD_CAG_MGMT_NO                           AS DIVD_CAG_MGMT_NO, /** Eclatement CRN !== 분할화물관리번호 ==! */
+                 A.BL_NO                                      AS BL_NO           , /** N° De Bl !== BL번호 ==! */
+                 A.CAG_TP_CD                                  AS CAG_TP_CD       ,
+                 A.BL_TP_CD                                   AS BL_TP_CD        , /** Code De Catégorie De B/L !== BL구분코드 ==! */
+                 A.DIVD_PCKG_GCNT                             AS DIVD_PCKG_GCNT  , /** Nombre de colis éclaté !== 분할포장개수 ==! */
+                 A.DIVD_WGHT                                  AS DIVD_WGHT       , /** Poids éclaté !== 분할중량 ==! */
+                 A.FRWR_CD                                    AS FRWR_CD         , /** Code De Groupeur !== 포워더코드 ==! */
+                 H2.CO_NM                                     AS FRWR_NM         , /** Code De Groupeur !== 포워더코드 ==! */
+                 A.CNSI_NM                                    AS CNSI_NM         , /** Nom de destinataire !== 수하인명 ==! */
+                 A.CNSI_ADDR                                  AS CNSI_ADDR       , /** Adresse de destinataire !== 수하인주소 ==! */
+                 A.CNSI_TLPH_NO                               AS CNSI_TLPH_NO    , /** N° de téléphone de destinataire !== 수하인전화번호 ==! */
+                 A.CNSI_EML                                   AS CNSI_EML        , /** E-mail de destinataire !== 수하인이메일 ==! */
+                 A.DEL_YN                                     AS DEL_YN          , /** Suppression On !== 삭제여부 ==! */
+                 A.FRST_REGST_ID                              AS FRST_REGST_ID   , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                 TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDDHH24MISS') AS FRST_RGSR_DTTM  ,         
+                 A.LAST_CHPR_ID                               AS LAST_CHPR_ID    , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                 TO_CHAR(A.LAST_CHG_DTTM,'YYYYMMDDHH24MISS')  AS LAST_CHG_DTTM   ,
+                 H.PRCS_STTS_CD                               AS PRCS_STTS_CD        
+            FROM TB_CARI_BL_DIVD_CAG A
+                 INNER JOIN (SELECT C.PRCS_STTS_CD   ,
+                                    B.BL_DIVD_RQST_NO
+                               FROM TB_CARI_BL_DIVD       B,
+                                    TB_CARI_CAG_PRCS_BRKD C
+                              WHERE C.DEL_YN          = 'N'
+                                AND B.DEL_YN          = 'N'
+                                AND C.CAG_RQST_TP_CD  IN ('BCE', 'BCC')
+                                AND C.RQST_DGCNT      = 0
+                                AND B.BL_DIVD_RQST_NO = C.CAG_RQST_NO
+                                AND B.BL_DIVD_RQST_NO = #{blDivdRqstNo}) H
+                         ON H.BL_DIVD_RQST_NO = A.BL_DIVD_RQST_NO
+                 LEFT OUTER JOIN (SELECT K1.CO_NM       ,
+                                         K1.RPRS_TLPH_NO,
+                                         K1.CO_ADDR     ,
+                                         K2.CO_DCLR_CD  
+                                    FROM TB_COM_CO         K1,
+                                         TB_COM_CO_DCLR_CD K2
+                                   WHERE K1.NIF = K2.NIF
+                                     AND K1.DEL_YN = 'N'
+                                     AND K2.DEL_YN = 'N'
+                                     AND K2.USE_YN = 'Y') H2
+                              ON H2.CO_DCLR_CD = A.FRWR_CD                    
+           WHERE A.DEL_YN          = 'N'
+             AND A.BL_DIVD_RQST_NO = #{blDivdRqstNo}
+        ORDER BY A.DIVD_CAG_SRNO 
+    </select>
+
+  	<!--
+      Consulter les informations sur la cargaison d'éclatement B/L.(container) !== BL분할 화물 정보을 조회한다.(컨테이너)==!
+    -->
+    <select id="selectCarBlDivdCagCntrListForCagVo" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo" resultType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagCntrVo">
+        /* selectCarBlDivdCagCntrList */
+        SELECT A.BL_DIVD_RQST_NO                            AS BL_DIVD_RQST_NO   , /** N° De Demande D'éclatement Bl !== BL분할신청번호 ==! */
+               A.DIVD_CAG_SRNO                              AS DIVD_CAG_SRNO     , /** N° Série De Remorque Pour Marchandises Fractionnées !== 분할화물트레일러일련번호 ==! */
+               A.DIVD_CAG_CNTR_SRNO                         AS DIVD_CAG_CNTR_SRNO, /** N° Série De Conteneur Pour Marchandises Fractionnées !== 분할화물컨테이너일련번호 ==! */
+               A.CNTR_NO                                    AS CNTR_NO           , /** N° De Conteneur !== 컨테이너번호 ==! */
+               A.CNTR_TP_CD                                 AS CNTR_TP_CD        , /** Code De Type De Conteneur !== 컨테이너구분코드 ==! */
+               A.SEAL_NO1                                   AS SEAL_NO1          , /** N° De Scellé1 !== 봉인번호1 ==! */
+               A.SEAL_CHPN1                                 AS SEAL_CHPN1        , /** Responsable de scellé 1 !== 봉인담당자1 ==! */
+               A.SEAL_NO2                                   AS SEAL_NO2          , /** N° De Scellé2 !== 봉인번호2 ==! */
+               A.SEAL_CHPN2                                 AS SEAL_CHPN2        , /** Responsable de scellé 2 !== 봉인담당자2 ==! */
+               A.SEAL_NO3                                   AS SEAL_NO3          , /** N° De Scellé3 !== 봉인번호3 ==! */
+               A.SEAL_CHPN3                                 AS SEAL_CHPN3        , /** Responsable de scellé 3 !== 봉인담당자3 ==! */
+               A.DEL_YN                                     AS DEL_YN            , /** Suppression On !== 삭제여부 ==! */
+               A.FRST_REGST_ID                              AS FRST_REGST_ID     , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+               TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDDHH24MISS') AS FRST_RGSR_DTTM    ,         
+               A.LAST_CHPR_ID                               AS LAST_CHPR_ID      , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+               TO_CHAR(A.LAST_CHG_DTTM,'YYYYMMDDHH24MISS')  AS LAST_CHG_DTTM    
+          FROM TB_CARI_BL_DIVD_CAG_CNTR A
+         WHERE A.DEL_YN          = 'N'
+           AND A.BL_DIVD_RQST_NO = #{blDivdRqstNo}
+           <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(divdCagSrno)">
+           AND A.DIVD_CAG_SRNO   = #{divdCagSrno}
+           </if>
+    </select>
+
+  	<!--
+      Consulter les informations sur la cargaison d'éclatement B/L.(container) !== BL분할 화물 정보을 조회한다.(컨테이너)==!
+    -->
+    <select id="selectCarBlDivdCagVhclListForCagVo" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo" resultType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVhclVo">
+        /* selectCariBlDivdCagVhclList */
+        SELECT A.BL_DIVD_RQST_NO                            AS BL_DIVD_RQST_NO, /** N° De Demande D'éclatement Bl !== BL분할신청번호 ==! */
+               A.DIVD_CAG_SRNO                              AS DIVD_CAG_SRNO  , /** N° Série De Remorque Pour Marchandises Fractionnées !== 분할화물트레일러일련번호 ==! */
+               A.CHSS_NO                                    AS CHSS_NO        , /** N° De Chéssis !== 차대번호 ==! */
+               A.DEL_YN                                     AS DEL_YN         , /** Suppression On !== 삭제여부 ==! */
+               A.FRST_REGST_ID                              AS FRST_REGST_ID  , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+               TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDDHH24MISS') AS FRST_RGSR_DTTM ,         
+               A.LAST_CHPR_ID                               AS LAST_CHPR_ID   , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+               TO_CHAR(A.LAST_CHG_DTTM,'YYYYMMDDHH24MISS')  AS LAST_CHG_DTTM
+          FROM TB_CARI_BL_DIVD_CAG_VHCL A
+         WHERE A.DEL_YN          = 'N'
+           AND A.BL_DIVD_RQST_NO = #{blDivdRqstNo}
+           <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(divdCagSrno)">
+           AND A.DIVD_CAG_SRNO   = #{divdCagSrno}
+           </if>
+    </select>
+
+  	<!--
+      Consulter la liste des conteneurs sur la cargaison d'éclatement B/L. !== BL분할 화물 컨테이너 목록을 조회한다.==!
+    -->
+    <select id="selectCarBlDivdCagCntrList" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagCntrVo" resultType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagCntrVo">
+        /* selectCarBlDivdCagCntrList */
+        SELECT A.BL_DIVD_RQST_NO                            AS BL_DIVD_RQST_NO   , /** N° De Demande D'éclatement Bl !== BL분할신청번호 ==! */
+               A.DIVD_CAG_SRNO                              AS DIVD_CAG_SRNO     , /** N° Série De Remorque Pour Marchandises Fractionnées !== 분할화물트레일러일련번호 ==! */
+               A.DIVD_CAG_CNTR_SRNO                         AS DIVD_CAG_CNTR_SRNO, /** N° Série De Conteneur Pour Marchandises Fractionnées !== 분할화물컨테이너일련번호 ==! */
+               A.CNTR_NO                                    AS CNTR_NO           , /** N° De Conteneur !== 컨테이너번호 ==! */
+               A.CNTR_TP_CD                                 AS CNTR_TP_CD        , /** Code De Type De Conteneur !== 컨테이너구분코드 ==! */
+               A.SEAL_NO1                                   AS SEAL_NO1          , /** N° De Scellé1 !== 봉인번호1 ==! */
+               A.SEAL_CHPN1                                 AS SEAL_CHPN1        , /** Responsable de scellé 1 !== 봉인담당자1 ==! */
+               A.SEAL_NO2                                   AS SEAL_NO2          , /** N° De Scellé2 !== 봉인번호2 ==! */
+               A.SEAL_CHPN2                                 AS SEAL_CHPN2        , /** Responsable de scellé 2 !== 봉인담당자2 ==! */
+               A.SEAL_NO3                                   AS SEAL_NO3          , /** N° De Scellé3 !== 봉인번호3 ==! */
+               A.SEAL_CHPN3                                 AS SEAL_CHPN3        , /** Responsable de scellé 3 !== 봉인담당자3 ==! */
+               A.DEL_YN                                     AS DEL_YN            , /** Suppression On !== 삭제여부 ==! */
+               A.FRST_REGST_ID                              AS FRST_REGST_ID     , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+               TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDDHH24MISS') AS FRST_RGSR_DTTM    ,         
+               A.LAST_CHPR_ID                               AS LAST_CHPR_ID      , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+               TO_CHAR(A.LAST_CHG_DTTM,'YYYYMMDDHH24MISS')  AS LAST_CHG_DTTM    
+          FROM TB_CARI_BL_DIVD_CAG_CNTR A
+         WHERE A.DEL_YN          = 'N'
+           AND A.BL_DIVD_RQST_NO = #{blDivdRqstNo}
+           AND A.DIVD_CAG_SRNO   = #{divdCagSrno}
+    </select>
+
+  	<!--
+      Consulter la liste des conteneurs sur la cargaison d'éclatement B/L.((Véhicule) !==BL분할화물의 차량목록을 조회한다.==!
+    -->
+    <select id="selectCarBlDivdCagVhclList" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVhclVo" resultType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVhclVo">
+        /* selectCariBlDivdCagVhclList */
+        SELECT A.BL_DIVD_RQST_NO                            AS BL_DIVD_RQST_NO, /** N° De Demande D'éclatement Bl !== BL분할신청번호 ==! */
+               A.DIVD_CAG_SRNO                              AS DIVD_CAG_SRNO  , /** N° Série De Remorque Pour Marchandises Fractionnées !== 분할화물트레일러일련번호 ==! */
+               A.CHSS_NO                                    AS CHSS_NO        , /** N° De Chéssis !== 차대번호 ==! */
+               A.DEL_YN                                     AS DEL_YN         , /** Suppression On !== 삭제여부 ==! */
+               A.FRST_REGST_ID                              AS FRST_REGST_ID  , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+               TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDDHH24MISS') AS FRST_RGSR_DTTM ,         
+               A.LAST_CHPR_ID                               AS LAST_CHPR_ID   , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+               TO_CHAR(A.LAST_CHG_DTTM,'YYYYMMDDHH24MISS')  AS LAST_CHG_DTTM
+          FROM TB_CARI_BL_DIVD_CAG_VHCL A
+         WHERE A.DEL_YN          = 'N'
+           AND A.BL_DIVD_RQST_NO = #{blDivdRqstNo}
+           AND A.DIVD_CAG_SRNO   = #{divdCagSrno}
+    </select>
+
+  	<!--
+      Consulter la liste des conteneurs sur la cargaison d'éclatement B/L.(remorque) !==BL분할화물의 트레일러 목록을 조회한다.==!
+    -->
+    <select id="selectCarBlDivdCagTrlrList" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagTrlrVo" resultType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagTrlrVo">
+        /* selectCariBlDivdCagTrlrList */
+        SELECT A.BL_DIVD_RQST_NO                            AS BL_DIVD_RQST_NO  , /** N° De Demande D'éclatement Bl !== BL분할신청번호 ==! */
+               A.DIVD_CAG_SRNO                              AS DIVD_CAG_SRNO    , /** N° Série De Remorque Pour Marchandises Fractionnées !== 분할화물트레일러일련번호 ==! */
+               A.TRLR_VHCL_RGSR_NO                          AS TRLR_VHCL_RGSR_NO, /** N° D'Immatriculation De Remorque !== 트레일러차량등록번호 ==! */
+               A.TRLR_SSIS_NO                               AS TRLR_SSIS_NO     , /** N° Chéssis De Remorque !== 트레일러샤시번호 ==! */
+               A.TRLR_STSZ                                  AS TRLR_STSZ        , /** Gabarit De Remorque !== 트레일러규격 ==! */
+               A.DEL_YN                                     AS DEL_YN           , /** Suppression On !== 삭제여부 ==! */
+               A.FRST_REGST_ID                              AS FRST_REGST_ID    , /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+               TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDDHH24MISS') AS FRST_RGSR_DTTM   ,         
+               A.LAST_CHPR_ID                               AS LAST_CHPR_ID     , /** Id Du Modificateur Final !== 최종변경자ID ==! */
+               TO_CHAR(A.LAST_CHG_DTTM,'YYYYMMDDHH24MISS')  AS LAST_CHG_DTTM    
+          FROM TB_CARI_BL_DIVD_CAG_TRLR A
+         WHERE A.DEL_YN          = 'N'
+           AND A.BL_DIVD_RQST_NO = #{blDivdRqstNo}
+           AND A.DIVD_CAG_SRNO   = #{divdCagSrno}
+    </select>
+
+  	<!--
+      Traiter le contrôle. !== 심사처리를 한다.==!
+    -->
+    <update id="updateCarBlDivdAudt" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdVo">
+        /* CariWrhs_updateCariBlDivdAudt */
+        UPDATE TB_CARI_BL_DIVD
+           SET  LAST_CHPR_ID  = #{lastChprId}
+               ,LAST_CHG_DTTM = SYSTIMESTAMP
+               <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(audtDt)">
+               <!-- ,AUDT_DTTM     = TO_CHAR(TO_DATE(#{audtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') -->
+               ,AUDT_DTTM     = TO_DATE(#{lastChgDttm}, 'YYYYMMDDHH24MISS')
+               </if>
+               <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(audtPtCd)">
+               ,AUDT_PT_CD = #{audtPtCd}
+               </if>
+               <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(audtRsltCn)">
+               ,AUDT_RSLT_CN = #{audtRsltCn}
+               </if>
+         WHERE BL_DIVD_RQST_NO = #{blDivdRqstNo}    /** N° de demande d'éclatement BL !== BL분할신청번호 ==! */
+    </update>
+
+  	<!--
+      Envoyer le résultat du contrôle vers la table externe. !== 외부 테이블에심사 결과를 전송한다.==!
+    -->
+    <update id="updateCarBlDivdAudtForEpt" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdVo">
+        /** updateCarBlDivdAudtForEpt */
+        UPDATE ALPASSEXT.TB_CARE_BL_DIVD
+           SET  PRCS_STTS_CD     = #{prcsSttsCd}
+               ,PRCS_DTTM        = TO_DATE(#{lastChgDttm}, 'DDMMYYYYHH24MISS')
+               ,LAST_CHPR_ID     = #{lastChprId}
+               ,LAST_CHG_DTTM    = SYSTIMESTAMP
+         WHERE BL_DIVD_RQST_NO = #{blDivdRqstNo}
+    </update>
+
+  	<!--
+      Consulter le nombre de demandes de sortie effectuées. !== 반출신고된 건수를 조회한다.==!
+    -->
+    <select id="selectCarRlseCnt" parameterType="alpass.ipt.car.bnwrhs.cagbrng.vo.CarRlbrPrngVo" resultType="java.lang.Integer">
+        /** selectCarRlseCnt : Consulter le nombre de demandes de sortie effectuées. !== 반출신고된 건수를 조회한다.==! */
+        SELECT COUNT(*) AS CNT
+          FROM AlPASSEXT.TB_CARE_RLBR A
+         WHERE A.DEL_YN       = 'N'
+           AND A.RLBR_PT_CD   <![CDATA[<>]]> '50' /** B/L분할에 의한 반출 제외 */
+           AND A.RLBR_TP_CD   = 'O'
+           AND A.PRCS_STTS_Cd <![CDATA[<>]]> 'D09'
+           AND A.CAG_MGMT_NO  = #{cagMgmtNo}
+           AND A.IBOBZ_CD     = #{ibobzCd}
+    </select>
+
+  	<!--
+      Modifier le CRN des marchandises sous l'éclatement B/L. !== BL 분할 화물 CRN 수정==!
+    -->
+    <update id="updateCarBlDivdCagCrn" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+         /** updateCarBlDivdCagCrn */
+         UPDATE TB_CARI_BL_DIVD_CAG
+            SET  LAST_CHPR_ID      = #{lastChprId}
+                ,LAST_CHG_DTTM     = TO_TIMESTAMP(#{lastChgDttm},'DDMMYYYYHH24MISS')
+                ,DIVD_MRN          = #{divdMrn} /** Eclatement MRN !== 분할MRN ==! */
+                ,DIVD_MSN          = #{divdMsn} /** Eclatement MSN !== 분할MSN ==! */
+                ,DIVD_HSN          = #{divdHsn} /** Eclatement HSN !== 분할HSN ==! */
+                ,DIVD_CAG_MGMT_NO  = #{divdCagMgmtNo} /** Eclatement CRN !== 분할CRN ==! */
+           WHERE DEL_YN = 'N'
+             AND BL_DIVD_RQST_NO   = #{blDivdRqstNo}    /** N° de demande d'éclatement BL !== BL분할신청번호 ==! */
+             AND DIVD_CAG_SRNO     = #{divdCagSrno}       /** N° De Serie d''eclatement !== 분할일련번호 ==! */
+    </update>
+
+  	<!--
+      Modifier le CRN des marchandises sous l'éclatement B/L. !== BL 분할 화물 CRN 수정==!
+    -->
+    <update id="updateCarBlDivdCagCrnForEPT" parameterType="alpass.ipt.car.bnwrhs.bldivd.vo.CarBlDivdCagVo">
+         /** updateCarBlDivdCagCrnForEPT */
+         UPDATE ALPASSEXT.TB_CARE_BL_DIVD_CAG
+            SET  LAST_CHPR_ID      = #{lastChprId}
+                ,LAST_CHG_DTTM     = TO_TIMESTAMP(#{lastChgDttm},'DDMMYYYYHH24MISS')
+                ,DIVD_MRN          = #{divdMrn} /** Eclatement MRN !== 분할MRN ==! */
+                ,DIVD_MSN          = #{divdMsn} /** Eclatement MSN !== 분할MSN ==! */
+                ,DIVD_HSN          = #{divdHsn} /** Eclatement HSN !== 분할HSN ==! */
+                ,DIVD_CAG_MGMT_NO  = #{divdCagMgmtNo} /** Eclatement CRN !== 분할CRN ==! */
+           WHERE DEL_YN = 'N'
+             AND BL_DIVD_RQST_MGMT_NO   = #{blDivdRqstMgmtNo}    /** N° de demande d'éclatement BL !== BL분할신청번호 ==! */
+             AND DIVD_CAG_SRNO    		= #{divdCagSrno}       /** N° De Serie d''eclatement !== 분할일련번호 ==! */
+    </update>
+
+  	<!--
+      [Rechercher] !== 관할세관코드를 조회한다. ==!
+    -->
+    <select id="selectGetCstmCd" parameterType="string" resultType="string">
+      /* alpass.ipt.car.bnwrhs.bldivd.mapper.CarBlDivdMapper.selectGetCstmCd */
+      SELECT C2.ORGN_CD CSTM_CD
+      FROM TB_POTI_ORGN C1
+        LEFT JOIN TB_POTI_ORGN C2
+          ON C1.UPR_ORGN_MGMT_CD = C2.ORGN_MGMT_CD
+          AND C2.DEL_YN = 'N'
+      WHERE C1.DEL_YN = 'N'
+        AND C1.ORGN_CD = #{jrsdOrgnCd}
+        AND ROWNUM = 1
+    </select>
+</mapper>

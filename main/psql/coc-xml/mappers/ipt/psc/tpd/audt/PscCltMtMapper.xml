@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.psc.tpd.audt.mapper.PscCltMtMapper">
+
+       
+  <insert id="insertTpdClt" parameterType="alpass.ipt.psc.tpd.audt.vo.PscTpdCltVo">
+      /* insertTpdClt */
+    <selectKey keyProperty="cltSrno" order="BEFORE" resultType="java.math.BigDecimal">
+      SELECT NVL(MAX(CLT_SRNO),0)+1 FROM TB_PSCI_CLT_RGSR
+    </selectKey>
+    INSERT INTO TB_PSCI_CLT_RGSR
+        (
+          CLT_SRNO                     /** Numéro de série du bon de sortie !== 반출증일련번호 ==! */
+        , REFF_NO                      /**   N° De Référence !== 참조번호 ==! */
+        , CSTM_CD                      /**  Code Du Bureau !== 세관코드 ==! */
+        , RLSE_RQST_DT                 /**  Date de demande de sortie !==  반출신청일자 ==! */
+        , INSC_EMP_ID                  /**  ID de l'vérificateur !== 검사직원ID ==! */
+        , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+        , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+        , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+        , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+        , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        VALUES
+        (
+          #{cltSrno}                 
+        , #{reffNo}               
+        , #{cstmCd}                   
+        , TO_CHAR(sysdate,'yyyymmdd') 
+        , #{inscEmpId}          
+        , 'N'                         
+        , #{frstRegstId}              
+        , CURRENT_TIMESTAMP                
+        , #{lastChprId}                
+        , CURRENT_TIMESTAMP              
+        )
+  </insert>       
+       
+  <select id="selectPscCltReport"
+    parameterType="alpass.ipt.psc.tpd.audt.vo.PscTpdCltVo" resultType="alpass.ipt.psc.tpd.audt.vo.PscTpdCltVo">
+    /* selectPscCltReport */
+    
+     SELECT
+          A.CLT_SRNO                     /** Numéro de série du bon de sortie !== 반출증일련번호 ==! */
+        , A.REFF_NO                      /**   N° De Référence !== 참조번호 ==! */
+        , A.CSTM_CD                      /**  Code Du Bureau !== 세관코드 ==! */
+        , FN_GET_ORGN_NM(A.CSTM_CD) AS CSTM_CD_NM               /**  !== 세관명 ==! */
+        , A.RLSE_RQST_DT                 /**  Date de demande de sortie !==  반출신청일자 ==! */
+        , A.INSC_EMP_ID                  /**  ID de l'vérificateur !== 검사직원ID ==! */
+        ,( SELECT EMP_NM
+           FROM TB_POTI_EMP
+             WHERE  PBSR_NO = A.FRST_REGST_ID
+         ) AS INSC_EMP_NM  
+        , A.DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+        , A.FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+        ,( SELECT EMP_NM
+              FROM TB_POTI_EMP
+               WHERE  PBSR_NO = A.FRST_REGST_ID
+         ) AS FRST_REGST_NM   
+        , A.FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+        , A.LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+        , A.LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        , B.TPD_VHCL_KND_CD            /** Code de genre de véhicule de TPD !== TPD차량종류코드 ==! */
+        , FN_GET_CD_VDVAL_NM('PSC_0007', B.TPD_VHCL_KND_CD, 'KO') AS TPD_VHCL_KND_NM   
+        , B.VHCL_RGSR_NO               /** N° d'immatriculation du véhicule !== 차량등록번호 ==! */
+    FROM  TB_PSCI_CLT_RGSR A , TB_PSCI_TPD_VHCL B
+    WHERE 1=1
+    AND A.REFF_NO = B.TPD_TEMP_NO
+    AND A.REFF_NO = #{reffNo}
+    AND ROWNUM = 1
+    ORDER BY A.FRST_RGSR_DTTM DESC
+                      
+  </select>        
+       
+ 
+</mapper>

@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="alpass.ipt.col.rcve.mapper.ColRcveMgmtMapper">
+
+    <!--
+    Consulter la liste des encaissements !==수납목록을 조회한다==!
+    -->
+    <select id="selectColRcveMgmtList" parameterType="alpass.ipt.col.rcve.vo.ColRcveMgmtVo" resultType="alpass.ipt.col.rcve.vo.ColRcveMgmtVo">
+        /* ColRcveMgmt_selectColRcveMgmtList */
+        <include refid="pagination.header" />
+        SELECT
+        NTFC.NTFC_NO                    /** N° d'avis !== 고지번호 ==! */
+        , NTFC.CSTM_CD                    /** Code du bureau !== 세관코드 ==! */
+        , FN_GET_ORGN_NM(NTFC.CSTM_CD) AS CSTM_NM
+        , NTFC.NTFC_PT_CD                 /** Code de type d'avis !== 고지유형코드 ==! */
+        , TO_CHAR(TO_DATE(NTFC.NTFC_DT,'YYYYMMDD'),'DD/MM/YYYY') AS NTFC_DT         /** Date de notification !== 고지일자 ==! */
+        , TO_CHAR(TO_DATE(NTFC.PAY_TMLM_DT,'YYYYMMDD'),'DD/MM/YYYY') AS PAY_TMLM_DT /** Delai de paiement !== 납부기한일자 ==! */
+        , NTFC.DLPY_INST_AMT              /** Montant Des Intérêts De Retard !== 체납이자금액 ==! */
+        , NTFC.ODLPY_INST_AMT             /** Montant Des Intérêts De Retard Non-Ajusté !== 원체납이자금액 ==! */
+        , NTFC.FINE_AMT                   /** Montant d'amende !== 벌금금액 ==! */
+        , NTFC.OTHS_PCFE_AMT              /** Montant des autres frais exigibles !== 기타수수료금액 ==! */
+        , NTFC.TAMT                       /** Montant total !== 총금액 ==! */
+        , NTFC.TXPR_IDFY_NO_TP_CD         /** Code de caterogie de NIU !== 납세자식별번호구분코드 ==! */
+        , NTFC.TXPR_IDFY_NO               /** NIU !== 납세자식별번호 ==! */
+        , NTFC.TXPR_NM                    /** Nom du responsable financier !== 납세자명 ==! */
+        , NTFC.REFF_NO_PT_CD              /** Code de type de numero de reference !== 참조번호유형코드 ==! */
+        , NTFC.REFF_NO                    /** N° de reference !== 참조번호 ==! */
+        , NTFC.DCER_CD                    /** Code du declarant !== 신고인코드 ==!*/
+        , NTFC.RCVE_YN                    /** Encaisse (ON) !== 수납여부 ==! */
+        , NTFC.PAY_TMLM_XTNS_YN           /** Echeance prorogee (ON) !== 납부기한연장여부 ==! */
+        , NTFC.DLPY_YN                    /** Paiement retarde (ON) !== 체납여부 ==! */
+        , NTFC.DLPY_INST_ADJU_YN          /** Intérêts de retard ajustés (O/N) !== 체납이자조정여부 ==! */
+        , NTFC.NTFC_DIVD_YN               /** Avis echelonne (ON) !== 고지분할여부 ==! */
+        , NTFC.RECP_PBLS_YN               /** Quittance delivree (ON) !== 영수증발행여부 ==! */
+        , NTFC.CNCL_YN                    /** Annule (ON) !== 취소여부 ==! */
+        , NTFC.ONTFC_NO                   /** N° de l'avis original !== 원고지번호 ==! */
+        , NTFC.DFPM_PAY_YN                /** Recours au credit d'enlevement (ON) !== 후불납부여부 ==! */
+        , NTFC.NTFC_PRCS_STTS_CD          /** Code de statut de traitement d'avis !== 고지처리상태코드 ==! */
+        , NTFC.DEL_YN                     /** Suppression ON !== 삭제여부 ==! */
+        , RCVE.RCVE_NO                    /** N° d'encaissement !== 수납번호 ==! */
+        , RCVE.RCVE_PT_CD                 /** Code de type d'encaissement !== 수납유형코드 ==! */
+        , RCVE.RCVE_AMT                   /** Montant encaisse !== 수납금액 ==! */
+        , TO_CHAR(TO_DATE(RCVE.RCVE_DT,'YYYYMMDD'),'DD/MM/YYYY') AS RCVE_DT              /** Date de stockage !== 수납일자 ==! */
+        , RCVE.HNWR_RCVE_RSN_CN           /** Contenu du motif d'enregistrement manuel !== 수작업수납사유내용 ==! */
+        , RCVE.ATCH_FILE_ID               /** ID du fichier joint !== 첨부파일ID ==! */
+        , RCVE.FRST_REGST_ID
+        , RCVE.FRST_RGSR_DTTM
+        , RCVE.LAST_CHPR_ID
+        , RCVE.LAST_CHG_DTTM
+        FROM  TB_COLI_NTFC NTFC /* TB_고지정보 */
+        , TB_COLI_RCVE RCVE /* TB_수납정보 */
+        WHERE  NTFC.DEL_YN     = 'N'
+        AND    NTFC.RCVE_YN    = 'Y'
+        AND    RCVE.DEL_YN     = 'N'
+        AND    NTFC.NTFC_NO    = RCVE.NTFC_NO
+        <if test='searchAllYn == null or searchAllYn !="Y" '>
+            AND    NTFC.CSTM_CD IN ( SELECT ORGN_CD FROM TABLE(FN_GET_COLT_CSTM_CD(#{sessPbsrNo})) )
+        </if>
+        <if test='cstmCd != null and cstmCd !=""'>
+            AND    NTFC.CSTM_CD = #{cstmCd}
+        </if>
+        <if test='ntfcNo != null and ntfcNo !=""'>
+            AND    NTFC.NTFC_NO    = #{ntfcNo}
+        </if>
+        <if test='rcveNo != null and rcveNo !=""'>
+            AND    RCVE.RCVE_NO    = #{rcveNo}
+        </if>
+        <if test='txprIdfyNo != null and txprIdfyNo !=""'>
+            AND    NTFC.TXPR_IDFY_NO LIKE #{txprIdfyNo}||'%'
+        </if>
+        <if test='rcveDtFrom != null and rcveDtFrom !="" and rcveDtTo != null and rcveDtTo !="" '>
+            AND    RCVE.RCVE_DT    BETWEEN TO_CHAR(TO_DATE(#{rcveDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{rcveDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+        </if>
+        <if test='ntfcDtFrom != null and ntfcDtFrom !="" and ntfcDtTo != null and ntfcDtTo !="" '>
+            AND    NTFC.NTFC_DT BETWEEN TO_CHAR(TO_DATE(#{ntfcDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{ntfcDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+        </if>
+        <if test='rcvePtCdList != null and rcvePtCdList.size() > 0'>
+            AND    RCVE.RCVE_PT_CD IN  <foreach collection="rcvePtCdList" item="rcvePtCdList" open="(" close=")" separator=",">#{rcvePtCdList}</foreach>
+        </if>
+        <if test='recpPblsYn != null and recpPblsYn !=""'>
+            AND    NTFC.RECP_PBLS_YN = #{recpPblsYn}
+        </if>
+        ORDER BY RCVE.RCVE_DT DESC, RCVE.RCVE_NO DESC, RCVE.NTFC_NO ASC
+        <include refid="pagination.footer" />
+    </select>
+
+    <!--
+    Consulter les détails de Informations sur l'encaissement !==수납정보를 조회한다==!
+    -->
+    <select id="selectColRcveMgmt" parameterType="alpass.ipt.col.rcve.vo.ColRcveMgmtVo" resultType="alpass.ipt.col.rcve.vo.ColRcveMgmtVo">
+        /* ColRcveMgmt_selectColRcveMgmt */
+        SELECT
+        NTFC.NTFC_NO                                                      /** N° d'avis !== 고지번호 ==! */
+        , NTFC.CSTM_CD                                                      /** Code du bureau !== 세관코드 ==! */
+        , NTFC.NTFC_PT_CD                                                   /** Code de type d'avis !== 고지유형코드 ==! */
+        , TO_CHAR(TO_DATE(NTFC.NTFC_DT,'YYYYMMDD'),'DD/MM/YYYY') AS NTFC_DT /** Date de notification !== 고지일자 ==! */
+        , TO_CHAR(TO_DATE(NTFC.PAY_TMLM_DT,'YYYYMMDD'),'DD/MM/YYYY') AS PAY_TMLM_DT /** Delai de paiement !== 납부기한일자 ==! */
+        , NTFC.DLPY_INST_AMT                                                /** Montant Des Intérêts De Retard !== 체납이자금액 ==! */
+        , NTFC.ODLPY_INST_AMT                                               /** Montant Des Intérêts De Retard Non-Ajusté !== 원체납이자금액 ==! */
+        , NTFC.FINE_AMT                                                     /** Montant d'amende !== 벌금금액 ==! */
+        , NTFC.OTHS_PCFE_AMT                                                /** Montant des autres frais exigibles !== 기타수수료금액 ==! */
+        , NTFC.TAMT                                                         /** Montant total !== 총금액 ==! */
+        , NTFC.TXPR_IDFY_NO_TP_CD                                           /** Code de caterogie de NIU !== 납세자식별번호구분코드 ==! */
+        , NTFC.TXPR_IDFY_NO                                                 /** NIU !== 납세자식별번호 ==! */
+        , NTFC.TXPR_NM                                                      /** Nom du responsable financier !== 납세자명 ==! */
+        , NTFC.REFF_NO_PT_CD                                                /** Code de type de numero de reference !== 참조번호유형코드 ==! */
+        , NTFC.REFF_NO                                                      /** N° de reference !== 참조번호 ==! */
+        , NTFC.DCER_CD                                                      /** Code du declarant !== 신고인코드 ==!*/
+        , NTFC.RCVE_YN                                                      /** Encaisse (ON) !== 수납여부 ==! */
+        , NTFC.PAY_TMLM_XTNS_YN                                             /** Echeance prorogee (ON) !== 납부기한연장여부 ==! */
+        , NTFC.DLPY_YN                                                      /** Paiement retarde (ON) !== 체납여부 ==! */
+        , NTFC.DLPY_INST_ADJU_YN                                            /** Intérêts de retard ajustés (O/N) !== 체납이자조정여부 ==! */
+        , NTFC.NTFC_DIVD_YN                                                 /** Avis echelonne (ON) !== 고지분할여부 ==! */
+        , NTFC.RECP_PBLS_YN                                                 /** Quittance delivree (ON) !== 영수증발행여부 ==! */
+        , NTFC.CNCL_YN                                                      /** Annule (ON) !== 취소여부 ==! */
+        , NTFC.ONTFC_NO                                                     /** N° de l'avis original !== 원고지번호 ==! */
+        , NTFC.DFPM_PAY_YN                                                  /** Recours au credit d'enlevement (ON) !== 후불납부여부 ==! */
+        , NTFC.NTFC_PRCS_STTS_CD                                            /** Code de statut de traitement d'avis !== 고지처리상태코드 ==! */
+        , NTFC.DEL_YN                                                       /** Suppression ON !== 삭제여부 ==! */
+        , RCVE.RCVE_NO                                                      /** N° d'encaissement !== 수납번호 ==! */
+        , RCVE.RCVE_PT_CD                                                   /** Code de type d'encaissement !== 수납유형코드 ==! */
+        , RCVE.RCVE_AMT                                                     /** Montant encaisse !== 수납금액 ==! */
+        , TO_CHAR(TO_DATE(RCVE.RCVE_DT,'YYYYMMDD'),'DD/MM/YYYY') AS RCVE_DT /** Date de stockage !== 수납일자 ==! */
+        , RCVE.HNWR_RCVE_RSN_CN                                             /** Contenu du motif d'enregistrement manuel !== 수작업수납사유내용 ==! */
+        , RCVE.TXPR_TLPH_NO                                             /** !== 수납전화번호 ==! */
+        , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = RCVE.REGST_ID) AS REGST_NM
+        , TO_CHAR(TO_DATE(RCVE.RGSR_DT,'YYYYMMDD'),'DD/MM/YYYY') AS RGSR_DT
+        , RCVE.TXPR_TLPH_NO
+        , RCVE.RCVE_BNK_CD
+        , RCVE.ATCH_FILE_ID                                                 /** ID du fichier joint !== 첨부파일ID ==! */
+        , RCVE.FRST_REGST_ID
+        , RCVE.FRST_RGSR_DTTM
+        , RCVE.LAST_CHPR_ID
+        , RCVE.LAST_CHG_DTTM
+        , RCVE.PYER_IDFY_NO_TP_CD
+        , RCVE.PYER_IDFY_NO
+        , RCVE.PYER_NM
+        FROM  TB_COLI_NTFC NTFC /* TB_고지정보 */
+        , TB_COLI_RCVE RCVE /* TB_수납정보 */
+        WHERE  NTFC.NTFC_NO    = RCVE.NTFC_NO
+        <if test='rcveNo != null and rcveNo !="" '>
+            AND    RCVE.RCVE_NO    = #{rcveNo}
+        </if>
+        <if test='ntfcNo != null and ntfcNo !="" '>
+            AND    NTFC.NTFC_NO    = #{ntfcNo}
+        </if>
+
+    </select>
+
+    <!--
+    Consulter la liste des encaissements !==수납목록을 조회한다==!
+    -->
+    <select id="selectColNtshRcveMgmtList" parameterType="alpass.ipt.col.rcve.vo.ColRcveMgmtVo" resultType="alpass.ipt.col.rcve.vo.ColRcveMgmtVo">
+        /* ColRcveMgmt_selectColNtshRcveMgmtList */
+        <include refid="pagination.header" />
+        SELECT
+        NTFC.NTFC_NO                    /** N° d'avis !== 고지번호 ==! */
+        , NTFC.CSTM_CD                    /** Code du bureau !== 세관코드 ==! */
+        , FN_GET_ORGN_NM(NTFC.CSTM_CD) AS CSTM_NM
+        , NTFC.NTFC_PT_CD                 /** Code de type d'avis !== 고지유형코드 ==! */
+        , TO_CHAR(TO_DATE(NTFC.NTFC_DT,'YYYYMMDD'),'DD/MM/YYYY') AS NTFC_DT         /** Date de notification !== 고지일자 ==! */
+        , TO_CHAR(TO_DATE(NTFC.PAY_TMLM_DT,'YYYYMMDD'),'DD/MM/YYYY') AS PAY_TMLM_DT /** Delai de paiement !== 납부기한일자 ==! */
+        , NTFC.DLPY_INST_AMT              /** Montant Des Intérêts De Retard !== 체납이자금액 ==! */
+        , NTFC.ODLPY_INST_AMT             /** Montant Des Intérêts De Retard Non-Ajusté !== 원체납이자금액 ==! */
+        , NTFC.FINE_AMT                   /** Montant d'amende !== 벌금금액 ==! */
+        , NTFC.OTHS_PCFE_AMT              /** Montant des autres frais exigibles !== 기타수수료금액 ==! */
+        , NTFC.TAMT                       /** Montant total !== 총금액 ==! */
+        , NTFC.TXPR_IDFY_NO_TP_CD         /** Code de caterogie de NIU !== 납세자식별번호구분코드 ==! */
+        , NTFC.TXPR_IDFY_NO               /** NIU !== 납세자식별번호 ==! */
+        , NTFC.TXPR_NM                    /** Nom du responsable financier !== 납세자명 ==! */
+        , NTFC.REFF_NO_PT_CD              /** Code de type de numero de reference !== 참조번호유형코드 ==! */
+        , NTFC.REFF_NO                    /** N° de reference !== 참조번호 ==! */
+        , NTFC.DCER_CD                    /** Code du declarant !== 신고인코드 ==!*/
+        , NTFC.RCVE_YN                    /** Encaisse (ON) !== 수납여부 ==! */
+        , NTFC.PAY_TMLM_XTNS_YN           /** Echeance prorogee (ON) !== 납부기한연장여부 ==! */
+        , NTFC.DLPY_YN                    /** Paiement retarde (ON) !== 체납여부 ==! */
+        , NTFC.DLPY_INST_ADJU_YN          /** Intérêts de retard ajustés (O/N) !== 체납이자조정여부 ==! */
+        , NTFC.NTFC_DIVD_YN               /** Avis echelonne (ON) !== 고지분할여부 ==! */
+        , NTFC.RECP_PBLS_YN               /** Quittance delivree (ON) !== 영수증발행여부 ==! */
+        , NTFC.CNCL_YN                    /** Annule (ON) !== 취소여부 ==! */
+        , NTFC.ONTFC_NO                   /** N° de l'avis original !== 원고지번호 ==! */
+        , NTFC.DFPM_PAY_YN                /** Recours au credit d'enlevement (ON) !== 후불납부여부 ==! */
+        , NTFC.NTFC_PRCS_STTS_CD          /** Code de statut de traitement d'avis !== 고지처리상태코드 ==! */
+        , NTFC.DEL_YN                     /** Suppression ON !== 삭제여부 ==! */
+        , RCVE.RCVE_NO                    /** N° d'encaissement !== 수납번호 ==! */
+        , RCVE.RCVE_PT_CD                 /** Code de type d'encaissement !== 수납유형코드 ==! */
+        , RCVE.RCVE_AMT                   /** Montant encaisse !== 수납금액 ==! */
+        , TO_CHAR(TO_DATE(RCVE.RCVE_DT,'YYYYMMDD'),'DD/MM/YYYY') AS RCVE_DT              /** Date de stockage !== 수납일자 ==! */
+        , RCVE.HNWR_RCVE_RSN_CN           /** Contenu du motif d'enregistrement manuel !== 수작업수납사유내용 ==! */
+        , RCVE.ATCH_FILE_ID               /** ID du fichier joint !== 첨부파일ID ==! */
+        , RCVE.FRST_REGST_ID
+        , RCVE.FRST_RGSR_DTTM
+        , RCVE.LAST_CHPR_ID
+        , RCVE.LAST_CHG_DTTM
+        FROM  TB_COLI_NTFC NTFC /* TB_고지정보 */
+        , TB_COLI_RCVE RCVE /* TB_수납정보 */
+        WHERE  NTFC.DEL_YN     = 'N'
+        AND    NTFC.RCVE_YN    = 'Y'
+        AND    RCVE.DEL_YN     = 'N'
+        AND    NTFC.NTFC_NO    = RCVE.NTFC_NO
+        AND    RCVE.RCVE_NO    = #{rcveNo}
+        ORDER BY FRST_RGSR_DTTM DESC
+        <include refid="pagination.footer" />
+    </select>
+
+</mapper>

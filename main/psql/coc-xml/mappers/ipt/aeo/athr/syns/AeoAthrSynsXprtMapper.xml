@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+Mapper : Gérer les experts externes. !== 외부전문관 관리 Mapper. ==!
+(wonjun.cha)
+-->
+<mapper namespace="alpass.ipt.aeo.athr.syns.mapper.AeoAthrSynsXprtMapper">
+
+    <!--
+    [Gérer les experts externes] Consulter la liste !== [외부전문관 관리] 목록조회 ==!
+    -->
+	<select id="selectAeoAthrSynsXprtList"
+	    parameterType="alpass.ipt.aeo.athr.audt.vo.AeoAthrAudtAdorVo"
+	    resultType="alpass.ipt.aeo.athr.audt.vo.AeoAthrAudtAdorVo">
+		/* selectAeoAthrSynsXprtList */
+	    <include refid="pagination.header"/>
+		  SELECT
+				  EMP.USER_ID AS ADOR_ID					/** Id De L'Inspecteur !== 심사자ID ==! */
+				, EMP.USER_NM AS EMP_NM                     /** Nom De L'Employé !== 직원명 ==! */
+				, EMP.CO_NM AS ORGN_NM                      /** Nom D'Organisme !== 조직명 ==! */
+				, EMP.USER_TP_NM AS CLPS_CD_NM              /** Code De Catégorie D'Utilisateur !== 사용자구분코드 ==! */
+				, EMP.EML                                   /** Email !== 이메일 ==! */
+				, EMP.TLPH_NO AS DEPT_TLPH_NO               /** N° De Téléphone !== 전화번호 ==! */
+		  FROM  (
+               SELECT D.NIF           /** Numéro d’identification fiscale !== 납세식별번호 ==! */
+                    , A.CO_NM         /** Nom De L'Entreprise !== 업체명 ==! */
+                    , D.USER_ID       /** Id D'Utilisateur !== 사용자ID ==! */
+                    , D.USER_NM       /** Nom De L'Utilisateur !== 사용자명 ==! */
+                    , D.USER_TP_CD    /** Code De Catégorie D'Utilisateur !== 사용자구분코드 ==! */
+                    , FN_GET_CD_VDVAL_NM('COM_0031', D.USER_TP_CD, #{langCd}) AS USER_TP_NM    /** Code De Catégorie D'Utilisateur !== 사용자구분코드 ==! */
+                    , D.NAT_CD        /** Code De Nationalité !== 국적코드 ==! */
+                    , D.GNDR_CD       /** Code De Sexe !== 성별코드 ==! */
+                    , FN_GET_CD_VDVAL_NM('COM_0027', D.GNDR_CD, #{langCd}) AS GNDR_NM    /** Code De Sexe !== 성별코드 ==! */
+                    , D.TLPH_NO       /** N° De Téléphone !== 전화번호 ==! */
+                    , D.EML           /** Email !== 이메일 ==! */
+                    , D.USER_ADDR     /** Adresse De L'Utilisateur !== 사용자주소 ==! */
+               FROM   TB_COM_CO A                     /** COM_ENTREPRISE !== COM_업체 ==! */
+                    , TB_COM_CO_DCLR_CD B             /** COM_CODE DE DÉCLARATION D'ENTREPRISE !== COM_업체신고코드 ==! */
+                    , TB_COM_CO_DCLR_CD_USER_REL C    /** COM_RAPPORT ENTRE UTILISATEUR ET CODE DE DÉCLARATION D'ENTREPRISE !== COM_업체신고코드사용자관계 ==! */
+                    , TB_COM_CO_USER D                /** COM_UTILISATEUR ENTREPRISE !== COM_업체사용자 ==! */
+               WHERE  A.DEL_YN ='N'
+               AND    B.NIF = A.NIF 
+               AND    B.CO_DCLR_TP_CD ='Q'
+               AND    B.DEL_YN ='N'
+               AND    C.NIF = B.NIF 
+               AND    C.DEL_YN ='N'
+               AND    C.CO_DCLR_CD = B.CO_DCLR_CD 
+               AND    D.USER_ID = C.USER_ID 
+               AND    D.NIF = C.NIF
+               AND    D.DEL_YN ='N'
+	          ) EMP
+	     WHERE 1= 1
+	     		
+	    <if test="srchCstm != null and srchCstm != ''">
+	       AND 	EMP.NIF = #{srchCstm}
+	    </if>
+	    <if test="srchName != null and srchName != ''">
+	       AND 	EMP.USER_NM LIKE '%' || #{srchName} || '%'
+	    </if>
+
+	     ORDER BY EMP.CO_NM ASC
+		<include refid="pagination.footer"/>
+	</select>
+	
+</mapper>

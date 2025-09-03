@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="alpass.ipt.psc.com.mapper.PscComTodoMapper">
+
+    <!--
+        Consultation de la liste de Todo !== Todo리스트 조회 ==!
+    -->
+    <select id="selectTodoIdLst"
+        parameterType="alpass.com.todo.vo.ComTodoVo"
+        resultType="alpass.com.todo.vo.ComTodoVo">
+        /* selectTodoIdLst */
+
+        SELECT TODO_ID
+        FROM   TB_POTI_TODO
+        WHERE  DEL_YN = 'N'
+        AND    BSOP_CLSF_CD = #{bsopClsfCd}
+        AND    TODO_REFF_NO = #{todoReffNo}
+        <if test="mdfyDgcnt != null and mdfyDgcnt != ''">
+            AND    MDFY_DGCNT = #{mdfyDgcnt}
+        </if>
+        AND    TODO_STTS_CD = 'A'
+        <if test="todoBsopTpCd != null and todoBsopTpCd != ''">
+            AND    TODO_BSOP_TP_CD = #{todoBsopTpCd}
+        </if>
+        <if test="chpnId != null and chpnId != ''">
+            AND    CHPN_ID = #{chpnId}
+        </if>
+    </select>
+
+    <!--
+        @TODO:번역필요 !== Todo Id 조회 ==!
+    -->
+    <select id="selectMytodoId"
+        parameterType="alpass.com.todo.vo.ComTodoVo"
+        resultType="java.lang.String">
+        /* selectMytodoId */
+
+        SELECT A.TODO_ID
+        FROM TB_POTI_TODO A
+           , TB_POTI_EMP B
+        WHERE A.CHPN_ID = B.PBSR_NO
+        AND A.CHPN_ID =  #{userId}
+        AND A.DEL_YN = 'N'
+        AND A.TODO_REFF_NO = #{todoReffNo}
+        AND A.TODO_STTS_CD = 'A'
+        AND A.TODO_BSOP_TP_CD = #{todoBsopTpCd}
+    </select>
+
+    <!--
+        @TODO:번역필요 !== Role 세관직원 목록 조회 ==!
+    -->
+    <select id="selectRoleCstmEmpList"
+        parameterType="java.lang.String"
+        resultType="java.lang.String">
+        /* selectRoleCstmEmpList */
+
+        SELECT B.PBSR_NO
+		FROM TB_POTI_EMP_AUTH A
+			 , TB_POTI_EMP B
+		WHERE A.DEL_YN = 'N'
+			AND B.DEL_YN = 'N'
+			AND A.PBSR_NO = B.PBSR_NO
+			AND ROLE_ID = #{roleId}
+    </select>
+
+  <update id="updateMyTodoCmplReff" parameterType="alpass.com.todo.vo.ComTodoVo">
+    /** updateMyTodoCmplReff */
+
+    UPDATE 
+    <if test="appClsfCd.equals('IPT')">TB_POTI_TODO</if>
+    <if test="appClsfCd.equals('EPT')">TB_POTE_TODO</if>
+    SET TODO_STTS_CD = #{todoSttsCd}                /** Code de statut de l'à faire !== 할일상태코드 ==! */
+      , CHPN_ID =  CASE WHEN #{todoSttsCd} = 'B' THEN CHPN_ID
+              ELSE CASE WHEN CHPN_ID IS NOT NULL AND NVL(#{chpnId}, NULL) IS NULL THEN CHPN_ID
+                ELSE #{chpnId} END END          /** ID de charge !== 담당자ID ==! */
+      , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+      , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+    WHERE DEL_YN = 'N'
+    <if test="todoId != null and todoId != ''">
+    AND TODO_ID = #{todoId}
+    </if>
+    <if test="bsopClsfCd != null and bsopClsfCd != ''">
+    AND BSOP_CLSF_CD = #{bsopClsfCd}
+    </if>    
+    <if test="todoBsopTpCd != null and todoBsopTpCd != ''">
+    AND TODO_BSOP_TP_CD = #{todoBsopTpCd}
+    </if>
+    <if test="todoReffNo != null and todoReffNo != ''">
+    AND TODO_REFF_NO = #{todoReffNo}
+    </if>
+    <if test="mdfyDgcnt != null and mdfyDgcnt != ''">
+    AND MDFY_DGCNT = #{mdfyDgcnt}
+    </if>
+    <if test="docDtlCd != null and docDtlCd != ''">
+    AND DOC_DTL_CD = #{docDtlCd}
+    </if>
+  </update>
+  
+  
+  <select id="selectUserInfo" parameterType="java.lang.String" resultType="alpass.ipt.psc.com.vo.PscComUserInfoVo">
+      /** selectUserInfo*/
+      SELECT INFO.* FROM 
+      (
+           SELECT USER_ID , USER_NM , TLPH_NO , EML , EML_RCPN_YN , SMS_RCPN_YN 
+           FROM ALPASSEXT.TB_COM_CO_USER
+           WHERE DEL_YN = 'N'
+           AND USER_ID = #{userId}
+           UNION ALL 
+               
+           SELECT USER_ID ,USER_NM , TLPH_NO , EML , EML_RCPN_YN , SMS_RCPN_YN 
+           FROM ALPASSEXT.TB_POTE_PSN_USER
+           WHERE DEL_YN = 'N'
+           AND USER_ID = #{userId}
+        
+      ) INFO
+
+  </select>
+    
+   <!--
+        @TODO:번역필요 !== userID 조회 ==!
+    -->
+   <select id="selectUserClsfCd"
+       parameterType="java.lang.String"
+       resultType="java.lang.String">
+       /* selectUserClsfCd */
+
+       SELECT B.USER_CLSF_CD
+         FROM ( SELECT A.USER_ID 
+				     , A.USER_NM 
+				     , A.TLPH_NO 
+				     , A.EML 
+				     , A.EML_RCPN_YN 
+				     , A.SMS_RCPN_YN 
+				     , A.USER_CLSF_CD
+				     , ROW_NUMBER() OVER(PARTITION BY A.USER_ID ORDER BY A.LAST_CHG_DTTM DESC) AS RN
+			      FROM ( SELECT USER_ID 
+		      				  , USER_NM 
+		      				  , TLPH_NO 
+		      				  , EML 
+		      				  , EML_RCPN_YN 
+		      				  , SMS_RCPN_YN 
+		      				  , LAST_CHG_DTTM
+		      				  , 'C' AS USER_CLSF_CD
+			      		  FROM  ALPASSINT.TB_COM_CO_USER
+			      		 WHERE  DEL_YN = 'N'
+			      		   AND  USER_ID = #{userId}
+			      		   
+			      		 UNION  ALL 
+			      		 			      		     
+			      		 SELECT USER_ID 
+		      				  , USER_NM 
+		      				  , TLPH_NO 
+		      				  , EML 
+		      				  , EML_RCPN_YN 
+		      				  , SMS_RCPN_YN 
+		      				  , LAST_CHG_DTTM
+		      				  , 'P' AS USER_CLSF_CD
+			      		  FROM  ALPASSINT.TB_POTE_PSN_USER
+			      		 WHERE  DEL_YN = 'N'
+			      		   AND  USER_ID = #{userId}
+			      	  ) A
+		        ) B
+		WHERE  B.RN = 1
+   </select>
+   
+   <!--
+        @TODO:번역필요 !== 세관직원 목록 조회 ==!
+    -->
+    <select id="selectCstmEmpList"
+        parameterType="java.lang.String"
+        resultType="java.lang.String">
+        /* selectCstmEmpList */
+        SELECT  A.PBSR_NO 
+          FROM  TB_POTI_EMP A    
+             ,  TB_POTI_EMP_AUTH B
+         WHERE  A.ORGN_MGMT_CD IN(
+						       	SELECT  ORGN_MGMT_CD          
+								  FROM  TB_POTI_ORGN 
+								 WHERE   ORGN_TP_CD IN('DGD','DIR','INS','INP') 
+								 START WITH UPPER(ORGN_MGMT_CD) = (SELECT A.ORGN_MGMT_CD			
+																	 FROM TB_POTI_ORGN A
+																	WHERE A.ORGN_NM ='IPVV'
+																	  AND A.HSRK_ORGN_MGMT_CD = (SELECT HSRK_ORGN_MGMT_CD
+																						           FROM TB_POTI_ORGN
+																						          WHERE ORGN_CD = #{cstmCd})
+																	UNION ALL 
+																	SELECT UPPER(ORGN_MGMT_CD) ORGN_MGMT_CD 
+																	  FROM TB_POTI_ORGN
+																	 WHERE ORGN_CD = #{cstmCd}
+																	 LIMIT 1) CONNECT BY PRIOR UPR_ORGN_MGMT_CD = ORGN_MGMT_CD						
+						       )
+           AND  B.ROLE_ID IN('PSC015','PSC008','PSC007','PSC006') 
+           AND  A.PBSR_NO = B.PBSR_NO 
+           AND  A.DEL_YN ='N'
+           AND  B.DEL_YN ='N'  
+    </select>
+  
+    <select id="insertFoncCdMytodoList"
+        parameterType="alpass.ipt.com.user.vo.ComUserVo" resultType="alpass.ipt.com.user.vo.ComUserVo">
+        /* insertFoncCdMytodoList */
+
+     SELECT * FROM (
+            SELECT A.PBSR_NO
+                  ,(SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = FN_GET_UPR_ORGN_CD(A.ORGN_MGMT_CD , 'INS')) AS IDD_ORGN_CD
+        FROM TB_POTI_EMP A
+        WHERE A.DEL_YN = 'N'
+        AND FN_GET_EMP_BWRK_STTS(A.PBSR_NO, 'Y') = 'TRUE'
+        AND FONC_CD = #{foncCd}
+        ) EMP
+     WHERE EMP.IDD_ORGN_CD = #{cstmOrgnCd}
+    </select>
+    
+    <!--
+        @TODO:번역필요 !== brq 세관직원 목록 조회 ==!
+    -->
+    <select id="selectBrqEmpList"
+        parameterType="alpass.ipt.com.user.vo.ComUserRoleVo"
+        resultType="alpass.ipt.com.user.vo.ComUserRoleVo">
+        /* selectBrqEmpList */
+        SELECT  A.PBSR_NO 
+          FROM  TB_POTI_EMP A    
+             ,  TB_POTI_EMP_AUTH B
+         WHERE  A.ORGN_MGMT_CD IN(
+						       	SELECT  ORGN_MGMT_CD          
+								  FROM  TB_POTI_ORGN 
+								 WHERE  1=1
+								 <if test="roleId != null and roleId.equals('PSC006')">
+							       AND  ORGN_TP_CD = 'INP'
+							    </if>
+							    <if test="roleId != null and roleId.equals('PSC007')">
+							       AND  ORGN_TP_CD = 'INS'
+							    </if>
+							    <if test="roleId != null and (roleId.equals('PSC008') or roleId.equals('PSC015'))">
+							       AND  ORGN_TP_CD IN('DGD','DIR')
+							    </if>
+								 START WITH UPPER(ORGN_MGMT_CD) = (SELECT A.ORGN_MGMT_CD			
+																	 FROM TB_POTI_ORGN A
+																	WHERE A.ORGN_NM ='IPVV'
+																	  AND A.HSRK_ORGN_MGMT_CD = (SELECT HSRK_ORGN_MGMT_CD
+																						           FROM TB_POTI_ORGN
+																						          WHERE ORGN_CD = #{orgnMgmtCd})
+																	UNION ALL 
+																	SELECT UPPER(ORGN_MGMT_CD) ORGN_MGMT_CD 
+																	  FROM TB_POTI_ORGN
+																	 WHERE ORGN_CD = #{orgnMgmtCd}
+																	 LIMIT 1) CONNECT BY PRIOR UPR_ORGN_MGMT_CD = ORGN_MGMT_CD						
+						       )
+		   <if test="roleId != null and !roleId.equals('PSC008')">	
+		   	AND  B.ROLE_ID = #{roleId}
+		   </if>	
+		   <if test="roleId != null and roleId.equals('PSC008')">	
+		   	 AND  B.ROLE_ID IN('PSC008','PSC015')
+		   </if>			       
+          
+           AND  A.PBSR_NO = B.PBSR_NO 
+           AND  A.DEL_YN ='N'
+           AND  B.DEL_YN ='N'  
+    </select>
+      
+</mapper>

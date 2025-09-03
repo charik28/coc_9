@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  Mapper : Evaluation des informations de base !== 기초정보평가 Mapper ==!
+-->
+<mapper namespace="alpass.ipt.rsm.basc.mapper.RsmBascInfoEvalMapper">
+
+    <!-- 
+    [Note d'évaluation] Modifier !== [평가점수] 수정 ==!
+    -->
+    <update id="updateEvalScore" 
+        parameterType="alpass.ipt.rsm.basc.vo.RsmBascInfoEvalVo">
+
+	    /* updateEvalScore */
+	    UPDATE TB_RSMI_BASC_INFO
+	    SET    INFO_PRCS_STTS_CD = #{infoPrcsSttsCd}    /* Code de l'état du traitement de l'information !== 정보처리상태코드 ==! */
+	         , INFO_AVLB_SCR = #{infoAvlbScr}           /* Note du degré de l'utilisation de l'information !== 정보이용도점수 ==! */
+	         , INFO_PERC_SCR = #{infoPercScr}           /* Note du degré de propagation de l'information !== 정보파급성점수 ==! */
+	         , INFO_RLBL_SCR = #{infoRlblScr}           /* Note du degré de la confiance de l'information !== 정보신뢰도점수 ==! */
+	         , RSK_SRSN_SCR = #{rskSrsnScr}             /* Note de la gravité du risque !== 위험심각성점수 ==! */
+	         , OCRN_PSBT_SCR = #{ocrnPsbtScr}           /* Note de la possibilité de l'apparition !== 발생가능성점수 ==! */
+	         , BASC_INFO_TSCR = #{bascInfoTscr}         /* Note totale de lin'formation de base !== 기초정보총점수 ==! */
+	         , TKAC_OPIN_CN = #{tkacOpinCn}             /* Contenu de l'opinion !== 조치의견내용 ==! */
+	         , LAST_CHPR_ID = #{lastChprId}             /* ID du modificateur final !== 최종변경자ID ==! */
+	         , LAST_CHG_DTTM = SYSTIMESTAMP             /* Date et heure de modification finale !== 최종변경일시 ==! */
+	    WHERE  BASC_INFO_RGSR_NO = #{bascInfoRgsrNo}     /* Numéro de l'enregistrement de l'information de base !== 기초정보등록번호 ==! */
+
+    </update>
+
+</mapper>

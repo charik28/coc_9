@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="alpass.ipt.col.admn.mapper.ColAdmnIttAffcPayMgmtMapper">
+
+    <!--
+    Consulter la liste des crédits administratifs !==행정기관 사후납부 관리 목록을 조회한다==!
+    -->
+    <select id="selectAdmnIttAffcPayMgmtLst" parameterType="alpass.ipt.col.admn.vo.ColAdmnIttAffcPayMgmtVo" resultType="alpass.ipt.col.admn.vo.ColAdmnIttAffcPayMgmtVo">
+        /** colAdmnIttAffcPayMgmt_selectAdmnIttAffcPayMgmtLst **/
+        <include refid="pagination.header" />
+        SELECT RQST_NO
+            , A.NIF
+            , A.MG_PT_CD
+            , A.ITT_CD
+            , A.MG_ITT_NM
+            , A.MG_PBLS_NO
+            , A.MG_AMT
+            , TO_CHAR(TO_DATE(A.VALD_STRT_DT, 'YYYYMMDD'),'DD/MM/YYYY') VALD_STRT_DT
+            , TO_CHAR(TO_DATE(A.VALD_END_DT, 'YYYYMMDD'),'DD/MM/YYYY') VALD_END_DT
+            , A.REGST_ID
+            , TO_CHAR(TO_DATE(A.RGSR_DT, 'YYYYMMDD'),'DD/MM/YYYY') RGSR_DT
+            , A.MG_EXTN_YN
+            , TO_CHAR(TO_DATE(A.MG_EXTN_DT, 'YYYYMMDD'),'DD/MM/YYYY')  MG_EXTN_DT
+            , A.DCLR_NO
+            , A.PRCS_STTS_CD
+            , A.MG_RTRN_RSN_CD
+            , TO_CHAR(TO_DATE(A.RQST_DT, 'YYYYMMDD'),'DD/MM/YYYY')  AS RQST_DT
+            , A.PYR_JOBT_NM
+            , A.PYR_NM
+            , A.PYMN_RESP_ACNT_CHPN_NM
+            , A.CSTM_WRTE_CN
+            , TO_CHAR(TO_DATE(A.ADJU_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS ADJU_DT
+            , DECODE(ADJU_DT, NULL, '02', '01') AS MG_STAT_CD
+            , A.MG_ITT_CD
+            , A.AC_NO
+            , A.ATCH_FILE_ID
+            , A.DEL_YN
+            , A.FRST_REGST_ID
+            , A.FRST_RGSR_DTTM
+            , A.LAST_CHPR_ID
+            , A.LAST_CHG_DTTM
+            , (	SELECT 	B.ORGN_CD
+                FROM 	TB_POTI_ORGN B,
+                        TB_POTI_ORGN C
+                WHERE 	C.UPR_ORGN_MGMT_CD = B.ORGN_MGMT_CD
+                    AND C.ORGN_CD           = A.CSTM_CD
+                    AND B.DEL_YN            = 'N'
+                    AND C.DEL_YN            = 'N'
+            ) AS SCTR_CD
+            , (	SELECT 	B.ORGN_NM
+                FROM 	TB_POTI_ORGN B,
+                        TB_POTI_ORGN C
+                WHERE 	C.UPR_ORGN_MGMT_CD = B.ORGN_MGMT_CD
+                    AND C.ORGN_CD           = A.CSTM_CD
+                    AND B.DEL_YN            = 'N'
+                    AND C.DEL_YN            = 'N'
+            ) AS SCTR_NM
+            , A.CSTM_CD
+            , FN_GET_ORGN_NM(A.CSTM_CD) AS CSTM_NM
+            , A.DEPT_CD
+            , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_CD = A.DEPT_CD AND DEL_YN = 'N') AS DEPT_NM
+            , A.MG_NO
+            , A.MG_VALD_STTS_CD
+            , A.PYMN_RESP_ACNT_JOBT_NM
+            , TO_CHAR(TO_DATE(D.DCLR_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS DCLR_DT
+            , A.RTRN_RSN_CN
+            , D.DEPT_CD AS DCLR_DEPT_CD
+        , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_CD = (SELECT DEPT_CD FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = A.DCLR_NO AND DEL_YN = 'N') AND DEL_YN = 'N') DCLR_DEPT_NM
+            , (SELECT CCP_AC_NO FROM TB_POTI_ORGN WHERE ORGN_CD = A.DEPT_CD AND DEL_YN = 'N') AS CCP_AC_NO
+            , (SELECT RIT_AC_NO FROM TB_POTI_ORGN WHERE ORGN_CD = A.DEPT_CD AND DEL_YN = 'N') AS RIT_AC_NO
+            , CASE WHEN A.PRCS_STTS_CD = '06' THEN TO_CHAR(TO_DATE(A.MG_EXTN_DT, 'YYYYMMDD'),'DD/MM/YYYY')
+                    ELSE NULL
+                END AS DSMS_DT          /*기각일자*/
+            , F.CLT_NO                                                                  /** N° bon à enlever != 반출증번호 */
+            , TO_CHAR(TO_DATE(F.RGSR_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS CLT_RGSR_DT       /** Date bon à enlever != 반출증발행일자 */
+            , TO_CHAR(TO_DATE(D.RLSE_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS RLSE_DT           /** Date d‘enlèvement !== 반출일자 ==! */
+            , ( CASE WHEN G.DLPY_YN = 'Y'
+                THEN ABS(DATE_PART('DAY', NOW() - TO_CHAR(TO_DATE(G.NTFC_DT, 'YYYYMMDD'),'YYYY-MM-DD')::TIMESTAMP) - 90)
+                ELSE NULL
+                END
+            ) AS DLPY_DCNT /* 체납일수 */
+            , G.NTFC_NO
+            , TO_CHAR(TO_DATE(G.NTFC_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS NTFC_DT
+            , (SELECT MAX(DLPY_DGCNT) FROM TB_COLI_DLPY WHERE NTFC_NO = G.NTFC_NO) AS DLPY_DGCNT
+            , G.RCVE_YN     /** Encaisse (ON) !== 수납여부 ==! */
+            , R.RCVE_NO
+            , TO_CHAR(TO_DATE(R.RCVE_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS RCVE_DT
+        FROM   TB_COLI_MG A
+             , TB_CLRI_DED_COMN D
+             , TB_COLI_CLT_PBLS F
+             , (SELECT * FROM TB_COLI_NTFC WHERE MG_TP_CD = 'A' AND NTFC_PT_CD = 'G') G
+             , TB_COLI_RCVE R
+        WHERE   A.DEL_YN = 'N'                /** SUPPRESSION ON !== 삭제여부 ==! */
+        AND     D.DEL_YN = 'N'
+        AND     G.NTFC_NO = R.NTFC_NO(+)
+        AND     A.DCLR_NO = D.DTL_DCSH_NO
+        AND     D.DTL_DCSH_NO = F.REFF_NO(+)
+        AND		A.DCLR_NO = G.DCLR_NO(+)
+        AND     A.PRCS_STTS_CD != '00'        /*임시저장 제외*/
+        <if test="sctrCd != null and sctrCd != ''">
+            AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+        </if>
+        <if test='cstmCd != null and cstmCd !=""'>
+            AND A.CSTM_CD = #{cstmCd}
+        </if>
+        <if test='deptCd != null and deptCd !=""'>
+            AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                       OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                                                                        OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+        </if>
+        <if test='dclrNo != null and dclrNo !=""'>
+            AND A.DCLR_NO = #{dclrNo}
+        </if>
+        <if test='dclrDtFrom != null and dclrDtFrom !="" and dclrDtTo != null and dclrDtTo !="" '>
+            AND D.DCLR_DT BETWEEN TO_CHAR(TO_DATE(#{dclrDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{dclrDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+        </if>
+        <if test="uprOrgnCd != null and uprOrgnCd != ''">
+            AND  A.CSTM_CD = #{uprOrgnCd}
+        </if>
+        <if test="orgnCd != null and orgnCd != ''">
+            AND  (A.DEPT_CD = #{orgnCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                        OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd})))
+                 )
+        </if>
+        <if test="mgTpCd != null and mgTpCd !=''">
+            AND A.MG_TP_CD  = #{mgTpCd}
+        </if>
+        <if test="rqstNo != null and rqstNo !=''">
+            AND A.RQST_NO LIKE TRIM(#{rqstNo}) || '%'
+        </if>
+        <if test="rqstDtFrom != null and rqstDtFrom != ''">
+            AND A.RQST_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{rqstDtFrom}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            AND A.RQST_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{rqstDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        </if>
+        <if test="nif != null and nif !=''">
+            AND A.NIF LIKE #{nif}||'%'
+        </if>
+        <if test="coNm != null and coNm !=''">
+            AND A.CO_NM LIKE '%'||TRIM(#{coNm}) || '%'
+        </if>
+        ORDER BY A.FRST_RGSR_DTTM DESC
+        <include refid="pagination.footer" />
+    </select>
+
+    <!--
+    Consulter la gestion des crédits administratifs !==행정기관 사후납부 조회한다==!
+    -->
+    <select id="selectAdmnIttAffcPayMgmt" parameterType="alpass.ipt.col.admn.vo.ColAdmnIttAffcPayMgmtVo" resultType="alpass.ipt.col.admn.vo.ColAdmnIttAffcPayMgmtVo">
+        /** colAdmnIttAffcPayMgmt_selectAdmnIttAffcPayMgmt **/
+        SELECT RQST_NO
+            , A.NIF
+            , A.MG_PT_CD
+            , A.ITT_CD
+            , A.MG_ITT_NM
+            , A.MG_PBLS_NO
+            , A.MG_AMT
+            , TO_CHAR(TO_DATE(VALD_STRT_DT, 'YYYYMMDD'),'DD/MM/YYYY') VALD_STRT_DT
+            , TO_CHAR(TO_DATE(VALD_END_DT, 'YYYYMMDD'),'DD/MM/YYYY') VALD_END_DT
+            , A.REGST_ID
+            , TO_CHAR(TO_DATE(RGSR_DT, 'YYYYMMDD'),'DD/MM/YYYY') RGSR_DT
+            , A.MG_EXTN_YN
+            , TO_CHAR(TO_DATE(MG_EXTN_DT, 'YYYYMMDD'),'DD/MM/YYYY')  MG_EXTN_DT
+            , A.DCLR_NO
+            , A.PRCS_STTS_CD
+            , A.CSTM_CD
+            , A.DEPT_CD
+            , A.MG_RTRN_RSN_CD
+            , TO_CHAR(TO_DATE(A.RQST_DT, 'YYYYMMDD'),'DD/MM/YYYY')  AS RQST_DT
+            , A.PYR_JOBT_NM
+            , A.PYR_NM
+            , A.PYMN_RESP_ACNT_CHPN_NM
+            , A.CSTM_WRTE_CN
+            , TO_CHAR(TO_DATE(A.ADJU_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS ADJU_DT
+            , A.MG_ITT_CD
+            , A.AC_NO
+            , A.ATCH_FILE_ID
+            , A.DEL_YN
+            , A.FRST_REGST_ID
+            , A.FRST_RGSR_DTTM
+            , A.LAST_CHPR_ID
+            , A.LAST_CHG_DTTM
+            , FN_GET_ORGN_NM(A.CSTM_CD) AS CSTM_NM
+            , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_CD = A.DEPT_CD AND DEL_YN = 'N') AS DEPT_NM
+            , A.MG_NO
+            , A.MG_VALD_STTS_CD
+            , A.PYMN_RESP_ACNT_JOBT_NM
+            , (SELECT TO_CHAR(TO_DATE(DCLR_DT, 'YYYYMMDD'),'DD/MM/YYYY') FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = A.DCLR_NO AND DEL_YN = 'N') AS DCLR_DT
+            , A.RTRN_RSN_CN
+            , (SELECT CCP_AC_NO FROM TB_POTI_ORGN WHERE ORGN_CD = A.DEPT_CD AND DEL_YN = 'N') AS CCP_AC_NO
+            , (SELECT RIT_AC_NO FROM TB_POTI_ORGN WHERE ORGN_CD = A.DEPT_CD AND DEL_YN = 'N') AS RIT_AC_NO
+            , CASE WHEN A.PRCS_STTS_CD = '06' THEN TO_CHAR(TO_DATE(A.MG_EXTN_DT, 'YYYYMMDD'),'DD/MM/YYYY')
+                    ELSE NULL
+                END AS DSMS_DT          /*기각일자*/
+        FROM   TB_COLI_MG A
+        WHERE   A.DEL_YN = 'N'                /** Suppression ON !== 삭제여부 ==! */
+        <if test="mgTpCd != null and mgTpCd !=''">
+            AND A.MG_TP_CD  = #{mgTpCd}
+        </if>
+        <if test="rqstNo != null and rqstNo !=''">
+            AND A.RQST_NO = #{rqstNo}
+        </if>
+    </select>
+
+    <!--
+    Approuver/rejeter la demande de crédit administratif !==행정기관 사후납부 관리 승인/기각 처리==!
+    -->
+    <update id="updateAdmnIttAffcPayMgmtPrcsSttsCd" parameterType="alpass.ipt.col.admn.vo.ColAdmnIttAffcPayMgmtVo" >
+        /** colAdmnIttAffcPayMgmt_updateAdmnIttAffcPayMgmtPrcsSttsCd **/
+        UPDATE TB_COLI_MG SET
+            PRCS_STTS_CD = #{prcsSttsCd}
+            , LAST_CHPR_ID = #{lastChprId}     	/* ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP 		/* Date et heure de modification finale !== 최종변경일시 ==! */
+            , ATCH_FILE_ID = #{atchFileId}
+            , CSTM_WRTE_CN = #{cstmWrteCn}
+            <if test="prcsSttsCd != null and prcsSttsCd == '02'.toString()">
+                , MG_EXTN_YN = 'N'
+            </if>
+
+            <if test="prcsSttsCd != null and (prcsSttsCd == '03'.toString() or prcsSttsCd == '06'.toString())">
+                , MG_RTRN_RSN_CD = #{mgRtrnRsnCd}
+                , RTRN_RSN_CN = #{rtrnRsnCn}
+                , MG_EXTN_YN = 'Y'
+                , MG_EXTN_DT = TO_CHAR(SYSTIMESTAMP,'YYYYMMDD')
+                , MG_VALD_STTS_CD = '06'
+            </if>
+
+            <if test="prcsSttsCd != null and prcsSttsCd == '05'.toString()">
+                , MG_NO = #{mgNo}
+                , VALD_STRT_DT = TO_CHAR(SYSTIMESTAMP,'YYYYMMDD')
+                , MG_EXTN_YN = 'N'
+                , REGST_ID = #{lastChprId}
+                , RGSR_DT = TO_CHAR(SYSTIMESTAMP,'YYYYMMDD')
+                , MG_VALD_STTS_CD = '02'
+            </if>
+        WHERE 1 = 1
+          AND RQST_NO = #{rqstNo}                         /* 신청번호 !== 신청번호 ==!*/
+    </update>
+
+    <!--
+    Vérifier le cas qui n'est pas dans un état traitable. !== 처리 가능한 상태가 아닌 경우를 검증한다 ==!
+    -->
+    <select id="selectIsNotAdmnIttAffcPayMgmtPrcsStts" resultType="string">
+        /* colAdmnIttAffcPayMgmt_selectIsNotAdmnIttAffcPayMgmtPrcsStts */
+        SELECT 1
+        FROM TB_COLI_MG
+        WHERE RQST_NO = #{rqstNo}
+          AND PRCS_STTS_CD IN ('01', '04')
+          AND DEL_YN = 'N'
+    </select>
+
+</mapper>

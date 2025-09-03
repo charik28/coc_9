@@ -1,0 +1,3188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  Mapper : Analyse d'informations !== 정보분석 Mapper ==!
+-->
+<mapper namespace="alpass.ipt.rsm.anay.mapper.RsmAnayMapper">
+
+    <sql id="selectAnayBasePerListBody">
+        WITH SELC_TABLE AS (
+            SELECT  A.DTL_DCSH_NO,              /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+                    A.BASE_RGSR_NO,             /** Numéro D'Enregistrement !== 기준등록번호 ==! */
+                    A.SELC_DT,                  /** Date De Ciblage  !== 선별일자 ==! */
+                    A.TAX_AMT,                  /** Montant De La Taxe !== 세금금액 ==! */
+                    A.TXBS_AMT,                 /** Montant de base d'imposition !== 과세기준금액 ==! */
+                    B.APLY_BASE_CLSF_CD,        /** Code De Classification De Critère En Vigueur !== 적용기준분류코드 ==! */
+                    B.RQST_BASE_CLSF_CD,        /** Code De Classification Du Critère Renseigné !== 신청기준분류코드 ==! */
+                    B.BASE_RQST_TP_CD,          /** Code De Type De Renseignement  !== 기준신청구분코드 ==! */
+                    A.SELC_RSLT_CD,             /** Code De Résultat De Ciblage !== 선별결과코드 ==! */
+                    A.GRN_SELC_CNT,             /** Nbr de déclarations ciblées (Vert) !== 선별건수(녹색) ==! */
+                    A.BLU_SELC_CNT,             /** Nbr de déclarations ciblées (Bleu) !== 선별건수(파랑) ==! */
+                    A.ORE_SELC_CNT,             /** Nbr de déclarations ciblées (Rouge) !== 선별건수(빨간) ==! */
+                    A.RED_SELC_CNT,             /**  Nbr de déclarations ciblées (Orange) !== 선별건수(오렌지) ==! */
+                    A.HIST_SRNO,                /** N° de sequence de l'historique !== 이력일련번호 ==! */
+                    A.DCLR_PT_CD,               /** Code De Type De Déclaration !== 신고유형코드 ==! */
+                    A.DCLR_CSTM_CD              /** Code De Bureau De Déclaration !== 신고세관코드 ==! */
+            FROM ( SELECT A.DTL_DCSH_NO,
+                          A.SELC_RSLT_CD,
+                          A.SELC_DT,
+                          A.TAX_AMT,
+                          A.TXBS_AMT,
+                          D.HIST_SRNO,
+                          D.DCLR_PT_CD,
+                          D.DCLR_CSTM_CD,
+                          DECODE (A.SELC_RSLT_CD, 'G', 1, 0) AS GRN_SELC_CNT,
+                          DECODE (A.SELC_RSLT_CD, 'B', 1, 0) AS BLU_SELC_CNT,
+                          DECODE (A.SELC_RSLT_CD, 'O', 1, 0) AS ORE_SELC_CNT,
+                          DECODE (A.SELC_RSLT_CD, 'R', 1, 0) AS RED_SELC_CNT,
+                          ( SELECT BASE_RGSR_NO
+                            FROM ( SELECT Z.BASE_RGSR_NO
+                                   FROM   TB_RSMI_DED_PDLS_SELC Z
+                                   WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                   ORDER BY DECODE (Z.RQST_BASE_CLSF_CD, 'AO', 1
+                                                                       , 'DE', 2
+                                                                       , 'MA', 3
+                                                                       , 'SC', 4
+                                                                       , 'FT', 5
+                                                                       , 'PR', 6
+                                                                       , 'HR', 7
+                                                                       , 'RA', 8
+                                                                       , 9) ASC ,
+                                             Z.APLY_PROR_RNK,
+                                             DECODE (Z.SELC_RSLT_CD, 'R', 1,
+                                                                     'O', 2,
+                                                                     'B', 3,
+                                                                     'G', 4),
+                                             Z.BASE_RGSR_DTTM DESC
+                                  )
+                                  WHERE ROWNUM = 1
+                            ) AS BASE_RGSR_NO
+                    FROM TB_RSMI_DED_SELC A,
+                         TB_CLRI_DED_COMN D
+                    WHERE A.DTL_DCSH_NO = D.DTL_DCSH_NO
+                    AND A.DEL_YN = 'N'
+                    AND D.DEL_YN = 'N'
+            <if test='rgsrStrtDt != "" and rgsrStrtDt != null and rgsrEndDt != "" and rgsrEndDt != null'>
+                AND A.SELC_DT BETWEEN TO_CHAR(TO_DATE(#{rgsrStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND
+                TO_CHAR(TO_DATE(#{rgsrEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            </if>
+            <if test='cmprYys != "" and cmprYys != null'>
+                <foreach item="cmprYyItem" collection="cmprYys" open="AND (" close=")" separator=" OR ">
+                    A.SELC_DT BETWEEN #{cmprYyItem} || LPAD(#{cmprStrtMm}, 2, '0') || '01'
+                    AND #{cmprYyItem} || LPAD(#{cmprEndMm}, 2, '0') || '31'
+                </foreach>
+            </if>
+            <if test='baseYy != null and baseYy != ""'>
+                AND A.SELC_DT LIKE #{baseYy} || '%'
+            </if>
+            <if test='cstmCd != "TOTAL" and cstmCd != null and cstmCd != ""'>
+                AND D.DCLR_CSTM_CD = #{cstmCd}
+            </if>
+            <if test='cstmCds != null and cstmCds.size() > 0'>
+                <foreach item="cstmCdItem" collection="cstmCds" open="AND D.DCLR_CSTM_CD IN (" close=")" separator=",">
+                    <![CDATA[
+                     #{cstmCdItem}
+                     ]]>
+                </foreach>
+            </if>
+            <if test='dclrPtCd != "TOTAL" and dclrPtCd != null and dclrPtCd != ""'>
+                AND D.DCLR_PT_CD = #{dclrPtCd}
+            </if>
+            <foreach item="dclrPtCdsItem" collection="dclrPtCds" open="AND D.DCLR_PT_CD IN (" close=")" separator=",">
+                #{dclrPtCdsItem}
+            </foreach>
+            ) A
+            , TB_RSMI_BASE_MGMT_COMN B
+            WHERE A.BASE_RGSR_NO = B.BASE_RGSR_NO
+            AND B.DEL_YN = 'N'
+        <if test='aplyBaseClsfCd != "TOTAL" and aplyBaseClsfCd != null and aplyBaseClsfCd != ""'>
+            AND B.RQST_BASE_CLSF_CD = #{aplyBaseClsfCd}
+        </if>
+        <foreach item="aplyBaseClsfCdItem" collection="aplyBaseClsfCds" open="AND B.RQST_BASE_CLSF_CD IN (" close=")"
+                 separator=",">
+            #{aplyBaseClsfCdItem}
+        </foreach>
+        )
+        , COLI_NTFC AS (
+            SELECT A.REFF_NO AS DTL_DCSH_NO                     /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+                 , DECODE(COUNT(*), 0, 'N', 'Y') AS NTFC_YN     /** Notification O/N !== 고지여부 ==! */
+                 , SUM(A.FINE_AMT) AS FINE_AMT                  /** Montant D'Amende !== 벌금금액 ==! */
+            FROM TB_COLI_NTFC A
+            WHERE A.NTFC_PT_CD = 'A'
+            AND A.REFF_NO_PT_CD = '002'
+            AND A.DEL_YN = 'N'
+            AND A.CNCL_YN = 'N'
+            GROUP BY A.REFF_NO
+          )
+        , DED_ADRT_D AS (
+            SELECT A.DTL_DCSH_NO                                /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+                 , DECODE (COUNT (*), 0, 'N', 'Y') AS ADRT_YN   /** résultat de la Vérification du DAU O/N !== 심사결과여부 ==! */
+            FROM TB_CLRI_DED_ADRT_D A
+            WHERE A.DEL_YN = 'N'
+            AND A.AUDT_RSLT_CD NOT IN ('NORM00', 'ATVALU')
+            GROUP BY A.DTL_DCSH_NO
+        )
+    </sql>
+
+    <sql id="selectSelcRsltAll">
+        SELECT    A.DTL_DCSH_NO             /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+                , A.BASE_RGSR_NO            /** Numéro D'Enregistrement !== 기준등록번호 ==! */
+                , A.SELC_DT                 /** Date De Ciblage  !== 선별일자 ==! */
+                , A.TAX_AMT                 /** Montant De La Taxe !== 세금금액 ==! */
+                , A.TXBS_AMT                /** Montant de base d'imposition !== 과세기준금액 ==! */
+                , B.APLY_BASE_CLSF_CD       /** Code De Classification De Critère En Vigueur !== 적용기준분류코드 ==! */
+                , B.RQST_BASE_CLSF_CD       /** Code De Classification Du Critère Renseigné !== 신청기준분류코드 ==! */
+                , B.BASE_RQST_TP_CD         /** Code De Type De Renseignement  !== 기준신청구분코드 ==! */
+                , A.SELC_RSLT_CD            /** Code De Résultat De Ciblage      !== 선별결과코드 ==! */
+                , A.GRN_SELC_CNT            /** Nombre De Déclaration En Vert    !== 녹색선별건수 ==! */
+                , A.BLU_SELC_CNT            /** Nombre De Déclaration En Bleu    !== 파랑선별건수 ==! */
+                , A.ORE_SELC_CNT            /** Nombre De Déclaration En Orangé  !== 오렌지선별건수 ==! */
+                , A.RED_SELC_CNT            /** Nombre De Déclaration En Rouge   !== 빨강선별건수 ==! */
+        FROM (SELECT A.DTL_DCSH_NO
+                    , A.SELC_RSLT_CD
+                    , A.SELC_DT
+                    , A.TAX_AMT
+                    , A.TXBS_AMT
+                    , DECODE (A.SELC_RSLT_CD, 'G', 1, 0) AS GRN_SELC_CNT
+                    , DECODE (A.SELC_RSLT_CD, 'B', 1, 0) AS BLU_SELC_CNT
+                    , DECODE (A.SELC_RSLT_CD, 'O', 1, 0) AS ORE_SELC_CNT
+                    , DECODE (A.SELC_RSLT_CD, 'R', 1, 0) AS RED_SELC_CNT
+                    , (SELECT BASE_RGSR_NO
+                       FROM (SELECT Z.BASE_RGSR_NO
+                             FROM   TB_RSMI_DED_PDLS_SELC Z
+                             WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                             AND    Z.DEL_YN = 'N'
+                            ORDER BY DECODE (Z.RQST_BASE_CLSF_CD, 'AO', 1
+                                                                , 'DE', 2
+                                                                , 'MA', 3
+                                                                , 'SC', 4
+                                                                , 'FT', 5
+                                                                , 'PR', 6
+                                                                , 'HR', 7
+                                                                , 'RA', 8
+                                                                , 9) ASC ,
+                                             Z.APLY_PROR_RNK,
+                                             DECODE (Z.SELC_RSLT_CD,
+                                                     'R', 1,
+                                                     'O', 2,
+                                                     'B', 3,
+                                                     'G', 4),
+                                             Z.BASE_RGSR_DTTM DESC)
+                       WHERE ROWNUM = 1) AS BASE_RGSR_NO
+                FROM TB_RSMI_DED_SELC A
+               WHERE 1 = 1
+                 AND A.DEL_YN = 'N'
+                 <include refid="searchSelcDt"/>
+              ) A
+              , TB_RSMI_BASE_MGMT_COMN B
+        WHERE A.BASE_RGSR_NO = B.BASE_RGSR_NO
+          AND B.DEL_YN = 'N'
+    </sql>
+
+    <sql id="searchSelcDt">
+        <if test='rgsrStrtDt != "" and rgsrStrtDt != null and rgsrEndDt != "" and rgsrEndDt != null'>
+            AND A.SELC_DT BETWEEN TO_CHAR(TO_DATE(#{rgsrStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{rgsrEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        </if>
+
+        <if test='dedStrtDt != "" and dedStrtDt != null and dedEndDt != "" and dedEndDt != null'>
+            AND B.DCLR_DT BETWEEN TO_CHAR(TO_DATE(#{dedStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{dedEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        </if>
+
+        <if test='cmprYys != "" and cmprYys != null'>
+            <foreach item="cmprYyItem" collection="cmprYys" open="AND (" close=")" separator=" OR ">
+                A.SELC_DT BETWEEN #{cmprYyItem} || LPAD(#{cmprStrtMm}, 2, '0') || '01' AND #{cmprYyItem} || LPAD(#{cmprEndMm}, 2, '0') || '31'
+            </foreach>
+        </if>
+        <if test='cmprStrtMm != null and cmprStrtMm != "" and cmprEndMm != null and cmprEndMm != ""'>
+
+        </if>
+
+        <if test='baseYy != null and baseYy != ""'>
+            AND A.SELC_DT LIKE DECODE('${prevYearYN}', 'Y', TO_NUMBER(#{baseYy}) -1, #{baseYy}) || '%'
+        </if>
+    </sql>
+
+    <sql id="AnayBasePerListSearchConditions">
+
+        <if test='cstmCd != "TOTAL" and cstmCd != null and cstmCd != ""'>
+            AND C.DCLR_CSTM_CD = #{cstmCd}
+        </if>
+        <if test='dclrPtCd != "TOTAL" and dclrPtCd != null and dclrPtCd != ""'>
+            AND C.DCLR_PT_CD = #{dclrPtCd}
+        </if>
+        <if test='aplyBaseClsfCd != "TOTAL" and aplyBaseClsfCd != null and aplyBaseClsfCd != ""'>
+            AND B.RQST_BASE_CLSF_CD = #{aplyBaseClsfCd}
+        </if>
+        <if test='cstmCds != null and cstmCds.size() > 0'>
+            <foreach item="cstmCdItem" collection="cstmCds" open="AND C.DCLR_CSTM_CD IN (" close=")" separator=",">
+                <![CDATA[
+                #{cstmCdItem}
+                ]]>
+            </foreach>
+        </if>
+        <foreach item="dclrPtCdsItem" collection="dclrPtCds" open="AND C.DCLR_PT_CD IN (" close=")" separator=",">
+            #{dclrPtCdsItem}
+        </foreach>
+        <foreach item="aplyBaseClsfCdItem" collection="aplyBaseClsfCds" open="AND B.RQST_BASE_CLSF_CD IN (" close=")"
+                 separator=",">
+            #{aplyBaseClsfCdItem}
+        </foreach>
+    </sql>
+
+    <!--
+    Consulter la performance par critère !== 기준별 목록조회 ==!
+    -->
+    <select id="selectAnayBasePerList"
+            parameterType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo"
+            resultType="alpass.ipt.rsm.smlt.vo.RsmSmltSelcStatsVo">
+
+        /** selectAnayBasePerList */
+
+        <include refid="selectAnayBasePerListBody"/>
+        SELECT CD
+        <if test="scrnTp == 'pridPt'">
+            , BASE_YY                       /** Année de référence  !== 기준년도 ==!*/
+        </if>
+        <if test="scrnTp == 'baseRgsrNo'">
+            , RQST_BASE_CLSF_CD             /** Code de classification du critère renseigné !== 신청기준부류코드 ==!*/
+            , BASE_RQST_TP_CD               /** Code de type de renseignement !== 기준신청구분코드 ==! */
+        </if>
+            , NVL(SUM(DCLR_CNT) OVER() / 2, 0) AS DCLR_CNT     /** Nombre de DED !== 신고건수==!*/
+            , NVL(SUM(TAX_AMT) OVER() / 2, 0) AS TAX_TAMT      /** Taxe !== 세금 ==!*/
+            , NVL(SUM(TXBS_AMT) OVER() / 2, 0) AS TXBS_TAMT    /** Valeur statistique(DZD) !== 과세기준가격 ==!*/
+            , SELC_CNT AS SELC_CNT              /** Nombre de saisi !== 선별건수 ==!*/
+            , NVL (SELC_TAX_AMT, 0) AS SELC_TAX_AMT     /** Droits et taxes de déclaration filtrée !== 선별세금 ==!*/
+            , NVL (SELC_TXBS_AMT, 0) AS SELC_TXBS_AMT   /** Valeur statistique de déclaration filitrée !== 선별과세기준금액 ==!*/
+            , DECODE( NVL(SELC_CNT,0), 0, 0, (GRN_SELC_CNT :: decimal / SELC_CNT :: decimal ) * 100 ) AS GRN_SELC_RT /** Taux de déclaration en circuit vert !== 녹색선별율 ==!*/
+            , DECODE( NVL(SELC_CNT,0), 0, 0, (BLU_SELC_CNT :: decimal / SELC_CNT :: decimal ) * 100 ) AS BLU_SELC_RT /** Taux de déclaration en circuit bleu !== 파랑선별율 ==!*/
+            , DECODE( NVL(SELC_CNT,0), 0, 0, (ORE_SELC_CNT :: decimal / SELC_CNT :: decimal ) * 100 ) AS ORE_SELC_RT /** Taux de déclaration en circuit orange !== 오렌지선별율 ==!*/
+            , DECODE( NVL(SELC_CNT,0), 0, 0, (RED_SELC_CNT :: decimal / SELC_CNT :: decimal ) * 100 ) AS RED_SELC_RT /** Taux de déclaration en circuit rouge !== 빨간선별율 ==!*/
+            , DSCL_CNT /** Nombre de détection !== 적발건수 ==!*/
+            , NVL(DSCL_TAX_AMT, 0) AS DSCL_TAX_AMT          /** Droits et taxes de déclaration détectée !== 적발세금금액 ==!*/
+            , NVL(DSCL_TXBS_AMT, 0) AS DSCL_TXBS_AMT        /** Valeur statistique de déclaration détectée !== 적발과세기준금액 ==!*/
+            , DECODE( NVL(SELC_CNT,0), 0, 0, (DSCL_CNT :: decimal / SELC_CNT :: decimal ) * 100 ) AS DSCL_RT    /** Taux de détection !== 적발율 ==!*/
+            , NVL(FINE_AMT, 0) AS FINE_AMT                  /** Taux de détection !== 벌금액 ==!*/
+            , ( SELECT Z.ORGN_NM
+                FROM   TB_POTI_ORGN Z
+                WHERE  Z.DEL_YN = 'N'
+                AND    Z.ORGN_CD = CD
+                AND    ROWNUM = 1
+              ) AS CD_NM
+        FROM (
+            SELECT
+                <choose>
+                    <when test="scrnTp == 'basePtPer' or scrnTp == 'cstmPerbasePer'">
+                        NVL(RQST_BASE_CLSF_CD, 'TOTAL') AS CD /** Classification des critères !== 적용기준분류코드 ==! */
+                    </when>
+                    <when test="scrnTp == 'cstmPerdclrPtPer'">
+                        NVL(DCLR_PT_CD, 'TOTAL') AS CD /** Modèle de déclaration !== 신고유형코드 ==! */
+                    </when>
+                    <when test="scrnTp == 'dclrPtPerCstmPer'">
+                        NVL(DCLR_CSTM_CD, 'TOTAL') AS CD /** Bureau !== 세관코드 ==! */
+                    </when>
+                    <when test="scrnTp == 'baseRgsrNo'">
+                        NVL(BASE_RGSR_NO, 'TOTAL') AS CD /** Numéro d'enregistrement de critère !== 기준등록번호 ==! */
+                        , MIN(RQST_BASE_CLSF_CD) AS RQST_BASE_CLSF_CD
+                        , MIN(BASE_RQST_TP_CD) AS BASE_RQST_TP_CD
+                    </when>
+                    <when test="scrnTp == 'pridPt'">
+                        NVL(RQST_BASE_CLSF_CD, 'TOTAL') AS CD /** Classification des critères !== 적용기준분류코드 ==! */
+                        , SUBSTR(SELC_DT, 1, 4) AS BASE_YY /** Année de référence !== 기준년도 ==!*/
+                    </when>
+                </choose>
+                , SUM(1) AS DCLR_CNT
+                , SUM(TAX_AMT) AS TAX_AMT
+                , SUM(TXBS_AMT) AS TXBS_AMT
+                , COUNT(*) AS SELC_CNT
+                , SUM(TAX_AMT) AS SELC_TAX_AMT
+                , SUM(TXBS_AMT) AS SELC_TXBS_AMT
+                , SUM(GRN_SELC_CNT) AS GRN_SELC_CNT
+                , SUM(BLU_SELC_CNT) AS BLU_SELC_CNT
+                , SUM(ORE_SELC_CNT) AS ORE_SELC_CNT
+                , SUM(RED_SELC_CNT) AS RED_SELC_CNT
+                , NVL(SUM(CASE WHEN A.DSCL_YN = 'Y' OR A.ADRT_YN = 'Y' OR A.NTFC_YN = 'Y' THEN 1
+                               ELSE 0
+                          END), 0) AS DSCL_CNT /** Nombre de détection !== 적발건수 ==! */
+                , SUM(A.FINE_AMT) AS FINE_AMT
+                , SUM(CASE WHEN (A.DSCL_YN = 'Y' OR 'Y' = A.ADRT_YN OR 'Y' = A.NTFC_YN)
+                                AND A.HIST_SRNO > 0
+                                THEN ABS(A.TAX_AMT - (  SELECT SUM(Z.TAX_AMT)
+                                                        FROM TB_CLRI_DED_TAX Z
+                                                        WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                        AND Z.DEL_YN = 'N')
+                                                     )
+                           ELSE 0
+                      END
+                  ) AS DSCL_TAX_AMT       /** Droits et taxes de déclaration détectée  !== 적발세금금액 ==! */
+                , SUM(CASE WHEN ( A.DSCL_YN = 'Y'
+                                  OR 'Y' = A.ADRT_YN
+                                  OR 'Y' = A.NTFC_YN
+                                 )
+                                 AND A.HIST_SRNO > 0
+                           THEN
+                                ABS(A.TXBS_AMT - ( SELECT SUM(Z.TTXBS_NCY_AMT)
+                                                   FROM TB_CLRI_DED_VLUT_COMN Z
+                                                   WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                   AND Z.DEL_YN = 'N'
+                                                 )
+                                   )
+                           ELSE 0
+                      END
+                ) AS DSCL_TXBS_AMT
+            FROM ( SELECT A.DTL_DCSH_NO
+                        , A.SELC_DT
+                        , A.HIST_SRNO
+                        , A.GRN_SELC_CNT
+                        , A.BLU_SELC_CNT
+                        , A.ORE_SELC_CNT
+                        , A.RED_SELC_CNT
+                        , A.RQST_BASE_CLSF_CD
+                        , A.BASE_RQST_TP_CD
+                        , A.DCLR_PT_CD
+                        , A.DCLR_CSTM_CD
+                        , A.BASE_RGSR_NO
+                        , ( SELECT DSCL_YN
+                            FROM TB_CLRI_DED_INSC_RSLT Z
+                            WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                            AND Z.IPRT_PRCS_STTS_CD = 'DD5'
+                            AND VIST_INSC_RQST_DGCNT = (SELECT MAX(VIST_INSC_RQST_DGCNT)
+                                                          FROM TB_CLRI_DED_INSC_RSLT
+                                                         WHERE DTL_DCSH_NO = A.DTL_DCSH_NO
+                                                           AND IPRT_PRCS_STTS_CD = 'DD5'
+                                                           AND DEL_YN = 'N')
+                          ) AS DSCL_YN
+                        , A.TAX_AMT
+                        , A.TXBS_AMT
+                        , F.FINE_AMT
+                        , F.NTFC_YN
+                        , G.ADRT_YN
+                   FROM SELC_TABLE A
+                      , COLI_NTFC F
+                      , DED_ADRT_D G
+                   WHERE A.DTL_DCSH_NO = F.DTL_DCSH_NO(+)
+                   AND   A.DTL_DCSH_NO = G.DTL_DCSH_NO(+)
+            ) A
+            <choose>
+                <when test="scrnTp == 'basePtPer' or scrnTp == 'cstmPerbasePer'">
+                    GROUP BY ROLLUP(A.RQST_BASE_CLSF_CD)
+                </when>
+                <when test="scrnTp == 'cstmPerdclrPtPer'">
+                    GROUP BY ROLLUP(A.DCLR_PT_CD)
+                </when>
+                <when test="scrnTp == 'dclrPtPerCstmPer'">
+                    GROUP BY ROLLUP(A.DCLR_CSTM_CD)
+                </when>
+                <when test="scrnTp == 'baseRgsrNo'">
+                    GROUP BY ROLLUP(A.BASE_RGSR_NO)
+                </when>
+                <when test="scrnTp == 'pridPt'">
+                    GROUP BY ROLLUP((A.RQST_BASE_CLSF_CD, SUBSTR(A.SELC_DT, 1, 4)))
+                </when>
+            </choose>
+        )
+        <choose>
+            <when test='scrnTp == "pridPt"'>
+                ORDER BY DECODE(CD, 'AO', 1
+                                  , 'DE', 2
+                                  , 'MA', 3
+                                  , 'SC', 4
+                                  , 'FT', 5
+                                  , 'PR', 6
+                                  , 'HR', 7
+                                  , 'RA', 8
+                                  , 'SY', 9
+                                  , 10) ASC
+                , BASE_YY
+            </when>
+            <otherwise>
+                ORDER BY DECODE(CD, 'AO', 1
+                                  , 'DE', 2
+                                  , 'MA', 3
+                                  , 'SC', 4
+                                  , 'FT', 5
+                                  , 'PR', 6
+                                  , 'HR', 7
+                                  , 'RA', 8
+                                  , 'SY', 9
+                                  , 10 ) ASC
+            </otherwise>
+        </choose>
+    </select>
+
+
+    <!--
+    Consulter la performance par champ DED !== 신고서항목별목록조회 ==!
+    -->
+    <select id="selectAnayDcshClusPerList" parameterType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo" resultType="alpass.ipt.rsm.smlt.vo.RsmSmltSelcStatsVo">
+
+        /*selectAnayDcshClusPerList*/
+		<choose>
+			<when test='alXlsDwnlYN != null and alXlsDwnlYN.equals("Y")'>
+        SELECT COUNT(*) OVER() AS TOT_CNT,
+               SQLRSLT.*,
+               ROWNUM as RNUM
+        FROM (
+            </when>
+            <otherwise>
+                <include refid="pagination.header"/>
+            </otherwise>
+        </choose>
+
+        SELECT
+               A.DTL_DCSH_NO     /** Numéro du DED !== DED번호 ==! */
+             , A.PRCS_STTS_CD    /** Code De Statut De Traitement !==처리상태코드 ==! */
+             , A.CAG_MGMT_NO     /** CRN !== 화물관리번호 ==! */
+             , TO_CHAR(TO_DATE(A.RLSE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') as RLSE_DT         /** Date d'enlèvement !== 반출일자 ==! */
+             , TO_CHAR(NVL( (SELECT BRKD.PRCS_DTRM_DTTM FROM TB_CLRI_DED_PRCS_BRKD BRKD WHERE BRKD.DTL_DCSH_NO = A.DTL_DCSH_NO AND BRKD.PRCS_STTS_CD = 'A04')
+                          , (SELECT FRST_RGSR_DTTM FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = A.DTL_DCSH_NO AND DEL_YN = 'N') ), 'DD/MM/YYYY hh24:mi:ss') AS RCPN_DTTM
+             , ( SELECT TO_CHAR(TO_DATE(RCVE.RCVE_DT, 'YYYYMMDD'), 'DD/MM/YYYY')
+                 FROM TB_COLI_NTFC NTFC
+                    , TB_COLI_RCVE RCVE
+                 WHERE NTFC.DEL_YN = 'N'
+                 AND NTFC.NTFC_NO = RCVE.NTFC_NO
+                 AND NTFC.RCVE_YN = 'Y'
+                 AND NTFC.DCLR_NO = A.DTL_DCSH_NO
+                ORDER BY NTFC.PAY_TMLM_DT DESC
+                FETCH FIRST 1 ROWS ONLY
+               ) as RCVE_DT      /** Date de paiement !== 수납일자  ==! */
+             , A.PDLS_NO         /** N° d'article !== 품목번호 ==!*/
+             , A.DCLR_CSTM_CD    /** Code de bureau de déclaration !== 신고세관 ==!*/
+             , A.DCLR_PT_CD      /** Code de type de déclaration !== 신고유형코드 ==!*/
+             , A.IMPPN_IDFY_NO   /** N° d'identification de l'importateur !== 수입자식별번호 ==!*/
+             , A.IMPPN_NM        /** Nom de l'importateur !== 수입자명 ==!*/
+             , A.DCER_CD         /** Code du déclarant !== 신고인코드 ==!*/
+             , A.DCER_CO_NM      /** Nom de societe du declarant !==신고인업체명==! */
+             , A.HS_CD           /** Code SH !== HS코드 ==!*/
+             , A.PDLS_NM         /** Nom de l'article !== 품목명 ==!*/
+             , A.ORCY_CNTY_CD    /** Code de pays d'origine !== 원산지국가코드 ==!*/
+             , A.FRST_SELC_RSLT_CD   /** Circuit initial !== 최초선별결과 ==!*/
+             , A.LAST_SELC_RSLT_CD   /** Circuit final !== 최종선별결과 ==!*/
+             , DECODE(A.SELC_CHG_CNT, 0, 'N', 'Y') AS SELC_CHG_YN      /** Circuit rerouté O/N !== 선별변경여부 ==! */
+             , NVL(A.DSCL_YN, 'N') AS DSCL_YN            /** Détecté O/N !== 적발여부 ==!*/
+             , NVL(A.ADRT_YN, 'N') AS AUDT_DSCL_YN       /** Détecté de l'examen O/N !== 심사적발여부 ==! */
+             , NVL(A.INSC_DSCL_YN, 'N') AS INSC_DSCL_YN  /** Détecté de l'inspection O/N !== 검사적발여부 ==!*/
+             , NVL(A.TXBS_AMT, 0) AS TXBS_AMT            /** Montant de la valeur statistique !== 과세기준금액 ==!*/
+             , NVL(A.INVC_AMT, 0) AS PDLS_INVC_AMT       /** Montant de la facture de l'article !== 품목송장금액 ==!*/
+             , NVL(A.TAX_AMT, 0) AS TAX_AMT              /** Montant de la taxe !== 세금금액 ==!*/
+             , ( CASE WHEN A.DSCL_YN = 'Y' AND A.HIST_SRNO > 0 THEN ABS (A.TAX_AMT - ( SELECT SUM (Z.TAX_AMT)
+                                                                                       FROM TB_CLRI_DED_TAX Z
+                                                                                       WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                                                       AND Z.PDLS_NO = A.PDLS_NO
+                                                                                       AND Z.DEL_YN = 'N'
+                                                                                     )
+                                                                        )
+                      ELSE 0
+                 END
+               ) AS DSCL_TAX_AMT       /** Droits et taxes de déclaration détectée !== 적발세금금액 ==!*/
+             , (CASE WHEN A.DSCL_YN = 'Y' AND A.HIST_SRNO > 0 THEN ABS (A.INVC_AMT - ( SELECT Z.PDLS_INVC_NCY_AMT
+                                                                                       FROM TB_CLRI_DED_VLUT_PDLS Z
+                                                                                       WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                                                       AND Z.PDLS_NO = A.PDLS_NO
+                                                                                       AND Z.DEL_YN = 'N'
+                                                                                     )
+                                                                       )
+                        ELSE 0
+                    END
+                ) AS DSCL_INVC_AMT          /** Montant de facture de déclaration détectée !== 적발인보이스금액 ==!*/
+             , (CASE WHEN A.DSCL_YN = 'Y' AND A.HIST_SRNO > 0 THEN ABS (A.TXBS_AMT - ( SELECT Z.PDLS_TXBS_NCY_AMT
+                                                                                       FROM TB_CLRI_DED_VLUT_PDLS Z
+                                                                                       WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                                                       AND Z.PDLS_NO = A.PDLS_NO
+                                                                                       AND Z.DEL_YN = 'N'
+                                                                                     )
+                                                                       )
+                     ELSE 0
+                END
+               ) AS DSCL_TXBS_AMT          /** Valeur statistique de déclaration détectée !== 적발과세기준금액 ==!*/
+             , NVL(A.FINE_AMT, 0) AS FINE_AMT /** Montant d'amende !== 벌금 ==! */
+             , A.IPRT_PRCS_STTS_CD
+             , ( SELECT 'Y'
+                 FROM TB_CLRI_DED_ADRT D
+                    , TB_CLRI_DED_VLUT_AUDT_COMN V
+                 WHERE D.DEL_YN = 'N'
+                 AND  V.DEL_YN = 'N'
+                 AND  D.DTL_DCSH_NO = A.DTL_DCSH_NO
+                 AND D.DTL_DCSH_NO = V.DTL_DCSH_NO
+                 AND D.PRC_EV_DGCNT = V.PRC_EV_DGCNT
+                 AND V.LAST_YN = 'Y'
+                 AND V.VLUT_PRCS_STTS_CD in ('D06','D08','D09') /** 심사완료/승인/거절 */
+               ) as  AUDT_CMPL_YN
+             , DECODE((SELECT COUNT(*) FROM TB_AEOI_ATHR_CO WHERE NIF = A.IMPPN_IDFY_NO), 0, 'N', 'Y') AS AEO_CO_YN /** OEA !== AEO업체 ==! */
+        FROM (SELECT
+                  A.DTL_DCSH_NO
+                , A.PRCS_STTS_CD
+                , A.CAG_MGMT_NO
+                , A.RLSE_DT
+                , A.HIST_SRNO
+                , A.DCLR_CSTM_CD
+                , A.DCLR_PT_CD
+                , A.IMPPN_IDFY_NO
+                , A.IMPPN_NM
+                , A.DCER_CD
+                , A.DCER_CO_NM
+                , A.BASE_RGSR_NO
+                , E.PDLS_NO
+                , E.HS_CD
+                , E.PDLS_NM
+                , E.ORCY_CNTY_CD
+                , ( SELECT Z.FRST_SELC_RSLT_CD
+                    FROM TB_RSMI_DED_PDLS_CHNL Z
+                    WHERE Z.DEL_YN = 'N'
+                    AND Z.DTL_DCSH_NO = E.DTL_DCSH_NO
+                    AND Z.PDLS_NO = E.PDLS_NO
+                  ) AS FRST_SELC_RSLT_CD
+                , (SELECT COUNT(*)
+                   FROM   TB_RSMI_SELC_CHG_MGMT T
+                   WHERE  T.DTL_DCSH_NO = E.DTL_DCSH_NO
+                   AND    T.PDLS_NO = E.PDLS_NO
+                   AND    (SELECT APRV_PRCS_STTS_CD FROM TB_POTI_APRV WHERE APRV_ID = T.APRV_ID) = 'I04'
+                  ) AS SELC_CHG_CNT
+                , ( SELECT Z.SELC_RSLT_CD
+                    FROM TB_RSMI_DED_PDLS_CHNL Z
+                    WHERE Z.DEL_YN = 'N'
+                    AND Z.DTL_DCSH_NO = E.DTL_DCSH_NO
+                    AND Z.PDLS_NO = E.PDLS_NO
+                  ) AS LAST_SELC_RSLT_CD
+                , CASE WHEN A.IPRT_DSCL_YN = 'Y' OR A.ADRT_YN = 'Y' OR NTFC_YN = 'Y' THEN 'Y'
+                       ELSE 'N'
+                  END DSCL_YN
+                , CASE WHEN A.IPRT_PRCS_STTS_CD = 'DD5' AND F.INSC_1_RSLT_CD != '01' THEN 'Y'
+                       ELSE 'N'
+                  END INSC_DSCL_YN
+                , A.ADRT_YN
+                , A.NTFC_YN
+                , CASE WHEN A.HIST_SRNO = 0 THEN ( SELECT Z.PDLS_TXBS_NCY_AMT
+                                                   FROM TB_CLRI_DED_VLUT_PDLS Z
+                                                   WHERE Z.DTL_DCSH_NO = E.DTL_DCSH_NO
+                                                   AND Z.PDLS_NO = E.PDLS_NO
+                                                   AND Z.DEL_YN = 'N'
+                                                 )
+                       WHEN A.HIST_SRNO > 0 THEN ( SELECT Z.PDLS_TXBS_NCY_AMT
+                                                   FROM TB_CLRI_DED_VLUT_PDLS_H Z
+                                                   WHERE Z.DTL_DCSH_NO = E.DTL_DCSH_NO
+                                                   AND Z.PDLS_NO = E.PDLS_NO
+                                                   AND Z.HIST_SRNO = 0
+                                                   AND Z.DEL_YN = 'N'
+                                                 )
+                  END TXBS_AMT
+                , CASE WHEN A.HIST_SRNO = 0 THEN ( SELECT Z.PDLS_INVC_NCY_AMT
+                                                   FROM TB_CLRI_DED_VLUT_PDLS Z
+                                                   WHERE Z.DTL_DCSH_NO = E.DTL_DCSH_NO
+                                                   AND Z.PDLS_NO = E.PDLS_NO
+                                                   AND Z.DEL_YN = 'N'
+                                                 )
+                       WHEN A.HIST_SRNO > 0 THEN ( SELECT Z.PDLS_INVC_NCY_AMT
+                                                   FROM TB_CLRI_DED_VLUT_PDLS_H Z
+                                                   WHERE Z.DTL_DCSH_NO = E.DTL_DCSH_NO
+                                                   AND Z.PDLS_NO = E.PDLS_NO
+                                                   AND Z.HIST_SRNO = 0
+                                                   AND Z.DEL_YN = 'N'
+                                                 )
+                  END INVC_AMT
+                , CASE WHEN A.HIST_SRNO = 0 THEN ( SELECT SUM (Z.TAX_AMT)
+                                                   FROM TB_CLRI_DED_TAX Z
+                                                   WHERE Z.DTL_DCSH_NO = E.DTL_DCSH_NO
+                                                   AND Z.PDLS_NO = E.PDLS_NO
+                                                   AND Z.DEL_YN = 'N'
+                                                 )
+                       WHEN A.HIST_SRNO > 0 THEN ( SELECT SUM (Z.TAX_AMT)
+                                                   FROM TB_CLRI_DED_TAX_H Z
+                                                   WHERE Z.DTL_DCSH_NO = E.DTL_DCSH_NO
+                                                   AND Z.PDLS_NO = E.PDLS_NO
+                                                   AND Z.HIST_SRNO = 0
+                                                   AND Z.DEL_YN = 'N'
+                                                 )
+                  END TAX_AMT
+                , A.FINE_AMT
+                , A.IPRT_PRCS_STTS_CD
+        FROM (
+
+            SELECT B.DTL_DCSH_NO
+                 , C.PRCS_STTS_CD
+                 , C.CAG_MGMT_NO
+                 , C.RLSE_DT
+                 , NVL(C.HIST_SRNO, 0) AS HIST_SRNO
+                 , C.DCLR_CSTM_CD
+                 , C.DCLR_PT_CD
+                 , C.IMPPN_IDFY_NO
+                 , C.DCER_CD
+                 , G.IPRT_PRCS_STTS_CD
+                 , B.BASE_RGSR_NO
+                 , ( SELECT Z.IMPPN_CO_NM
+                     FROM TB_CLRI_DED_CO Z
+                     WHERE Z.DTL_DCSH_NO = B.DTL_DCSH_NO
+                   ) AS IMPPN_NM
+                 , ( SELECT Z.DCER_CO_NM
+                     FROM TB_CLRI_DED_CO Z
+                     WHERE Z.DTL_DCSH_NO = B.DTL_DCSH_NO
+                   ) AS DCER_CO_NM
+                 , CASE WHEN G.IPRT_PRCS_STTS_CD = 'DD5' AND G.DSCL_YN = 'Y' THEN 'Y'
+                        ELSE 'N'
+                   END IPRT_DSCL_YN
+                 , D.NTFC_YN
+                 , D.FINE_AMT
+                 , E.ADRT_YN
+            FROM (<include refid="selectSelcRsltAll"/>) B
+            , TB_CLRI_DED_COMN C
+            , ( SELECT Z.REFF_NO AS DTL_DCSH_NO
+                     , DECODE(COUNT(*), 0, 'N', 'Y') AS NTFC_YN
+                     , SUM (Z.FINE_AMT) AS FINE_AMT
+                FROM TB_COLI_NTFC Z
+                WHERE Z.NTFC_PT_CD = 'A'
+                AND Z.REFF_NO_PT_CD = '002'
+                AND Z.DEL_YN = 'N'
+                AND Z.CNCL_YN = 'N'
+                GROUP BY Z.REFF_NO
+              ) D
+            , ( SELECT Z.DTL_DCSH_NO
+                     , DECODE (COUNT (*), 0, 'N', 'Y') AS ADRT_YN
+                FROM TB_CLRI_DED_ADRT_D Z
+                WHERE Z.AUDT_RSLT_CD NOT IN ('NORM00', 'ATVALU')
+                AND Z.DEL_YN = 'N'
+                GROUP BY Z.DTL_DCSH_NO
+              ) E
+            , TB_CLRI_DED_INSC_RSLT G
+            WHERE B.DTL_DCSH_NO = C.DTL_DCSH_NO
+            AND B.DTL_DCSH_NO = D.DTL_DCSH_NO(+)
+            AND B.DTL_DCSH_NO = E.DTL_DCSH_NO(+)
+            AND B.DTL_DCSH_NO = G.DTL_DCSH_NO(+)
+            AND C.DEL_YN = 'N'
+            AND G.DEL_YN(+) = 'N'
+                <include refid="AnayBasePerListSearchConditions"/>
+                <if test='baseRgsrNo != null and baseRgsrNo != "" and baseRgsrNo != "TOTAL"'>
+                    AND B.BASE_RGSR_NO = #{baseRgsrNo}
+                </if>
+                <if test='scrnTp == "isprPt"'>
+                    <if test='inqtPtCd == "A"'>
+                        AND C.AUDT_EMP_ID = #{cnsltId}
+                    </if>
+                    <if test='inqtPtCd == "B"'>
+                        AND C.INSC_EMP_ID = #{cnsltId}
+                    </if>
+                </if>
+                <if test='scrnTp == "isprRslt"'>
+                    AND G.IPRT_PRCS_STTS_CD = 'DD5'
+                    AND EXISTS
+                    (SELECT 1
+                    FROM TB_CLRI_DED_PDLS_INSC_RSLT Z
+                    WHERE Z.DTL_DCSH_NO = B.DTL_DCSH_NO
+                    AND Z.INSC_1_RSLT_CD = #{inscRsltCd}
+                    )
+                </if>
+                <if test='scrnTp == "hsAcrsInqt"'>
+                AND B.DTL_DCSH_NO IN
+                    (
+                        SELECT /*+ INDEX(B TB_CLRI_DED_PDLS_IX01) */
+                              A.DTL_DCSH_NO
+                        FROM TB_CLRI_DED_COMN A
+                           , TB_CLRI_DED_PDLS B
+                           , ( SELECT /*+ INDEX(A TB_CLRI_HS_CD_IX01)*/
+                                     A.HS_CD
+                                   , A.HS_APLY_STRT_DT
+                                   , HS_APLY_END_DT
+                               FROM TB_CLRI_HS_CD A
+                               START WITH A.HS_CD = #{hsCd}
+                               CONNECT BY PRIOR A.HS_CD = A.UPR_HS_CD AND PRIOR A.HS_APLY_STRT_DT = A.UPR_HS_APLY_STRT_DT
+                             ) C
+                           , TB_CLRI_DED_INSC_RSLT D
+                           , TB_RSMI_DED_SELC E
+                           WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+                           <foreach item="dclrPtCdsItem" collection="dclrPtCds" open="AND A.DCLR_PT_CD IN (" close=")" separator=",">
+                               #{dclrPtCdsItem}
+                           </foreach>
+                           AND A.DCLR_DT BETWEEN TO_CHAR(TO_DATE(#{dedStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{dedEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                           AND B.HS_CD = C.HS_CD
+                           AND C.HS_APLY_STRT_DT <![CDATA[ <= ]]> A.DCLR_DT AND C.HS_APLY_END_DT <![CDATA[ >= ]]> A.DCLR_DT
+                           AND A.DTL_DCSH_NO = D.DTL_DCSH_NO(+)
+                           AND D.IPRT_PRCS_STTS_CD(+) = 'DD5'
+                           AND D.DSCL_YN(+) = 'Y'
+                           AND A.DTL_DCSH_NO = E.DTL_DCSH_NO(+)
+                    )
+                </if>
+
+            ) A
+            LEFT JOIN TB_CLRI_DED_PDLS E ON A.DTL_DCSH_NO = E.DTL_DCSH_NO
+            LEFT JOIN TB_CLRI_DED_PDLS_INSC_RSLT F ON A.DTL_DCSH_NO = F.DTL_DCSH_NO AND E.PDLS_NO = F.PDLS_NO AND F.VIST_INSC_RQST_DGCNT = ( SELECT MAX(VIST_INSC_RQST_DGCNT)
+                                                                                                                                             FROM TB_CLRI_DED_PDLS_INSC_RSLT
+                                                                                                                                             WHERE DTL_DCSH_NO = E.DTL_DCSH_NO
+                                                                                                                                             AND PDLS_NO = E.PDLS_NO
+                                                                                                                                           )
+            <if test='scrnTp == "isprRslt"'>
+              AND EXISTS
+              (   SELECT 1
+                  FROM TB_CLRI_DED_PDLS_INSC_RSLT Z
+                  WHERE Z.DTL_DCSH_NO = E.DTL_DCSH_NO
+                  AND Z.PDLS_NO = E.PDLS_NO
+                  AND Z.INSC_1_RSLT_CD = #{inscRsltCd}
+              )
+            </if>
+        ) A
+        ORDER BY A.DTL_DCSH_NO
+        , TO_NUMBER(A.PDLS_NO)
+
+		<choose>
+			<when test='alXlsDwnlYN != null and alXlsDwnlYN.equals("Y")'>
+        ) SQLRSLT
+            </when>
+            <otherwise>
+                <include refid="pagination.footer"/>
+            </otherwise>
+        </choose>
+
+    </select>
+
+    <!--
+    Consulter la performance par bureau (onglet du bureau de déclaration) !== 세관별실적조회(신고세관TAB) ==!
+    -->
+    <select id="selectAnayCstmPerCstmList"
+            parameterType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo"
+            resultType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo">
+
+        /* selectAnayCstmPerCstmList */
+        <include refid="alpass.ipt.rsm.anay.mapper.RsmAnayMapper.selectAnayBasePerListBody"/>
+        SELECT DISTINCT
+               A.DCLR_CSTM_CD AS CSTM_CD        /** Code de bureau de déclaration !== 신고세관 ==!*/
+             , ( SELECT Z.ORGN_NM
+                 FROM TB_POTI_ORGN Z
+                 WHERE Z.DEL_YN = 'N'
+                 AND Z.ORGN_CD = A.DCLR_CSTM_CD
+                 AND ROWNUM = 1
+               ) AS CSTM_CD_NM      /** Nom du bureau !== 세관명 ==!*/
+        FROM SELC_TABLE A
+        ORDER BY A.DCLR_CSTM_CD
+    </select>
+
+    <!--
+    Consulter le résultat du ciblage par type de déclaration !== 신고유형별실적목록조회(신고유형TAB) ==!
+    -->
+    <select id="selectAnayDclrPtCdList"
+            parameterType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo"
+            resultType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo">
+
+        /* selectAnayDclrPtCdList */
+        <include refid="selectAnayBasePerListBody"/>
+        SELECT DISTINCT
+              A.DCLR_PT_CD AS CSTM_CD /** Code de type de déclaration !== 신고유형코드 ==!*/
+            , ( SELECT Z.CD_VDVAL_NM
+                FROM TB_COM_COMN_CD_D_LANG Z
+                WHERE Z.COMN_CD = 'CLR_0004'
+                AND Z.LANG_CD = #{langCd}
+                AND Z.CD_VDVAL = A.DCLR_PT_CD
+              ) AS CSTM_CD_NM    /** Nom de Type De Déclaration !== 신고유형명 ==! */
+        FROM SELC_TABLE A
+        ORDER BY A.DCLR_PT_CD
+    </select>
+
+    <!--
+      [Consulter la performance par certificat de visite] Consulter la liste !== [검사결과별실적] 목록조회  ==!
+    -->
+    <select id="selectAnayInscResultList"
+            parameterType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo"
+            resultType="alpass.ipt.rsm.smlt.vo.RsmSmltSelcStatsVo">
+
+        /* selectAnayInscResultList */
+        WITH RSMI_DED_SELC AS (
+            SELECT A.DTL_DCSH_NO
+                 , DECODE (B.DSCL_YN, 'Y', 'Y', NVL((
+                                                        SELECT 'Y'
+                                                        FROM TB_CLRI_DED_PDLS_INSC_RSLT
+                                                        WHERE DEL_YN = 'N'
+                                                        AND DTL_DCSH_NO = A.DTL_DCSH_NO
+                                                        ORDER BY INSC_1_RSLT_CD DESC
+                                                        FETCH FIRST 1 ROWS ONLY
+                                                    ),'N')
+                   ) as DSCL_YN
+                 , C.HIST_SRNO
+            FROM TB_RSMI_DED_SELC A
+               , TB_CLRI_DED_INSC_RSLT B
+               , TB_CLRI_DED_COMN C
+            WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+            AND   A.DTL_DCSH_NO = C.DTL_DCSH_NO
+            AND   B.IPRT_PRCS_STTS_CD = 'DD5'
+            <if test='rgsrStrtDt != "" and rgsrStrtDt != null and rgsrEndDt != "" and rgsrEndDt != null'>
+                AND A.SELC_DT BETWEEN TO_CHAR(TO_DATE(#{rgsrStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND
+                                      TO_CHAR(TO_DATE(#{rgsrEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            </if>
+            <if test='cstmCds != null and cstmCds.size() > 0'>
+                <foreach item="cstmCdItem" collection="cstmCds" open="AND C.DCLR_CSTM_CD IN (" close=")" separator=",">
+                    <![CDATA[
+                    #{cstmCdItem}
+                    ]]>
+                </foreach>
+            </if>
+        )
+        , PDLS_IPRS_RSLT AS (
+            SELECT A.DTL_DCSH_NO
+                 , A.PDLS_NO
+                 , A.INSC_1_RSLT_CD AS INSC_RSLT_CD
+            FROM   TB_CLRI_DED_PDLS_INSC_RSLT A
+            WHERE  A.DEL_YN = 'N'
+            AND    COALESCE(A.INSC_1_RSLT_CD,'') > ''
+            <if test='inscRsltCd != "" and inscRsltCd != null'>
+                AND A.INSC_1_RSLT_CD = #{inscRsltCd}
+            </if>
+            AND EXISTS ( SELECT *
+                         FROM  RSMI_DED_SELC Z
+                         WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                       )
+            UNION
+            SELECT A.DTL_DCSH_NO
+                 , A.PDLS_NO
+                 , A.INSC_2_RSLT_CD AS INSC_RSLT_CD
+            FROM   TB_CLRI_DED_PDLS_INSC_RSLT A
+            WHERE  A.DEL_YN = 'N'
+            AND    COALESCE(A.INSC_2_RSLT_CD,'') > ''
+            <if test='inscRsltCd != "" and inscRsltCd != null'>
+                AND A.INSC_2_RSLT_CD = #{inscRsltCd}
+            </if>
+            AND EXISTS ( SELECT *
+                         FROM  RSMI_DED_SELC Z
+                         WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                       )
+            UNION
+            SELECT A.DTL_DCSH_NO
+                 , A.PDLS_NO
+                 , A.INSC_3_RSLT_CD AS INSC_RSLT_CD
+            FROM   TB_CLRI_DED_PDLS_INSC_RSLT A
+            WHERE  A.DEL_YN = 'N'
+            AND    COALESCE(A.INSC_3_RSLT_CD,'') > ''
+            <if test='inscRsltCd != "" and inscRsltCd != null'>
+                AND A.INSC_3_RSLT_CD = #{inscRsltCd}
+            </if>
+            AND EXISTS ( SELECT *
+                         FROM  RSMI_DED_SELC Z
+                         WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                       )
+            UNION
+            SELECT A.DTL_DCSH_NO
+                 , A.PDLS_NO
+                 , A.INSC_4_RSLT_CD AS INSC_RSLT_CD
+            FROM   TB_CLRI_DED_PDLS_INSC_RSLT A
+            WHERE  A.DEL_YN = 'N'
+            AND    COALESCE(A.INSC_4_RSLT_CD,'') > ''
+            <if test='inscRsltCd != "" and inscRsltCd != null'>
+                AND A.INSC_4_RSLT_CD = #{inscRsltCd}
+            </if>
+            AND EXISTS ( SELECT *
+                         FROM  RSMI_DED_SELC Z
+                         WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                       )
+            UNION
+            SELECT A.DTL_DCSH_NO
+                 , A.PDLS_NO
+                 , A.INSC_5_RSLT_CD AS INSC_RSLT_CD
+            FROM   TB_CLRI_DED_PDLS_INSC_RSLT A
+            WHERE  A.DEL_YN = 'N'
+            AND    COALESCE(A.INSC_5_RSLT_CD,'') > ''
+            <if test='inscRsltCd != "" and inscRsltCd != null'>
+                AND A.INSC_5_RSLT_CD = #{inscRsltCd}
+            </if>
+            AND EXISTS ( SELECT *
+                         FROM  RSMI_DED_SELC Z
+                         WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                       )
+            UNION
+            SELECT A.DTL_DCSH_NO
+                 , A.PDLS_NO
+                 , A.INSC_6_RSLT_CD AS INSC_RSLT_CD
+            FROM   TB_CLRI_DED_PDLS_INSC_RSLT A
+            WHERE  A.DEL_YN = 'N'
+            AND    COALESCE(A.INSC_6_RSLT_CD,'') > ''
+            <if test='inscRsltCd != "" and inscRsltCd != null'>
+                AND A.INSC_6_RSLT_CD = #{inscRsltCd}
+            </if>
+            AND EXISTS ( SELECT *
+                         FROM  RSMI_DED_SELC Z
+                         WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                       )
+        )
+        , CLRI_DED_TAX AS (
+            SELECT SUM(A.TAX_AMT) AS TAX_AMT
+            FROM   TB_RSMI_DED_SELC A
+            WHERE  EXISTS ( SELECT *
+                            FROM   PDLS_IPRS_RSLT Z
+                            WHERE  Z.DTL_DCSH_NO = A.DTL_DCSH_NO
+                          )
+        )
+        , CLRI_DED_PDLS_TAX AS (
+            SELECT A.DTL_DCSH_NO
+                 , A.PDLS_NO
+                 , SUM(A.TAX_AMT) AS TAX_AMT
+            FROM    TB_CLRI_DED_TAX A
+            WHERE   A.DEL_YN = 'N'
+            AND EXISTS ( SELECT *
+                         FROM  PDLS_IPRS_RSLT Z
+                         WHERE Z.DTL_DCSH_NO = A.DTL_DCSH_NO
+                         AND   Z.PDLS_NO = A.PDLS_NO
+                       )
+            GROUP BY A.DTL_DCSH_NO, A.PDLS_NO
+        )
+        , CLRI_DED_VLUT_PDLS AS (
+            SELECT A.*
+            FROM TB_CLRI_DED_VLUT_PDLS A
+            WHERE A.DEL_YN = 'N'
+            AND EXISTS ( SELECT *
+                         FROM  PDLS_IPRS_RSLT Z
+                         WHERE Z.DTL_DCSH_NO = A.DTL_DCSH_NO
+                         AND   Z.PDLS_NO = A.PDLS_NO
+                       )
+        )
+        , CLRI_DED_VLUT_COMN AS (
+            SELECT SUM(A.TXBS_AMT) AS TXBS_AMT
+            FROM  TB_RSMI_DED_SELC A
+            WHERE EXISTS ( SELECT *
+                           FROM  PDLS_IPRS_RSLT Z
+                           WHERE Z.DTL_DCSH_NO = A.DTL_DCSH_NO
+                         )
+        )
+        SELECT A.INSC_RSLT_CD                   /** Résultat de l'inspection !== 검사결과 ==! */
+             , A.SELC_CNT                        /** Nombre de ciblage !== 선별건수 ==! */
+             , A.DSCL_CNT                        /** !== 적발건수 ==! */
+             , A.PDLS_TAX_AMT AS SELC_TAX_AMT            /** Droits et taxes de déclaration filtrée !== 선별세금금액 ==! */
+             , A.PDLS_TXBS_AMT AS SELC_TXBS_AMT          /** Valeur statistique de déclaration filitrée !== 선별과세기준금액 ==! */
+             , A.DSCL_PDLS_TAX_AMT AS DSCL_TAX_AMT       /** Droits et taxes de déclaration détectée  !== 적발세금금액 ==! */
+             , A.DSCL_PDLS_TXBS_AMT AS DSCL_TXBS_AMT     /** Valeur statistique de déclaration détectée !== 적발과세기준금액 ==! */
+             , DECODE( NVL(A.SELC_CNT,0), 0, 0, (A.DSCL_CNT :: decimal / A.SELC_CNT :: decimal) * 100 ) AS RTO    /** Proportion !== 비율 ==! */
+        FROM ( SELECT A.INSC_RSLT_CD
+                    , COUNT(DISTINCT A.DTL_DCSH_NO) AS SELC_CNT
+                    , SUM(DSCL_CNT) AS DSCL_CNT
+                    , SUM(PDLS_TAX_AMT) AS PDLS_TAX_AMT
+                    , SUM(PDLS_TXBS_AMT) AS PDLS_TXBS_AMT
+                    , SUM(DSCL_PDLS_TAX_AMT) AS DSCL_PDLS_TAX_AMT
+                    , SUM(DSCL_PDLS_TXBS_AMT) AS DSCL_PDLS_TXBS_AMT
+               FROM ( SELECT DTL_DCSH_NO
+                           , A.INSC_RSLT_CD
+                           , SUM(DSCL_CNT) AS DSCL_CNT
+                           , SUM(PDLS_TAX_AMT) AS PDLS_TAX_AMT
+                           , SUM(PDLS_TXBS_AMT) AS PDLS_TXBS_AMT
+                           , SUM(DSCL_PDLS_TAX_AMT) AS DSCL_PDLS_TAX_AMT
+                           , SUM(DSCL_PDLS_TXBS_AMT) AS DSCL_PDLS_TXBS_AMT
+                      FROM (
+                            SELECT A.DTL_DCSH_NO
+                                 , ROW_NUMBER() OVER (PARTITION BY B.DTL_DCSH_NO ORDER BY B.DTL_DCSH_NO, B.PDLS_NO ) AS DED_PDLS_SEQ
+                                 , B.INSC_RSLT_CD
+                                 , B.PDLS_NO
+                                 , CASE WHEN A.HIST_SRNO = 0 THEN C.TAX_AMT
+                                        ELSE ( SELECT SUM(TH.TAX_AMT)
+                                               FROM   TB_CLRI_DED_TAX_H TH
+                                               WHERE TH.DEL_YN = 'N'
+                                               AND TH.HIST_SRNO = 0
+                                               AND TH.DTL_DCSH_NO = A.DTL_DCSH_NO
+                                               AND TH.PDLS_NO = B.PDLS_NO
+                                             )
+                                   END PDLS_TAX_AMT
+                                 , CASE WHEN A.HIST_SRNO = 0 THEN E.PDLS_TXBS_NCY_AMT
+                                        ELSE ( SELECT PH.PDLS_TXBS_NCY_AMT
+                                               FROM TB_CLRI_DED_VLUT_PDLS_H PH
+                                               WHERE PH.DEL_YN = 'N'
+                                               AND PH.HIST_SRNO = 0
+                                               AND PH.DTL_DCSH_NO = A.DTL_DCSH_NO
+                                               AND PH.PDLS_NO = B.PDLS_NO
+                                             )
+                                   END PDLS_TXBS_AMT
+                                 , CASE WHEN A.DSCL_YN = 'Y' AND A.HIST_SRNO > 0 THEN ABS(C.TAX_AMT - ( SELECT SUM(TH.TAX_AMT)
+                                                                                                        FROM   TB_CLRI_DED_TAX_H TH
+                                                                                                        WHERE TH.DEL_YN = 'N'
+                                                                                                        AND TH.HIST_SRNO = 0
+                                                                                                        AND TH.DTL_DCSH_NO = A.DTL_DCSH_NO
+                                                                                                        AND TH.PDLS_NO = B.PDLS_NO
+                                                                                                      ))
+                                        ELSE 0
+                                   END DSCL_PDLS_TAX_AMT
+                                 , CASE WHEN A.DSCL_YN = 'Y' AND A.HIST_SRNO > 0 THEN 1 ELSE 0 END AS DSCL_CNT
+                                 , CASE WHEN A.DSCL_YN = 'Y' AND A.HIST_SRNO > 0 THEN ABS(E.PDLS_TXBS_NCY_AMT - ( SELECT PH.PDLS_TXBS_NCY_AMT
+                                                                                                                  FROM TB_CLRI_DED_VLUT_PDLS_H PH
+                                                                                                                  WHERE PH.DEL_YN = 'N'
+                                                                                                                  AND PH.HIST_SRNO = 0
+                                                                                                                  AND PH.DTL_DCSH_NO = A.DTL_DCSH_NO
+                                                                                                                  AND PH.PDLS_NO = B.PDLS_NO
+                                                                                                                ))
+                                        ELSE 0
+                                   END DSCL_PDLS_TXBS_AMT
+                            FROM  RSMI_DED_SELC A
+                                , PDLS_IPRS_RSLT B
+                                , CLRI_DED_PDLS_TAX C
+                                , CLRI_DED_VLUT_PDLS E
+                            WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+                            AND   A.DTL_DCSH_NO = C.DTL_DCSH_NO(+)
+                            AND   B.PDLS_NO = C.PDLS_NO
+                            AND   A.DTL_DCSH_NO = E.DTL_DCSH_NO(+)
+                            AND   B.PDLS_NO = E.PDLS_NO
+                      ) A
+                      GROUP BY A.DTL_DCSH_NO, A.INSC_RSLT_CD
+               ) A
+               GROUP BY A.INSC_RSLT_CD
+          ) A
+        WHERE 1 = 1
+        ORDER BY A.INSC_RSLT_CD
+    </select>
+
+    <!--
+      [Consulter la performance de ciblage annuelle] Consulter la liste !== [연간선별실적] 목록조회  ==!
+    -->
+    <select id="selectYySelcAcrs"
+            parameterType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo"
+            resultType="alpass.ipt.rsm.smlt.vo.RsmSmltSelcStatsVo">
+        /* selectYySelcAcrs */
+        <if test='scrnTp == "dtl"'>
+            <include refid="pagination.header"/>
+        </if>
+        SELECT
+            <if test='scrnTp == "dtl"'>
+                INQT_PT_CD      /** Type de consultation (code) !== 조회유형 ==! */
+            </if>
+            <if test='scrnTp != "dtl"'>
+                NVL(INQT_PT_CD, 'TOTAL') AS INQT_PT_CD      /** Type de consultation !== 조회유형 ==! */
+            </if>
+            , NVL(SUM (BF_DCLR_CNT), 0) AS BF_DCLR_CNT              /** Nombre de DED de l'année dernière !== 전년도 DED ==! */
+            , NVL(SUM(BF_RED_SELC_CNT), 0) AS BF_RED_SELC_CNT       /** Nombre de ciblage du circuit rouge de l'an dernier !== 전년도 빨강 선별 건수 ==! */
+            , NVL(SUM(BF_ORE_SELC_CNT), 0) AS BF_ORE_SELC_CNT       /** Nombre de ciblage du circuit orange de l'an dernier !== 전년도 오렌지 선별 건수 ==! */
+            , NVL(SUM(BF_BLU_SELC_CNT), 0) AS BF_BLU_SELC_CNT       /** Nombre de ciblage du circuit bleu de l'an dernier !== 전년도 블루 선별 건수 ==! */
+            , NVL(SUM(BF_GRN_SELC_CNT), 0) AS BF_GRN_SELC_CNT       /** Nombre de ciblage du circuit rouge de l'an dernier !== 전년도 그린 선별 건수 ==! */
+            , NVL((SUM (BF_RED_SELC_CNT) / NULLIF(SUM(BF_SELC_CNT), 0)) * 100, 0)AS BF_RED_SELC_RT      /** Taux de ciblage du circuit rouge de l'an dernier !== 전년도 레드 선별율 ==! */
+            , NVL((SUM (BF_ORE_SELC_CNT) / NULLIF(SUM(BF_SELC_CNT), 0)) * 100, 0)AS BF_ORE_SELC_RT      /** Taux de ciblage du circuit orange de l'an dernier !== 전년도 오렌지 선별율 ==! */
+            , NVL((SUM (BF_BLU_SELC_CNT) / NULLIF(SUM(BF_SELC_CNT), 0)) * 100, 0)AS BF_BLU_SELC_RT      /** Taux de ciblage du circuit bleu de l'an dernier !== 전년도 블루 선별율 ==! */
+            , NVL((SUM (BF_GRN_SELC_CNT) / NULLIF(SUM(BF_SELC_CNT), 0)) * 100, 0)AS BF_GRN_SELC_RT      /** Taux de ciblage du circuit vert de l'an dernier !== 전년도 그린 선별율 ==! */
+            , NVL(SUM(DCLR_CNT), 0) AS DCLR_CNT                 /** Nombre de déclarations !== 신고건수 ==!*/
+            , NVL(SUM(RED_SELC_CNT), 0) AS RED_SELC_CNT         /** Nombre de déclaration en rouge !== 빨강선별건수 ==!*/
+            , NVL(SUM(ORE_SELC_CNT), 0) AS ORE_SELC_CNT         /** Nombre de déclaration en orange !== 오렌지선별건수 ==!*/
+            , NVL(SUM(BLU_SELC_CNT), 0) AS BLU_SELC_CNT         /** Nombre de déclaration en bleu !== 파랑선별건수 ==!*/
+            , NVL(SUM(GRN_SELC_CNT), 0) AS GRN_SELC_CNT         /** Nombre de déclaration en vert !== 녹색선별건수 ==!*/
+            , NVL((SUM (RED_SELC_CNT) / NULLIF(SUM(SELC_CNT), 0)) * 100, 0)AS RED_SELC_RT       /** Taux de déclaration en circuit rouge !== 빨강선별률 ==!*/
+            , NVL((SUM (ORE_SELC_CNT) / NULLIF(SUM(SELC_CNT), 0)) * 100, 0)AS ORE_SELC_RT       /** Taux de déclaration en circuit orange !== 오렌지선별률 ==!*/
+            , NVL((SUM (BLU_SELC_CNT) / NULLIF(SUM(SELC_CNT), 0)) * 100, 0)AS BLU_SELC_RT       /** Taux de déclaration en circuit bleu !== 파랑선별률 ==!*/
+            , NVL((SUM (GRN_SELC_CNT) / NULLIF(SUM(SELC_CNT), 0)) * 100, 0)AS GRN_SELC_RT       /** Taux de déclaration en circuit vert !== 녹색선별률 ==!*/
+            , ( SELECT Z.ORGN_NM
+                FROM   TB_POTI_ORGN Z
+                WHERE  Z.DEL_YN = 'N'
+                AND    Z.ORGN_CD = INQT_PT_CD
+                AND    ROWNUM = 1
+              ) AS INQT_PT_NM       /** Type de consultation (nom) !== 조회유형 ==! */
+        FROM ( SELECT
+                <if test='scrnTp == "list"'>
+                    <if test='inqtPtCd == "yYQrt"'>
+                        MAX(TO_CHAR(ADD_MONTHS(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 12), 'Q/YYYY')) AS INQT_PT_CD
+                        , TO_CHAR(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 'Q/YYYY') AS BF_INQT_PT_CD
+                    </if>
+                    <if test='inqtPtCd == "yYMm"'>
+                        MAX(TO_CHAR(ADD_MONTHS(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 12), 'MM/YYYY')) AS INQT_PT_CD
+                        , TO_CHAR(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 'MM/YYYY') AS BF_INQT_PT_CD
+                    </if>
+                    <if test='inqtPtCd == "yYMmMm"'>
+                        #{cmprStrtMm} || '~' || #{cmprEndMm} || '/' || #{baseYy} AS INQT_PT_CD
+                    </if>
+                </if>
+                <if test='scrnTp == "dtl"'>
+                    <if test='inqtTp == "cstm"'>
+                        C.DCLR_CSTM_CD AS INQT_PT_CD
+                    </if>
+                    <if test='inqtTp == "dclrPt"'>
+                        C.DCLR_PT_CD AS INQT_PT_CD
+                    </if>
+                </if>
+                    , COUNT (*) AS BF_DCLR_CNT
+                    , SUM(1) AS BF_SELC_CNT
+                    , SUM(B.RED_SELC_CNT) AS BF_RED_SELC_CNT
+                    , SUM(B.ORE_SELC_CNT) AS BF_ORE_SELC_CNT
+                    , SUM(B.BLU_SELC_CNT) AS BF_BLU_SELC_CNT
+                    , SUM(B.GRN_SELC_CNT) AS BF_GRN_SELC_CNT
+                    , 0 AS DCLR_CNT
+                    , 0 AS SELC_CNT
+                    , 0 AS RED_SELC_CNT
+                    , 0 AS ORE_SELC_CNT
+                    , 0 AS BLU_SELC_CNT
+                    , 0 AS GRN_SELC_CNT
+                FROM TB_RSMI_DED_SELC A
+                    , (<include refid="selectSelcRsltAll"><property name="prevYearYN" value="Y"/></include>) B
+                    , TB_CLRI_DED_COMN C
+                WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+                AND A.DTL_DCSH_NO = C.DTL_DCSH_NO
+                <if test='inqtPtCd == "yYQrt"'>
+                    AND TO_CHAR(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 'YYYYQ') BETWEEN TO_NUMBER(#{baseYy}) -1 || #{fromQrt} AND
+                    TO_NUMBER(#{baseYy}) -1 || #{toQrt}
+                </if>
+                <if test='inqtPtCd == "yYMm"'>
+                    AND TO_CHAR(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 'YYYYMM') BETWEEN TO_NUMBER(#{baseYy}) -1 ||
+                    LPAD(#{cmprStrtMm}, 2, '0') AND TO_NUMBER(#{baseYy}) -1 || LPAD(#{cmprEndMm}, 2, '0')
+                </if>
+                <if test='inqtPtCd == "yYMmMm"'>
+                    AND TO_CHAR(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 'YYYYMM') BETWEEN TO_NUMBER(#{baseYy}) -1 ||
+                    LPAD(#{cmprStrtMm}, 2, '0') AND TO_NUMBER(#{baseYy}) -1 || LPAD(#{cmprEndMm}, 2, '0')
+                </if>
+                AND   A.DEL_YN = 'N'
+                AND   C.DEL_YN = 'N'
+                <if test='scrnTp == "list"'>
+                    <if test='inqtPtCd == "yYQrt"'>
+                        GROUP BY TO_CHAR(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 'Q/YYYY')
+                    </if>
+                    <if test='inqtPtCd == "yYMm"'>
+                        GROUP BY TO_CHAR(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 'MM/YYYY')
+                    </if>
+                </if>
+                <if test='scrnTp == "dtl"'>
+                    <if test='inqtTp == "cstm"'>
+                        GROUP BY C.DCLR_CSTM_CD
+                    </if>
+                    <if test='inqtTp == "dclrPt"'>
+                        GROUP BY C.DCLR_PT_CD
+                    </if>
+                </if>
+            UNION
+            SELECT
+                <if test='scrnTp == "list"'>
+                    <if test='inqtPtCd == "yYQrt"'>
+                        TO_CHAR(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 'Q/YYYY') AS INQT_PT_CD
+                        , TO_CHAR(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 'Q/YYYY') AS BF_INQT_PT_CD
+                    </if>
+                    <if test='inqtPtCd == "yYMm"'>
+                        TO_CHAR(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 'MM/YYYY') AS INQT_PT_CD
+                        , TO_CHAR(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 'MM/YYYY') AS BF_INQT_PT_CD
+                    </if>
+                    <if test='inqtPtCd == "yYMmMm"'>
+                        #{cmprStrtMm} || '~' || #{cmprEndMm} || '/' || #{baseYy} AS INQT_PT_CD
+                    </if>
+                </if>
+            <if test='scrnTp == "dtl"'>
+                <if test='inqtTp == "cstm"'>
+                    C.DCLR_CSTM_CD AS INQT_PT_CD
+                </if>
+                <if test='inqtTp == "dclrPt"'>
+                    C.DCLR_PT_CD AS INQT_PT_CD
+                </if>
+            </if>
+                , 0 AS BF_DCLR_CNT
+                , 0 AS BF_SELC_CNT
+                , 0 AS BF_RED_SELC_CNT
+                , 0 AS BF_ORE_SELC_CNT
+                , 0 AS BF_BLU_SELC_CNT
+                , 0 AS BF_GRN_SELC_CNT
+                , COUNT (*) AS DCLR_CNT
+                , SUM(1) AS SELC_CNT
+                , SUM(B.RED_SELC_CNT) AS SELC_RED_CNT
+                , SUM(B.ORE_SELC_CNT) AS ORE_SELC_CNT
+                , SUM(B.BLU_SELC_CNT) AS BLU_SELC_CNT
+                , SUM(B.GRN_SELC_CNT) AS GRN_SELC_CNT
+            FROM TB_RSMI_DED_SELC A
+                , (<include refid="selectSelcRsltAll"/>) B
+                , TB_CLRI_DED_COMN C
+            WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+            AND   A.DTL_DCSH_NO = C.DTL_DCSH_NO
+            <if test='inqtPtCd == "yYQrt"'>
+                AND TO_CHAR(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 'YYYYQ') BETWEEN #{baseYy} || #{fromQrt} AND #{baseYy} ||
+                #{toQrt}
+            </if>
+            <if test='inqtPtCd == "yYMm"'>
+                AND TO_CHAR(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 'YYYYMM') BETWEEN #{baseYy} || LPAD(#{cmprStrtMm}, 2, '0') AND
+                #{baseYy} || LPAD(#{cmprEndMm}, 2, '0')
+            </if>
+            <if test='inqtPtCd == "yYMmMm"'>
+                AND TO_CHAR(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 'YYYYMM') BETWEEN #{baseYy} || LPAD(#{cmprStrtMm}, 2, '0') AND
+                #{baseYy} || LPAD(#{cmprEndMm}, 2, '0')
+            </if>
+            AND   A.DEL_YN = 'N'
+            AND   C.DEL_YN = 'N'
+            <if test='scrnTp == "list"'>
+                <if test='inqtPtCd == "yYQrt"'>
+                    GROUP BY TO_CHAR(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 'Q/YYYY')
+                </if>
+                <if test='inqtPtCd == "yYMm"'>
+                    GROUP BY TO_CHAR(TO_DATE (A.SELC_DT, 'YYYYMMDD'), 'MM/YYYY')
+                </if>
+            </if>
+            <if test='scrnTp == "dtl"'>
+                <if test='inqtTp == "cstm"'>
+                    GROUP BY C.DCLR_CSTM_CD
+                </if>
+                <if test='inqtTp == "dclrPt"'>
+                    GROUP BY C.DCLR_PT_CD
+                </if>
+            </if>
+        ) GROUP BY
+        <if test='scrnTp == "dtl"'>
+            INQT_PT_CD
+        </if>
+        <if test='scrnTp != "dtl"'>
+            ROLLUP(INQT_PT_CD)
+        </if>
+        ORDER BY INQT_PT_CD
+        <if test='scrnTp == "dtl"'>
+            <include refid="pagination.footer"/>
+        </if>
+    </select>
+
+    <!--
+      [Consulter la performance par type de modification] Consulter la liste !== [정정유형별실적] 목록조회  ==!
+    -->
+    <select id="selectMdfyPtPerList"
+            parameterType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo"
+            resultType="alpass.ipt.rsm.smlt.vo.RsmSmltSelcStatsVo">
+        /* selectMdfyPtPerList */
+        <include refid="pagination.header"/>
+        SELECT A.DTL_DCSH_NO            /** Numéro du DED !== DED 번호 ==!*/
+             , A.HS_CD_MDFY_CNT         /** Résultat du contrôle !== HS코드 수정 건수==!*/
+             , A.QTY_MDFY_CNT           /** Résultat du contrôle !== 수량 수정 건수==!*/
+             , A.PDLS_TTWG_MDFY_CNT     /** Résultat du contrôle !==총중량 수정 건수==!*/
+             , A.PDLS_INVC_AMT_MDFY_CNT /** Résultat du contrôle !==송장금액 수정 건수==!*/
+             , A.PDLS_CACH_NCY_AMT_MDFY_CNT     /** Résultat du contrôle !==운임 수정 건수==!*/
+             , A.PDLS_INFEE_NCY_AMT_MDFY_CNT    /** Résultat du contrôle !==보험료 수정 건수==!*/
+             , A.ORCY_CNTY_CDMDFY_CNT           /** Résultat du contrôle !==원산지 수정 건수==!*/
+             , A.TXRT_MDFY_CNT                  /** Résultat du contrôle !==세율 수정 건수==!*/
+             , A.TXBS_AMT                       /** Valeur statistique(DZD) !== 과세기준가격 ==! */
+             , CASE WHEN B.DSCL_YN = 'Y' AND C.HIST_SRNO > 0 THEN ABS( A.TXBS_AMT - ( SELECT Z.TTXBS_NCY_AMT
+                                                                                      FROM   TB_CLRI_DED_VLUT_COMN Z
+                                                                                      WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                                                      AND    Z.DEL_YN = 'N'
+                                                                                    )
+                                                                     )
+                    ELSE 0
+               END DSCL_TXBS_AMT        /** Valeur statistique de déclaration détectée !== 적발과세기준금액 ==!*/
+             , A.TAX_AMT                /** Taxe !== 세금 ==!*/
+             , CASE WHEN B.DSCL_YN = 'Y' AND C.HIST_SRNO > 0 THEN ABS( A.TAX_AMT - ( SELECT SUM(Z.TAX_AMT)
+                                                                                     FROM   TB_CLRI_DED_TAX Z
+                                                                                     WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                                                     AND    Z.PDLS_NO != '0'
+                                                                                     AND    Z.DEL_YN = 'N'
+                                                                                   )
+                                                                     )
+                    ELSE 0
+               END DSCL_TAX_AMT
+             , A.SELC_RSLT_CD           /** Résultat de ciblage !== 선별결과 ==! */
+             , NVL(B.DSCL_YN, 'N')  AS DSCL_YN   /** Détecté O/N !== 적발여부 ==!*/
+        FROM  ( SELECT A.DTL_DCSH_NO
+                     , SUM(CASE WHEN B.DTL_DCSH_NO IS NULL THEN 0
+                                WHEN NVL(A.HS_CD, 'X') = NVL(B.HS_CD, 'X') THEN 0
+                                ELSE 1 END
+                       ) AS HS_CD_MDFY_CNT
+                     , SUM(CASE WHEN B.DTL_DCSH_NO IS NULL THEN 0
+                                WHEN NVL(A.QTY, 0) = NVL(B.QTY, 0) AND NVL(A.QTY_UT_CD, 'X') = NVL(B.QTY_UT_CD, 'X') THEN 0
+                                ELSE 1 END
+                       ) AS QTY_MDFY_CNT
+                     , SUM(CASE WHEN B.DTL_DCSH_NO IS NULL THEN 0
+                                WHEN NVL(A.PDLS_TTWG, 0) = NVL(B.PDLS_TTWG, 0) THEN 0
+                                ELSE 1 END
+                       ) AS PDLS_TTWG_MDFY_CNT
+                     , SUM(CASE WHEN B.DTL_DCSH_NO IS NULL THEN 0
+                                WHEN NVL(A.PDLS_INVC_AMT, 0) = NVL(B.PDLS_INVC_AMT, 0) THEN 0
+                                ELSE 1 END
+                       ) AS PDLS_INVC_AMT_MDFY_CNT
+                     , SUM(CASE WHEN B.DTL_DCSH_NO IS NULL THEN 0
+                                WHEN NVL(A.PDLS_CACH_NCY_AMT, 0) = NVL(B.PDLS_CACH_NCY_AMT, 0) THEN 0
+                                ELSE 1 END
+                       ) AS PDLS_CACH_NCY_AMT_MDFY_CNT
+                     , SUM(CASE WHEN B.DTL_DCSH_NO IS NULL THEN 0
+                                WHEN NVL(A.PDLS_INFEE_NCY_AMT, 0) = NVL(B.PDLS_INFEE_NCY_AMT, 0) THEN 0
+                                ELSE 1 END
+                       ) AS PDLS_INFEE_NCY_AMT_MDFY_CNT
+                     , SUM(CASE WHEN B.DTL_DCSH_NO IS NULL THEN 0
+                                WHEN NVL(A.ORCY_CNTY_CD, 'X') = NVL(B.ORCY_CNTY_CD, 'X') THEN 0
+                                ELSE 1 END
+                       ) AS ORCY_CNTY_CDMDFY_CNT
+                     , SUM(CASE WHEN B.DTL_DCSH_NO IS NULL THEN 0
+                                WHEN NVL(A.TXRT, 0) = NVL(B.TXRT, 0) THEN 0
+                                ELSE 1 END
+                       ) AS TXRT_MDFY_CNT
+                     , NVL(SUM(A.TAX_AMT), 0) AS TAX_AMT
+                     , NVL(SUM(A.TXBS_AMT), 0) AS TXBS_AMT
+                     , MIN(B.SELC_RSLT_CD) AS SELC_RSLT_CD
+                 FROM ( SELECT A.DTL_DCSH_NO
+                             , B.HIST_SRNO
+                             , C.PDLS_NO
+                             , C.HS_CD
+                             , C.QTY
+                             , C.QTY_UT_CD
+                             , C.PDLS_TTWG
+                             , E.PDLS_INVC_CURR_CD
+                             , E.PDLS_INVC_NCY_AMT AS PDLS_INVC_AMT
+                             , E.PDLS_CACH_NCY_AMT
+                             , E.PDLS_INFEE_NCY_AMT
+                             , C.ORCY_CNTY_CD
+                             , D.TXRT
+                             , E.PDLS_TXBS_NCY_AMT AS TXBS_AMT
+                             , ( SELECT SUM(Z.TAX_AMT) AS TAX_AMT
+                                 FROM   TB_CLRI_DED_TAX_H Z
+                                 WHERE  Z.HIST_SRNO = 0
+                                 AND    A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                 AND    C.PDLS_NO = Z.PDLS_NO
+                                 AND    Z.DEL_YN = 'N'
+                               ) AS TAX_AMT
+                        FROM TB_RSMI_DED_SELC A
+                           , TB_CLRI_DED_COMN_H B
+                           , TB_CLRI_DED_PDLS_H C
+                           , TB_CLRI_DED_TAX_H D
+                           , TB_CLRI_DED_VLUT_PDLS_H E
+                        WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+                        AND A.DTL_DCSH_NO = C.DTL_DCSH_NO
+                        AND B.HIST_SRNO = C.HIST_SRNO
+                        AND A.DTL_DCSH_NO = D.DTL_DCSH_NO(+)
+                        AND B.HIST_SRNO = D.HIST_SRNO
+                        AND C.PDLS_NO = D.PDLS_NO
+                        AND D.TAX_CD(+) = 'D.D'
+                        AND D.DEL_YN(+) = 'N'
+                        AND A.DTL_DCSH_NO = E.DTL_DCSH_NO(+)
+                        AND C.PDLS_NO = E.PDLS_NO
+                        AND B.HIST_SRNO = E.HIST_SRNO
+                        AND E.DEL_YN(+) = 'N'
+                        AND B.HIST_SRNO = 0
+                        AND A.SELC_DT BETWEEN TO_CHAR(TO_DATE(#{rgsrStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{rgsrEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                        <if test='imppnCd != null and imppnCd != ""'>
+                        AND B.IMPPN_IDFY_NO = #{imppnCd}
+                        </if>
+                        <if test='dcerCd != null and dcerCd != ""'>
+                        AND B.DCER_CD = #{dcerCd}
+                        </if>
+                        <if test='cstmCds != null and cstmCds.size() > 0'>
+                            <foreach item="cstmCdItem" collection="cstmCds" open="AND B.DCLR_CSTM_CD IN (" close=")" separator=",">
+                            <![CDATA[
+                            #{cstmCdItem}
+                            ]]>
+                            </foreach>
+                        </if>
+                        <if test='dtlDcshNo != null and dtlDcshNo != ""'>
+                           <![CDATA[
+                           AND A.DTL_DCSH_NO = REPLACE(#{dtlDcshNo}, '-')
+                           ]]>
+                        </if>
+                        UNION ALL
+                        SELECT    A.DTL_DCSH_NO
+                                , B.HIST_SRNO
+                                , C.PDLS_NO
+                                , C.HS_CD
+                                , C.QTY
+                                , C.QTY_UT_CD
+                                , C.PDLS_TTWG
+                                , E.PDLS_CACH_CURR_CD AS PDLS_INVC_CURR_CD
+                                , E.PDLS_INVC_NCY_AMT AS PDLS_INVC_AMT
+                                , E.PDLS_CACH_NCY_AMT
+                                , E.PDLS_INFEE_NCY_AMT
+                                , C.ORCY_CNTY_CD
+                                , D.TXRT
+                                , E.PDLS_TXBS_NCY_AMT AS TXBS_AMT
+                                , ( SELECT SUM(Z.TAX_AMT) AS TAX_AMT
+                                    FROM   TB_CLRI_DED_TAX Z
+                                    WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                    AND    C.PDLS_NO = Z.PDLS_NO
+                                    AND    Z.DEL_YN = 'N'
+                                  ) AS TAX_AMT
+                        FROM TB_RSMI_DED_SELC A
+                           , TB_CLRI_DED_COMN B
+                           , TB_CLRI_DED_PDLS C
+                           , TB_CLRI_DED_TAX D
+                           , TB_CLRI_DED_VLUT_PDLS E
+                        WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+                        AND   A.DTL_DCSH_NO = C.DTL_DCSH_NO
+                        AND   A.DTL_DCSH_NO = D.DTL_DCSH_NO(+)
+                        AND   C.PDLS_NO = D.PDLS_NO
+                        AND   D.TAX_CD(+) = 'D.D'
+                        AND   D.DEL_YN(+) = 'N'
+                        AND   A.DTL_DCSH_NO = E.DTL_DCSH_NO(+)
+                        AND   C.PDLS_NO = E.PDLS_NO
+                        AND   E.DEL_YN(+) = 'N'
+                        AND   B.HIST_SRNO = 0
+                        AND   A.SELC_DT BETWEEN TO_CHAR(TO_DATE(#{rgsrStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{rgsrEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                        <if test='imppnCd != null and imppnCd != ""'>
+                        AND B.IMPPN_IDFY_NO = #{imppnCd}
+                        </if>
+                        <if test='dcerCd != null and dcerCd != ""'>
+                        AND B.DCER_CD = #{dcerCd}
+                        </if>
+                        <if test='cstmCds != null and cstmCds.size() > 0'>
+                            <foreach item="cstmCdItem" collection="cstmCds" open="AND B.DCLR_CSTM_CD IN (" close=")" separator=",">
+                                <![CDATA[
+                                    #{cstmCdItem}
+                                ]]>
+                            </foreach>
+                        </if>
+                        <if test='dtlDcshNo != null and dtlDcshNo != ""'>
+                            <![CDATA[
+                                    AND A.DTL_DCSH_NO = REPLACE(#{dtlDcshNo}, '-')
+                                ]]>
+                        </if>
+            ) A
+            , (SELECT A.DTL_DCSH_NO
+                    , C.PDLS_NO
+                    , C.HS_CD
+                    , C.QTY
+                    , C.QTY_UT_CD
+                    , C.PDLS_TTWG
+                    , E.PDLS_CACH_CURR_CD AS PDLS_INVC_CURR_CD
+                    , E.PDLS_INVC_NCY_AMT AS PDLS_INVC_AMT
+                    , E.PDLS_CACH_NCY_AMT
+                    , E.PDLS_INFEE_NCY_AMT
+                    , C.ORCY_CNTY_CD
+                    , D.TXRT
+                    , E.PDLS_TXBS_NCY_AMT AS TXBS_AMT
+                    , A.SELC_RSLT_CD
+                    , ( SELECT SUM(Z.TAX_AMT) AS TAX_AMT
+                        FROM   TB_CLRI_DED_TAX Z
+                        WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                        AND    C.PDLS_NO = Z.PDLS_NO
+                        AND    Z.DEL_YN = 'N'
+                      ) AS TAX_AMT
+                FROM  TB_RSMI_DED_SELC A
+                    , TB_CLRI_DED_COMN B
+                    , TB_CLRI_DED_PDLS C
+                    , TB_CLRI_DED_TAX D
+                    , TB_CLRI_DED_VLUT_PDLS E
+                WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+                AND   A.DTL_DCSH_NO = C.DTL_DCSH_NO
+                AND   A.DTL_DCSH_NO = D.DTL_DCSH_NO(+)
+                AND   C.PDLS_NO = D.PDLS_NO
+                AND   D.TAX_CD(+) = 'D.D'
+                AND   D.DEL_YN(+) = 'N'
+                AND   C.DTL_DCSH_NO = E.DTL_DCSH_NO(+)
+                AND   C.PDLS_NO = E.PDLS_NO(+)
+                AND   E.DEL_YN(+) = 'N'
+                AND   B.HIST_SRNO > 0
+                AND   A.SELC_DT BETWEEN TO_CHAR(TO_DATE(#{rgsrStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{rgsrEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            ) B
+            WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO(+)
+            AND A.PDLS_NO = B.PDLS_NO(+)
+            GROUP BY A.DTL_DCSH_NO
+            ORDER BY A.DTL_DCSH_NO
+        ) A
+        , TB_CLRI_DED_INSC_RSLT B
+        , TB_CLRI_DED_COMN C
+        WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO(+)
+        AND   B.IPRT_PRCS_STTS_CD(+) = 'DD5'
+        AND   A.DTL_DCSH_NO = C.DTL_DCSH_NO
+        <trim prefix="AND (" suffix=")" prefixOverrides="OR">
+            <if test="mdfyPts.contains('01')">
+                OR A.HS_CD_MDFY_CNT > 0
+            </if>
+            <if test="mdfyPts.contains('02')">
+                OR A.QTY_MDFY_CNT > 0
+            </if>
+            <if test="mdfyPts.contains('03')">
+                OR A.PDLS_TTWG_MDFY_CNT > 0
+            </if>
+            <if test="mdfyPts.contains('04')">
+                OR A.PDLS_INVC_AMT_MDFY_CNT > 0
+            </if>
+            <if test="mdfyPts.contains('05')">
+                OR A.PDLS_CACH_NCY_AMT_MDFY_CNT > 0
+            </if>
+            <if test="mdfyPts.contains('06')">
+                OR A.PDLS_INFEE_NCY_AMT_MDFY_CNT > 0
+            </if>
+            <if test="mdfyPts.contains('07')">
+                OR A.ORCY_CNTY_CDMDFY_CNT > 0
+            </if>
+            <if test="mdfyPts.contains('08')">
+                OR A.TXRT_MDFY_CNT > 0
+            </if>
+        </trim>
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+      [Consulter la performance par type de modification] Consulter les détails !== [정정유형별실적] 상세조회   ==!
+    -->
+    <select id="selectMdfyPtPerDtlList"
+            parameterType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo"
+            resultType="alpass.ipt.rsm.smlt.vo.RsmSmltSelcStatsVo">
+        /* selectMdfyPtPerDtlList */
+        SELECT A.DTL_DCSH_NO                                        /** Numero du DED !== DED 번호 ==!*/
+             , A.PDLS_NO                                            /** N° d'article !== 품목번호 ==!*/
+             , A.HIST_SRNO AS INIT_HIST_SRNO                        /** Numero d'historique initial !== 최초이력번호 ==! */
+             , B.HIST_SRNO AS MDFY_HIST_SRNO                        /** Numero d'historique de rectification !== 정정이력번호 ==! */
+             , A.HS_CD AS INIT_HS_CD                                /** Code tarifaire initial !== 초기HS코드 ==!*/
+             , B.HS_CD AS MDFY_HS_CD                                /** Code tarifaire apres changement !== 변경후 HS코드 ==!*/
+             , A.QTY AS INIT_QTY                                    /** Quantite initiale !== 초기수량 ==!*/
+             , B.QTY AS MDFY_QTY                                    /** Quantite apres changement !== 변경후 수량 ==!*/
+             , A.QTY_UT_CD AS INIT_QTY_UT_CD                        /** Unite de quantite initiale !== 초기수량단위  ==!*/
+             , B.QTY_UT_CD AS MDFY_QTY_UT_CD                        /** Unite de quantite apres changement !== 변경후 수량단위 ==!*/
+             , A.PDLS_TTWG AS INIT_PDLS_TTWG                        /** Poids d'article initial  !== 초기품목중량 ==!*/
+             , B.PDLS_TTWG AS MDFY_PDLS_TTWG                        /** Poids d'article apres changement !== 변경후 품목중량 ==!*/
+             , A.PDLS_INVC_AMT AS INIT_PDLS_INVC_AMT                /** Montant de facture d'article initial !== 초기품목송장금액  ==!*/
+             , B.PDLS_INVC_AMT AS MDFY_PDLS_INVC_AMT                /** Montant de facture d'article apres changement !== 변경후 품목송장금액 ==!*/
+             , A.PDLS_CACH_NCY_AMT AS INIT_PDLS_CACH_NCY_AMT        /** Montant de transport d'article initial !== 초기품목운송금액 ==!*/
+             , B.PDLS_CACH_NCY_AMT AS MDFY_PDLS_CACH_NCY_AMT        /** Montant de transport d'article apres changement !== 변경후 품목운송금액 ==!*/
+             , A.PDLS_INFEE_NCY_AMT AS INIT_PDLS_INFEE_NCY_AMT      /** Montant de prime d'assurance initial !== 초기보험료금액 ==!*/
+             , B.PDLS_INFEE_NCY_AMT AS MDFY_PDLS_INFEE_NCY_AMT      /** Montant de prime d'assurance apres changement !== 변경후 보험료금액 ==!*/
+             , A.ORCY_CNTY_CD AS INIT_ORCY_CNTY_CD                  /** Code de pays d'origine initial !== 초기원산지코드 ==!*/
+             , B.ORCY_CNTY_CD AS MDFY_ORCY_CNTY_CD                  /** Code de pays d'origine apres changement !== 변경후 원산지코드 ==!*/
+             , A.TXRT AS INIT_TXRT                                  /** Taux de l'impot initial !== 초기세율 ==!*/
+             , B.TXRT AS MDFY_TXRT                                  /** Taux de l'impot apres changement !== 변경후 세율 ==!*/
+             , A.TXBS_AMT AS INIT_TXBS_AMT                          /** Montant de base de taxe initial !== 초기과세기준금액 ==!*/
+             , B.TXBS_AMT AS MDFY_TXBS_AMT                          /** Montant de base de taxe apres changement !== 변경후 과세기준금액 ==!*/
+             , A.TAX_AMT AS INIT_TAX_AMT                            /** Montant de taxe initial !== 초기세금금액 ==!*/
+             , B.TAX_AMT AS MDFY_TAX_AMT                            /** Montant de taxe apres changement !== 변경후세금금액 ==!*/
+             , A.DSCL_YN
+        FROM  ( SELECT A.DTL_DCSH_NO
+                     , B.HIST_SRNO
+                     , C.PDLS_NO
+                     , 'MOD'
+                     , C.HS_CD
+                     , C.QTY
+                     , C.QTY_UT_CD
+                     , C.PDLS_TTWG
+                     , E.PDLS_INVC_CURR_CD
+                     , E.PDLS_INVC_NCY_AMT AS PDLS_INVC_AMT
+                     , E.PDLS_CACH_NCY_AMT
+                     , E.PDLS_INFEE_NCY_AMT
+                     , C.ORCY_CNTY_CD
+                     , D.TXRT
+                     , E.PDLS_TXBS_NCY_AMT AS TXBS_AMT
+                     , ( SELECT SUM (Z.TAX_AMT) AS TAX_AMT
+                         FROM   TB_CLRI_DED_TAX_H Z
+                         WHERE  Z.HIST_SRNO = 0
+                         AND    A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                         AND    C.PDLS_NO = Z.PDLS_NO
+                         AND    Z.DEL_YN = 'N'
+                       ) AS TAX_AMT
+                     , NVL(( SELECT CASE WHEN NVL(H.INSC_1_RSLT_CD, '01') != '01' THEN 'Y'
+                                         ELSE 'N'
+                                    END
+                             FROM TB_CLRI_DED_PDLS_INSC_RSLT H
+                                , TB_CLRI_DED_INSC_RSLT I
+                             WHERE H.DTL_DCSH_NO(+) = C.DTL_DCSH_NO
+                             AND H.PDLS_NO(+) = C.PDLS_NO
+                             AND I.DTL_DCSH_NO(+) = C.DTL_DCSH_NO
+                             AND I.IPRT_PRCS_STTS_CD(+) = 'DD5'
+                             AND I.VIST_INSC_RQST_DGCNT = H.VIST_INSC_RQST_DGCNT
+                             AND I.VIST_INSC_RQST_DGCNT = (SELECT MAX(VIST_INSC_RQST_DGCNT)
+                                                             FROM TB_CLRI_DED_INSC_RSLT
+                                                            WHERE DTL_DCSH_NO = C.DTL_DCSH_NO
+                                                              AND IPRT_PRCS_STTS_CD = 'DD5'
+                                                              AND DEL_YN = 'N')
+                           ), 'N') AS DSCL_YN
+                FROM   TB_RSMI_DED_SELC A
+                     , TB_CLRI_DED_COMN_H B
+                     , TB_CLRI_DED_PDLS_H C
+                     , TB_CLRI_DED_TAX_H D
+                     , TB_CLRI_DED_VLUT_PDLS_H E
+                WHERE  A.DTL_DCSH_NO = B.DTL_DCSH_NO
+                AND    B.HIST_SRNO = C.HIST_SRNO(+)
+                AND    A.DTL_DCSH_NO = C.DTL_DCSH_NO
+                AND    A.DTL_DCSH_NO = D.DTL_DCSH_NO(+)
+                AND    C.HIST_SRNO = D.HIST_SRNO
+                AND    C.PDLS_NO = D.PDLS_NO
+                AND    D.TAX_CD(+) = 'D.D'
+                AND    D.DEL_YN(+) = 'N'
+                AND    A.DTL_DCSH_NO = E.DTL_DCSH_NO(+)
+                AND    C.PDLS_NO = E.PDLS_NO
+                AND    E.DEL_YN(+) = 'N'
+                AND    C.HIST_SRNO = E.HIST_SRNO
+                AND    B.HIST_SRNO = 0
+                AND    A.DTL_DCSH_NO = #{dtlDcshNo}
+                UNION ALL
+                SELECT A.DTL_DCSH_NO
+                     , B.HIST_SRNO
+                     , C.PDLS_NO
+                     , 'MOD'
+                     , C.HS_CD
+                     , C.QTY
+                     , C.QTY_UT_CD
+                     , C.PDLS_TTWG
+                     , E.PDLS_INVC_CURR_CD
+                     , E.PDLS_INVC_NCY_AMT AS PDLS_INVC_AMT
+                     , E.PDLS_CACH_NCY_AMT
+                     , E.PDLS_INFEE_NCY_AMT
+                     , C.ORCY_CNTY_CD
+                     , D.TXRT
+                     , E.PDLS_TXBS_NCY_AMT AS TXBS_AMT
+                     , ( SELECT SUM (Z.TAX_AMT) AS TAX_AMT
+                         FROM   TB_CLRI_DED_TAX Z
+                         WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                         AND    C.PDLS_NO = Z.PDLS_NO
+                         AND    Z.DEL_YN = 'N'
+                       ) AS TAX_AMT
+                     , NVL(( SELECT CASE WHEN NVL(H.INSC_1_RSLT_CD, '01') != '01' THEN 'Y'
+                                         ELSE 'N'
+                                    END
+                             FROM TB_CLRI_DED_PDLS_INSC_RSLT H
+                                , TB_CLRI_DED_INSC_RSLT I
+                             WHERE H.DTL_DCSH_NO(+) = C.DTL_DCSH_NO
+                             AND H.PDLS_NO(+) = C.PDLS_NO
+                             AND I.DTL_DCSH_NO(+) = C.DTL_DCSH_NO
+                             AND I.IPRT_PRCS_STTS_CD(+) = 'DD5'
+                             AND I.VIST_INSC_RQST_DGCNT = H.VIST_INSC_RQST_DGCNT
+                             AND I.VIST_INSC_RQST_DGCNT = (SELECT MAX(VIST_INSC_RQST_DGCNT)
+                                                             FROM TB_CLRI_DED_INSC_RSLT
+                                                            WHERE DTL_DCSH_NO = C.DTL_DCSH_NO
+                                                              AND IPRT_PRCS_STTS_CD = 'DD5'
+                                                              AND DEL_YN = 'N')
+                           ), 'N') AS DSCL_YN
+                FROM   TB_RSMI_DED_SELC A
+                     , TB_CLRI_DED_COMN B
+                     , TB_CLRI_DED_PDLS C
+                     , TB_CLRI_DED_TAX D
+                     , TB_CLRI_DED_VLUT_PDLS E
+                WHERE  A.DTL_DCSH_NO = B.DTL_DCSH_NO
+                AND    A.DTL_DCSH_NO = C.DTL_DCSH_NO
+                AND    A.DTL_DCSH_NO = D.DTL_DCSH_NO(+)
+                AND    C.PDLS_NO = D.PDLS_NO
+                AND    D.TAX_CD(+) = 'D.D'
+                AND    D.DEL_YN(+) = 'N'
+                AND    A.DTL_DCSH_NO = E.DTL_DCSH_NO(+)
+                AND    C.PDLS_NO = E.PDLS_NO
+                AND    E.DEL_YN(+) = 'N'
+                AND    B.HIST_SRNO = 0
+                AND    A.DTL_DCSH_NO = #{dtlDcshNo}
+        ) A
+        , ( SELECT A.DTL_DCSH_NO
+                 , NVL(B.HIST_SRNO, 0) AS HIST_SRNO
+                 , C.PDLS_NO
+                 , 'ORG'AS DIV
+                 , C.HS_CD
+                 , C.QTY
+                 , C.QTY_UT_CD
+                 , C.PDLS_TTWG
+                 , E.PDLS_INVC_CURR_CD
+                 , E.PDLS_INVC_NCY_AMT AS PDLS_INVC_AMT
+                 , E.PDLS_CACH_NCY_AMT
+                 , E.PDLS_INFEE_NCY_AMT
+                 , C.ORCY_CNTY_CD
+                 , D.TXRT
+                 , E.PDLS_TXBS_NCY_AMT AS TXBS_AMT
+                 , ( SELECT SUM (Z.TAX_AMT) AS TAX_AMT
+                     FROM   TB_CLRI_DED_TAX Z
+                     WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                     AND    C.PDLS_NO = Z.PDLS_NO
+                     AND    Z.DEL_YN = 'N'
+                   ) AS TAX_AMT
+            FROM   TB_RSMI_DED_SELC A
+                 , TB_CLRI_DED_COMN B
+                 , TB_CLRI_DED_PDLS C
+                 , TB_CLRI_DED_TAX D
+                 , TB_CLRI_DED_VLUT_PDLS E
+            WHERE  A.DTL_DCSH_NO = B.DTL_DCSH_NO
+            AND    A.DTL_DCSH_NO = C.DTL_DCSH_NO
+            AND    A.DTL_DCSH_NO = D.DTL_DCSH_NO(+)
+            AND    C.PDLS_NO = D.PDLS_NO
+            AND    D.TAX_CD(+) = 'D.D'
+            AND    D.DEL_YN(+) = 'N'
+            AND    C.DTL_DCSH_NO = E.DTL_DCSH_NO(+)
+            AND    C.PDLS_NO = E.PDLS_NO(+)
+            AND    E.DEL_YN(+) = 'N'
+            AND    A.DTL_DCSH_NO = #{dtlDcshNo}
+            AND    B.HIST_SRNO > 0
+        ) B
+        WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO(+)
+        AND   A.PDLS_NO = B.PDLS_NO(+)
+        ORDER BY A.DTL_DCSH_NO, TO_NUMBER(A.PDLS_NO)
+    </select>
+
+    <sql id="selectAudtEmpId">
+        SELECT A.DTL_DCSH_NO                    /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+             , B.AUDT_EMP_ID AS PSBR_NO         /** N˚ matricule solde !== 공무원번호 ==! */
+             , B.AUDT_EMP_ID || '(' || C.EMP_NM || ')' AS PSBR_NO_NM        /** Nom matricule solde !== 공무원명 ==!*/
+             , 'A' AS INQT_PT_CD                /** Type de consultation !== 조회유형 ==! */
+             , B.DCLR_CSTM_CD                   /** Bureau !== 세관코드 ==! */
+             , B.DCLR_PT_CD                     /** Code de type de déclaration !== 신고유형코드 ==! */
+             , NVL(B.HIST_SRNO, 0) AS HIST_SRNO     /** N° de sequence de l'historique !== 이력일련번호 ==! */
+             , A.TAX_AMT                        /** Montant De La Taxe !== 세금금액 ==! */
+             , A.TXBS_AMT                       /** Montant de base d'imposition !== 과세기준금액 ==! */
+        FROM TB_RSMI_DED_SELC A
+           , TB_CLRI_DED_COMN B
+           , TB_POTI_EMP C
+        WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+        AND B.AUDT_EMP_ID = C.PBSR_NO(+)
+        AND A.DEL_YN = 'N'
+        AND B.DEL_YN = 'N'
+        AND B.AUDT_EMP_ID IS NOT NULL
+        AND B.PRCS_STTS_CD NOT IN ('A01', 'A03', 'A04', 'C02', 'B01', 'B02' )
+        <if test='audtEmpId != null and audtEmpId != ""'>
+            <![CDATA[
+            AND    B.AUDT_EMP_ID = #{audtEmpId}
+            ]]>
+        </if>
+        <include refid="searchSelcDt"/>
+        <if test='cstmCds != null and cstmCds.size() > 0'>
+            <foreach item="cstmCdItem" collection="cstmCds" open="AND B.DCLR_CSTM_CD IN (" close=")" separator=",">
+            <![CDATA[
+            #{cstmCdItem}
+            ]]>
+            </foreach>
+        </if>
+    </sql>
+
+    <sql id="selectInscEmpId">
+        SELECT A.DTL_DCSH_NO                /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+             , B.INSC_EMP_ID AS PSBR_NO     /** N˚ matricule solde !== 공무원번호 ==! */
+             , B.INSC_EMP_ID || '(' || C.EMP_NM || ')' AS PSBR_NO_NM        /** Nom matricule solde !== 공무원명 ==!*/
+             , 'B' AS INQT_PT_CD            /** Type de consultation !== 조회유형 ==! */
+             , B.DCLR_CSTM_CD               /** Bureau !== 세관코드 ==! */
+             , B.DCLR_PT_CD                 /** Code de type de déclaration !== 신고유형코드 ==! */
+             , NVL(B.HIST_SRNO, 0) AS HIST_SRNO     /** N° de sequence de l'historique !== 이력일련번호 ==! */
+             , A.TAX_AMT                    /** Montant De La Taxe !== 세금금액 ==! */
+             , A.TXBS_AMT                   /** Montant de base d'imposition !== 과세기준금액 ==! */
+        FROM  TB_RSMI_DED_SELC A
+            , TB_CLRI_DED_COMN B
+            , TB_POTI_EMP C
+        WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+        AND   B.INSC_EMP_ID = C.PBSR_NO(+)
+        AND A.DEL_YN = 'N'
+        AND B.DEL_YN = 'N'
+        AND B.INSC_EMP_ID IS NOT NULL
+        AND B.PRCS_STTS_CD NOT IN ('A01', 'A03', 'A04', 'C02', 'B01', 'B02' )
+        <if test='inscEmpId != null and inscEmpId != ""'>
+        <![CDATA[
+        AND    B.INSC_EMP_ID = #{inscEmpId}
+        ]]>
+        </if>
+        <include refid="searchSelcDt"/>
+        <if test='cstmCds != null and cstmCds.size() > 0'>
+            <foreach item="cstmCdItem" collection="cstmCds" open="AND B.DCLR_CSTM_CD IN (" close=")" separator=",">
+            <![CDATA[
+            #{cstmCdItem}
+            ]]>
+            </foreach>
+        </if>
+    </sql>
+
+    <!--
+      [Consulter la performance par inspecteur/agent de visite] Consulter la liste !== [심사자/검사자실적] 목록조회 ==!
+    -->
+    <select id="selectInscPtList" parameterType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo" resultType="alpass.ipt.rsm.smlt.vo.RsmSmltSelcStatsVo">
+        /* selectInscPtList */
+        WITH COLI_NTFC AS (
+            SELECT A.REFF_NO AS DTL_DCSH_NO
+                 , DECODE(COUNT(*), 0, 'N', 'Y') AS NTFC_YN
+                 , SUM(A.FINE_AMT) AS FINE_AMT
+            FROM   TB_COLI_NTFC A
+            WHERE  A.NTFC_PT_CD = 'A'
+            AND    A.REFF_NO_PT_CD = '002'
+            AND    A.DEL_YN = 'N'
+            AND    A.CNCL_YN = 'N'
+            GROUP BY A.REFF_NO
+        )
+        , DED_ADRT_D AS (
+            SELECT A.DTL_DCSH_NO
+                 , DECODE (COUNT (*), 0, 'N', 'Y') AS ADRT_YN
+            FROM   TB_CLRI_DED_ADRT_D A
+            WHERE  A.DEL_YN = 'N'
+            AND    A.AUDT_RSLT_CD NOT IN ('NORM00', 'ATVALU')
+            GROUP BY A.DTL_DCSH_NO
+        )
+        <include refid="pagination.header" />
+        SELECT
+              INQT_PT_CD    /** Type de consultation !== 조회유형 ==! */
+            , PSBR_NO       /** N˚ matricule solde !== 공무원번호 ==! */
+            , PSBR_NO_NM    /** Nom matricule solde !== 공무원명 ==! */
+            , SELC_CNT      /** Nombre de ciblage !== 선별건수 ==! */
+            , SELC_CHG_CNT  /** !== 선별변경건수 ==! */
+            , TAX_AMT       /** Taxe !== 세금 ==!*/
+            , TXBS_AMT      /** Valeur statistique(DZD) !== 과세기준가격 ==! */
+            , DSCL_TAX_AMT  /** Droits et taxes de déclaration détectée  !== 적발세금금액 ==!*/
+            , DSCL_TXBS_AMT /** Valeur statistique de déclaration détectée !== 적발과세기준금액 ==!*/
+            , DSCL_CNT      /** Nombre de détection !== 적발건수 ==! */
+            , NTFC_TAX_AMT  /*  Montant D'Amende !== 벌금 금액 ==! */
+            , NVL((DSCL_CNT/SELC_CNT) * 100, 0) AS DSCL_RT /** Taux de détection !== 적발율 ==!*/
+        FROM
+        (
+            SELECT A.INQT_PT_CD
+                 , PSBR_NO
+                 , MAX(PSBR_NO_NM) AS PSBR_NO_NM
+                 , COUNT(*) AS SELC_CNT /** Nombre de ciblage !== 선별건수 ==! */
+                 , SUM(TAX_AMT) AS TAX_AMT /** Taxe !== 세금 ==!*/
+                 , SUM(TXBS_AMT) AS TXBS_AMT /** Valeur statistique(DZD) !== 과세기준가격 ==! */
+                 , SUM(DSCL_TAX_AMT) AS DSCL_TAX_AMT
+                 , SUM(DSCL_TXBS_AMT) AS DSCL_TXBS_AMT
+                 , NVL(SUM(CASE WHEN A.DSCL_YN = 'Y' OR A.NTFC_YN = 'Y' OR A.ADRT_YN = 'Y' THEN 1 ELSE 0 END), 0) AS DSCL_CNT /** Nombre de détection !== 적발건수 ==! */
+                 , NVL(SUM(A.FINE_AMT), 0) AS NTFC_TAX_AMT   /**  벌금 금액*/
+                 , NVL(SUM(CASE WHEN A.SELC_CHG_YN = 'Y' THEN 1 ELSE 0 END),0) AS  SELC_CHG_CNT
+            FROM  (
+                SELECT A.DTL_DCSH_NO
+                     , A.PSBR_NO /** N˚ matricule solde !== 공무원번호 ==! */
+                     , A.PSBR_NO_NM /** Nom matricule solde !== 공무원명 ==!*/
+                     , A.INQT_PT_CD /** Type de consultation !== 조회유형코드 ==! */
+                     , A.DSCL_YN
+                     , B.NTFC_YN
+                     , C.ADRT_YN
+                     , A.TAX_AMT /** Taxe !== 세금 ==!*/
+                     , A.TXBS_AMT /** Valeur statistique(DZD) !== 과세기준가격 ==! */
+                     , DECODE((SELECT COUNT(*)
+                               FROM   TB_RSMI_SELC_CHG_MGMT T
+                               WHERE  T.DTL_DCSH_NO = A.DTL_DCSH_NO
+                               AND    (SELECT APRV_PRCS_STTS_CD FROM TB_POTI_APRV WHERE APRV_ID = T.APRV_ID) = 'I04'
+                               AND    T.DEL_YN = 'N'
+                              ), 0, 'N', 'Y') AS SELC_CHG_YN
+                     , CASE WHEN (     A.DSCL_YN = 'Y'
+                                    OR B.NTFC_YN = 'Y'
+                                    OR C.ADRT_YN = 'Y'
+                                  )
+                                  AND A.HIST_SRNO > 0 THEN ABS (TAX_AMT - ( SELECT SUM(Z.TAX_AMT)
+                                                                            FROM   TB_CLRI_DED_TAX Z
+                                                                            WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                                        /*  AND    Z.PDLS_NO != '0'  */
+                                                                            AND    Z.DEL_YN = 'N'))
+                            ELSE 0
+                       END DSCL_TAX_AMT
+                     , CASE WHEN (    A.DSCL_YN = 'Y'
+                                   OR B.NTFC_YN = 'Y'
+                                   OR C.ADRT_YN = 'Y'
+                                 )
+                                 AND A.HIST_SRNO > 0 THEN ABS (A.TXBS_AMT - ( SELECT Z.TTXBS_NCY_AMT
+                                                                              FROM   TB_CLRI_DED_VLUT_COMN Z
+                                                                              WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                                              AND    Z.DEL_YN = 'N'))
+                            ELSE 0
+                       END DSCL_TXBS_AMT
+                     , B.FINE_AMT
+                FROM ( SELECT  A.DTL_DCSH_NO
+                             , A.INQT_PT_CD
+                             , A.PSBR_NO_NM AS PSBR_NO_NM
+                             , A.PSBR_NO
+                             , A.HIST_SRNO
+                             , A.TAX_AMT /** Taxe !== 세금 ==!*/
+                             , A.TXBS_AMT /** Valeur statistique(DZD) !== 과세기준가격 ==! */
+                             , B.DSCL_YN
+                       FROM (
+                               <choose>
+                                   <when test='(audtEmpId == "" and inscEmpId == "") or (audtEmpId != "" and inscEmpId != "")'>
+                                       <include refid="selectAudtEmpId"/>
+                                       UNION ALL
+                                       <include refid="selectInscEmpId"/>
+                                   </when>
+                                   <when test='audtEmpId != null and audtEmpId != ""'>
+                                       <include refid="selectAudtEmpId"/>
+                                   </when>
+                                   <when test='inscEmpId != null and inscEmpId != ""'>
+                                       <include refid="selectInscEmpId"/>
+                                   </when>
+                               </choose>
+                       ) A
+                       , TB_CLRI_DED_INSC_RSLT B
+                       WHERE  A.DTL_DCSH_NO = B.DTL_DCSH_NO(+)
+                       AND    B.IPRT_PRCS_STTS_CD(+) = 'DD5'
+                ) A
+                , COLI_NTFC B
+                , DED_ADRT_D C
+                WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO(+)
+                AND   A.DTL_DCSH_NO = C.DTL_DCSH_NO(+)
+           ) A
+           GROUP BY A.PSBR_NO
+                  , A.INQT_PT_CD
+           ORDER BY A.PSBR_NO
+                  , A.INQT_PT_CD
+        )
+        <include refid="pagination.footer"/>
+        
+    </select>
+
+
+    <!--
+      [Consulter l'historique de critères] Consulter la liste !== [기준내역조회] 목록 조회  ==!
+    -->
+    <select id="selectAnayBaseBrkdList" parameterType="alpass.ipt.rsm.anay.vo.RsmAnayComnVo" resultType="alpass.ipt.rsm.com.vo.RsmBaseMgmtComnVo">
+        /* selectAnayBaseBrkdList */
+        <include refid="pagination.header"/>
+        SELECT A.APLY_BASE_CLSF_CD      /** Type de critères !== 기준유형= =! */
+             , A.RQST_BASE_CLSF_CD      /** Code de classification du critère renseigné !== 신청기준분류코드 ==! */
+             , A.BASE_RQST_TP_CD        /** Code de type de renseignement !== 기준신청구분코드 ==! */
+             , A.BASE_RGSR_NO           /** Numéro d'enregistrement de critère !== 기준등록번호 ==! */
+             , A.APLY_STRT_DT           /** Date de départ de l'application !== 적용시작일자 ==!*/
+             , A.APLY_END_DT            /** Date de fin de l'application !== 적용종료일자 ==!*/
+             , TO_CHAR(TO_DATE(A.APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') || '~' || TO_CHAR(TO_DATE(A.APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS APLY_DT /** Durée d'application  !== 적용기간 ==!*/
+             , A.BASE_DESC              /** Description de critère !== 기준설명 ==!*/
+             , A.APLY_CSTM_TP_CD        /** Code de type de bureau  !== 적용세관구분코드 ==!*/
+             , A.BASE_APLY_YN           /** En vigueur O/N !== 기준적용여부 ==!*/
+             , A.BASE_PRCS_STTS_CD      /** Code de statut de critère  !== 기준처리상태코드 ==!*/
+             , A.FRST_REGST_ID          /** ID du premier enregistrant  !== 최초등록자ID ==!*/
+             , ( SELECT EMP_NM
+                 FROM   TB_POTI_EMP
+                 WHERE  PBSR_NO = A.FRST_REGST_ID
+               ) AS FRST_REGST_NM  /* Nom du premier enregistrant  !== 최초등록자이름 ==! */
+             , ( SELECT LISTAGG(DCLR_PT_CD, ',') WITHIN GROUP (ORDER BY DCLR_PT_CD)
+                 FROM   TB_RSMI_DCLR_PT_BASE
+                 WHERE  BASE_RGSR_NO=A.BASE_RGSR_NO
+               ) AS DCLR_PT_CD /** Modèle de déclaration  !== 신고유형코드 ==!*/
+             , ( SELECT TO_CHAR(APRV_PRCS_DTTM, 'YYYYMMDD')
+                 FROM  TB_POTI_APRV_D X
+                 WHERE X.APRV_ID = A.APRV_ID
+                 AND   X.APRV_SRNO = ( SELECT MAX(APRV_SRNO)
+                                       FROM TB_POTI_APRV_D Y
+                                       WHERE  Y.APRV_ID = X.APRV_ID
+                                     )
+                 AND   X.APRV_RSLT_CD = 'J01'
+               ) AS APRE_DT /** Date d'autorisation !== 승인일자 ==!*/
+        FROM  TB_RSMI_BASE_MGMT_COMN A
+        WHERE A.DEL_YN = 'N'
+        <if test='(aplyStrtDt != null and !"".equals(aplyStrtDt)) and (aplyEndDt != null and !"".equals(aplyEndDt))'>
+            AND A.APLY_STRT_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            AND A.APLY_END_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        </if>
+
+        <if test='rqstBaseClsfCds != null and rqstBaseClsfCds.size() > 0'>
+            <foreach item="rqstBaseClsfCd" collection="rqstBaseClsfCds" open="AND A.RQST_BASE_CLSF_CD IN (" close=")"
+                     separator=",">
+                #{rqstBaseClsfCd}
+            </foreach>
+        </if>
+
+        <if test='baseRqstTpCds != null and baseRqstTpCds.size() > 0'>
+            <foreach item="baseRqstTpCd" collection="baseRqstTpCds" open="AND A.BASE_RQST_TP_CD IN (" close=")"
+                     separator=",">
+                #{baseRqstTpCd}
+            </foreach>
+        </if>
+
+        <if test='basePrcsSttsCds != null and basePrcsSttsCds.size() > 0'>
+            <foreach item="basePrcsSttsCd" collection="basePrcsSttsCds" open="AND A.BASE_PRCS_STTS_CD IN (" close=")"
+                     separator=",">
+                #{basePrcsSttsCd}
+            </foreach>
+        </if>
+
+        <if test='baseAplyYns != null and baseAplyYns.size() > 0'>
+            <foreach item="baseAplyYn" collection="baseAplyYns" open="AND A.BASE_APLY_YN IN (" close=")" separator=",">
+                #{baseAplyYn}
+            </foreach>
+        </if>
+
+        <if test='dcshTpCds != null and dcshTpCds.size() > 0'>
+            <foreach item="dcshTpCd" collection="dcshTpCds" open="AND A.DCSH_TP_CD IN (" close=")" separator=",">
+                #{dcshTpCd}
+            </foreach>
+        </if>
+        <if test="baseRgsrNo != '' and baseRgsrNo != null">
+            AND A.BASE_RGSR_NO = REPLACE(#{baseRgsrNo}, '-')
+        </if>
+        <if test="baseDesc != '' and baseDesc != null">
+            <![CDATA[
+            AND A.BASE_DESC LIKE '%' || #{baseDesc} || '%'
+            ]]>
+        </if>
+        ORDER BY DECODE(#{sort}, '01', A.BASE_RGSR_NO, '02', A.APLY_STRT_DT, '03', A.APLY_END_DT) DESC
+
+        <include refid="pagination.footer"/>
+    </select>
+
+
+    <sql id="selectSelcMnfs">
+    SELECT A.CAG_MGMT_NO            /** CRN !== 화물관리번호 ==! */
+         , A.APLY_BASE_CLSF_CD      /** Code De Classification De Critère En Vigueur !== 적용기준분류코드 ==! */
+         , A.RQST_BASE_CLSF_CD      /** Code de classification du critère renseigné !== 신청기준분류코드 ==! */
+         , A.BASE_RGSR_NO           /** Numéro D'Enregistrement !== 기준등록번호 ==! */
+         , A.BASE_RQST_TP_CD        /** Code De Type De Renseignement  !== 기준신청구분코드 ==! */
+         , A.SELC_DT                /** Date De Ciblage  !== 선별일자 ==! */
+         , A.SELC_TRGT_YN           /** Sélectivité O/N !== 선별대상여부 ==! */
+         , A.JRSD_ORGN_CD           /** Code D'Unité Compétente !== 관할조직코드 ==! */
+    FROM (
+        SELECT /*+ INDEX(B TB_RSMI_BASE_MGMT_COMN_IX02)*/
+             ROW_NUMBER() OVER ( PARTITION BY A.CAG_MGMT_NO ORDER BY DECODE (A.APLY_BASE_CLSF_CD, 'MA', 1
+                                                                                                , 'HR', 2
+                                                                                                , 'SY', 3
+                                                                                                , 4)
+                                                                    , B.APLY_PROR_RNK
+                                                                    , A.FRST_RGSR_DTTM
+                               ) AS RNK
+           , A.CAG_MGMT_NO
+           , A.BASE_RGSR_NO
+           , A.APLY_BASE_CLSF_CD
+           , A.SELC_DT
+           , A.SELC_TRGT_YN
+           , B.RQST_BASE_CLSF_CD
+           , B.BASE_RQST_TP_CD
+           , C.JRSD_ORGN_CD
+        FROM TB_RSMI_MNFS_SELC A
+            , TB_RSMI_BASE_MGMT_COMN B
+            , TB_CARI_CAG_DCSH C
+            , TB_CARI_CAG_DCSH_BL D
+        WHERE A.BASE_RGSR_NO = B.BASE_RGSR_NO
+        AND   A.CAG_MGMT_NO = D.CAG_MGMT_NO
+        AND   C.MRN = D.MRN
+        AND   A.DEL_YN = 'N'
+        AND   B.DEL_YN = 'N'
+        AND   C.DEL_YN = 'N'
+        AND   D.DEL_YN = 'N'
+        /** AND   C.BL_PT_CD = 'M' */
+        <if test='rqstBaseClsfCd != null and rqstBaseClsfCd != ""'>
+        AND   B.RQST_BASE_CLSF_CD = #{rqstBaseClsfCd}
+        </if>
+        <if test='cstmCd != null and cstmCd != ""'>
+        AND   C.JRSD_ORGN_CD = #{cstmCd}
+        </if>
+        AND   A.SELC_DT BETWEEN TO_CHAR(TO_DATE(#{rgsrStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{rgsrEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        UNION
+        SELECT /*+ INDEX(A TB_RSMI_MNFS_SELC_IX02) */
+               ROW_NUMBER() OVER (PARTITION BY A.CAG_MGMT_NO ORDER BY DECODE (A.APLY_BASE_CLSF_CD , 'MA', 1
+                                                                                                  , 'HR', 2
+                                                                                                  , 'SY', 3
+                                                                                                  , 4)
+                                                                      , B.APLY_PROR_RNK
+                                                                      , A.FRST_RGSR_DTTM
+                                 ) AS RNK
+             , A.CAG_MGMT_NO
+             , A.BASE_RGSR_NO
+             , A.APLY_BASE_CLSF_CD
+             , A.SELC_DT
+             , A.SELC_TRGT_YN
+             , B.RQST_BASE_CLSF_CD
+             , B.BASE_RQST_TP_CD
+             , C.JRSD_ORGN_CD
+        FROM TB_RSMI_MNFS_SELC A
+           , TB_RSMI_BASE_MGMT_COMN B
+           , ( SELECT DCSH.JRSD_ORGN_CD
+                    , BL.CAG_MGMT_NO
+               FROM TB_CARI_CAG_DCSH DCSH
+                  , TB_CARI_CAG_DCSH_BL BL
+               WHERE DCSH.MRN = BL.MRN
+               AND DCSH.DEL_YN = 'N'
+               AND BL.DEL_YN = 'N'
+             ) C
+        WHERE A.BASE_RGSR_NO = B.BASE_RGSR_NO
+        AND   A.CAG_MGMT_NO = C.CAG_MGMT_NO
+        AND   A.DEL_YN = 'N'
+        AND   B.DEL_YN = 'N'
+        <if test='rqstBaseClsfCd != null and rqstBaseClsfCd != ""'>
+        AND   B.RQST_BASE_CLSF_CD = #{rqstBaseClsfCd}
+        </if>
+        <if test='cstmCd != null and cstmCd != ""'>
+        AND   C.JRSD_ORGN_CD = #{cstmCd}
+        </if>
+        AND   A.SELC_DT BETWEEN TO_CHAR(TO_DATE(#{rgsrStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{rgsrEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+    ) A
+    WHERE  A.RNK = 1
+    </sql>
+
+    <!--
+      [Consulter le résultat de ciblage de la déclaration de cargaison] Consulter la liste !== [화물신고서선별실적] 목록조회 ==!
+    -->
+    <select id="selectAnayMnfsPerList" parameterType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo" resultType="alpass.ipt.rsm.smlt.vo.RsmSmltSelcStatsVo">
+        /** selectAnayMnfsPerList */
+        SELECT NVL(RQST_BASE_CLSF_CD, 'TOTAL') AS RQST_BASE_CLSF_CD         /** Code de classification du critère renseigné !== 신청기준분류코드 ==! */
+             , SUM(CAST(NVL(CAG_CNT,0) as INTEGER)) OVER() / 2 AS CAG_CNT   /** Nombre de fret !== 화물건수 ==! */
+             , NVL(SELC_CNT,0) AS SELC_CNT      /** Nombre de saisi !== 선별건수 ==!*/
+             , DECODE( NVL(SELC_CNT,0), 0, 0, (SELC_CNT / (SUM(CAG_CNT) OVER() / 2)) * 100 ) AS SELC_RT     /** Taux de ciblage !== 선별율 ==!*/
+             , NVL(DSCL_CNT,0) AS DSCL_CNT      /** Nombre de détection !== 적발건수 ==!*/
+             , NVL(DSCL_RT,0) AS DSCL_RT        /** Taux de détection !== 적발율 ==!*/
+        FROM (
+            SELECT A.RQST_BASE_CLSF_CD
+                 , SUM(1)  AS CAG_CNT
+                 , COUNT(1) AS SELC_CNT
+                 , SUM(DSCL_CNT) AS DSCL_CNT
+                 , (SUM(DSCL_CNT) / COUNT(1)) * 100 AS DSCL_RT
+            FROM   (
+                SELECT A.CAG_MGMT_NO
+                     , A.APLY_BASE_CLSF_CD
+                     , A.RQST_BASE_CLSF_CD
+                     , A.BASE_RGSR_NO
+                     , A.BASE_RQST_TP_CD
+                     , A.SELC_DT
+                     , A.SELC_TRGT_YN
+                     , ( SELECT COUNT(*)
+                         FROM   TB_CLRI_DED_COMN Z
+                              , TB_CLRI_DED_INSC_RSLT Y
+                         WHERE  Z.CAG_MGMT_NO = A.CAG_MGMT_NO
+                         AND    Z.DTL_DCSH_NO = Y.DTL_DCSH_NO
+                         AND    Y.IPRT_PRCS_STTS_CD = 'DD5'
+                         AND    Y.DSCL_YN = 'Y'
+                         AND    Z.DEL_YN = 'N'
+                         AND    Y.DEL_YN = 'N'
+                       ) AS DSCL_CNT
+                FROM  (
+                    SELECT A.CAG_MGMT_NO
+                         , A.APLY_BASE_CLSF_CD
+                         , A.RQST_BASE_CLSF_CD
+                         , A.BASE_RGSR_NO
+                         , A.BASE_RQST_TP_CD
+                         , A.SELC_DT
+                         , A.SELC_TRGT_YN
+                    FROM (
+                        SELECT /*+ INDEX(A TB_RSMI_MNFS_SELC_IX02) */
+                               ROW_NUMBER() OVER (PARTITION BY A.CAG_MGMT_NO ORDER BY DECODE (A.APLY_BASE_CLSF_CD , 'MA', 1
+                                                                                                                  , 'HR', 2
+                                                                                                                  , 'SY', 3
+                                                                                                                  , 'RA', 4
+                                                                                                                  , 5)
+                                                                                    , B.APLY_PROR_RNK
+                                                                                    , A.FRST_RGSR_DTTM
+                                                 ) AS RNK
+                              , A.CAG_MGMT_NO
+                              , A.BASE_RGSR_NO
+                              , A.APLY_BASE_CLSF_CD
+                              , A.SELC_DT
+                              , A.SELC_TRGT_YN
+                              , B.RQST_BASE_CLSF_CD
+                              , B.BASE_RQST_TP_CD
+                        FROM TB_RSMI_MNFS_SELC A
+                           , TB_RSMI_BASE_MGMT_COMN B
+                        WHERE A.BASE_RGSR_NO = B.BASE_RGSR_NO
+                        AND   A.SELC_DT BETWEEN TO_CHAR(TO_DATE(#{rgsrStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{rgsrEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                        AND   A.DEL_YN = 'N'
+                        AND   B.DEL_YN = 'N'
+                    ) A
+                    WHERE  A.RNK = 1
+                ) A
+                WHERE A.APLY_BASE_CLSF_CD NOT IN ('AO','CW', 'SW')
+            ) A
+            GROUP BY ROLLUP(A.RQST_BASE_CLSF_CD)
+        )
+        ORDER BY DECODE(RQST_BASE_CLSF_CD, 'MA', 1, 'HR', 2, 'SY', 3, 'RA', 4, 5)
+    </select>
+
+    <!--
+      [Résultat de ciblage DDC / par jour] Consulter les détails !== [일별화물신고서 선별 조회] 상세조회 ==!
+    -->
+    <select id="selectAnayMnfsPerDtlList" parameterType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo" resultType="alpass.ipt.rsm.smlt.vo.RsmSmltSelcStatsVo">
+        /** selectAnayMnfsPerDtlList */
+        SELECT A.TOT_CNT        /** Nombre Total De Cas !== 총건수 ==! */
+             , A.SELC_DT        /** Date de ciblage !== 선별일자 ==! */
+             , A.CAG_MGMT_NO    /** CRN !== 화물관리번호 ==! */
+             , A.BASE_RGSR_NO   /** Numéro d'enregistrement !== 기준등록번호 ==! */
+             , B.DTL_DCSH_NO    /** N° de DED !== DED ==! */
+             , NVL(( SELECT DSCL_YN
+                     FROM   TB_CLRI_DED_INSC_RSLT Z
+                     WHERE  Z.DTL_DCSH_NO = B.DTL_DCSH_NO
+                     AND    Z.IPRT_PRCS_STTS_CD = 'DD5'
+                     AND    Z.DEL_YN = 'N'
+                     AND    Z.VIST_INSC_RQST_DGCNT = (SELECT MAX(VIST_INSC_RQST_DGCNT)
+                                                        FROM TB_CLRI_DED_INSC_RSLT
+                                                       WHERE DTL_DCSH_NO = B.DTL_DCSH_NO
+                                                         AND IPRT_PRCS_STTS_CD = 'DD5'
+                                                         AND DEL_YN = 'N')
+                   ),'N') AS DSCL_YN   /** Détecté O/N !== 적발여부 ==!*/
+             , A.BASE_RQST_TP_CD    /** Code de type de renseignement !== 기준신청구분코드 ==! */
+             , A.RQST_BASE_CLSF_CD  /** Code de classification du critère renseigné !== 신청기준분류코드 ==! */
+        FROM   ( <include refid="pagination.header"/>
+                 <include refid="selectSelcMnfs"/>
+                 ORDER BY A.SELC_DT DESC
+                        , A.CAG_MGMT_NO
+                 <include refid="pagination.footer"/>
+               ) A
+             , TB_CLRI_DED_COMN B
+        WHERE A.CAG_MGMT_NO = B.CAG_MGMT_NO(+)
+        AND   B.DEL_YN(+) = 'N'
+        ORDER BY A.SELC_DT DESC
+               , A.CAG_MGMT_NO
+               , B.DTL_DCSH_NO
+    </select>
+
+
+    <!--
+      [Résultat de ciblage DDC / par jour] Consulter la liste !== [일별화물신고서 선별 조회] 목록조회 ==!
+    -->
+    <select id="selectAnayDdPerMnfsList" parameterType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo" resultType="alpass.ipt.rsm.smlt.vo.RsmSmltSelcStatsVo">
+        /** selectAnayDdPerMnfsList */
+        SELECT A.CSTM_CD /** Nom du bureau !== 세관명 ==! */
+             , DECODE(A.CSTM_CD, 'TOTAL', A.CSTM_CD, A.CSTM_CD || '|' ||( SELECT Z.ORGN_NM FROM TB_POTI_ORGN Z WHERE Z.ORGN_CD = A.CSTM_CD AND ROWNUM = 1)) AS CSTM_NM /** Code de bureau !== 세관코드 ==!*/
+             , A.MA_CNT /** Gérer le critère obligatoire(Nombre de ciblage) !== 필수기준(건수) ==! */
+             , A.HR_CNT /** Gérer le critère à risque(Nombre de ciblage) !== 우범기준(건수) ==! */
+             , A.SY_CNT /** Gérer le critère du système(Nombre de ciblage) !== 시스템기준(건수) ==! */
+             , A.SELC_CNT  /** Nombre de saisi !== 선별건수 ==!*/
+             , A.MA_RT /** Gérer le critère obligatoire(Proportion) !== 필수기준 (비율) ==! */
+             , A.HR_RT /** Gérer le critère à risque(Proportion) !== 우범기준(비율) ==! */
+             , A.SY_RT /** Gérer le critère du système(Proportion)  !== 시스템기준(비율) ==! */
+             , A.RT_SUM /** Proportion  !== 비율 ==! */
+        FROM   (
+            SELECT NVL(A.JRSD_ORGN_CD, 'TOTAL') AS CSTM_CD
+                 , SUM(DECODE(A.RQST_BASE_CLSF_CD, 'MA', 1, 0)) AS MA_CNT
+                 , SUM(DECODE(A.RQST_BASE_CLSF_CD, 'HR', 1, 0)) AS HR_CNT
+                 , SUM(DECODE(A.RQST_BASE_CLSF_CD, 'SY', 1, 0)) AS SY_CNT
+                 , SUM(1) AS SELC_CNT  /** Nombre de saisi !== 선별건수 ==!*/
+                 , (SUM(DECODE(A.RQST_BASE_CLSF_CD, 'MA', 1, 0)) / SUM(1)) * 100 AS MA_RT
+                 , (SUM(DECODE(A.RQST_BASE_CLSF_CD, 'HR', 1, 0)) / SUM(1)) * 100 AS HR_RT
+                 , (SUM(DECODE(A.RQST_BASE_CLSF_CD, 'SY', 1, 0)) / SUM(1)) * 100 AS SY_RT
+                 , (SUM(1) / SUM(1)) * 100 AS RT_SUM
+            FROM   (<include refid="selectSelcMnfs"/>) A
+            WHERE   LENGTH(A.JRSD_ORGN_CD) > 0
+            GROUP BY ROLLUP(A.JRSD_ORGN_CD)
+        ) A
+    </select>
+
+        <sql id="selectAnayDdPerDedBody">
+        FROM   TB_RSMI_DED_SELC A
+             , (<include refid="selectSelcRsltAll"/>) B
+             , TB_CLRI_DED_COMN C
+        WHERE  A.DTL_DCSH_NO = B.DTL_DCSH_NO
+        AND    A.DTL_DCSH_NO = C.DTL_DCSH_NO
+        AND    A.DEL_YN = 'N'
+        AND    C.DEL_YN = 'N'
+        AND    A.SELC_DT BETWEEN TO_CHAR(TO_DATE(#{rgsrStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{rgsrEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        <if test='dtlDcshNo != null and dtlDcshNo != ""'>
+        AND    A.DTL_DCSH_NO = REPLACE(#{dtlDcshNo}, '-')
+        </if>
+        <if test='imppnCd != null and imppnCd != ""'>
+        AND    C.IMPPN_IDFY_NO = #{imppnCd}
+        </if>
+        <if test='cstmCd != null and cstmCd != ""'>
+        AND    C.DCLR_CSTM_CD = #{cstmCd}
+        </if>
+        <if test='dclrPtCd != null and dclrPtCd != ""'>
+        AND    C.DCLR_PT_CD = #{dclrPtCd}
+        </if>
+        <if test='rqstBaseClsfCd != null and rqstBaseClsfCd != ""'>
+        AND    B.RQST_BASE_CLSF_CD = #{rqstBaseClsfCd}
+        </if>
+
+    </sql>
+    <!--
+      [Résultat de ciblage DeD / par jour] Consulter la liste !== [일별DeD조회] 목록조회  ==!
+    -->
+    <select id="selectAnayDdPerDedList" parameterType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo" resultType="alpass.ipt.rsm.smlt.vo.RsmSmltSelcStatsVo">
+        /* selectAnayDdPerDedList */
+        SELECT T.*
+            , CASE WHEN T.SELC_CNT = 0 THEN 0
+                   ELSE ROUND((CAST(T.GRN_SELC_CNT as INTEGER) / CAST(T.SELC_CNT as INTEGER)) * 100, 1)
+              END AS GRN_SELC_RT            /* Taux de déclaration en circuit vert  !== 녹색선별율 ==! */
+            , CASE WHEN T.SELC_CNT = 0 THEN 0
+                   ELSE ROUND((CAST(T.BLU_SELC_CNT as INTEGER) / CAST(T.SELC_CNT as INTEGER)) * 100, 1)
+              END AS BLU_SELC_RT            /* Taux de déclaration en circuit bleu  !== 파랑선별율 ==! */
+            , CASE WHEN T.SELC_CNT = 0 THEN 0
+                   ELSE ROUND((CAST(T.RED_SELC_CNT as INTEGER) / CAST(T.SELC_CNT as INTEGER)) * 100, 1)
+              END AS RED_SELC_RT            /* Taux de déclaration en circuit rouge !== 빨강선별율 ==! */
+            , CASE WHEN T.SELC_CNT = 0 THEN 0
+                   ELSE ROUND((CAST(T.ORE_SELC_CNT as INTEGER) / CAST(T.SELC_CNT as INTEGER)) * 100, 1)
+              END AS ORE_SELC_RT            /* Taux de ciblage vers le circuit orange !== 오렌지선별율 ==! */
+        FROM
+        (
+            SELECT
+                   <if test='scrnTp == "dclrCstmCd"'>
+                   NVL(C.DCLR_CSTM_CD, 'TOTAL') AS DCLR_CSTM_CD /** Code de bureau de déclaration !== 신고세관 ==! */
+                   </if>
+                   <if test='scrnTp == "dclrPtCd"'>
+                   NVL(C.DCLR_PT_CD, 'TOTAL') AS DCLR_PT_CD /** Code de type de déclaration !== 신고유형코드 ==!*/
+                   </if>
+                   <if test='scrnTp == "rqstBaseClsfCd"'>
+                   NVL(B.RQST_BASE_CLSF_CD, 'TOTAL') AS RQST_BASE_CLSF_CD /** Code de classification du critère renseigné !== 신청기준분류코드 ==! */
+                   </if>
+                 , SUM(1) AS SELC_CNT /** Nombre de ciblage !== 선별건수 ==!*/
+                 , SUM(B.GRN_SELC_CNT) AS GRN_SELC_CNT /** Nombre de déclaration en vert !== 녹색선별건수 ==!*/
+                 , SUM(B.BLU_SELC_CNT) AS BLU_SELC_CNT /** Nombre de déclaration en bleu !== 파랑선별건수 ==!*/
+                 , SUM(B.ORE_SELC_CNT) AS ORE_SELC_CNT /** Nombre de déclaration en jaune !== 노랑선별건수 ==!*/
+                 , SUM(B.RED_SELC_CNT) AS RED_SELC_CNT /** Nombre de déclaration en rouge !== 빨강선별건수 ==!*/
+            <include refid="selectAnayDdPerDedBody"/>
+            <if test='scrnTp == "dclrCstmCd"'>
+            GROUP BY ROLLUP(C.DCLR_CSTM_CD)
+            ORDER BY C.DCLR_CSTM_CD
+            </if>
+            <if test='scrnTp == "dclrPtCd"'>
+            GROUP BY ROLLUP(C.DCLR_PT_CD)
+            ORDER BY C.DCLR_PT_CD
+            </if>
+            <if test='scrnTp == "rqstBaseClsfCd"'>
+            GROUP BY ROLLUP(B.RQST_BASE_CLSF_CD)
+            ORDER BY B.RQST_BASE_CLSF_CD
+            </if>
+        ) T
+    </select>
+
+    <!--
+      [Résultat de ciblage DeD / par jour] Consulter les détails !== [일별DeD조회] 상세조회  ==!
+    -->
+    <select id="selectAnayDdPerDedDetailList" parameterType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo" resultType="alpass.ipt.rsm.smlt.vo.RsmSmltSelcStatsVo">
+        /* selectAnayDdPerDedDetailList */
+        <include refid="pagination.header"/>
+       SELECT A.DTL_DCSH_NO         /** N° de DED !== DED번호 ==! */
+            , A.SELC_DT             /** Date de ciblage !== 선별일자 ==! */
+            , A.SELC_RSLT_CD        /** Résultat de ciblage !== 선별결과 ==!*/
+            , B.BASE_RGSR_NO        /** Numéro d'enregistrement !== 기준등록번호 ==! */
+            , B.BASE_RQST_TP_CD     /** Code de type de renseignement !== 기준신청구분코드 ==! */
+            , B.RQST_BASE_CLSF_CD   /** Code de classification du critère renseigné !== 신청기준분류코드 ==! */
+            , ( SELECT LISTAGG(Z.PDLS_NO, ',') WITHIN GROUP (ORDER BY Z.PDLS_NO)
+                FROM   TB_RSMI_DED_PDLS_SELC Z
+                WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                AND    B.BASE_RGSR_NO = Z.BASE_RGSR_NO
+              ) AS PDLS_NO         /** N° d'article !== 품목번호 ==! */
+        <include refid="selectAnayDdPerDedBody"/>
+        ORDER BY A.SELC_DT
+        <include refid="pagination.footer"/>
+    </select>
+
+
+    <sql id="selectNifList">
+        SELECT POTE_NIF.NIF AS NIF              /** NIF !== 납세번호 ==! */
+             , DECODE(COM_CO.CO_NM, NULL, POTE_NIF.CONM, COM_CO.CO_NM) AS CO_NM         /** Nom De L'Entreprise !== 업체명 ==! */
+             , POTE_NIF.MN_BIZ_NM               /** Nom De L'Activité Principale !== 주요사업명 ==! */
+             , DECODE(COM_CO.RPRS_TLPH_NO, NULL, POTE_NIF.RPRS_TLPH_NO, COM_CO.RPRS_TLPH_NO) AS RPRS_TLPH_NO    /** N° De Téléphone Principale !== 대표전화번호 ==! */
+             , DECODE(   COM_CO.CO_ADDR
+                       , NULL
+                       , ( SELECT
+                               LISTAGG(ADDR, ', ') WITHIN GROUP (ORDER BY RNUM DESC) ADDR
+                           FROM (
+                                    SELECT ROWNUM RNUM, ADDR
+                                    FROM (
+                                            SELECT "VIL"||"COMU"||"QUTR"||"PLC_NM" AS ADDR FROM crosstab(
+                                               'SELECT
+                                                    DECODE(TX.PLC_NM, ''NULL'', NULL, TX.PLC_NM) AS PLC_NM
+                                                  , DECODE(TX.QUTR, ''NULL'', NULL, TX.QUTR) AS QUTR
+                                                  , DECODE(TX.COMU, ''NULL'', NULL, TX.COMU) AS COMU
+                                                  , DECODE(TX.VIL, ''NULL'', NULL, TX.VIL) AS VIL
+                                                FROM   TB_POTE_NIF TX
+                                                     , TB_COM_CO COM_CO
+                                                WHERE TX.DEL_YN = ''N'' AND COM_CO.DEL_YN(+) = ''N''
+                                                AND   TX.NIF = COM_CO.NIF(+)
+                                                AND   TX.NIF_STTS_CD != ''0''
+                                                ORDER BY 1,2'
+                                             , $$VALUES ('PLC_NM'::text), ('QUTR')$$
+                                           ) AS ct ("VIL" text, "COMU" text, "QUTR" text, "PLC_NM" text)
+                                    )
+                           )
+                       )
+                       , COM_CO.CO_ADDR
+               )  AS CO_ADDR            /** Adresse de l'entreprise !== 업체주소 ==! */
+             , COM_CO.RPRS_EML          /** Email Principal !== 대표이메일 ==! */
+             , COM_CO.CO_TP_CD          /** Code De Type D'Entreprise !== 	업체구분코드 ==! */
+             , FN_GET_CD_VDVAL_NM('COM_0028',COM_CO.CO_TP_CD,#{langCd}) AS CO_TP_NM         /** Nom De Type D'Entreprise !== 업체구분명 ==! */
+             , COM_CO.RPRS_FAX_NO       /** N° De Fax Principal !== 대표팩스번호 ==! */
+             , FN_GET_CD_VDVAL_NM('POT_0014', POTE_NIF.NIF_STTS_CD, #{langCd}) AS NIF_STTS_NM       /** Statut NIF !== NIF 상태 ==! */
+             , CASE WHEN COM_CO.STTS_TP_CD IS NULL THEN FN_GET_CD_VDVAL_NM('POT_0014', POTE_NIF.NIF_STTS_CD, #{langCd})
+                    ELSE FN_GET_CD_VDVAL_NM('COM_0029', COM_CO.STTS_TP_CD, #{langCd})
+               END CO_STTS_CD_NM        /** Statut D'Entreprise !== 업체상태 ==! */
+        <include refid="selectNifBody"/>
+    </sql>
+
+    <sql id="selectNifBody">
+        FROM  TB_POTE_NIF POTE_NIF
+            , TB_COM_CO COM_CO
+        WHERE POTE_NIF.DEL_YN = 'N'
+        AND COM_CO.DEL_YN(+) = 'N'
+        AND POTE_NIF.NIF = COM_CO.NIF(+)
+        AND POTE_NIF.NIF_STTS_CD != '0'
+    </sql>
+
+
+    <!--
+      [Consulter les détails d'opérateur] Consulter les détails !== [업체실적조회] 목록조회 ==!
+    -->
+    <select id="selectAnayCoAcrsList" parameterType="alpass.ipt.rsm.anay.vo.RsmAnayComnVo" resultType="alpass.ipt.rsm.anay.vo.RsmAnayCoAcrsVo">
+        /* selectAnayCoAcrsList */
+        <include refid="pagination.header"/>
+        SELECT DISTINCT
+               CO_TP_CD     /** Code de type d'entreprise !== 업체구분코드 ==! */
+             , CO_CD        /** Code d'entreprise !== 업체코드 ==! */
+             , CO_NM        /** Nom de l'entreprise !== 업체명 ==! */
+             , NIF          /** NIF !== 납세식별번호(NIF) ==! */
+        FROM   (
+            <if test='coTpCd.equals("I")'>
+               SELECT 'I' AS CO_TP_CD
+                     , A.IMPPN_IDFY_NO AS CO_CD
+                     , B.CONM AS CO_NM
+                     , B.NIF
+                FROM TB_CLRI_DED_COMN A
+                   , alpassext.TB_POTE_NIF B      /** include selectNifList DELETE */
+                   , TB_RSMI_DED_SELC C
+                WHERE A.IMPPN_IDFY_NO = B.NIF(+)
+                AND   A.DTL_DCSH_NO = C.DTL_DCSH_NO
+                AND   LENGTH(A.IMPPN_IDFY_NO) > 0
+                AND   A.DCLR_DT BETWEEN TO_CHAR(TO_DATE(#{dedStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{dedEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                <if test='bsopTpCd.equals("I")'>
+                AND   A.DCLR_PT_CD IN (
+                    SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                    FROM TB_COM_COMN_CD CD
+                       , TB_COM_COMN_CD_D DETAIL
+                    WHERE  CD.DEL_YN = 'N'
+                    AND CD.USE_YN ='Y'
+                    AND  CD.COMN_CD = 'RSM_0052'
+                    AND  CD.COMN_CD = DETAIL.COMN_CD
+                    AND  DETAIL.DEL_YN = 'N'
+                    AND DETAIL.USE_YN ='Y'
+                    AND  DETAIL.USER_DEFN_VDVAL1 = 'IMP'
+                )
+                </if>
+                <if test="coCds != null">
+                    <foreach item="coCdsItem" collection="coCds" open="AND A.IMPPN_IDFY_NO IN (" close=")" separator=",">
+                    <![CDATA[
+                    #{coCdsItem}
+                    ]]>
+                    </foreach>
+                </if>
+            </if>
+            <if test='coTpCd.equals("E")'>
+                SELECT 'E' AS CO_TP_CD
+                     , A.EXPPN_IDFY_NO AS CO_CD
+                     , B.CONM AS CO_NM
+                     , B.NIF
+                FROM TB_CLRI_DED_COMN A
+                   , alpassext.TB_POTE_NIF B      /** include selectNifList DELETE */
+                   , TB_RSMI_DED_SELC C
+                WHERE A.EXPPN_IDFY_NO = B.NIF(+)
+                AND   A.DTL_DCSH_NO = C.DTL_DCSH_NO
+                AND   LENGTH(A.EXPPN_IDFY_NO) > 0        /** A.EXPPN_IDFY_NO > CHR(0) DELETE */
+                AND   A.DCLR_DT BETWEEN TO_CHAR(TO_DATE(#{dedStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{dedEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                <if test='bsopTpCd.equals("E")'>
+                AND   A.DCLR_PT_CD IN (
+                    SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                    FROM TB_COM_COMN_CD CD
+                       , TB_COM_COMN_CD_D DETAIL
+                    WHERE CD.DEL_YN = 'N'
+                    AND CD.USE_YN ='Y'
+                    AND  CD.COMN_CD = 'RSM_0052'
+                    AND  CD.COMN_CD = DETAIL.COMN_CD
+                    AND  DETAIL.DEL_YN = 'N'
+                    AND DETAIL.USE_YN ='Y'
+                    AND  DETAIL.USER_DEFN_VDVAL1 = 'EXP'
+                )
+                </if>
+                <if test="coCds != null">
+                    <foreach item="coCdsItem" collection="coCds" open="AND A.EXPPN_IDFY_NO IN (" close=")" separator=",">
+                    <![CDATA[
+                    #{coCdsItem}
+                    ]]>
+                </foreach>
+                </if>
+            </if>
+            <if test='coTpCd.equals("D")'>
+                SELECT 'D' AS CO_TP_CD
+                     , A.DCER_CD AS CO_CD
+                     , B.CO_NM
+                     , B.NIF
+                FROM   TB_CLRI_DED_COMN A
+                     , TB_COM_CO B
+                     , TB_RSMI_DED_SELC C
+                     , TB_COM_CO_DCLR_CD D
+                WHERE  A.DCER_CD = D.CO_DCLR_CD
+                AND    D.NIF = B.NIF
+                AND    D.CO_DCLR_TP_CD = 'H' /** AND    A.DCER_CD > CHR(0) DELETE */
+                <if test='bsopTpCd.equals("I")'>
+                AND   A.DCLR_PT_CD IN (
+                    SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                    FROM TB_COM_COMN_CD CD
+                       , TB_COM_COMN_CD_D DETAIL
+                    WHERE CD.DEL_YN = 'N'
+                    AND CD.USE_YN ='Y'
+                    AND CD.COMN_CD = 'RSM_0052'
+                    AND CD.COMN_CD = DETAIL.COMN_CD
+                    AND DETAIL.DEL_YN = 'N'
+                    AND DETAIL.USE_YN ='Y'
+                    AND DETAIL.USER_DEFN_VDVAL1 = 'IMP'
+                )
+                </if>
+                <if test='bsopTpCd.equals("E")'>
+                AND   A.DCLR_PT_CD IN (
+                    SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                    FROM TB_COM_COMN_CD   CD
+                       , TB_COM_COMN_CD_D DETAIL
+                    WHERE CD.DEL_YN = 'N'
+                    AND CD.USE_YN ='Y'
+                    AND CD.COMN_CD = 'RSM_0052'
+                    AND CD.COMN_CD = DETAIL.COMN_CD
+                    AND DETAIL.DEL_YN = 'N'
+                    AND DETAIL.USE_YN ='Y'
+                    AND DETAIL.USER_DEFN_VDVAL1 = 'EXP'
+                )
+                </if>
+                AND    A.DTL_DCSH_NO = C.DTL_DCSH_NO
+                AND    A.DCLR_DT BETWEEN TO_CHAR(TO_DATE(#{dedStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{dedEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                <if test="coCds != null">
+                    <foreach item="coCdsItem" collection="coCds" open="AND D.CO_DCLR_CD IN (" close=")" separator=",">
+                        <![CDATA[
+                        #{coCdsItem}
+                        ]]>
+                    </foreach>
+                </if>
+            </if>
+        )
+        ORDER BY CO_CD DESC
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+    Consulter les détails d'import/export !== 수입자/수출자 업체실적상세조회 ==!
+    -->
+    <select id="selectAnayCoAcrsSelcDtl" parameterType="alpass.ipt.rsm.anay.vo.RsmAnayComnVo" resultType="alpass.ipt.rsm.anay.vo.RsmAnayCoAcrsVo">
+        /* selectAnayCoAcrsSelcDtl */
+        SELECT DCLR_CNT         /** Nombre de déclarations !== 신고건수 ==!*/
+             , SELC_CNT         /** Nombre de saisi !== 선별건수 ==!*/
+             , RED_SELC_CNT     /** Nombre de déclaration en rouge !== 빨강선별건수 ==!*/
+             , GRN_SELC_CNT     /** Nombre de déclaration en vert !== 녹색선별건수 ==!*/
+             , ORE_SELC_CNT     /** Nombre de déclaration en jaune !== 노랑선별건수 ==!*/
+             , BLU_SELC_CNT     /** Nombre de déclaration en bleu !== 파랑선별건수 ==!*/
+             , TAX_AMT          /** Taxe !== 세금 ==!*/
+             , TAX_AMT - INIT_TAX_AMT AS ADIT_TAX_AMT       /** Droits et taxes additionnels !== 추가납부세액 ==!*/
+             , CASE WHEN TAX_AMT = 0 OR (TAX_AMT - INIT_TAX_AMT)  <![CDATA[<= ]]> 0 THEN 0 ELSE (TAX_AMT - INIT_TAX_AMT) / TAX_AMT * 100 END TAX_ATR_RT     /** Taux de redressement !== 세금수정율 ==!*/
+             , DSCL_CNT         /** Nombre de détection !== 적발건수 ==!*/
+        FROM   (
+            SELECT COUNT(A.DTL_DCSH_NO) AS DCLR_CNT
+                 , SUM(1) AS SELC_CNT
+                 , NVL(SUM(CASE WHEN A.SELC_RSLT_CD = 'R' THEN 1 ELSE 0 END), 0) AS RED_SELC_CNT
+                 , NVL(SUM(CASE WHEN A.SELC_RSLT_CD = 'G' THEN 1 ELSE 0 END), 0) AS GRN_SELC_CNT
+                 , NVL(SUM(CASE WHEN A.SELC_RSLT_CD = 'O' THEN 1 ELSE 0 END), 0) AS ORE_SELC_CNT
+                 , NVL(SUM(CASE WHEN A.SELC_RSLT_CD = 'B' THEN 1 ELSE 0 END), 0) AS BLU_SELC_CNT
+                 , NVL(SUM (( SELECT SUM(Z.PAY_TAX_AMT)
+                              FROM   TB_CLRI_DED_TAX Z
+                              WHERE  B.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                              AND    Z.DEL_YN = 'N'
+                            )), 0) AS TAX_AMT
+                 , NVL(SUM( CASE WHEN B.HIST_SRNO = 0 THEN ( SELECT SUM (Z.PAY_TAX_AMT)
+                                                            FROM TB_CLRI_DED_TAX Z
+                                                            WHERE  B.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                            AND Z.DEL_YN = 'N'
+                                                          )
+                                WHEN B.HIST_SRNO > 0 THEN ( SELECT SUM (Z.PAY_TAX_AMT)
+                                                            FROM TB_CLRI_DED_TAX_H Z
+                                                            WHERE B.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                            AND Z.HIST_SRNO = 0
+                                                            AND Z.DEL_YN = 'N'
+                                                          )
+                            END), 0) AS INIT_TAX_AMT
+                 , SUM( CASE WHEN C.IPRT_PRCS_STTS_CD = 'DD5' AND C.DSCL_YN = 'Y' THEN 1
+                             ELSE 0 END
+                      ) AS DSCL_CNT
+            FROM   TB_RSMI_DED_SELC A
+                 , TB_CLRI_DED_COMN B
+                 , TB_CLRI_DED_INSC_RSLT C
+            WHERE   A.DTL_DCSH_NO = B.DTL_DCSH_NO
+            AND     A.DTL_DCSH_NO = C.DTL_DCSH_NO(+)
+            AND     B.DCLR_DT BETWEEN TO_CHAR(TO_DATE(#{dedStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{dedEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            <if test='bsopTpCd.equals("I")'>
+            AND    B.DCLR_PT_CD IN (
+                SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                FROM TB_COM_COMN_CD   CD , TB_COM_COMN_CD_D DETAIL
+                WHERE CD.DEL_YN = 'N'
+                AND CD.USE_YN ='Y'
+                AND CD.COMN_CD = 'RSM_0052'
+                AND CD.COMN_CD = DETAIL.COMN_CD
+                AND DETAIL.DEL_YN = 'N'
+                AND DETAIL.USE_YN ='Y'
+                AND DETAIL.USER_DEFN_VDVAL1 = 'IMP'
+            )
+            </if>
+            <if test='bsopTpCd.equals("E")'>
+            AND    B.DCLR_PT_CD IN (
+                SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                FROM TB_COM_COMN_CD CD
+                   , TB_COM_COMN_CD_D DETAIL
+                WHERE CD.DEL_YN = 'N'
+                AND CD.USE_YN ='Y'
+                AND CD.COMN_CD = 'RSM_0052'
+                AND CD.COMN_CD = DETAIL.COMN_CD
+                AND DETAIL.DEL_YN = 'N'
+                AND DETAIL.USE_YN ='Y'
+                AND DETAIL.USER_DEFN_VDVAL1 = 'EXP'
+            )
+            </if>
+            <if test='coTpCd == "D"'>
+            AND    B.DCER_CD = #{coCd}
+            </if>
+            <if test='coTpCd == "I"'>
+            AND     B.IMPPN_IDFY_NO = #{coCd}
+            </if>
+            <if test='coTpCd == "E"'>
+            AND     B.EXPPN_IDFY_NO = #{coCd}
+            </if>
+        )
+    </select>
+
+    <!--
+      [Consulter les détails d'opérateur] Consulter les détails !== [업체실적조회] 상세조회 ==!
+    -->
+    <select id="selectAnayCoAcrsCoDtl" parameterType="alpass.ipt.rsm.anay.vo.RsmAnayComnVo" resultType="alpass.ipt.rsm.anay.vo.RsmAnayCoAcrsVo">
+        /** selectAnayCoAcrsCoDtl */
+        <!--  <include refid="selectNifList"/> -->
+        SELECT POTE_NIF.NIF AS NIF          /** NIF !== 납세번호 ==! */
+             , DECODE(COM_CO.CO_NM, NULL, POTE_NIF.CONM, COM_CO.CO_NM) AS CO_NM     /** Nom De L'Entreprise !== 업체명 ==! */
+             , POTE_NIF.MN_BIZ_NM           /** Nom De L'Activité Principale !== 주요사업명 ==! */
+             , COM_CO.RPRS_TLPH_NO AS RPRS_TLPH_NO      /** N° De Téléphone Principale !== 대표전화번호 ==! */
+             , DECODE(   COM_CO.CO_ADDR
+                       , NULL
+                       , CASE WHEN (POTE_NIF.POST_CD = '' OR POTE_NIF.POST_CD IS NULL) THEN NULL
+                              ELSE '[' || POTE_NIF.POST_CD || '] ' || ( SELECT POST_ADDR || ' ' || POTE_NIF.CO_DTL_ADDR FROM TB_COM_WLY_POST_CD W WHERE W.POST_CD = POTE_NIF.POST_CD )
+                         END
+                       , COM_CO.CO_ADDR
+               )  AS CO_ADDR        /** Adresse De L'Entreprise  !== 업체주소 ==! */
+             , COM_CO.RPRS_EML      /** Email Principal !== 대표이메일 ==! */
+             , COM_CO.CO_TP_CD      /** Code de type d'entreprise  !== 업체구분코드 ==! */
+             , FN_GET_CD_VDVAL_NM('COM_0028', COM_CO.CO_TP_CD, #{langCd}) AS CO_TP_NM   /** Nom De Type D'Entreprise !== 업체구분명 ==! */
+             , COM_CO.RPRS_FAX_NO   /** N° De Fax Principal !== 대표팩스번호 ==! */
+             , FN_GET_CD_VDVAL_NM('POT_0014', POTE_NIF.NIF_STTS_CD, #{langCd}) AS NIF_STTS_NM   /** Statut NIF !== NIF 상태 ==! */
+             , CASE WHEN COM_CO.STTS_TP_CD IS NULL THEN FN_GET_CD_VDVAL_NM('POT_0014', POTE_NIF.NIF_STTS_CD, #{langCd})
+                    ELSE FN_GET_CD_VDVAL_NM('COM_0029', COM_CO.STTS_TP_CD, #{langCd})
+               END CO_STTS_CD_NM    /** Statut D'Entreprise !== 업체상태 ==! */
+        FROM  alpassext.TB_POTE_NIF POTE_NIF
+            , TB_COM_CO COM_CO
+        WHERE POTE_NIF.DEL_YN = 'N'
+        AND COM_CO.DEL_YN(+) = 'N'
+        AND POTE_NIF.NIF = COM_CO.NIF(+)
+        AND POTE_NIF.NIF_STTS_CD != '0'
+        AND POTE_NIF.NIF = #{nif}
+    </select>
+
+    <!--
+      [Consulter les détails d'opérateur] Consulter les détails (déclarant) !== [업체실적조회] 상세조회 (신고인) ==!
+    -->
+    <select id="selectAnayCoAcrsDcerCoDtl" parameterType="alpass.ipt.rsm.anay.vo.RsmAnayComnVo" resultType="alpass.ipt.rsm.anay.vo.RsmAnayCoAcrsVo">
+        /** selectAnayCoAcrsDcerCoDtl */
+        SELECT A.CO_NM          /** Nom de l'entreprise  !== 업체명 ==!*/
+             , A.CO_ADDR        /** Adresse de l'entreprise   !== 업체주소 ==!*/
+             , A.RPRS_TLPH_NO   /** N° de téléphone principale  !== 대표전화번호 ==!*/
+             , A.RPRS_FAX_NO    /** N° de fax principal  !== 대표FAX번호 ==!*/
+             , FN_GET_CD_VDVAL_NM('COM_0029', A.STTS_TP_CD, #{langCd}) AS CO_STTS_CD_NM /** Code de statut d'entreprise !== 업체상태코드 ==! */
+        FROM   TB_COM_CO A
+             , TB_COM_CO_DCLR_CD B
+        WHERE  A.NIF = B.NIF
+        AND    B.CO_DCLR_CD = #{coCd}
+        AND    A.NIF = #{nif}
+    </select>
+
+    <!--
+    Consulter la liste d'évaluation des entreprises !== 업체평가목록조회 ==!
+    -->
+    <select id="selectCoEvList" parameterType="alpass.ipt.rsm.anay.vo.RsmAnayComnVo" resultType="alpass.ipt.rsm.com.vo.RsmCoEvComnVo">
+        /*selectCoEvList*/
+        SELECT A.EV_QRT        /** Trimestre d'évaluation !== 평가분기 ==!*/
+             , A.EV_CO_TP_CD   /** Code de type de contrat !== 평가업체구분코드 ==!*/
+             , A.CO_EV_SCR     /** Trimestre d'évaluation !== 업체평가점수 ==!*/
+             , A.EV_GD_CD      /** Code de groupe d'évaluation !== 평가등급코드 ==!*/
+             , 'Q' || SUBSTR(A.EV_QRT, 5, 1) || ' ' || SUBSTR(A.EV_QRT, 1, 4) || '(' || A.EV_GD_CD || ')' AS EV_QRT2 /** Trimestre d'évaluation !== 평가분기 ==!*/
+        FROM TB_RSMI_CO_EV_COMN A
+        WHERE A.NIF = #{coCd}
+        AND A.EV_CO_TP_CD = DECODE(#{coTpCd}, 'D', 'A', 'I', 'B', #{coTpCd})
+        AND A.EV_QRT_SRNO = ( SELECT MAX(EV_QRT_SRNO)
+                              FROM   TB_RSMI_CO_EV_COMN Z
+                              WHERE  Z.EV_QRT = A.EV_QRT
+                              AND    Z.EV_CO_TP_CD = A.EV_CO_TP_CD
+                            )
+        AND A.EV_QRT BETWEEN TO_CHAR(SYSDATE, 'YYYY') - 2 || TO_CHAR(SYSDATE, 'Q') AND  TO_CHAR(SYSDATE, 'YYYY') || TO_CHAR(SYSDATE, 'Q')
+        ORDER BY A.FRST_RGSR_DTTM
+    </select>
+
+     <!--
+    Consulter la liste du nombre de déclaration par bureau !== 신고세관별 신고건수 목록조회 ==!
+    -->
+    <select id="selectDclrCstmDedCntList" parameterType="alpass.ipt.rsm.anay.vo.RsmAnayComnVo" resultType="alpass.ipt.rsm.smlt.vo.RsmSmltSelcStatsVo">
+        /* selectDclrCstmDedCntList */
+        SELECT ROWNUM AS RNUM
+             , DCLR_CSTM_CD     /** Code de bureau de déclaration !== 신고세관코드 ==!*/
+             , DCLR_CNT         /** Nombre de déclarations !== 신고건수 ==!*/
+             , ( SELECT Z.ORGN_NM
+                 FROM   TB_POTI_ORGN Z
+                 WHERE  Z.DEL_YN = 'N'
+                 AND    Z.ORGN_CD = A.DCLR_CSTM_CD
+                 AND    ROWNUM = 1
+               ) AS CSTM_NM     /** Nom du bureau !== 세관명 ==!*/
+        FROM (
+            SELECT A.DCLR_CSTM_CD
+                 , COUNT(*) AS DCLR_CNT
+            FROM   TB_CLRI_DED_COMN A
+            WHERE  1 = 1
+            <if test='bsopTpCd.equals("I")'>
+            AND   A.DCLR_PT_CD IN (
+                SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                FROM TB_COM_COMN_CD CD
+                   , TB_COM_COMN_CD_D DETAIL
+                WHERE CD.DEL_YN = 'N'
+                AND CD.USE_YN ='Y'
+                AND CD.COMN_CD = 'RSM_0052'
+                AND CD.COMN_CD = DETAIL.COMN_CD
+                AND DETAIL.DEL_YN = 'N'
+                AND DETAIL.USE_YN ='Y'
+                AND DETAIL.USER_DEFN_VDVAL1 = 'IMP'
+            )
+            </if>
+            <if test='bsopTpCd.equals("E")'>
+            AND   A.DCLR_PT_CD IN (
+                SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                FROM TB_COM_COMN_CD CD
+                   , TB_COM_COMN_CD_D DETAIL
+                WHERE CD.DEL_YN = 'N'
+                AND CD.USE_YN ='Y'
+                AND CD.COMN_CD = 'RSM_0052'
+                AND CD.COMN_CD = DETAIL.COMN_CD
+                AND DETAIL.DEL_YN = 'N'
+                AND DETAIL.USE_YN ='Y'
+                AND DETAIL.USER_DEFN_VDVAL1 = 'EXP'
+            )
+            </if>
+            <if test='coTpCd == "D"'>
+              AND    A.DCER_CD = #{coCd}
+            </if>
+            <if test='coTpCd == "I"'>
+              AND    A.IMPPN_IDFY_NO = #{coCd}
+            </if>
+            <if test='coTpCd == "E"'>
+              AND    A.EXPPN_IDFY_NO = #{coCd}
+            </if>
+            AND    A.DCLR_DT BETWEEN TO_CHAR(TO_DATE(#{dedStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{dedEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            AND    A.DCLR_CSTM_CD IS NOT NULL
+            GROUP BY A.DCLR_CSTM_CD
+            ORDER BY COUNT(*) DESC
+        ) A
+        WHERE ROWNUM <![CDATA[<= ]]> 5
+    </select>
+
+     <!--
+    Consulter la liste du nombre d'article déclarée par bureau !== 신고세관별 품목 신고건수 목록 조회 ==!
+    -->
+    <select id="selectPdlsDclrCntList" parameterType="alpass.ipt.rsm.anay.vo.RsmAnayComnVo" resultType="alpass.ipt.rsm.smlt.vo.RsmSmltSelcStatsVo">
+        /* selectPdlsDclrCntList */
+        SELECT ROWNUM AS RNUM
+             , PDLS_NM      /** Nom de l'article !== 품목명 ==! */
+             , HS_CD        /** Code SH !== HS코드 ==! */
+             , DCLR_CNT     /** Nombre de déclarations !== 신고건수 ==! */
+             , INVC_AMT     /** Montant de facture !== 송장금액 ==! */
+        FROM (
+            SELECT MAX(A.PDLS_NM) AS PDLS_NM
+                 , A.HS_CD
+                 , COUNT(DISTINCT A.DTL_DCSH_NO) AS DCLR_CNT
+                 , SUM(B.PDLS_INVC_NCY_AMT) AS INVC_AMT
+            FROM   TB_CLRI_DED_PDLS A
+                 , TB_CLRI_DED_VLUT_PDLS B
+                 , TB_CLRI_DED_COMN C
+            WHERE  A.DTL_DCSH_NO = B.DTL_DCSH_NO
+            AND    A.PDLS_NO = B.PDLS_NO
+            AND    A.DTL_DCSH_NO = C.DTL_DCSH_NO
+            <if test='bsopTpCd.equals("I")'>
+            AND    C.DCLR_PT_CD IN (
+                SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                FROM TB_COM_COMN_CD CD
+                   , TB_COM_COMN_CD_D DETAIL
+                WHERE CD.DEL_YN = 'N'
+                AND CD.USE_YN ='Y'
+                AND CD.COMN_CD = 'RSM_0052'
+                AND CD.COMN_CD = DETAIL.COMN_CD
+                AND DETAIL.DEL_YN = 'N'
+                AND DETAIL.USE_YN ='Y'
+                AND DETAIL.USER_DEFN_VDVAL1 = 'IMP'
+            )
+            </if>
+            <if test='bsopTpCd.equals("E")'>
+            AND    C.DCLR_PT_CD IN (
+                SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                FROM TB_COM_COMN_CD CD
+                   , TB_COM_COMN_CD_D DETAIL
+                WHERE CD.DEL_YN = 'N'
+                AND CD.USE_YN ='Y'
+                AND CD.COMN_CD = 'RSM_0052'
+                AND CD.COMN_CD = DETAIL.COMN_CD
+                AND DETAIL.DEL_YN = 'N'
+                AND DETAIL.USE_YN ='Y'
+                AND DETAIL.USER_DEFN_VDVAL1 = 'EXP'
+            )
+            </if>
+            <if test='coTpCd == "D"'>
+              AND    C.DCER_CD = #{coCd}
+            </if>
+            <if test='coTpCd == "I"'>
+              AND    C.IMPPN_IDFY_NO = #{coCd}
+            </if>
+            <if test='coTpCd == "E"'>
+              AND   C.EXPPN_IDFY_NO = #{coCd}
+            </if>
+            AND    C.DCLR_DT BETWEEN TO_CHAR(TO_DATE(#{dedStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{dedEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+
+            GROUP BY A.HS_CD
+            ORDER BY SUM(B.PDLS_INVC_NCY_AMT) DESC
+        )
+        WHERE ROWNUM <![CDATA[ <= ]]> 5
+    </select>
+
+    <!--
+      [Voir la performance par champ DeD] Consulter la liste !== [신고서항목별목록조회] 목록조회 ==!
+    -->
+    <select id="selectAudtDcshClusPerList" parameterType="alpass.ipt.rsm.smlt.vo.RsmSmltBtchVo" resultType="alpass.ipt.rsm.smlt.vo.RsmSmltSelcStatsVo">
+        /* selectAudtDcshClusPerList */
+        SELECT A.TOT_CNT
+             , A.DTL_DCSH_NO                            /** Numéro du DED !== DED번호 ==!*/
+             , A.PDLS_NO                                /** N° d'article !== 품목번호 ==!*/
+             , A.DCLR_CSTM_CD                           /** Bureau de douane !==세관==!*/
+             , '' AS REGM_CD                            /** Régime !==레짐==!*/
+             , A.DCLR_PT_CD                             /** Code de type de déclaration !== 신고유형코드 ==!*/
+             , A.IMPPN_IDFY_NO                          /** N° d'identification de l'importateur !== 수입자식별번호 ==!*/
+             , A.IMPPN_NM                               /** Nom de l'importateur !== 수입자명 ==!*/
+             , A.DCER_CD                                /** Code du déclarant !== 신고인코드 ==!*/
+             , A.DCER_CO_NM                             /** Nom de societe du declarant !==신고인업체명==! */
+             , A.HS_CD                                  /** Code SH !== HS코드 ==!*/
+             , A.PDLS_NM                                /** Nom de l'article !== 품목명 ==!*/
+             , A.ORCY_CNTY_CD                           /** Code de pays d'origine !== 원산지국가코드 ==!*/
+             , A.SELC_RSLT_CD AS FRST_SELC_RSLT         /** Code de résultat de ciblage !== 선별결과코드 ==!*/
+             , A.SELC_RSLT_CD AS LAST_SELC_RSLT         /** Code de résultat de ciblage !== 선별결과코드 ==!*/
+             , NVL(A.DSCL_YN, 'N') AS DSCL_YN           /** Détecté O/N !== 적발여부 ==!*/
+             , NVL(A.ADRT_YN, 'N') AS AUDT_DSCL_YN      /* Détecté de l'examen O/N  !== 심사적발여부 ==! */
+             , NVL(A.INSC_DSCL_YN, 'N') AS INSC_DSCL_YN /** Détecté de l'inspection O/N !== 검사적발여부 ==!*/
+             , NVL(A.TXBS_AMT, 0) AS TXBS_AMT           /** Montant de la valeur statistique !== 과세기준금액 ==!*/
+             , NVL(A.INVC_AMT, 0) AS PDLS_INVC_AMT      /** Montant de la facture de l'article !== 품목송장금액 ==!*/
+             , NVL(A.TAX_AMT, 0) AS TAX_AMT             /** Montant de la taxe !== 세금금액 ==!*/
+             , NVL((CASE WHEN A.DSCL_YN = 'Y' AND A.HIST_SRNO > 0 THEN ABS (A.TAX_AMT - (SELECT SUM (Z.TAX_AMT)
+                                                                                           FROM TB_CLRI_DED_TAX Z
+                                                                                          WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                                                            AND Z.PDLS_NO = A.PDLS_NO
+                                                                                            AND Z.DEL_YN = 'N')
+                                                                            )
+                      ELSE 0 END
+                ), 0) AS DSCL_TAX_AMT /** Droits et taxes de déclaration détectée  !== 적발세금금액 ==!*/
+             , NVL((CASE WHEN A.DSCL_YN = 'Y' AND A.HIST_SRNO > 0 THEN ABS (A.INVC_AMT - (SELECT Z.PDLS_INVC_NCY_AMT
+                                                                                            FROM TB_CLRI_DED_VLUT_PDLS Z
+                                                                                           WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                                                             AND Z.PDLS_NO = A.PDLS_NO
+                                                                                             AND Z.DEL_YN = 'N')
+                                                                           )
+                      ELSE 0 END
+                ), 0) AS DSCL_INVC_AMT /** Montant de facture de déclaration détectée !== 적발인보이스금액 ==!*/
+             , NVL((CASE WHEN A.DSCL_YN = 'Y' AND A.HIST_SRNO > 0 THEN ABS (A.TXBS_AMT - (SELECT Z.PDLS_TXBS_NCY_AMT
+                                                                                   FROM   TB_CLRI_DED_VLUT_PDLS Z
+                                                                                   WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                                                   AND    Z.PDLS_NO = A.PDLS_NO
+                                                                                   AND    Z.DEL_YN = 'N')
+                                                                          )
+                      ELSE 0 END
+                ), 0) AS DSCL_TXBS_AMT /** Valeur statistique de déclaration détectée !== 적발과세기준금액 ==!*/
+              , NVL(FINE_AMT, 0) AS FINE_AMT /** Taux de détection !== 벌금액 ==!*/
+        FROM   (SELECT /*+ INDEX(E TB_CLRI_DED_PDLS_IX01)  */
+                       A.TOT_CNT
+                     , A.DTL_DCSH_NO
+                     , A.HIST_SRNO
+                     , A.DCLR_CSTM_CD
+                     , A.DCLR_PT_CD
+                     , A.IMPPN_IDFY_NO
+                     , A.IMPPN_NM
+                     , A.DCER_CD
+                     , A.DCER_CO_NM
+                     , E.PDLS_NO
+                     , E.HS_CD
+                     , E.PDLS_NM
+                     , E.ORCY_CNTY_CD
+                     , A.SELC_RSLT_CD
+                     , CASE WHEN A.IPRT_DSCL_YN = 'Y' OR A.ADRT_YN = 'Y' OR NTFC_YN = 'Y' THEN 'Y'
+                            ELSE 'N'
+                       END DSCL_YN
+                     , CASE WHEN A.IPRT_PRCS_STTS_CD = 'DD5' AND F.INSC_1_RSLT_CD != '01' THEN 'Y'
+                            ELSE 'N'
+                       END INSC_DSCL_YN
+                     , A.ADRT_YN
+                     , A.NTFC_YN
+                     , CASE WHEN A.HIST_SRNO = 0 THEN (SELECT Z.PDLS_TXBS_NCY_AMT
+                                                       FROM   TB_CLRI_DED_VLUT_PDLS Z
+                                                       WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                       AND    Z.PDLS_NO = E.PDLS_NO
+                                                       AND    Z.DEL_YN = 'N')
+                            WHEN A.HIST_SRNO > 0 THEN (SELECT Z.PDLS_TXBS_NCY_AMT
+                                                       FROM   TB_CLRI_DED_VLUT_PDLS_H Z
+                                                       WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                       AND    Z.PDLS_NO = E.PDLS_NO
+                                                       AND    Z.HIST_SRNO = 0
+                                                       AND    Z.DEL_YN = 'N')
+                       END TXBS_AMT
+                     , CASE WHEN A.HIST_SRNO = 0 THEN (SELECT Z.PDLS_INVC_NCY_AMT
+                                                       FROM   TB_CLRI_DED_VLUT_PDLS Z
+                                                       WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                       AND    Z.PDLS_NO = E.PDLS_NO
+                                                       AND    Z.DEL_YN = 'N')
+                            WHEN A.HIST_SRNO > 0 THEN (SELECT Z.PDLS_INVC_NCY_AMT
+                                                       FROM   TB_CLRI_DED_VLUT_PDLS_H Z
+                                                       WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                       AND    Z.PDLS_NO = E.PDLS_NO
+                                                       AND    Z.HIST_SRNO = 0
+                                                       AND    Z.DEL_YN = 'N')
+                       END INVC_AMT
+                     , CASE WHEN A.HIST_SRNO = 0 THEN (SELECT SUM (Z.TAX_AMT)
+                                                       FROM   TB_CLRI_DED_TAX Z
+                                                       WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                       AND    Z.PDLS_NO = E.PDLS_NO
+                                                       AND    Z.DEL_YN = 'N')
+                            WHEN A.HIST_SRNO > 0 THEN (SELECT SUM (Z.TAX_AMT)
+                                                       FROM   TB_CLRI_DED_TAX_H Z
+                                                       WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                                       AND    Z.PDLS_NO = E.PDLS_NO
+                                                       AND    Z.HIST_SRNO = 0
+                                                       AND    Z.DEL_YN = 'N')
+                       END TAX_AMT
+                     , A.FINE_AMT
+                  FROM (
+                       <include refid="pagination.header" />
+                       SELECT  A.DTL_DCSH_NO
+                             , NVL(A.HIST_SRNO, 0) AS HIST_SRNO
+                             , DCLR_CSTM_CD
+                             , A.DCLR_PT_CD
+                             , A.IMPPN_IDFY_NO
+                             , A.DCER_CD
+                             , B.IPRT_PRCS_STTS_CD
+                             , A.SELC_RSLT_CD
+                             , ( SELECT Z.IMPPN_CO_NM
+                                 FROM   TB_CLRI_DED_CO Z
+                                 WHERE  Z.DTL_DCSH_NO = A.DTL_DCSH_NO
+                               ) AS IMPPN_NM
+                             , ( SELECT Z.DCER_CO_NM
+                                 FROM   TB_CLRI_DED_CO Z
+                                 WHERE  Z.DTL_DCSH_NO = A.DTL_DCSH_NO
+                               ) AS DCER_CO_NM
+                             , CASE WHEN B.IPRT_PRCS_STTS_CD = 'DD5' AND B.DSCL_YN = 'Y' THEN 'Y'
+                                    ELSE 'N'
+                               END IPRT_DSCL_YN
+                             , C.NTFC_YN
+                             , C.FINE_AMT
+                             , D.ADRT_YN
+                        FROM (
+                            <if test='dcshClusTpCd != "09"'>
+                            SELECT DTL_DCSH_NO, HIST_SRNO, IMPPN_IDFY_NO, SELC_RSLT_CD, DCLR_CSTM_CD, DCLR_PT_CD, DCER_CD, EXPPN_IDFY_NO, AUDT_EMP_ID, INSC_EMP_ID, CSM_CNTY_CD, DSTN_CNTY_CD
+                            FROM TB_CLRI_DED_COMN
+                            WHERE PRCS_STTS_CD != 'A01'
+                            AND DCLR_DT BETWEEN TO_CHAR(TO_DATE(#{dedStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{dedEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                            <if test='bsopTpCd.equals("I")'>
+                            AND DCLR_PT_CD IN (
+                                SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                                FROM TB_COM_COMN_CD CD
+                                   , TB_COM_COMN_CD_D DETAIL
+                                WHERE CD.DEL_YN = 'N'
+                                AND CD.USE_YN ='Y'
+                                AND CD.COMN_CD = 'RSM_0052'
+                                AND CD.COMN_CD = DETAIL.COMN_CD
+                                AND DETAIL.DEL_YN = 'N'
+                                AND DETAIL.USE_YN ='Y'
+                                AND DETAIL.USER_DEFN_VDVAL1 = 'IMP'
+                            )
+                            </if>
+                            <if test='bsopTpCd.equals("E")'>
+                            AND DCLR_PT_CD IN (
+                                SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                                FROM TB_COM_COMN_CD CD
+                                   , TB_COM_COMN_CD_D DETAIL
+                                WHERE CD.DEL_YN = 'N'
+                                AND CD.USE_YN ='Y'
+                                AND CD.COMN_CD = 'RSM_0052'
+                                AND CD.COMN_CD = DETAIL.COMN_CD
+                                AND DETAIL.DEL_YN = 'N'
+                                AND DETAIL.USE_YN ='Y'
+                                AND DETAIL.USER_DEFN_VDVAL1 = 'EXP'
+                            )
+                            </if>
+                            AND IMPPN_IDFY_NO IS NOT NULL
+                            AND HIST_SRNO = 0
+                            AND DEL_YN = 'N'
+                            UNION ALL
+                            SELECT DTL_DCSH_NO, HIST_SRNO, IMPPN_IDFY_NO, SELC_RSLT_CD, DCLR_CSTM_CD, DCLR_PT_CD, DCER_CD, EXPPN_IDFY_NO, AUDT_EMP_ID, INSC_EMP_ID, CSM_CNTY_CD, DSTN_CNTY_CD
+                            FROM TB_CLRI_DED_COMN_H
+                            WHERE DCLR_DT BETWEEN TO_CHAR(TO_DATE(#{dedStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{dedEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                            <if test='bsopTpCd.equals("I")'>
+                            AND DCLR_PT_CD IN (
+                                SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                                FROM TB_COM_COMN_CD CD
+                                   , TB_COM_COMN_CD_D DETAIL
+                                WHERE CD.DEL_YN = 'N'
+                                AND CD.USE_YN ='Y'
+                                AND CD.COMN_CD = 'RSM_0052'
+                                AND CD.COMN_CD = DETAIL.COMN_CD
+                                AND DETAIL.DEL_YN = 'N'
+                                AND DETAIL.USE_YN ='Y'
+                                AND DETAIL.USER_DEFN_VDVAL1 = 'IMP'
+                            )
+                           </if>
+                           <if test='bsopTpCd.equals("E")'>
+                           AND DCLR_PT_CD IN (
+                               SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                               FROM TB_COM_COMN_CD CD
+                                  , TB_COM_COMN_CD_D DETAIL
+                               WHERE CD.DEL_YN = 'N'
+                               AND CD.USE_YN ='Y'
+                               AND CD.COMN_CD = 'RSM_0052'
+                               AND CD.COMN_CD = DETAIL.COMN_CD
+                               AND DETAIL.DEL_YN = 'N'
+                               AND DETAIL.USE_YN ='Y'
+                               AND DETAIL.USER_DEFN_VDVAL1 = 'EXP'
+                           )
+                           </if>
+                           AND IMPPN_IDFY_NO IS NOT NULL
+                           AND HIST_SRNO = 0
+                           AND DEL_YN = 'N'
+                           </if>
+                           <if test='dcshClusTpCd == "09"'>
+                           SELECT A.DTL_DCSH_NO, A.HIST_SRNO, A.IMPPN_IDFY_NO, A.SELC_RSLT_CD, A.DCLR_CSTM_CD, A.DCLR_PT_CD, A.DCER_CD
+                                , A.EXPPN_IDFY_NO, A.AUDT_EMP_ID, A.INSC_EMP_ID, A.CSM_CNTY_CD, A.DSTN_CNTY_CD
+                           FROM TB_CLRI_DED_COMN A, TB_CLRI_DED_PDLS B
+                           WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+                           AND A.PRCS_STTS_CD != 'A01'
+                           AND A.DCLR_DT BETWEEN TO_CHAR(TO_DATE(#{dedStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{dedEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                           <if test='bsopTpCd.equals("I")'>
+                           AND A.DCLR_PT_CD IN (
+                               SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                               FROM TB_COM_COMN_CD CD
+                                  , TB_COM_COMN_CD_D DETAIL
+                               WHERE CD.DEL_YN = 'N'
+                               AND CD.USE_YN ='Y'
+                               AND CD.COMN_CD = 'RSM_0052'
+                               AND CD.COMN_CD = DETAIL.COMN_CD
+                               AND DETAIL.DEL_YN = 'N'
+                               AND DETAIL.USE_YN ='Y'
+                               AND DETAIL.USER_DEFN_VDVAL1 = 'IMP'
+                           )
+                           </if>
+                           <if test='bsopTpCd.equals("E")'>
+                           AND A.DCLR_PT_CD IN (
+                               SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                               FROM TB_COM_COMN_CD CD
+                                  , TB_COM_COMN_CD_D DETAIL
+                               WHERE CD.DEL_YN = 'N'
+                               AND CD.USE_YN ='Y'
+                               AND CD.COMN_CD = 'RSM_0052'
+                               AND CD.COMN_CD = DETAIL.COMN_CD
+                               AND DETAIL.DEL_YN = 'N'
+                               AND DETAIL.USE_YN ='Y'
+                               AND DETAIL.USER_DEFN_VDVAL1 = 'EXP'
+                           )
+                           </if>
+                           AND B.APC_CD IS NOT NULL
+                           AND A.HIST_SRNO = 0
+                           AND A.DEL_YN = 'N'
+                           AND B.DEL_YN = 'N'
+                           GROUP BY A.DTL_DCSH_NO, A.HIST_SRNO, IMPPN_IDFY_NO, SELC_RSLT_CD, DCLR_CSTM_CD, DCLR_PT_CD, DCER_CD, EXPPN_IDFY_NO, AUDT_EMP_ID, INSC_EMP_ID, CSM_CNTY_CD, DSTN_CNTY_CD
+                           UNION ALL
+                           SELECT A.DTL_DCSH_NO, A.HIST_SRNO, A.IMPPN_IDFY_NO, A.SELC_RSLT_CD, A.DCLR_CSTM_CD, A.DCLR_PT_CD, A.DCER_CD
+                                , A.EXPPN_IDFY_NO, A.AUDT_EMP_ID, A.INSC_EMP_ID, A.CSM_CNTY_CD, A.DSTN_CNTY_CD
+                           FROM TB_CLRI_DED_COMN_H A, TB_CLRI_DED_PDLS_H B
+                           WHERE A.DTL_DCSH_NO = B.DTL_DCSH_NO
+                           AND A.DCLR_DT BETWEEN TO_CHAR(TO_DATE(#{dedStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(#{dedEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                           <if test='bsopTpCd.equals("I")'>
+                           AND A.DCLR_PT_CD IN (
+                               SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                               FROM TB_COM_COMN_CD CD
+                                  , TB_COM_COMN_CD_D DETAIL
+                               WHERE CD.DEL_YN = 'N'
+                               AND CD.USE_YN ='Y'
+                               AND CD.COMN_CD = 'RSM_0052'
+                               AND CD.COMN_CD = DETAIL.COMN_CD
+                               AND DETAIL.DEL_YN = 'N'
+                               AND DETAIL.USE_YN ='Y'
+                               AND DETAIL.USER_DEFN_VDVAL1 = 'IMP'
+                           )
+                           </if>
+                           <if test='bsopTpCd.equals("E")'>
+                           AND A.DCLR_PT_CD IN (
+                               SELECT DETAIL.CD_VDVAL AS DCLR_PT_CD /* CODE DE TYPE DE DÉCLARATION !== 신고유형코드 ==! */
+                               FROM TB_COM_COMN_CD CD, TB_COM_COMN_CD_D DETAIL
+                               WHERE CD.DEL_YN = 'N'
+                               AND CD.USE_YN ='Y'
+                               AND CD.COMN_CD = 'RSM_0052'
+                               AND CD.COMN_CD = DETAIL.COMN_CD
+                               AND DETAIL.DEL_YN = 'N'
+                               AND DETAIL.USE_YN ='Y'
+                               AND DETAIL.USER_DEFN_VDVAL1 = 'EXP'
+                           )
+                           </if>
+                           AND B.APC_CD IS NOT NULL
+                           AND A.HIST_SRNO = 0
+                           AND A.DEL_YN = 'N'
+                           AND B.DEL_YN = 'N'
+                           GROUP BY A.DTL_DCSH_NO, A.HIST_SRNO, IMPPN_IDFY_NO, SELC_RSLT_CD, DCLR_CSTM_CD, DCLR_PT_CD, DCER_CD, EXPPN_IDFY_NO, AUDT_EMP_ID, INSC_EMP_ID, CSM_CNTY_CD, DSTN_CNTY_CD
+                           </if>
+                        ) A
+                        , ( SELECT DTL_DCSH_NO, DSCL_YN, IPRT_PRCS_STTS_CD
+                            FROM TB_CLRI_DED_INSC_RSLT
+                            WHERE IPRT_PRCS_STTS_CD = 'DD5'
+                            AND DSCL_YN = 'Y'
+                            AND DEL_YN = 'N'
+                          ) B
+                        , ( SELECT Z.REFF_NO AS DTL_DCSH_NO
+                                 , DECODE(COUNT(*), 0, 'N', 'Y') AS NTFC_YN
+                                 , SUM (Z.FINE_AMT) AS FINE_AMT
+                            FROM   TB_COLI_NTFC Z
+                            WHERE  Z.NTFC_PT_CD = 'A'
+                            AND    Z.REFF_NO_PT_CD = '002'
+                            AND    Z.DEL_YN = 'N'
+                            AND    Z.CNCL_YN = 'N'
+                            GROUP BY Z.REFF_NO
+                          ) C
+                        , ( SELECT Z.DTL_DCSH_NO
+                                 , DECODE (COUNT (*), 0, 'N', 'Y') AS ADRT_YN
+                            FROM  TB_CLRI_DED_ADRT_D Z
+                            WHERE Z.AUDT_RSLT_CD NOT IN ('NORM00', 'ATVALU')
+                            AND Z.DEL_YN = 'N'
+                            GROUP BY Z.DTL_DCSH_NO
+                          ) D
+                        WHERE  A.DTL_DCSH_NO = B.DTL_DCSH_NO(+)
+                        AND    A.DTL_DCSH_NO = C.DTL_DCSH_NO(+)
+                        AND    A.DTL_DCSH_NO = D.DTL_DCSH_NO(+)
+                        AND   (DSCL_YN = 'Y' OR NTFC_YN = 'Y' OR ADRT_YN = 'Y')
+                        <if test='scrnTp == "txrtMdfyHs"'>
+                        AND   B.IPRT_PRCS_STTS_CD = 'DD5'
+                        AND   B.DSCL_YN = 'Y'
+                        AND   EXISTS ( SELECT 1
+                                       FROM   TB_CLRI_DED_PDLS_INSC_RSLT Z
+                                       WHERE  Z.DTL_DCSH_NO = B.DTL_DCSH_NO
+                                       AND (   Z.INSC_1_RSLT_CD = '04'
+                                            OR Z.INSC_2_RSLT_CD = '04'
+                                            OR Z.INSC_3_RSLT_CD = '04'
+                                            OR Z.INSC_4_RSLT_CD = '04'
+                                            OR Z.INSC_5_RSLT_CD = '04'
+                                            OR Z.INSC_6_RSLT_CD = '04'
+                                           )
+                                       AND  Z.BFCH_HS_CD = #{bfchHsCd}
+                                     )
+                        </if>
+                        <if test='scrnTp == "lowPrcEvDclr"'>
+                            <choose>
+                                <when test='coTpCd == "I"'>
+                                AND    A.IMPPN_IDFY_NO = #{coCd}
+                                </when>
+                                <when test='coTpCd == "E"'>
+                                AND    A.EXPPN_IDFY_NO = #{coCd}
+                                </when>
+                                <when test='coTpCd == "D"'>
+                                AND    A.DCER_CD = #{coCd}
+                                </when>
+                            </choose>
+                            AND   EXISTS ( SELECT *
+                                           FROM   TB_CLRI_DED_ADRT_D Z
+                                           WHERE  Z.DTL_DCSH_NO = A.DTL_DCSH_NO
+                                           AND    Z.DEL_YN = 'N'
+                                           AND    Z.AUDT_RSLT_CD = 'UNVALU'
+                                         )
+                        </if>
+                        <if test='scrnTp == "adorIsprCctr"'>
+                            <choose>
+                                <when test='coTpCd == "I"'>
+                                 AND   A.IMPPN_IDFY_NO = #{coCd}
+                                </when>
+                                <when test='coTpCd == "D"'>
+                                AND    A.DCER_CD = #{coCd}
+                                </when>
+                            </choose>
+                            <choose>
+                                <when test='empTpCd == "A"'>
+                                AND    A.AUDT_EMP_ID = #{audtEmpId}
+                                </when>
+                                <when test='empTpCd == "B"'>
+                                AND    A.INSC_EMP_ID = #{inscEmpId}
+                                </when>
+                            </choose>
+                        </if>
+                        <if test='scrnTp == "clusDsclRt"'>
+                            <choose>
+                                <when test='dcshClusTpCd == "01"'>
+                                AND    A.IMPPN_IDFY_NO = #{dcshClusVal}
+                                </when>
+                                <when test='dcshClusTpCd == "02"'>
+                                AND    A.EXPPN_IDFY_NO = #{dcshClusVal}
+                                </when>
+                                <when test='dcshClusTpCd == "03"'>
+                                AND    A.DCER_CD = #{dcshClusVal}
+                                </when>
+                                <when test='dcshClusTpCd == "04"'>
+                                AND EXISTS ( SELECT *
+                                             FROM   TB_CLRI_DED_PDLS Z
+                                             WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                             AND   Z.HS_CD = #{dcshClusVal}
+                                           )
+                                </when>
+                                <when test='dcshClusTpCd == "05"'>
+                                AND EXISTS ( SELECT *
+                                             FROM   TB_CLRI_DED_PDLS Z
+                                             WHERE A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                             AND   Z.ORCY_CNTY_CD = #{dcshClusVal}
+                                           )
+                                </when>
+                                <when test='dcshClusTpCd == "06"'>
+                                AND A.CSM_CNTY_CD = #{dcshClusVal}
+                                </when>
+                                <when test='dcshClusTpCd == "07"'>
+                                AND A.DSTN_CNTY_CD = #{dcshClusVal}
+                                </when>
+                                <when test='dcshClusTpCd == "08"'>
+                                AND A.DCLR_PT_CD = #{dcshClusVal}
+                                </when>
+                                <when test='dcshClusTpCd == "09"'>
+                                AND EXISTS ( SELECT *
+                                             FROM   TB_CLRI_DED_PDLS Z
+                                             WHERE  A.DTL_DCSH_NO = Z.DTL_DCSH_NO
+                                             AND    Z.APC_CD = #{dcshClusVal}
+                                           )
+                                </when>
+                            </choose>
+                        </if>
+                        <include refid="pagination.footer" />
+                  ) A
+                  LEFT JOIN TB_CLRI_DED_PDLS E           ON A.DTL_DCSH_NO = E.DTL_DCSH_NO
+                  LEFT JOIN TB_CLRI_DED_PDLS_INSC_RSLT F ON A.DTL_DCSH_NO = F.DTL_DCSH_NO
+                                                        AND E.DTL_DCSH_NO = F.DTL_DCSH_NO
+                                                    <if test='scrnTp == "txrtMdfyHs"'>
+                                                        AND  F.BFCH_HS_CD = #{bfchHsCd}
+                                                    </if>
+        ) A
+        ORDER BY A.DTL_DCSH_NO
+               , TO_NUMBER(A.PDLS_NO)
+    </select>
+
+
+</mapper>

@@ -1,0 +1,1016 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.co.mapper.PotPmCoDclrCdMapper">
+
+    <!--
+         Consulter la liste des codes d'activité des entreprises !==업체 신고코드 목록 조회==!
+    -->
+    <select id="selectCoDclrCdApreList" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdapreVo"
+            resultType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdapreVo">
+        /** selectCoDclrCdApreList */
+        <include refid="pagination.header"/>
+        SELECT
+        A.CO_DCLR_CD_RQST_NO
+        , A.NIF
+        , A.CO_DCLR_TP_CD
+        , A.CO_DCLR_CD
+        , A.BF_CO_DCLR_CD
+        , A.WRHS_CO_DCLR_CD
+        , A.CARR_CD
+        , A.RQST_TP_CD
+        , A.PRCS_STTS_CD
+        , A.STTS_CHG_RSN_CN
+        , A.RTRN_RSN_CN
+        , A.DEL_YN
+        , A.FRST_REGST_ID
+        , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+        , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY') AS FRST_RGSR_DT
+        , A.LAST_CHPR_ID
+        , TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+        , A.USE_YN
+        , TO_CHAR(A.ACAP_DTTM,'DD/MM/YYYY') AS ACAP_DTTM
+        , A.CO_DCLR_CD_NM
+        , A.ATCH_FILE_ID
+        , B.CO_NM
+        , B.STTS_TP_CD
+        , B.RPRS_TLPH_NO
+        , B.RPRS_FAX_NO
+        , B.RPRS_EML
+        , B.CO_ADDR
+        , C.USER_ID
+        , C.USER_TP_CD
+        , C.USER_NM
+        , C.USER_FMNM
+        , CASE WHEN C.NAT_CD IS NULL OR C.NAT_CD = FN_GET_PARAM('DMSC_CNTY_CD')
+        THEN 'Y'
+        ELSE 'N'
+        END AS NATV_YN
+        , C.INHB_RGSR_NO
+        , C.TLPH_NO
+        , C.GNDR_CD
+        , C.USER_ADDR
+        , C.EML
+        , C.NAT_CD
+        , C.PSPR_NO
+        , C.EML_RCPN_YN
+        , C.SMS_RCPN_YN
+        , A.APRV
+        , A.PERM_NO
+        , A.APPR_QLFC_CD
+        , A.APPR_TP_CD
+        , A.APPR_CHRC_CD
+        , A.DOFO_CN
+        , TO_CHAR(TO_DATE(A.APRV_ISS_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') AS APRV_ISS_DT
+        , TO_CHAR(TO_DATE(A.PERM_NO_ISS_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') AS PERM_NO_ISS_DT
+        , (SELECT ORGN_NM FROM TB_POTI_ORGN ORGN WHERE ORGN.ORGN_MGMT_CD = B.SBMT_CSTM) AS ORGN_NM
+        FROM TB_POTE_CO_DCLR_CD_RQST A
+        , TB_COM_CO B
+        ,(
+        SELECT
+        RANK() OVER (PARTITION BY NIF ORDER BY FRST_RGSR_DTTM DESC, USER_ID DESC) AS RN
+        ,USER_ID
+        ,NIF
+        ,USER_TP_CD
+        ,USER_NM
+        ,USER_FMNM
+        ,INHB_RGSR_NO
+        ,TLPH_NO
+        ,GNDR_CD
+        ,USER_ADDR
+        ,EML
+        ,NAT_CD
+        ,PSPR_NO
+        ,EML_RCPN_YN
+        ,SMS_RCPN_YN
+        FROM TB_COM_CO_USER
+        WHERE DEL_YN = 'N'
+        AND USER_TP_CD = 'R'
+        AND USE_YN = 'Y'
+        AND USER_STTS_CD NOT IN ('03')
+        ) C
+        WHERE A.DEL_YN = 'N'
+        AND A.NIF = B.NIF
+        AND A.NIF = C.NIF (+)
+        AND 1 = C.RN (+)
+        <if test="srchNif != null and srchNif != ''">
+            AND UPPER(A.NIF) LIKE '%'|| UPPER(#{srchNif}) ||'%'
+        </if>
+        <if
+                test="searchKeywordFrom != null and searchKeywordFrom != '' and searchKeywordTo != null and searchKeywordTo != '' ">
+            AND TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDD')
+            BETWEEN TO_CHAR(TO_DATE( #{searchKeywordFrom} , 'DD/MM/YYYY'), 'YYYYMMDD')
+            AND TO_CHAR(TO_DATE( #{searchKeywordTo} , 'DD/MM/YYYY'), 'YYYYMMDD')
+        </if>
+        <if test="srchPrcsSttsCd != null and srchPrcsSttsCd != ''">
+            AND A.PRCS_STTS_CD = #{srchPrcsSttsCd}
+        </if>
+        <if test="srchCoDclrTpCd != null and srchCoDclrTpCd != ''">
+            AND A.CO_DCLR_TP_CD = #{srchCoDclrTpCd}
+        </if>
+        <if test="srchCoDclrCd != null and srchCoDclrCd != ''">
+            AND UPPER(A.CO_DCLR_CD) LIKE '%'|| UPPER(#{srchCoDclrCd})||'%'
+        </if>
+        <if test="srchCoNm != null and srchCoNm != ''">
+            AND UPPER(B.CO_NM) LIKE '%'|| UPPER(#{srchCoNm})||'%'
+        </if>
+        <if test="!isAllListAuth">
+            AND B.SBMT_CSTM IN (SELECT ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE UPR_ORGN_MGMT_CD = (SELECT
+            HSRK_ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = #{searchSbmtCstm}))
+        </if>
+
+        <if test="srchSbmtCstm != null and srchSbmtCstm != ''">
+            AND B.SBMT_CSTM = #{srchSbmtCstm}
+        </if>
+
+        <if test="srchOrgnCd != null and srchOrgnCd != ''">
+            AND B.SBMT_CSTM IN (SELECT ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE UPR_ORGN_MGMT_CD =
+            #{srchOrgnCd})
+        </if>
+        ORDER BY A.CO_DCLR_CD_RQST_NO
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!-- 
+         Consulter les détails des codes d'activité des entreprises !==업체 신고코드 상세 조회==!
+     -->
+    <select id="selectCoDclrCdApre" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdapreVo"
+            resultType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdapreVo">
+        /** selectCoDclrCdApre */
+        SELECT
+        A.CO_DCLR_CD_RQST_NO
+        , A.NIF
+        , A.CO_DCLR_CD_RQST_NO
+        , A.CO_DCLR_TP_CD
+        , A.CO_DCLR_CD
+        , A.BF_CO_DCLR_CD
+        , A.WRHS_CO_DCLR_CD
+        , A.CARR_CD
+        , A.RQST_TP_CD
+        , A.RTRN_RSN_CN
+        , A.STTS_CHG_RSN_CN
+        , A.PRCS_STTS_CD
+        , A.DEL_YN
+        , A.FRST_REGST_ID
+        , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+        , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY') AS FRST_RGSR_DT
+        , A.LAST_CHPR_ID
+        , TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+        , A.USE_YN
+        , TO_CHAR(A.ACAP_DTTM,'DD/MM/YYYY') AS ACAP_DTTM
+        , A.CO_DCLR_CD_NM
+        , A.ATCH_FILE_ID
+        , B.CO_NM
+        , B.STTS_TP_CD
+        , B.RPRS_TLPH_NO
+        , B.RPRS_FAX_NO
+        , B.RPRS_EML
+        , B.CO_ADDR
+        , C.USER_ID
+        , C.USER_TP_CD
+        , C.USER_NM
+        , C.USER_FMNM
+        , CASE WHEN C.NAT_CD IS NULL OR C.NAT_CD = FN_GET_PARAM('DMSC_CNTY_CD')
+        THEN 'Y'
+        ELSE 'N'
+        END AS NATV_YN
+        , C.INHB_RGSR_NO
+        , C.TLPH_NO
+        , C.GNDR_CD
+        , C.USER_ADDR
+        , C.EML
+        , C.NAT_CD
+        , C.PSPR_NO
+        , C.EML_RCPN_YN
+        , C.SMS_RCPN_YN
+        , A.APRV
+        , A.PERM_NO
+        , TO_CHAR(TO_DATE(A.APRV_ISS_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') AS APRV_ISS_DT
+        , TO_CHAR(TO_DATE(A.PERM_NO_ISS_DT, 'DD/MM/YYYY'), 'DD/MM/YYYY') AS PERM_NO_ISS_DT
+        FROM TB_POTE_CO_DCLR_CD_RQST A
+        , TB_COM_CO B
+        ,(
+        SELECT
+        RANK() OVER (PARTITION BY NIF ORDER BY FRST_RGSR_DTTM DESC, USER_ID DESC) AS RN
+        ,USER_ID
+        ,NIF
+        ,USER_TP_CD
+        ,USER_NM
+        ,USER_FMNM
+        ,INHB_RGSR_NO
+        ,TLPH_NO
+        ,GNDR_CD
+        ,USER_ADDR
+        ,EML
+        ,NAT_CD
+        ,PSPR_NO
+        ,EML_RCPN_YN
+        ,SMS_RCPN_YN
+        FROM TB_COM_CO_USER
+        WHERE DEL_YN = 'N'
+        AND USER_TP_CD = 'R'
+        AND USE_YN = 'Y'
+        AND USER_STTS_CD NOT IN ('03')
+        ) C
+        WHERE A.DEL_YN = 'N'
+        AND A.NIF = B.NIF
+        AND A.NIF = C.NIF (+)
+        AND 1 = C.RN (+)
+        AND A.CO_DCLR_CD_RQST_NO = #{coDclrCdRqstNo}
+        <if test="searchKeywordFrom != null and searchKeywordFrom != '' and searchKeywordTo != null and searchKeywordTo != '' ">
+            AND TO_CHAR(A.FRST_RGSR_DTTM,'YYYYMMDD')
+            BETWEEN TO_CHAR(TO_DATE( #{searchKeywordFrom} , 'DD/MM/YYYY'), 'YYYYMMDD')
+            AND TO_CHAR(TO_DATE( #{searchKeywordTo} , 'DD/MM/YYYY'), 'YYYYMMDD')
+        </if>
+        <if test="srchPrcsSttsCd != null and srchPrcsSttsCd != ''">
+            AND A.PRCS_STTS_CD = #{srchPrcsSttsCd}
+        </if>
+        <if test="srchCoDclrTpCd != null and srchCoDclrTpCd != ''">
+            AND A.CO_DCLR_TP_CD = #{srchCoDclrTpCd}
+        </if>
+        <if test="srchCoNm != null and srchCoNm != ''">
+            AND B.CO_NM = #{srchCoNm}
+        </if>
+    </select>
+
+    <!-- 
+         Consulter les informations de représentant !==대표자 정보 조회==!
+    -->
+    <select id="selectCoRppnList" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCouserVo"
+            resultType="alpass.ipt.pot.pm.co.vo.PotPmCoCouserVo">
+        /** selectCoRppnList */
+        SELECT USER_ID
+             , NIF
+             , USER_TP_CD
+             , USER_NM
+             , INHB_RGSR_NO
+             , TLPH_NO
+             , GNDR_CD
+             , USER_ADDR
+             , EML
+             , NAT_CD
+             , PSPR_NO
+             , EML_RCPN_YN
+             , SMS_RCPN_YN
+             , DEL_YN
+             , FRST_REGST_ID
+             , FRST_RGSR_DTTM
+             , LAST_CHPR_ID
+             , LAST_CHG_DTTM
+             , USER_STTS_CD
+             , ATCH_FILE_ID
+             , RTRN_RSN_CN
+             , USE_YN
+             , LEAV_RSN_CN
+        FROM TB_COM_CO_USER
+        WHERE DEL_YN = 'N'
+          AND NIF = #{nif}
+          AND USER_TP_CD IN ('M', 'R')
+          AND USE_YN = 'Y'
+    </select>
+
+    <!--
+         Vérifier CDA déjà existant !==관세사 중복 체크==!
+    -->
+    <select id="selectCdaDupChk" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdapreVo"
+            resultType="java.lang.Integer">
+        /** selectCdaDupChk */
+        SELECT COUNT(CO_DCLR_CD) AS CNT
+        FROM TB_COM_CO_DCLR_CD A
+        WHERE A.DEL_YN = 'N'
+          AND A.NIF = #{nif}
+          AND A.CO_DCLR_TP_CD = 'H'
+    </select>
+
+    <!-- 
+         Numéroter le Code d'activité de l'entreprise !==업체 신고코드 채번==!
+    -->
+    <select id="selectCoDclrCdKey" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdapreVo"
+            resultType="java.lang.String">
+        /** selectCoDclrCdKey */
+        SELECT #{coDclrTpCd} || LPAD(TO_CHAR(NVL(
+                                                     (SELECT MAX(TO_NUMBER(SUBSTR(CO_DCLR_CD, 2)))
+                                                      FROM TB_COM_CO_DCLR_CD
+                                                      WHERE CO_DCLR_TP_CD = #{coDclrTpCd}
+                                                        AND CO_DCLR_CD NOT LIKE 'FD%'
+                                                        AND CO_DCLR_CD NOT LIKE 'CC%'
+                                                        AND CO_DCLR_CD NOT LIKE 'EE%'
+                                                        AND CO_DCLR_CD NOT LIKE 'FF%'
+                                                        AND CO_DCLR_CD NOT LIKE 'KK%')
+                                                 , 0) + 1), 4, '0') AS CO_DCLR_CD_KEY
+        FROM DUAL
+    </select>
+
+    <!--
+         Enregistrer (Approuver/Renvoyer) l'approbation du code d'activité de l'entreprise - IPT !==업체신고코드사용 승인(반려) 등록 - 내부==!
+    -->
+    <insert id="insertCoDclrCdIptApre" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdapreVo">
+        /** insertCoDclrCdIptApre */
+        with upsert as
+                     (
+        UPDATE TB_COM_CO_DCLR_CD
+        SET CO_DCLR_TP_CD      = #{coDclrTpCd}
+          , BF_CO_DCLR_CD      = #{bfCoDclrCd}
+          , CARR_CD            = #{carrCd}
+          , ACAP_DTTM          = SYSTIMESTAMP
+          , RQST_TP_CD         = #{rqstTpCd}
+          , PRCS_STTS_CD       = #{prcsSttsCd}
+          , USE_YN             = #{useYn}
+          , DEL_YN             = 'N'
+          , FRST_REGST_ID      = #{frstRegstId}
+          , FRST_RGSR_DTTM     = SYSTIMESTAMP
+          , LAST_CHPR_ID       = #{lastChprId}
+          , LAST_CHG_DTTM      = SYSTIMESTAMP
+          , CO_DCLR_CD_NM      = #{coDclrCdNm}
+          , ATCH_FILE_ID       = #{atchFileId}
+          , APRV               = #{aprv}
+          , APRV_ISS_DT        = REPLACE(#{aprvIssDt}, '/', '')
+          , PERM_NO            = #{permNo}
+          , PERM_NO_ISS_DT     = REPLACE(#{permNoIssDt}, '/', '')
+          , APRV_ISS_END_DT    = #{aprvIssEndDt}
+          , PERM_NO_ISS_END_DT = #{permNoIssEndDt}
+          , APPR_QLFC_CD       = #{apprQlfcCd}
+          , APPR_TP_CD         = #{apprTpCd}
+          , APPR_CHRC_CD       = #{apprChrcCd}
+          , DOFO_CN            = #{dofoCn}
+        WHERE NIF = #{nif}
+          AND CO_DCLR_CD = #{coDclrCd} RETURNING *
+        )
+        INSERT
+        INTO TB_COM_CO_DCLR_CD
+        ( NIF
+        , CO_DCLR_CD
+        , BF_CO_DCLR_CD
+        , CO_DCLR_TP_CD
+        , CARR_CD
+        , ACAP_DTTM
+        , RQST_TP_CD
+        , PRCS_STTS_CD
+        , USE_YN
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM
+        , CO_DCLR_CD_NM
+        , ATCH_FILE_ID
+        , APRV
+        , APRV_ISS_DT
+        , PERM_NO
+        , PERM_NO_ISS_DT
+        , APRV_ISS_END_DT
+        , PERM_NO_ISS_END_DT
+        , APPR_QLFC_CD
+        , APPR_TP_CD
+        , APPR_CHRC_CD
+        , DOFO_CN)
+        SELECT #{nif}
+             , #{coDclrCd}
+             , #{bfCoDclrCd}
+             , #{coDclrTpCd}
+             , #{carrCd}
+             , SYSTIMESTAMP
+             , #{rqstTpCd}
+             , #{prcsSttsCd}
+             , #{useYn}
+             , 'N'
+             , #{frstRegstId}
+             , SYSTIMESTAMP
+             , #{lastChprId}
+             , SYSTIMESTAMP
+             , #{coDclrCdNm}
+             , #{atchFileId}
+             , #{aprv}
+             , REPLACE(#{aprvIssDt}, '/', '')
+             , #{permNo}
+             , REPLACE(#{permNoIssDt}, '/', '')
+             , #{aprvIssEndDt}
+             , #{permNoIssEndDt}
+             , #{apprQlfcCd}
+             , #{apprTpCd}
+             , #{apprChrcCd}
+             , #{dofoCn} WHERE NOT exists(select * from upsert)
+    </insert>
+
+    <!-- 
+         Enregistrer une relation utilisateur code de réclamation !==업체신고코드사용자관계 등록==!
+    -->
+    <insert id="insertCoDclrCdUserRel" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcduserrelVo">
+        /** insertCoDclrCdUserRel */
+        with upsert as
+                     (
+        UPDATE TB_COM_CO_DCLR_CD_USER_REL
+        SET DEL_YN         = 'N'
+          , FRST_REGST_ID  = #{frstRegstId}
+          , FRST_RGSR_DTTM = SYSTIMESTAMP
+          , LAST_CHPR_ID   = #{lastChprId}
+          , LAST_CHG_DTTM  = SYSTIMESTAMP
+        WHERE NIF = #{nif}
+          AND CO_DCLR_CD = #{coDclrCd}
+          AND USER_ID = #{userId} returning *
+        )
+        INSERT
+        INTO TB_COM_CO_DCLR_CD_USER_REL
+        ( NIF
+        , CO_DCLR_CD
+        , USER_ID
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM)
+        SELECT #{nif}
+             , #{coDclrCd}
+             , #{userId}
+             , 'N'
+             , #{frstRegstId}
+             , SYSTIMESTAMP
+             , #{lastChprId}
+             , SYSTIMESTAMP WHERE NOT exists(select * from upsert)
+    </insert>
+
+    <!-- 
+         Consulter une liste de rôles !==역할 목록 조회==!
+    -->
+    <select id="selectComRoleList" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoComRoleVo"
+            resultType="alpass.ipt.pot.pm.co.vo.PotPmCoComRoleVo">
+        /** selectComRoleList */
+        SELECT
+        A.ROLE_ID /** ID de role !== 역할ID ==! */
+        , A.APP_CLSF_CD /** Code de classification des programmes d'appli !== 응용분류코드 ==! */
+        , A.BSOP_CLSF_CD /** Code de domaine de travail !== 업무분류코드 ==! */
+        , (SELECT L.ROLE_NM
+        FROM TB_COM_ROLE_LANG L
+        WHERE L.ROLE_ID = A.ROLE_ID
+        AND L.DEL_YN = 'N'
+        AND L.LANG_CD = #{langCd}
+        ) AS ROLE_NM /** Nom du role !== 역할명 ==! */
+        , A.ROLE_DESC /** Description de role !== 역할설명 ==! */
+        , A.USE_YN /** Utilise ON !== 사용여부 ==! */
+        , A.DEL_YN /** Suppression ON !== 삭제여부 ==! */
+        , A.FRST_REGST_ID /** ID du premier enregistrant !== 최초등록자ID ==! */
+        , A.FRST_RGSR_DTTM /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+        , A.LAST_CHPR_ID /** ID du modificateur final !== 최종변경자ID ==! */
+        , A.LAST_CHG_DTTM /** Date et heure de modification finale !== 최종변경일시 ==! */
+        , A.ROLE_PT_CD
+        , A.ROLE_USER_TP_CD
+        , A.CO_DCLR_TP_CD /** @TODO : 번역필요 !== 업체신고유형코드 ==! */
+        , A.ITT_TP_CD /** @TODO : 번역필요 !== 기관구분코드 ==! */
+        , A.ITT_CD
+        FROM TB_COM_ROLE A
+        WHERE A.DEL_YN = 'N'
+        AND A.APP_CLSF_CD = 'EPT'
+        <if test="coDclrTpCd != null and coDclrTpCd != ''">
+            AND A.CO_DCLR_TP_CD = #{coDclrTpCd}
+        </if>
+    </select>
+    <!-- 
+         Vérifier rôles déjà existant !==사용자 역할 중복 체크==!
+    -->
+    <select id="selectCoUserAuthDupChk" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCouserauthVo" resultType="int">
+        /** selectCoUserAuthDupChk */
+        SELECT COUNT(*) AS CNT
+        FROM TB_COM_CO_USER_AUTH A
+        WHERE A.DEL_YN = 'N'
+          AND A.NIF = #{nif}
+          AND A.USER_ID = #{userId}
+          AND A.ROLE_ID = #{roleId}
+    </select>
+
+    <!-- 
+         Enregistrer des rôles un utilisateur entreprise !==사용자 역할 등록==!
+    -->
+    <update id="insertCoUserAuth" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCouserauthVo">
+        /** insertCoUserAuth */
+        INSERT INTO TB_COM_CO_USER_AUTH
+        ( NIF /** N° de RCCM !== 사업자등록번호 ==! */
+        , ROLE_ID /** ID de role  !== 역할ID ==! */
+        , USER_ID /** ID d'utilisateur !== 사용자ID ==! */
+        , USE_YN /** Utilise ON !== 사용여부 ==! */
+        , DEL_YN /** Suppression ON !== 삭제여부 ==! */
+        , FRST_REGST_ID /** ID du premier enregistrant  !== 최초등록자ID ==! */
+        , FRST_RGSR_DTTM /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+        , LAST_CHPR_ID /** ID du modificateur final !== 최종변경자ID ==! */
+        , LAST_CHG_DTTM /** Date et heure de modification finale !== 최종변경일시 ==! */
+        )
+        VALUES ( #{nif} /** N° de RCCM !== 사업자등록번호 ==! */
+               , #{roleId} /** ID de role  !== 역할ID ==! */
+               , #{userId} /** ID d'utilisateur !== 사용자ID ==! */
+               , 'Y' /** Utilise ON !== 사용여부 ==! */
+               , 'N' /** Suppression ON !== 삭제여부 ==! */
+               , #{frstRegstId} /** ID du premier enregistrant  !== 최초등록자ID ==! */
+               , SYSTIMESTAMP /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+               , #{lastChprId} /** ID du modificateur final !== 최종변경자ID ==! */
+               , SYSTIMESTAMP /** Date et heure de modification finale !== 최종변경일시 ==! */
+               )
+    </update>
+
+    <!--
+         Supprimer une relation utilisateur code de réclamation !==업체신고코드사용자관계 삭제==!
+    -->
+    <update id="deleteCoDclrCdUserRel" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcduserrelVo">
+        /** deleteCoDclrCdUserRel */
+        UPDATE TB_COM_CO_DCLR_CD_USER_REL SET
+        DEL_YN = 'Y'
+        , LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE DEL_YN = 'N'
+        AND NIF = #{nif}
+        <if test="coDclrCd != null and coDclrCd != ''">
+            AND CO_DCLR_CD = #{coDclrCd}
+        </if>
+        <if test="userId != null and userId != ''">
+            AND USER_ID = #{userId}
+        </if>
+    </update>
+
+    <!--
+        Supprimer un code d'activité de l'entreprise !==업체신고코드 삭제==!
+    -->
+    <update id="deleteCoDclrCd" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdVo">
+        /** deleteCoDclrCd */
+        UPDATE TB_COM_CO_DCLR_CD SET
+        DEL_YN = 'Y'
+        , USE_YN = 'N'
+        , LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE DEL_YN = 'N'
+        AND NIF = #{nif}
+        <if test="coDclrCd != null and coDclrCd != ''">
+            AND CO_DCLR_CD = #{coDclrCd}
+        </if>
+    </update>
+
+    <!-- 
+         Nombre de codes de déclaration commerciale pour la suppression du rôle d'utilisateur !==사용자 역할 삭제 위한 업체신고코드 카운트==!
+    -->
+    <select id="selectCoDclrCdCnt" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCouserauthVo" resultType="int">
+        /** selectCoDclrCdCnt */
+        SELECT COUNT(*) AS CNT
+        FROM TB_COM_CO_DCLR_CD A
+        WHERE A.DEL_YN = 'N'
+          AND DEL_YN = 'N'
+          AND NIF = #{nif}
+          AND CO_DCLR_TP_CD = #{coDclrTpCd}
+          AND USE_YN = 'Y'
+    </select>
+
+    <!-- 
+         Supprimer le rôle de l'utilisateur !==사용자 역할 삭제==!
+    -->
+    <delete id="deleteCoUserAuth" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCouserauthVo">
+        /** deleteCoUserAuth */
+        DELETE FROM TB_COM_CO_USER_AUTH
+        WHERE NIF = #{nif}
+        <if test="userId != null and userId != ''">
+            AND USER_ID = #{userId}
+        </if>
+        <if test="roleId != null and roleId != ''">
+            AND ROLE_ID = #{roleId}
+        </if>
+    </delete>
+
+    <!-- 
+         Enregistrer l'historique de statut de l'entreprise !==업체상태이력 등록==!
+    -->
+    <insert id="insertCoDclrCdSttsHist" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdsttshistVo">
+        /** insertCoDclrCdSttsHist */
+        INSERT INTO TB_COM_CO_DCLR_CD_STTS_H
+        ( NIF
+        , CO_DCLR_CD
+        , CHG_SRNO
+        , STTS_TP_CD
+        , STTS_CHG_RSN_CN
+        , WRKR_ID
+        , WRKR_DTTM
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM)
+        VALUES ( #{nif}
+               , #{coDclrCd}
+               , NVL((SELECT MAX(CHG_SRNO) + 1 FROM TB_COM_CO_DCLR_CD_STTS_H WHERE NIF = #{nif}), 1)
+               , #{sttsTpCd}
+               , #{sttsChgRsnCn}
+               , #{wrkrId}
+               , SYSTIMESTAMP
+               , 'N'
+               , #{frstRegstId}
+               , SYSTIMESTAMP
+               , #{lastChprId}
+               , SYSTIMESTAMP)
+    </insert>
+
+    <!-- 
+         Enregistrer (Approuver/Renvoyer) l'approbation du code d'activité de l'entreprise - EPT !==업체신고코드사용 승인(반려) 등록 - 외부==!
+    -->
+    <update id="updateCoDclrCdEptApre" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdapreVo">
+        /** updateCoDclrCdEptApre */
+        UPDATE TB_POTE_CO_DCLR_CD_RQST A
+        SET A.CO_DCLR_CD    = #{coDclrCd}
+          , A.PRCS_STTS_CD  = #{apreYn}
+          , A.RTRN_RSN_CN   = #{rtrnRsnCn}
+          , A.ACAP_DTTM     = SYSTIMESTAMP
+          , A.USE_YN        = #{useYn}
+          , A.LAST_CHPR_ID  = #{lastChprId}
+          , A.LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE 1 = 1
+          AND A.CO_DCLR_CD_RQST_NO = #{coDclrCdRqstNo}
+    </update>
+
+    <!--
+        Consulter la liste des ID de représentant !==대표자 대표위임자 ID 목록 조회==!
+    -->
+    <select id="selectCoRppnRppnMndrList" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCouserVo"
+            resultType="alpass.ipt.pot.pm.co.vo.PotPmCoCouserVo">
+        /** selectCoRppnRppnMndrList */
+        SELECT USER_ID
+        FROM TB_COM_CO_USER
+        WHERE DEL_YN = 'N'
+          AND NIF = #{nif}
+          AND USER_TP_CD IN ('R', 'M')
+    </select>
+
+    <!--
+         Consulter la liste de l'inscription de l'entreprise !==업체 신고코드 목록 조회 ==!
+    -->
+    <select id="selectCoDclrCdList" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCouserVo"
+            resultType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdapreVo">
+        /** selectCoDclrCdList */
+        SELECT CO_DCLR_CD
+        FROM TB_COM_CO_DCLR_CD
+        WHERE DEL_YN = 'N'
+          AND NIF = #{nif}
+    </select>
+
+    <!--
+           Enregistrer une attribution de délégation des douaniers !==업체 신고코드 목록 조회 ==!
+      -->
+    <select id="insertCsbrMndaArvrAuthUserList"
+            parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCouserVo"
+            resultType="alpass.ipt.pot.pm.co.vo.PotPmCoCouserVo">
+        /** insertCsbrMndaArvrAuthUserList */
+        SELECT USER_ID
+        FROM TB_COM_CO_USER
+        WHERE DEL_YN = 'N'
+          AND NIF = #{nif}
+          AND USER_TP_CD IN ('R', 'M')
+    </select>
+
+    <!--
+         Enregistrer une attribution de délégation des douaniers !==관세사위임 권한 등록 ==!
+    -->
+    <insert id="insertCsbrMndaArvrAuth" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCouserVo">
+        /** insertCsbrMndaArvrAuth */
+        WITH UPSERT AS (
+        UPDATE TB_COM_CO_USER_AUTH
+        SET USE_YN         = 'Y'
+          , DEL_YN         = 'N'
+          , FRST_REGST_ID  = #{frstRegstId}
+          , FRST_RGSR_DTTM = SYSTIMESTAMP
+          , LAST_CHPR_ID   = #{lastChprId}
+          , LAST_CHG_DTTM  = SYSTIMESTAMP
+        WHERE NIF = #{nif}
+          and ROLE_ID = 'POT098'
+          and USER_ID = #{userId} RETURNING *
+      )
+        INSERT
+        INTO TB_COM_CO_USER_AUTH
+        ( NIF
+        , ROLE_ID
+        , USER_ID
+        , USE_YN
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM)
+        SELECT #{nif}
+             , 'POT098'
+             , #{userId}
+             , 'Y'
+             , 'N'
+             , #{frstRegstId}
+             , SYSTIMESTAMP
+             , #{lastChprId}
+             , SYSTIMESTAMP WHERE NOT EXISTS(SELECT * FROM UPSERT)
+    </insert>
+
+    <!--
+         Supprimer une attribution de délégation des douaniers !==관세사위임 권한 삭제 ==!
+    -->
+    <update id="deleteCsbrMndaArvrAuth" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCouserVo">
+        /** deleteCsbrMndaArvrAuth */
+        DELETE
+        FROM TB_COM_CO_USER_AUTH
+        WHERE NIF = #{nif}
+          AND ROLE_ID = 'POT098'
+    </update>
+
+    <!--
+   Liste des demandes de zone d'activité du code d'activité de l'entreprise !==업체신고코드 활동지역 신청 목록==!
+  -->
+    <select id="selectCoDclrActvReeqnRqstList"
+            parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdapreVo"
+            resultType="alpass.com.comn.vo.ComItemVo">
+        /** selectCoDclrActvReeqnRqstList */
+        SELECT WLY_CD                                AS ITEM
+             , (SELECT A.WLY_NM
+                FROM TB_COM_WLY_CD_LANG A
+                WHERE A.WLY_CD = TB_POTE_ACTV_REQN_RQST.WLY_CD
+                  AND LANG_CD = #{langCd})           AS ITEM_NM
+             , DEL_YN
+             , FRST_REGST_ID
+             , TO_CHAR(FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM
+             , LAST_CHPR_ID
+             , TO_CHAR(LAST_CHG_DTTM, 'DD/MM/YYYY')  AS LAST_CHG_DTTM
+        FROM TB_POTE_ACTV_REQN_RQST
+        WHERE CO_DCLR_CD_RQST_NO = #{coDclrCdRqstNo}
+        ORDER BY WLY_CD
+    </select>
+
+
+    <!--
+   Liste des demandes de spécialité de l'expert du code d'activité de l'entreprise !==업체신고코드 전문분야 신청 목록==!
+  -->
+    <select id="selectCoDclrSpclRlmRqstCdList"
+            parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdapreVo" resultType="java.lang.String">
+        /** selectCoDclrSpclRlmRqstCdList */
+        SELECT SPCL_RLM_CD
+        FROM TB_POTE_SPCL_RLM_RQST
+        WHERE CO_DCLR_CD_RQST_NO = #{coDclrCdRqstNo}
+        ORDER BY SPCL_RLM_CD
+    </select>
+
+    <!--
+   Liste des demandes de zone d'activité du code d'activité de l'entreprise !==업체신고코드 활동지역 신청 목록==!
+  -->
+    <select id="selectCoDclrActvReeqnList"
+            parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdapreVo"
+            resultType="alpass.com.comn.vo.ComItemVo">
+        /** selectCoDclrActvReeqnList */
+        SELECT WLY_CD                                AS ITEM
+             , (SELECT A.WLY_NM
+                FROM TB_COM_WLY_CD_LANG A
+                WHERE A.WLY_CD = TB_COM_ACTV_REQN.WLY_CD
+                  AND LANG_CD = #{langCd})           AS ITEM_NM
+             , DEL_YN
+             , FRST_REGST_ID
+             , TO_CHAR(FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM
+             , LAST_CHPR_ID
+             , TO_CHAR(LAST_CHG_DTTM, 'DD/MM/YYYY')  AS LAST_CHG_DTTM
+        FROM TB_COM_ACTV_REQN
+        WHERE CO_DCLR_CD = #{coDclrCd}
+        ORDER BY WLY_CD
+    </select>
+
+
+    <!--
+   Liste des demandes de spécialité de l'expert du code d'activité de l'entreprise !==업체신고코드 전문분야 신청 목록==!
+  -->
+    <select id="selectCoDclrSpclRlmCdList"
+            parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdapreVo" resultType="java.lang.String">
+        /** selectCoDclrSpclRlmCdList */
+        SELECT SPCL_RLM_CD
+        FROM TB_COM_SPCL_RLM
+        WHERE CO_DCLR_CD = #{coDclrCd}
+        ORDER BY SPCL_RLM_CD
+    </select>
+
+
+    <!--
+      Enregistrer la demande de zone d'activité du code d'activité de l'entreprise !==업체신고코드 활동지역 신청 등록==!
+   -->
+    <update id="insertCoDclrActvReeqn" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdapreVo">
+        /** insertCoDclrActvReeqn */
+        INSERT INTO TB_COM_ACTV_REQN( CO_DCLR_CD
+                                    , WLY_CD
+                                    , DEL_YN
+                                    , FRST_REGST_ID
+                                    , FRST_RGSR_DTTM
+                                    , LAST_CHPR_ID
+                                    , LAST_CHG_DTTM)
+        VALUES ( #{coDclrCd}
+               , #{wlyCd}
+               , 'N' /** Suppression ON !== 삭제여부 ==! */
+               , #{frstRegstId} /** ID du premier enregistrant  !== 최초등록자ID ==! */
+               , SYSTIMESTAMP /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+               , #{lastChprId} /** ID du modificateur final !== 최종변경자ID ==! */
+               , SYSTIMESTAMP /** Date et heure de modification finale !== 최종변경일시 ==! */
+               )
+    </update>
+
+
+    <!--
+      Enregistrer la demande de spécialité de l'expert du code d'activité de l'entreprise !==업체신고코드 전문분야신청 등록==!
+   -->
+    <update id="insertCoDclrSpclRlm" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdapreVo">
+        /** insertCoDclrSpclRlm */
+        INSERT INTO TB_COM_SPCL_RLM( CO_DCLR_CD
+                                   , SPCL_RLM_CD
+                                   , DEL_YN
+                                   , FRST_REGST_ID
+                                   , FRST_RGSR_DTTM
+                                   , LAST_CHPR_ID
+                                   , LAST_CHG_DTTM)
+        VALUES ( #{coDclrCd}
+               , #{spclRlmCd}
+               , 'N' /** Suppression ON !== 삭제여부 ==! */
+               , #{frstRegstId} /** ID du premier enregistrant  !== 최초등록자ID ==! */
+               , SYSTIMESTAMP /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+               , #{lastChprId} /** ID du modificateur final !== 최종변경자ID ==! */
+               , SYSTIMESTAMP /** Date et heure de modification finale !== 최종변경일시 ==! */
+               )
+    </update>
+
+    <!--
+      Liste de Code de déclaration de l'entreprise !==업체신고코드 목록==!
+   -->
+    <select id="selectDclrCdList" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdVo"
+            resultType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdVo">
+        /** selectDclrCdList */
+        <if test="pagingYn != 'N'.toString()">
+            <include refid="pagination.header"/>
+        </if>
+        SELECT
+        A.NIF
+        , B.CO_NM
+        , A.CO_DCLR_CD
+        , A.CO_DCLR_TP_CD
+        , A.USE_YN
+        , A.DEL_YN
+        , A.FRST_REGST_ID
+        , A.FRST_RGSR_DTTM
+        , A.LAST_CHPR_ID
+        , A.LAST_CHG_DTTM
+        FROM TB_COM_CO_DCLR_CD A
+        , TB_COM_CO B
+        WHERE A.NIF = B.NIF(+)
+        AND A.DEL_YN = 'N'
+        AND B.DEL_YN = 'N'
+        <if test="srchCoDclrTpCd != null and srchCoDclrTpCd != ''">
+            AND A.CO_DCLR_TP_CD = #{srchCoDclrTpCd}
+        </if>
+        <if test="srchCoDclrCd != null and srchCoDclrCd != ''">
+            AND A.CO_DCLR_CD = #{srchCoDclrCd}
+        </if>
+        <if test="srchNif != null and srchNif != ''">
+            AND A.NIF = #{srchNif}
+        </if>
+        <if test="srchCoNm != null and srchCoNm != ''">
+            AND UPPER(B.CO_NM) LIKE '%' || UPPER(#{srchCoNm}) || '%'
+        </if>
+        ORDER BY NIF
+        <if test="pagingYn != 'N'.toString()">
+            <include refid="pagination.footer"/>
+        </if>
+    </select>
+
+    <!--
+        Liste de Code de déclaration de l'entreprise !==업체신고코드활동정지 목록==!
+     -->
+    <select id="selectDclrCdActvStopList" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdVo"
+            resultType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdVo">
+        /** selectDclrCdActvStopList */
+        <include refid="pagination.header"/>
+        SELECT
+        A.SRNO
+        , A.NIF
+        , A.CO_DCLR_CD
+        , SUBSTR(A.CO_DCLR_CD,0,1) as CO_DCLR_TP_CD
+        , B.CO_NM
+        , A.ACTV_STOP_CD
+        , A.ACTV_STOP_ATDOC_ID
+        , A.ACTV_STOP_RELE_ATDOC_ID
+        , A.ACTV_STOP_DT
+        , A.ACTV_STRT_DT
+        , A.ACTV_STOP_RELE_RSN
+        , A.DEL_YN
+        , A.ACTV_STTS_CD
+        , A.FRST_REGST_ID
+        , TO_CHAR(A.FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+        , A.LAST_CHPR_ID
+        , TO_CHAR(A.LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+        FROM TB_COM_CO_DCLR_CD_ACTV_STOP_BRKD A, TB_COM_CO B
+        WHERE A.NIF = B.NIF(+)
+        AND A.DEL_YN = 'N'
+        AND B.DEL_YN = 'N'
+        AND A.NIF = #{nif}
+        AND A.CO_DCLR_CD = #{coDclrCd}
+        ORDER BY SRNO
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+      Enregistrer le code de rapport d'activité pour suspension d'activité !==업체신고코드활동정지 등록==!
+     -->
+    <update id="insertDclrCdActvStop" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdVo">
+        /** insertDclrCdActvStop */
+        INSERT INTO TB_COM_CO_DCLR_CD_ACTV_STOP_BRKD( SRNO
+                                                    , NIF
+                                                    , CO_DCLR_CD
+                                                    , ACTV_STOP_CD
+                                                    , ACTV_STOP_ATDOC_ID
+                                                    , ACTV_STOP_RELE_ATDOC_ID
+                                                    , ACTV_STOP_DT
+                                                    , ACTV_STOP_RELE_RSN
+                                                    , ACTV_STTS_CD
+                                                    , DEL_YN
+                                                    , FRST_REGST_ID
+                                                    , FRST_RGSR_DTTM
+                                                    , LAST_CHPR_ID
+                                                    , LAST_CHG_DTTM)
+        VALUES ( (SELECT NVL(MAX(SRNO) + 1, 0) FROM TB_COM_CO_DCLR_CD_ACTV_STOP_BRKD)
+               , #{nif}
+               , #{coDclrCd}
+               , #{actvStopCd}
+               , #{actvStopAtdocId}
+               , #{actvStopReleAtDocId}
+               , TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD')
+               , #{actvStopReleRsn}
+               , '2'
+               , 'N'
+               , #{frstRegstId}
+               , SYSTIMESTAMP
+               , #{lastChprId}
+               , SYSTIMESTAMP)
+    </update>
+
+
+    <!--
+      Modification suspension de l'activité du code rapport d'activité !==업체신고코드활동정지 수정==!
+   -->
+    <update id="updateDclrCdActvStop" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdVo">
+        /** updateDclrCdActvStop */
+        UPDATE TB_COM_CO_DCLR_CD_ACTV_STOP_BRKD
+        SET ACTV_STOP_CD            = #{actvStopCd}
+          , ACTV_STOP_ATDOC_ID      = #{actvStopAtdocId}
+          , ACTV_STOP_RELE_ATDOC_ID = #{actvStopReleAtDocId}
+          , ACTV_STOP_DT            = TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD')
+          , ACTV_STOP_RELE_RSN      = #{actvStopReleRsn}
+          , ACTV_STTS_CD            = #{actvSttsCd}
+          , DEL_YN                  = 'N'
+          , LAST_CHPR_ID            = #{lastChprId}
+          , LAST_CHG_DTTM           = SYSTIMESTAMP
+        WHERE SRNO = #{srno}
+    </update>
+
+    <!--
+      Supprimer la suspension de l'activité du code de rapport d'activité !==업체신고코드활동정지 삭제==!
+     -->
+    <update id="deleteDclrCdActvStop" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdVo">
+        /** deleteDclrCdActvStop */
+        UPDATE TB_COM_CO_DCLR_CD_ACTV_STOP_BRKD
+        SET DEL_YN        = 'Y'
+          , LAST_CHPR_ID  = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE DEL_YN = 'N'
+          AND SRNO = #{srno}
+    </update>
+
+    <!--
+        Modifier de code d'activité de l'entreprise !==업체신고코드 사용여부 수정==!
+     -->
+    <update id="updateCoDclrCdUse" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdVo">
+        /** updateCoDclrCdUse */
+        UPDATE TB_COM_CO_DCLR_CD
+        SET USE_YN        = #{useYn}
+          , LAST_CHPR_ID  = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE DEL_YN = 'N'
+          AND NIF = #{nif}
+          AND CO_DCLR_CD = #{coDclrCd}
+    </update>
+
+    <!--
+     Modifier l'utilisation de la suspension d'activité du code rapport d'activité !==업체신고코드활동정지 사용여부 수정==!
+   -->
+    <update id="updateCoDclrCdActvStopBrkdUse"
+            parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdVo">
+        /** updateCoDclrCdActvStopBrkdUse */
+        UPDATE TB_COM_CO_DCLR_CD_ACTV_STOP_BRKD
+        SET ACTV_STTS_CD            = '1'
+          , ACTV_STOP_RELE_RSN      = #{actvStopReleRsn}
+          , ACTV_STOP_RELE_ATDOC_ID = #{actvStopReleAtDocId}
+          , ACTV_STRT_DT            = TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD')
+          , LAST_CHPR_ID            = #{lastChprId}
+          , LAST_CHG_DTTM           = SYSTIMESTAMP
+        WHERE DEL_YN = 'N'
+          AND SRNO = #{srno}
+    </update>
+
+    <!--
+        Modifier de code d'activité de l'entreprise !==업체신고코드활동정지 목록==!
+     -->
+    <select id="countDclrCdActvStopList" parameterType="alpass.ipt.pot.pm.co.vo.PotPmCoCodclrcdVo"
+            resultType="java.lang.Integer">
+        /** selectDclrCdActvStopList */
+        SELECT count(*)
+        FROM TB_COM_CO_DCLR_CD_ACTV_STOP_BRKD
+        WHERE DEL_YN = 'N'
+          AND NIF = #{nif}
+          AND CO_DCLR_CD = #{coDclrCd}
+          AND ACTV_STTS_CD = '2'
+    </select>
+</mapper>

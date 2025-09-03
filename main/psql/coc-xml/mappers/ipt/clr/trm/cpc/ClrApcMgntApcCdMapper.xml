@@ -1,0 +1,437 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="alpass.ipt.clr.trm.cpc.mapper.ClrApcMgmtApcCdMapper">
+
+    <select id="selectClrApcMgmtApcCdList" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcCdVo" resultType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcCdVo">
+        /* selectClrApcMgmtApcCdList : APC코드관리 목록 조회 */
+        <include refid="pagination.header" />
+        SELECT AA.APC_CD                            /** Code APC !== APC코드 ==! */
+        , AA.APC_NM                             /** Nom de l'APC !== APC명 ==! */
+        , AA.PSMGT_YN                           /** Suivi ON !== 사후관리여부 ==! */
+        , AA.PSMGT_PRID                         /** Periode du suivi !== 사후관리기간 ==! */
+        , AA.MPRC_EXCN_YN                       /** Non-application de la valeur mercuriale !== 시장가격제외여부 ==! */
+        , AA.RMRK_CN                            /** Remarque !== 비고 ==!*/
+        FROM TB_CLRI_APC_CD AA
+        WHERE AA.DEL_YN = 'N'                       /** Code APC !== APC코드 ==! */
+        <if test="apcCd != null and apcCd != ''">
+            AND AA.APC_CD LIKE #{apcCd} || '%'
+        </if>
+        <if test="psmgtPrid != null and psmgtPrid != ''">
+            AND AA.PSMGT_PRID = #{psmgtPrid}
+        </if>
+        <if test="psmgtYn != null and psmgtYn != ''">
+            AND AA.PSMGT_YN = #{psmgtYn}
+        </if>
+        <if test="apcAplyStrtDt != null and apcAplyStrtDt != ''">
+            AND EXISTS (
+                SELECT 1 FROM TB_CLRI_APC_RDEX_TXRT BB
+                WHERE AA.APC_CD = BB.APC_CD
+                AND BB.DEL_YN ='N'
+                AND BB.APC_APLY_STRT_DT = TO_CHAR(TO_DATE(#{apcAplyStrtDt},'DD/MM/YYYY'), 'YYYYMMDD')
+            )
+        </if>
+        <if test="taxCd != null and taxCd != ''">
+            AND EXISTS (
+            SELECT 1 FROM TB_CLRI_APC_RDEX_TXRT BB
+            WHERE AA.APC_CD = BB.APC_CD
+            AND BB.DEL_YN ='N'
+            AND BB.TAX_CD = #{taxCd}
+            )
+        </if>
+        <if test="baseDt != null and baseDt != ''">
+            AND EXISTS (
+            SELECT 1 FROM TB_CLRI_APC_RDEX_TXRT BB
+            WHERE AA.APC_CD = BB.APC_CD
+            AND BB.DEL_YN ='N'
+            AND TO_CHAR(TO_DATE(#{baseDt},'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN BB.APC_APLY_STRT_DT AND BB.APC_APLY_END_DT
+            )
+        </if>
+        <if test="hsCd != null and hsCd != ''">
+            AND EXISTS (
+                SELECT 1 FROM TB_CLRI_APC_HS BB
+                WHERE AA.APC_CD = BB.APC_CD
+                AND BB.DEL_YN ='N'
+                AND #{hsCd} BETWEEN FROM_HS10_CD AND TO_HS10_CD
+            )
+        </if>
+        ORDER BY APC_CD ASC
+        <include refid="pagination.footer" />
+    </select>
+
+    <select id="selectClrApcMgmtApcCdDuplicateCheck" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcCdVo" resultType="int">
+        /* selectClrApcMgmtApcCdDuplicateCheck : APC코드등록 중복 확인*/
+        SELECT TO_CHAR(COUNT(*)) AS COUNT
+        FROM TB_CLRI_APC_CD
+        WHERE APC_CD = #{apcCd}
+    </select>
+
+    <insert id="insertClrApcMgmtApcCd" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcCdVo">
+        /* insertClrApcMgmtApcCd : APC코드관리 등록*/
+        INSERT INTO TB_CLRI_APC_CD
+        (
+            APC_CD                       /** Code APC !== APC코드 ==! */
+        , APC_NM                       /** Nom de l'APC !== APC명 ==! */
+        , PSMGT_YN                     /** Suivi ON !== 사후관리여부 ==! */
+        , PSMGT_PRID                   /** Periode du suivi !== 사후관리기간 ==! */
+        , MPRC_EXCN_YN                 /** Non-application de la valeur mercuriale !== 시장가격제외여부 ==! */
+        , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+        , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+        , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+        , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+        , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        , RMRK_CN                      /** Remarque !== 비고 ==! */
+        )
+        VALUES
+            (
+                #{apcCd}                     /** Code APC !== APC코드 ==! */
+            , #{apcNm}                     /** Nom de l'APC !== APC명 ==! */
+            , #{psmgtYn}                   /** Suivi ON !== 사후관리여부 ==! */
+            , #{psmgtPrid}                 /** Periode du suivi !== 사후관리기간 ==! */
+            , #{mprcExcnYn}                /** Non-application de la valeur mercuriale !== 시장가격제외여부 ==! */
+            , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+            , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+            , #{rmrkCn}                      /** Remarque !== 비고 ==! */
+            )
+    </insert>
+
+    <update id="updateClrApcMgmtApcCd" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcCdVo">
+        /* updateClrApcMgmtApcCd : APC코드관리 수정*/
+        UPDATE  TB_CLRI_APC_CD SET
+        <trim prefixOverrides="," >
+            APC_NM = #{apcNm}                           /** Nom de l'APC !== APC명 ==! */
+            , PSMGT_YN = #{psmgtYn}                       /** Suivi ON !== 사후관리여부 ==! */
+            , PSMGT_PRID = #{psmgtPrid}                   /** Periode du suivi !== 사후관리기간 ==! */
+            , MPRC_EXCN_YN = #{mprcExcnYn}                /** Non-application de la valeur mercuriale !== 시장가격제외여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+            , RMRK_CN = #{rmrkCn}                         /** Remarque !== 비고 ==! */
+        </trim>
+        WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+        AND  APC_CD = #{apcCd}                           /** Code APC !== APC코드 ==! */
+    </update>
+
+    <select id="selectClrApcExcpMtrCdList" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcCdVo" resultType="alpass.ipt.clr.trm.cpc.vo.ClrApcmgmtApcExcpMtrCdMgmtVo">
+        /*selectClrApcExcpMtrCdList : APC예외사항 목록 조회*/
+        SELECT
+              ROW_NUMBER() OVER(ORDER BY APC_CD,APC_EXCP_MTR_CD,APLY_STRT_DT) AS RNUM
+            , APC_CD
+            , (SELECT APC_NM FROM TB_CLRI_APC_CD WHERE APC_CD = A.APC_CD) AS APC_NM
+            , APC_EXCP_MTR_CD
+            , APC_EXCP_MTR_CD_NM
+            , TO_CHAR(TO_DATE(APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS APLY_STRT_DT
+            , TO_CHAR(TO_DATE(APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS APLY_END_DT
+            , HS_CD
+            ,'Y' FIX_YN
+            ,CASE WHEN APLY_END_DT <![CDATA[ < ]]>  TO_CHAR(CURRENT_DATE,'YYYYMMDD') THEN 'Y' ELSE 'N' END  APLY_END_FIX_YN
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+        FROM TB_CLRI_APC_EXCP_MTR_CD_MGMT A
+        WHERE DEL_YN = 'N'                               /** Suppression ON !== 삭제여부 ==! */
+        AND  A.APC_CD = #{apcCd}                         /** Code APC !== APC코드 ==! */
+        ORDER BY APC_EXCP_MTR_CD
+    </select>
+
+    <select id="selectClrApcMgmtCoList" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcCdVo" resultType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcCoVo">
+        /*selectClrApcMgmtApcTxrtCoList : APC등록세율별 업체지정 리스트*/
+        SELECT
+        ROW_NUMBER() OVER(ORDER BY APC_CD,NIF,APLY_STRT_DT) AS RNUM
+        ,APC_CD
+        ,(SELECT APC_NM FROM TB_CLRI_APC_CD WHERE APC_CD = A.APC_CD) AS APC_NM
+        ,NIF
+        ,(SELECT CO_NM FROM  TB_COM_CO B WHERE A.NIF = B.NIF) CO_NM
+        ,TO_CHAR(TO_DATE(APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS CO_APLY_STRT_DT
+        ,TO_CHAR(TO_DATE(APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS CO_APLY_END_DT
+        ,CASE WHEN APLY_END_DT <![CDATA[ < ]]>  TO_CHAR(CURRENT_DATE,'YYYYMMDD') THEN 'Y' ELSE 'N' END  APLY_END_FIX_YN
+        ,DEL_YN
+        ,'Y' FIX_YN
+        ,FRST_REGST_ID
+        ,FRST_RGSR_DTTM
+        ,LAST_CHPR_ID
+        ,LAST_CHG_DTTM
+        FROM TB_CLRI_APC_CO A
+        WHERE DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+        AND  A.APC_CD = #{apcCd}                         /** Code APC !== APC코드 ==! */
+        <if test="baseDt != null and baseDt != ''">
+            AND TO_DATE(#{baseDt}, 'YYYYMMDD') BETWEEN  TO_DATE(APLY_STRT_DT,'YYYYMMDD') AND TO_DATE(APLY_END_DT,'YYYYMMDD')
+        </if>
+        <if test="apcAplyStrtDt != null and apcAplyStrtDt != ''">
+            AND TO_DATE(#{apcAplyStrtDt}, 'YYYYMMDD') =  TO_DATE(APLY_STRT_DT,'YYYYMMDD')
+        </if>
+        ORDER BY NIF,CO_APLY_STRT_DT
+    </select>
+
+    <select id="selectClrApcMgmtHsList" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcCdVo" resultType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcHsVo">
+        /*selectClrApcMgmtHsList : APC등록세율별 HS지정 리스트 */
+        SELECT
+        ROW_NUMBER() OVER(ORDER BY APC_CD,BASE_SRNO,FROM_HS_CD,APLY_STRT_DT) AS RNUM
+        ,APC_CD
+        ,(SELECT APC_NM FROM TB_CLRI_APC_CD WHERE APC_CD = A.APC_CD) AS APC_NM
+        ,FROM_HS_CD
+        ,TO_HS_CD
+        ,FROM_HS10_CD
+        ,TO_HS10_CD
+        ,HS_EXCP_MTR_CD
+        ,(SELECT B.CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG B WHERE B.COMN_CD = 'CLR_0126' AND B.LANG_CD = #{langCd} AND B.CD_VDVAL = A.HS_EXCP_MTR_CD) AS HS_EXCP_MTR_NM
+        ,TO_CHAR(TO_DATE(APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS HS_APLY_STRT_DT
+        ,TO_CHAR(TO_DATE(APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS HS_APLY_END_DT
+        ,CASE WHEN APLY_END_DT <![CDATA[ < ]]>  TO_CHAR(CURRENT_DATE,'YYYYMMDD') THEN 'Y' ELSE 'N' END  APLY_END_FIX_YN
+        ,CASE WHEN APLY_STRT_DT > TO_CHAR(CURRENT_DATE,'YYYYMMDD') THEN 'Y' ELSE 'N' END  APLY_STRT_FIX_YN
+        ,DEL_YN
+        ,'Y' FIX_YN
+        ,FRST_REGST_ID
+        ,FRST_RGSR_DTTM
+        ,LAST_CHPR_ID
+        ,LAST_CHG_DTTM
+        FROM TB_CLRI_APC_HS A
+        WHERE DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+        AND  A.APC_CD = #{apcCd}                         /** Code APC !== APC코드 ==! */
+        <if test="baseDt != null and baseDt != ''">
+            AND TO_DATE(#{baseDt}, 'YYYYMMDD') BETWEEN TO_DATE(APLY_STRT_DT,'YYYYMMDD') AND TO_DATE(APLY_END_DT,'YYYYMMDD')
+        </if>
+        <if test="apcAplyStrtDt != null and apcAplyStrtDt != ''">
+            AND TO_DATE(#{apcAplyStrtDt}, 'YYYYMMDD') =  TO_DATE(APLY_STRT_DT,'YYYYMMDD')
+        </if>
+        ORDER BY APC_CD,BASE_SRNO,FROM_HS_CD,APLY_STRT_DT
+    </select>
+
+    <update id="deleteClrApcExcpMtrCd"  parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcCdVo">
+        /*deleteClrApcExcpMtrCd : 등록전 기존 등록된 예외사항코드관리 리스트 삭제처리*/
+        UPDATE TB_CLRI_APC_EXCP_MTR_CD_MGMT SET
+        <trim prefixOverrides="," >
+              DEL_YN ='Y'
+            , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        </trim>
+        WHERE APC_CD = #{apcCd}                           /** Code APC !== APC코드 ==! */
+        AND   APC_EXCP_MTR_CD = #{apcExcpMtrCd}           /** Code des extraits de APC !== APC예외사항코드 ==! */
+        AND   DEL_YN = 'N'
+    </update>
+
+    <update id="deleteClrApcMgmtApcCo"  parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcCdVo">
+        /*deleteClrApcMgmtApcCo : 등록전 기존 등록된 업체리스트 리스트 삭제처리*/
+        UPDATE TB_CLRI_APC_CO SET
+        <trim prefixOverrides="," >
+            DEL_YN ='Y'
+            ,LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+            ,LAST_CHG_DTTM = SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+        </trim>
+        WHERE APC_CD = #{apcCd}
+        AND  DEL_YN = 'N'
+    </update>
+
+    <update id="deleteClrApcMgmtApcHs"  parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcCdVo">
+        /*deleteClrApcMgmtApcHs : 등록전 기존 등록된 HS 리스트 삭제처리*/
+        UPDATE TB_CLRI_APC_HS SET
+        <trim prefixOverrides="," >
+            DEL_YN ='Y'
+            ,LAST_CHPR_ID = #{lastChprId}                 /** ID du modificateur final !== 최종변경자ID ==! */
+            ,LAST_CHG_DTTM = SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+        </trim>
+        WHERE  APC_CD = #{apcCd}
+        AND  DEL_YN = 'N'
+    </update>
+
+    <insert id="insertClrApcExcpMtrCd" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrApcmgmtApcExcpMtrCdMgmtVo" >
+        /*insertClrApcExcpMtrCd : 예외사항 등록*/
+        <selectKey keyProperty="apcExcpMtrCd" resultType="String" order="BEFORE">
+            SELECT LPAD(CAST(COALESCE(MAX(CAST(APC_EXCP_MTR_CD AS INTEGER)), 0) + 1 AS VARCHAR), 3, '0')
+            FROM TB_CLRI_APC_EXCP_MTR_CD_MGMT
+            WHERE APC_CD = #{apcCd}
+        </selectKey>
+        INSERT INTO TB_CLRI_APC_EXCP_MTR_CD_MGMT
+            (
+              APC_CD
+            , APC_EXCP_MTR_CD
+            , APC_EXCP_MTR_CD_NM
+            , APLY_STRT_DT
+            , APLY_END_DT
+            , HS_CD
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+            )
+            SELECT
+              #{apcCd}
+            , #{apcExcpMtrCd}
+            , #{apcExcpMtrCdNm}
+            , #{aplyStrtDt}
+            , #{aplyEndDt}
+            , #{hsCd}
+            , 'N'
+            , #{frstRegstId}        /** ID du premier enregistrant  !==최초등록자ID==! */
+            , SYSTIMESTAMP          /** Date et heure de premier enregistrement !==최초등록일시==! */
+            , #{lastChprId}         /** ID du modificateur final !==최종변경자ID==! */
+            , SYSTIMESTAMP          /** Date et heure de modification finale !==최종변경일시==! */
+    </insert>
+
+    <update id="updateClrApcExcpMtrCd" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcCdVo">
+        /*updateClrApcExcpMtrCd : 예외사항 리스트 수정*/
+        UPDATE TB_CLRI_APC_EXCP_MTR_CD_MGMT
+        SET
+        <trim prefixOverrides="," >
+              APC_EXCP_MTR_CD_NM = #{apcExcpMtrCdNm}      /** Nom de l'APC !== APC명 ==! */
+            , APLY_STRT_DT = #{aplyStrtDt}
+            , APLY_END_DT = #{aplyEndDt}
+            , HS_CD = #{hsCd}
+            , DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !==최종변경자ID==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !==최종변경일시==! */
+        </trim>
+        WHERE APC_CD = #{apcCd}                           /** Code APC !== APC코드 ==! */
+        AND   APC_EXCP_MTR_CD = #{apcExcpMtrCd}           /** Code des extraits de APC !== APC예외사항코드 ==! */
+    </update>
+
+    <insert id="insertClrApcMgmtApcCo" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcCoVo" >
+        /*insertClrApcMgmtApcCo : 업체정보 리스트 등록*/
+        WITH UPSET AS
+        (
+        UPDATE TB_CLRI_APC_CO M
+        SET
+        <trim prefixOverrides="," >
+            DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+            ,LAST_CHPR_ID = #{lastChprId} /** ID du modificateur final !==최종변경자ID==! */
+            ,LAST_CHG_DTTM = SYSTIMESTAMP /** Date et heure de modification finale !==최종변경일시==! */
+            ,APLY_END_DT = #{coAplyEndDt}
+        </trim>
+        WHERE APC_CD = #{apcCd}                         /** Code APC !== APC코드 ==! */
+        AND  NIF = #{nif}
+        AND  APLY_STRT_DT = #{coAplyStrtDt}
+        RETURNING M.*
+        )INSERT INTO TB_CLRI_APC_CO
+        (
+        APC_CD
+        ,NIF
+        ,APLY_STRT_DT
+        ,APLY_END_DT
+        ,DEL_YN
+        ,FRST_REGST_ID
+        ,FRST_RGSR_DTTM
+        ,LAST_CHPR_ID
+        ,LAST_CHG_DTTM
+        )
+        SELECT
+         #{apcCd}
+        ,#{nif}
+        ,#{coAplyStrtDt}
+        ,#{coAplyEndDt}
+        ,'N'
+        ,#{frstRegstId}        /** ID du premier enregistrant  !==최초등록자ID==! */
+        ,SYSTIMESTAMP          /** Date et heure de premier enregistrement !==최초등록일시==! */
+        ,#{lastChprId}         /** ID du modificateur final !==최종변경자ID==! */
+        ,SYSTIMESTAMP          /** Date et heure de modification finale !==최종변경일시==! */
+        WHERE NOT EXISTS( SELECT * FROM UPSET)
+    </insert>
+
+    <insert id="insertClrApcMgmtApcHs" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcHsVo" >
+        /*insertClrApcMgmtApcHs : HS정보 리스트 등록*/
+        WITH UPSET AS
+        (
+        UPDATE TB_CLRI_APC_HS M
+        SET
+        <trim prefixOverrides="," >
+            DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+            ,LAST_CHPR_ID = #{lastChprId} /** ID du modificateur final !==최종변경자ID==! */
+            ,LAST_CHG_DTTM = SYSTIMESTAMP /** Date et heure de modification finale !==최종변경일시==! */
+            ,APLY_END_DT = #{hsAplyEndDt}
+            ,HS_EXCP_MTR_CD = CASE WHEN #{hsAplyStrtDt} > TO_CHAR(CURRENT_DATE,'YYYYMMDD') THEN NVL(#{hsExcpMtrCd},'') ELSE HS_EXCP_MTR_CD END
+        </trim>
+        WHERE APC_CD = #{apcCd}                         /** Code APC !== APC코드 ==! */
+        AND  FROM_HS10_CD = #{fromHs10Cd}
+        AND  APLY_STRT_DT = #{hsAplyStrtDt}
+        AND  NVL(HS_EXCP_MTR_CD,'') = NVL(#{hsExcpMtrCd},'')
+        RETURNING M.*
+        )
+        INSERT INTO TB_CLRI_APC_HS
+        (
+        APC_CD
+        ,BASE_SRNO
+        ,HS_EXCP_MTR_CD
+        ,FROM_HS_CD
+        ,TO_HS_CD
+        ,FROM_HS10_CD
+        ,TO_HS10_CD
+        ,APLY_STRT_DT
+        ,APLY_END_DT
+        ,DEL_YN
+        ,FRST_REGST_ID
+        ,FRST_RGSR_DTTM
+        ,LAST_CHPR_ID
+        ,LAST_CHG_DTTM
+        )
+        SELECT
+        #{apcCd}
+        ,NVL((SELECT MAX(BASE_SRNO) +1 FROM TB_CLRI_APC_HS WHERE  APC_CD = #{apcCd} AND FROM_HS_CD = #{fromHs10Cd} AND APLY_STRT_DT =#{hsAplyStrtDt})  , 1)
+        ,NVL(#{hsExcpMtrCd},'')
+        <choose>
+            <when test='allHsAplyYn != null and allHsAplyYn.equals("Y")'>
+                , '01'
+                , '99'
+            </when>
+            <otherwise>
+                ,#{fromHs10Cd}
+                ,#{toHs10Cd}
+            </otherwise>
+        </choose>
+        ,#{fromHs10Cd}
+        ,#{toHs10Cd}
+        ,#{hsAplyStrtDt}
+        ,#{hsAplyEndDt}
+        ,'N'
+        ,#{frstRegstId}        /** ID du premier enregistrant  !==최초등록자ID==! */
+        ,SYSTIMESTAMP          /** Date et heure de premier enregistrement !==최초등록일시==! */
+        ,#{lastChprId}         /** ID du modificateur final !==최종변경자ID==! */
+        ,SYSTIMESTAMP          /** Date et heure de modification finale !==최종변경일시==! */
+        WHERE NOT EXISTS( SELECT * FROM UPSET)
+    </insert>
+
+    <select id="selectAplyEndDtClrApcHsList" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcHsVo" resultType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcHsVo">
+        /*selectAplyEndDtClrApcHsList : APLY_END_DT 업데이트용 HS리스트 */
+        SELECT
+              A.APC_CD
+             ,B.FROM_HS_CD
+             ,B.TO_HS_CD
+             ,B.FROM_HS10_CD
+             ,B.TO_HS10_CD
+             ,B.HS_EXCP_MTR_CD
+             ,TO_CHAR(TO_DATE(B.APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS HS_APLY_STRT_DT
+             ,TO_CHAR(TO_DATE(B.APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS HS_APLY_END_DT
+        FROM TB_CLRI_APC_CD A, TB_CLRI_APC_HS B
+        WHERE A.DEL_YN = 'N'  AND B.DEL_YN = 'N'                              /** Suppression ON !== 삭제여부 ==! */
+          AND A.APC_CD = B.APC_CD
+          AND B.FROM_HS10_CD  = #{fromHs10Cd} /** Code HS_CD !== HS코드 ==! */
+          <if test="hsAplyStrtDt != null and hsAplyStrtDt != '' ">
+            <if test="hsAplyEndDt != null and hsAplyEndDt != '' ">
+                <![CDATA[ AND  TO_CHAR(TO_DATE(#{hsAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')  <= B.APLY_STRT_DT AND TO_CHAR(TO_DATE(#{hsAplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') >= B.APLY_END_DT  ]]>
+            </if>
+          </if>
+
+        ORDER BY B.FROM_HS10_CD , B.APLY_STRT_DT
+    </select>
+
+    <insert id="updateClrApcMgmtApcHs" parameterType="alpass.ipt.clr.trm.cpc.vo.ClrTrmApcMgmtApcHsVo" >
+        /*updateClrApcMgmtApcHs : HS정보 리스트 업데이트*/
+        UPDATE TB_CLRI_APC_HS M
+        SET
+        <trim prefixOverrides="," >
+            DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+            ,LAST_CHPR_ID = #{lastChprId} /** ID du modificateur final !==최종변경자ID==! */
+            ,LAST_CHG_DTTM = SYSTIMESTAMP /** Date et heure de modification finale !==최종변경일시==! */
+            , APLY_END_DT = CASE WHEN #{hsAplyEndDt} >= APLY_STRT_DT THEN #{hsAplyEndDt} ELSE APLY_STRT_DT END  /** Date De Fin De L'Application !== 적용종료일자 ==! */
+        </trim>
+        WHERE APC_CD = #{apcCd}                         /** Code APC !== APC코드 ==! */
+        AND  FROM_HS10_CD = #{fromHs10Cd}
+        AND  APLY_STRT_DT = #{hsAplyStrtDt}
+        AND  NVL(HS_EXCP_MTR_CD,'') = NVL(#{hsExcpMtrCd},'')
+    </insert>
+
+
+</mapper>

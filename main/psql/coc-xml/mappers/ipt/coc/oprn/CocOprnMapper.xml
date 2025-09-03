@@ -1,0 +1,588 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<!--
+Mapper : COC OPRN
+(ISSAD Lounis)
+-->
+
+<mapper namespace="alpass.ipt.coc.oprn.mapper.CocOprnMapper">
+
+    <!-- Récupérer la liste des opérations -->
+    <select id="selectOprnList" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo"
+            resultType="alpass.ipt.coc.oprn.vo.CocOprnVo">
+        /** selectOprnList */
+        <include refid="pagination.header"/>
+        SELECT
+        B.OPRN_REF_NO,
+        B.ORGN_REFF_NO,
+        B.OPRN_TITLE,
+        B.OPRN_STTS,
+        B.OPRN_ST,
+        B.OPRN_CNCL_RSN,
+        B.OPRN_ADDR,
+        TO_CHAR(B.OPRN_DPT_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS OPRN_DPT_DTTM,
+        TO_CHAR(B.OPRN_STRT_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS OPRN_STRT_DTTM,
+        TO_CHAR(B.OPRN_END_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS OPRN_END_DTTM,
+        TO_CHAR(B.OPRN_BCK_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS OPRN_BCK_DTTM,
+        B.OPRN_LAT,
+        B.OPRN_LONG,
+        B.COLAB_NM,
+        B.ORGN_CD,
+        B.USE_YN,
+        B.DEL_YN,
+        B.FRST_REGST_ID,
+        TO_CHAR(B.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM,
+        B.LAST_CHPR_ID,
+        TO_CHAR(B.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+        FROM TB_COC_OPRN B
+        JOIN TB_POTI_ORGN A ON A.ORGN_CD = B.ORGN_CD
+        WHERE B.DEL_YN = 'N'
+        AND (
+        #{orgnCd} IN ('000000000', '308000000')
+        OR A.ORGN_CD = #{orgnCd}
+        OR A.ORGN_MGMT_CD IN (
+        SELECT ORGN_MGMT_CD
+        FROM TB_POTI_ORGN
+        WHERE DEL_YN = 'N'
+        START WITH ORGN_CD = #{orgnCd}
+        CONNECT BY PRIOR ORGN_MGMT_CD = UPR_ORGN_MGMT_CD
+        )
+        )
+        <if test='srchOprnRefNo != null'>
+            AND LOWER(B.OPRN_REF_NO) LIKE '%' || LOWER(#{srchOprnRefNo}) || '%'
+        </if>
+        <if test='srchOrgnReffNo != null'>
+            AND LOWER(B.ORGN_REFF_NO) LIKE '%' || LOWER(#{srchOrgnReffNo}) || '%'
+        </if>
+        <if test='srchOprnTitle != null'>
+            AND LOWER(B.OPRN_TITLE) LIKE '%' || LOWER(#{srchOprnTitle}) || '%'
+        </if>
+        <if test='srchOprnStts != null'>
+            AND LOWER(B.OPRN_STTS) LIKE '%' || LOWER(#{srchOprnStts}) || '%'
+        </if>
+        <if test='srchOprnSt != null'>
+            AND LOWER(B.OPRN_ST) LIKE '%' || LOWER(#{srchOprnSt}) || '%'
+        </if>
+<!--        <if test='srchOprnTp != null'>-->
+<!--            AND LOWER(B.OPRN_TP) LIKE '%' || LOWER(#{srchOprnTp}) || '%'-->
+<!--        </if>-->
+        <if test='srchOprnAddr != null'>
+            AND LOWER(B.OPRN_ADDR) LIKE '%' || LOWER(#{srchOprnAddr}) || '%'
+        </if>
+        <if test="oprnDtFrom != null and oprnDtFrom != '' and oprnDtTo != null and oprnDtTo != ''">
+            AND TO_CHAR(B.FRST_RGSR_DTTM, 'YYYYMMDD') <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{oprnDtFrom}, 'DD/MM/YYYY'),
+            'YYYYMMDD')
+            AND TO_CHAR(B.FRST_RGSR_DTTM, 'YYYYMMDD') <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{oprnDtTo}, 'DD/MM/YYYY'),
+            'YYYYMMDD')
+        </if>
+        <if test='srchOrgnCd != null'>
+            AND A.ORGN_MGMT_CD IN (
+            SELECT ORGN_MGMT_CD
+            FROM TB_POTI_ORGN
+            WHERE DEL_YN = 'N'
+            START WITH ORGN_CD = #{srchOrgnCd}
+            CONNECT BY PRIOR ORGN_MGMT_CD = UPR_ORGN_MGMT_CD
+            )
+        </if>
+        ORDER BY OPRN_ST ASC
+        <include refid="pagination.footer"/>
+    </select>
+
+
+    <!-- Récupérer la liste des opérations -->
+    <select id="selectMapOprnList" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo"
+            resultType="alpass.ipt.coc.oprn.vo.CocOprnVo">
+        /** selectMapOprnList */
+        SELECT
+        B.OPRN_REF_NO,
+        B.OPRN_LAT,
+        B.OPRN_LONG,
+        B.ORGN_CD
+        FROM TB_COC_OPRN B
+        JOIN TB_POTI_ORGN A ON A.ORGN_CD = B.ORGN_CD
+        WHERE B.DEL_YN = 'N'
+        AND (
+        #{orgnCd} IN ('000000000', '308000000')
+        OR A.ORGN_CD = #{orgnCd}
+        OR A.ORGN_MGMT_CD IN (
+        SELECT ORGN_MGMT_CD
+        FROM TB_POTI_ORGN
+        WHERE DEL_YN = 'N'
+        START WITH ORGN_CD = #{orgnCd}
+        CONNECT BY PRIOR ORGN_MGMT_CD = UPR_ORGN_MGMT_CD
+        )
+        )
+        AND B.OPRN_ST = '02'
+        <if test="srchOprnRefNo != null and srchOprnRefNo != ''">
+            AND LOWER(B.OPRN_REF_NO) LIKE '%' || LOWER(#{srchOprnRefNo}) || '%'
+        </if>
+        <if test="srchOprnStts != null">
+            AND LOWER(B.OPRN_STTS) LIKE '%' || LOWER(#{srchOprnStts}) || '%'
+        </if>
+        <if test="oprnDtFrom != null and oprnDtFrom != '' and oprnDtTo != null and oprnDtTo != ''">
+            AND TO_CHAR(B.FRST_RGSR_DTTM, 'YYYYMMDD') <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{oprnDtFrom}, 'DD/MM/YYYY'),
+            'YYYYMMDD')
+            AND TO_CHAR(B.FRST_RGSR_DTTM, 'YYYYMMDD') <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{oprnDtTo}, 'DD/MM/YYYY'),
+            'YYYYMMDD')
+        </if>
+        <if test='srchOrgnCd != null'>
+            AND A.ORGN_MGMT_CD IN (
+            SELECT ORGN_MGMT_CD
+            FROM TB_POTI_ORGN
+            WHERE DEL_YN = 'N'
+            START WITH ORGN_CD = #{srchOrgnCd}
+            CONNECT BY PRIOR ORGN_MGMT_CD = UPR_ORGN_MGMT_CD
+            )
+        </if>
+    </select>
+
+
+    <!-- Récupérer une opération -->
+    <select id="selectOprn" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo"
+            resultType="alpass.ipt.coc.oprn.vo.CocOprnVo">
+        /** selectOprn */
+        SELECT OPRN_REF_NO,
+               ORGN_REFF_NO,
+               OPRN_TITLE,
+               OPRN_STTS,
+               OPRN_ST,
+               OPRN_CNCL_RSN,
+               OPRN_ADDR,
+               TO_CHAR(OPRN_DPT_DTTM, 'DD/MM/YYYY HH24:MI:SS')  AS OPRN_DPT_DTTM,
+               TO_CHAR(OPRN_STRT_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS OPRN_STRT_DTTM,
+               TO_CHAR(OPRN_END_DTTM, 'DD/MM/YYYY HH24:MI:SS')  AS OPRN_END_DTTM,
+               TO_CHAR(OPRN_BCK_DTTM, 'DD/MM/YYYY HH24:MI:SS')  AS OPRN_BCK_DTTM,
+               OPRN_LAT,
+               OPRN_LONG,
+               COLAB_NM,
+               ORGN_CD,
+               USE_YN,
+               DEL_YN,
+               FRST_REGST_ID,
+               TO_CHAR(FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM,
+               LAST_CHPR_ID,
+               TO_CHAR(LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS')  AS LAST_CHG_DTTM
+        FROM TB_COC_OPRN
+        WHERE OPRN_REF_NO = #{oprnRefNo}
+          AND DEL_YN = 'N'
+    </select>
+
+    <!-- Récupérer les douaniers d'une opération -->
+    <select id="selectEmpOprnList" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo"
+            resultType="alpass.ipt.coc.mgmt.emp.vo.CocMgmtEmpVo">
+        /** selectEmpOprnList */
+        SELECT
+        C.pbsr_no ,
+        C.emp_nm ,
+        C.emp_stts_cd ,
+        C.inhb_rgsr_no ,
+        C.eml ,
+        TO_CHAR(TO_DATE(C.brdy,
+        'YYYYMMDD'),
+        'DD/MM/YYYY') AS brdy ,
+        C.gndr_cd ,
+        C.mobl_no ,
+        C.dept_tlph_no ,
+        C.emp_addr ,
+        C.phto_imge_cn ,
+        TO_CHAR(TO_DATE(C.wrkp_asn_dt,'YYYYMMDD'),'DD/MM/YYYY') AS wrkp_asn_dt ,
+        TO_CHAR(TO_DATE(C.enco_dt,'YYYYMMDD'),'DD/MM/YYYY') AS enco_dt ,
+        C.emp_bwrk_stts_cd ,
+        C.bsop_clsf_cd ,
+        C.emp_fmnm ,
+        C.emp_nm ,
+        C.far_nm ,
+        C.mor_fmnm ,
+        C.mor_nm ,
+        C.emp_post_cd ,
+        C.grd_cd ,
+        C.fonc_cd ,
+        C.atch_file_id ,
+        TO_CHAR(TO_DATE(C.now_fonc_strt_dt,'YYYYMMDD'),'DD/MM/YYYY') AS now_fonc_strt_dt ,
+        C.temp_brdy ,
+        C.bld_tp_cd ,
+        C.orgn_cd ,
+        <if test="langCd == 'AR'">
+            (select orgn_ar_nm from tb_poti_orgn D where D.orgn_cd= C.orgn_cd ) as orgn_nm
+        </if>
+        <if test="langCd == 'FR'">
+            (select orgn_nm from tb_poti_orgn D where D.orgn_cd= C.orgn_cd ) as orgn_nm
+        </if>
+        FROM tb_poti_co_emp C
+        JOIN TB_COC_EMP_OPRN_REL D ON C.pbsr_no = D.CO_EMP_REF_NO
+        JOIN TB_COC_OPRN B ON D.OPRN_REF_NO = B.OPRN_REF_NO
+        WHERE B.OPRN_REF_NO = #{oprnRefNo}
+        AND B.DEL_YN = 'N'
+        AND C.DEL_YN = 'N'
+    </select>
+
+    <!-- Récupérer les véhicules d'une opération -->
+    <select id="selectVhclOprnList" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo"
+            resultType="alpass.ipt.coc.mgmt.vhcl.vo.CocMgmtVhclVo">
+        /** selectVhclOprnList */
+        SELECT C.VHCL_REF_NO
+             , C.VHCL_RGSR_NO
+             , C.VHCL_STTS
+             , C.VHCL_CND_CD
+             , C.VHCL_KND_CD
+             , C.VHCL_CHSS_NO
+             , C.DEL_YN
+             , C.VHCL_BRND_CD
+             , C.VHCL_MDL_CD
+             , C.VHCL_MNFC_YY
+             , C.USE_YN
+             , C.ORGN_CD
+             , C.FRST_REGST_ID
+             , E.vhcl_mdl_nm
+             , F.vhcl_mnur_nm                                     as vhcl_brnd_nm
+             , TO_CHAR(C.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+             , C.LAST_CHPR_ID
+             , TO_CHAR(C.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS')  AS LAST_CHG_DTTM
+        FROM TB_COC_VHCL C
+                 JOIN TB_COC_VHCL_OPRN_REL D ON C.VHCL_REF_NO = D.VHCL_REF_NO
+                 JOIN TB_COC_OPRN B ON D.OPRN_REF_NO = B.OPRN_REF_NO
+                 JOIN tb_com_vhcl_mdl E ON E.vhcl_mdl_cd = C.vhcl_mdl_cd
+                 JOIN tb_com_vhcl_mnur F ON F.vhcl_mnur_cd = C.vhcl_brnd_cd
+
+        WHERE B.OPRN_REF_NO = #{oprnRefNo}
+          AND B.DEL_YN = 'N'
+          AND C.DEL_YN = 'N'
+    </select>
+
+    <!-- Récupérer les armes d'une opération -->
+    <select id="selectArmOprnList" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo"
+            resultType="alpass.ipt.coc.mgmt.arm.vo.CocMgmtArmVo">
+        /** selectArmOprnList */
+        SELECT C.ARM_REF_NO,
+               C.ARM_SRNO,
+               C.ARM_MX_CP_CH,
+               C.ARM_CD,
+               C.ORGN_CD,
+               C.USE_YN,
+               C.DEL_YN,
+               C.FRST_REGST_ID,
+               TO_CHAR(C.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM,
+               C.LAST_CHPR_ID,
+               TO_CHAR(C.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS')  AS LAST_CHG_DTTM,
+               C.ARM_STTS
+        FROM TB_COC_ARM C
+                 JOIN TB_COC_ARM_OPRN_REL D ON C.ARM_REF_NO = D.ARM_REF_NO
+                 JOIN TB_COC_OPRN B ON D.OPRN_REF_NO = B.OPRN_REF_NO
+        WHERE B.OPRN_REF_NO = #{oprnRefNo}
+          AND B.DEL_YN = 'N'
+          AND C.DEL_YN = 'N'
+    </select>
+
+    <!-- Récupérer les munitions d'une opération -->
+    <select id="selectAmoOprnList" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo"
+            resultType="alpass.ipt.coc.mgmt.amo.vo.CocMgmtAmoVo">
+        /** selectAmoOprnList */
+        SELECT C.AMO_REF_NO,
+               C.AMO_QTY,
+               D.AMO_QTY                                          as oprn_qty,
+               C.AMO_CALB,
+               C.ORGN_CD,
+               C.amo_mnfc_yy,
+               C.WHITE_YN,
+               C.USE_YN,
+               C.DEL_YN,
+               C.FRST_REGST_ID,
+               TO_CHAR(C.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM,
+               C.LAST_CHPR_ID,
+               TO_CHAR(C.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS')  AS LAST_CHG_DTTM
+        FROM TB_COC_AMO C
+                 JOIN TB_COC_AMO_OPRN_REL D ON C.AMO_REF_NO = D.AMO_REF_NO
+                 JOIN TB_COC_OPRN B ON D.OPRN_REF_NO = B.OPRN_REF_NO
+        WHERE B.OPRN_REF_NO = #{oprnRefNo}
+          AND B.DEL_YN = 'N'
+          AND C.DEL_YN = 'N'
+    </select>
+
+    <!-- Récupérer les équipements d'une opération -->
+    <select id="selectEqipOprnList" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo"
+            resultType="alpass.ipt.coc.mgmt.eqip.vo.CocMgmtEqipVo">
+        /** selectEqipOprnList */
+        SELECT C.EQIP_REF_NO,
+               C.EQIP_INVN_NO,
+               C.EQIP_NM,
+               C.EQIP_TP,
+               C.EQIP_DESC,
+               C.EQIP_STTS,
+               C.ORGN_CD,
+               C.USE_YN,
+               C.DEL_YN,
+               C.FRST_REGST_ID,
+               TO_CHAR(C.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM,
+               C.LAST_CHPR_ID,
+               TO_CHAR(C.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS')  AS LAST_CHG_DTTM
+        FROM TB_COC_EQIP C
+                 JOIN TB_COC_EQIP_OPRN_REL D ON C.EQIP_REF_NO = D.EQIP_REF_NO
+                 JOIN TB_COC_OPRN B ON D.OPRN_REF_NO = B.OPRN_REF_NO
+        WHERE B.OPRN_REF_NO = #{oprnRefNo}
+          AND B.DEL_YN = 'N'
+          AND C.DEL_YN = 'N'
+    </select>
+
+    <!-- Récupérer les brigades canines d'une opération -->
+    <select id="selectCnnOprnList" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo"
+            resultType="alpass.ipt.coc.mgmt.cnn.vo.CocMgmtCnnVo">
+        /** selectCnnOprnList */
+        SELECT C.CNN_REF_NO,
+               C.CNN_NM,
+               C.CNN_AGE,
+               C.CNN_TP,
+               C.CNN_BLD,
+               C.CNN_SPCL,
+               C.CNN_RC,
+               C.CNN_IMG,
+               C.PBSR_NO,
+               C.ORGN_CD,
+               C.USE_YN,
+               C.DEL_YN,
+               C.FRST_REGST_ID,
+               TO_CHAR(C.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM,
+               C.LAST_CHPR_ID,
+               TO_CHAR(C.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS')  AS LAST_CHG_DTTM
+        FROM TB_COC_CNN C
+                 JOIN TB_COC_CNN_OPRN_REL D ON C.CNN_REF_NO = D.CNN_REF_NO
+                 JOIN TB_COC_OPRN B ON D.OPRN_REF_NO = B.OPRN_REF_NO
+        WHERE B.OPRN_REF_NO = #{oprnRefNo}
+          AND B.DEL_YN = 'N'
+          AND C.DEL_YN = 'N'
+    </select>
+
+    <!-- Récupérer les collaborateurs d'une opération -->
+    <select id="selectColabOprnList" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo" resultType="java.lang.String">
+        /** selectColabOprnList */
+        SELECT C.COLAB_CD
+        FROM TB_COC_COLAB_OPRN_REL C
+                 JOIN TB_COC_OPRN B ON C.OPRN_REF_NO = B.OPRN_REF_NO
+        WHERE B.OPRN_REF_NO = #{oprnRefNo}
+          AND B.DEL_YN = 'N'
+    </select>
+
+    <!--  Récupérer la liste de type d'une opération -->
+    <select id="selectOprnTpList" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo" resultType="java.lang.String">
+        /** selectOprnTpList */
+        SELECT C.OPRN_TP_CD
+        FROM TB_COC_OPRN_TP_REL C
+                 JOIN TB_COC_OPRN B ON C.OPRN_REF_NO = B.OPRN_REF_NO
+        WHERE B.OPRN_REF_NO = #{oprnRefNo}
+          AND B.DEL_YN = 'N'
+    </select>
+
+    <update id="updateRealTimeStrtOprn" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo">
+        UPDATE TB_COC_OPRN
+        SET OPRN_ST       = '02',
+            LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE OPRN_STRT_DTTM <![CDATA[ <= ]]> CURRENT_TIMESTAMP
+          AND DEL_YN = 'N'
+          AND OPRN_ST = '01'
+          AND (oprn_stts = '' OR oprn_stts is null )
+    </update>
+
+
+    <update id="updateRealTimeEndOprn" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo">
+        UPDATE TB_COC_OPRN
+        SET OPRN_ST       = '03',
+            LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE OPRN_END_DTTM <![CDATA[ <= ]]> CURRENT_TIMESTAMP
+          AND DEL_YN = 'N'
+          AND OPRN_ST = '02'
+          AND (oprn_stts = '' OR oprn_stts is null )
+    </update>
+
+
+    <!-- Insérer une opération -->
+    <insert id="insertOprn" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo">
+        /** insertOprn */
+        WITH UPSERT AS (
+        UPDATE TB_COC_OPRN
+        SET ORGN_REFF_NO   = #{orgnReffNo},
+            OPRN_TITLE     = #{oprnTitle},
+            OPRN_STTS      = #{oprnStts},
+            OPRN_ST        = #{oprnSt},
+            OPRN_ADDR      = #{oprnAddr},
+            OPRN_DPT_DTTM  = TO_TIMESTAMP(#{oprnDptDttm}, 'DD/MM/YYYY HH24:MI:SS'),
+            OPRN_STRT_DTTM = TO_TIMESTAMP(#{oprnStrtDttm}, 'DD/MM/YYYY HH24:MI:SS'),
+            OPRN_END_DTTM  = TO_TIMESTAMP(#{oprnEndDttm}, 'DD/MM/YYYY HH24:MI:SS'),
+            OPRN_BCK_DTTM  = TO_TIMESTAMP(#{oprnBckDttm}, 'DD/MM/YYYY HH24:MI:SS'),
+            OPRN_LAT       = #{oprnLat},
+            OPRN_LONG      = #{oprnLong},
+            COLAB_NM       = #{colabNm},
+            ORGN_CD        = #{orgnCd},
+            USE_YN         = #{useYn},
+            DEL_YN         = #{delYn},
+            FRST_REGST_ID  = #{frstRegstId},
+            FRST_RGSR_DTTM = SYSTIMESTAMP,
+            LAST_CHPR_ID   = #{lastChprId},
+            LAST_CHG_DTTM  = SYSTIMESTAMP
+        WHERE OPRN_REF_NO = #{oprnRefNo} RETURNING *
+        )
+        INSERT
+        INTO TB_COC_OPRN (OPRN_REF_NO,
+                          ORGN_REFF_NO,
+                          OPRN_TITLE,
+                          OPRN_STTS,
+                          OPRN_ST,
+                          OPRN_ADDR,
+                          OPRN_DPT_DTTM,
+                          OPRN_STRT_DTTM,
+                          OPRN_END_DTTM,
+                          OPRN_BCK_DTTM,
+                          OPRN_LAT,
+                          OPRN_LONG,
+                          COLAB_NM,
+                          ORGN_CD,
+                          USE_YN,
+                          DEL_YN,
+                          FRST_REGST_ID,
+                          FRST_RGSR_DTTM,
+                          LAST_CHPR_ID,
+                          LAST_CHG_DTTM)
+        SELECT #{oprnRefNo},
+               #{orgnReffNo},
+               #{oprnTitle},
+               #{oprnStts},
+               #{oprnSt},
+               #{oprnAddr},
+               TO_TIMESTAMP(#{oprnDptDttm}, 'DD/MM/YYYY HH24:MI:SS'),
+               TO_TIMESTAMP(#{oprnStrtDttm}, 'DD/MM/YYYY HH24:MI:SS'),
+               TO_TIMESTAMP(#{oprnEndDttm}, 'DD/MM/YYYY HH24:MI:SS'),
+               TO_TIMESTAMP(#{oprnBckDttm}, 'DD/MM/YYYY HH24:MI:SS'),
+               #{oprnLat},
+               #{oprnLong},
+               #{colabNm},
+               #{orgnCd},
+               #{useYn},
+               #{delYn},
+               #{frstRegstId},
+               SYSTIMESTAMP,
+               #{lastChprId},
+               SYSTIMESTAMP WHERE NOT EXISTS (SELECT * FROM UPSERT);
+    </insert>
+
+    <!-- Insérer les douaniers -->
+    <insert id="insertEmpOprnRel" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo">
+        /** insertEmpOprnRel */
+        INSERT INTO TB_COC_EMP_OPRN_REL (oprn_ref_no, co_emp_ref_no)
+        VALUES
+        <foreach collection="empList" item="emp" separator=",">
+            (#{oprnRefNo}, #{emp.pbsrNo})
+        </foreach>
+    </insert>
+
+    <insert id="insertVhclOprnRel" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo">
+        /** insertVhclOprnRel */
+        INSERT INTO TB_COC_VHCL_OPRN_REL (oprn_ref_no, vhcl_ref_no)
+        VALUES
+        <foreach collection="vhclList" item="vhcl" separator=",">
+            (#{oprnRefNo}, #{vhcl.vhclRefNo})
+        </foreach>
+    </insert>
+    <insert id="insertArmOprnRel" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo">
+        /** insertArmOprnRel */
+        INSERT INTO TB_COC_ARM_OPRN_REL (oprn_ref_no, arm_ref_no)
+        VALUES
+        <foreach collection="armList" item="arm" separator=",">
+            (#{oprnRefNo}, #{arm.armRefNo})
+        </foreach>
+    </insert>
+    <insert id="insertAmoOprnRel" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo">
+        /** insertAmoOprnRel */
+        INSERT INTO TB_COC_AMO_OPRN_REL (oprn_ref_no, amo_ref_no,amo_qty)
+        VALUES
+        <foreach collection="amoList" item="amo" separator=",">
+            (#{oprnRefNo}, #{amo.amoRefNo},#{amo.oprnQty})
+        </foreach>
+    </insert>
+    <insert id="insertEqipOprnRel" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo">
+        /** insertEqipOprnRel */
+        INSERT INTO TB_COC_EQIP_OPRN_REL (oprn_ref_no, eqip_ref_no)
+        VALUES
+        <foreach collection="eqipList" item="eqip" separator=",">
+            (#{oprnRefNo}, #{eqip.eqipRefNo})
+        </foreach>
+    </insert>
+    <insert id="insertCnnOprnRel" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo">
+        /** insertCnnOprnRel */
+        INSERT INTO TB_COC_CNN_OPRN_REL (oprn_ref_no, cnn_ref_no)
+        VALUES
+        <foreach collection="cnnList" item="cnn" separator=",">
+            (#{oprnRefNo}, #{cnn.cnnRefNo})
+        </foreach>
+    </insert>
+    <insert id="insertColabOprnRel" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo">
+        /** insertColabOprnRel */
+        INSERT INTO TB_COC_COLAB_OPRN_REL (oprn_ref_no, colab_cd)
+        VALUES
+        <foreach collection="colabList" item="colab" separator=",">
+            (#{oprnRefNo}, #{colab})
+        </foreach>
+    </insert>
+
+    <insert id="insertOprnTpRel" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo">
+        /** insertOprnTpRel */
+        INSERT INTO TB_COC_OPRN_TP_REL (oprn_ref_no, oprn_tp_cd)
+        VALUES
+        <foreach collection="oprnTpList" item="oprnTp" separator=",">
+            (#{oprnRefNo}, #{oprnTp})
+        </foreach>
+    </insert>
+
+    <!-- Modifier une opération -->
+    <update id="updateOprn" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo">
+        /** updateOprn */
+        UPDATE TB_COC_OPRN
+        SET OPRN_STRT_DTTM = TO_TIMESTAMP(#{oprnStrtDttm}, 'DD/MM/YYYY HH24:MI:SS'),
+            OPRN_END_DTTM  = TO_TIMESTAMP(#{oprnEndDttm}, 'DD/MM/YYYY HH24:MI:SS'),
+            OPRN_BCK_DTTM  = TO_TIMESTAMP(#{oprnBckDttm}, 'DD/MM/YYYY HH24:MI:SS'),
+            OPRN_STTS      = #{oprnStts},
+            OPRN_ST        = '03',
+            LAST_CHPR_ID   = #{lastChprId},
+            LAST_CHG_DTTM  = SYSTIMESTAMP
+        WHERE OPRN_REF_NO = #{oprnRefNo}
+          AND DEL_YN = #{delYn}
+    </update>
+
+    <!-- Annuler une opération -->
+    <update id="updateOprnSt" parameterType="alpass.ipt.coc.oprn.vo.CocOprnVo">
+        /** updateOprnSt */
+        UPDATE TB_COC_OPRN
+        SET OPRN_ST       = #{oprnSt},
+            OPRN_CNCL_RSN = #{oprnCnclRsn},
+            LAST_CHPR_ID  = #{lastChprId},
+            LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE OPRN_REF_NO = #{oprnRefNo}
+          AND DEL_YN = #{delYn}
+    </update>
+
+    <!-- Step 1: Update oprn_st -->
+    <update id="updateOprnStatus">
+        UPDATE tb_coc_oprn
+        SET oprn_st = '02'
+        WHERE oprn_strt_dttm <![CDATA[ <= ]]> CURRENT_TIMESTAMP
+        AND DEL_YN = 'N'
+    </update>
+
+    <!-- Step 2: Select concerned users -->
+    <select id="getUsersToNotify" resultType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpVo">
+        SELECT e.pbsr_no, e.orgn_mgmt_cd
+        FROM tb_poti_emp e
+        WHERE e.orgn_mgmt_cd IN (
+        SELECT DISTINCT ORGN_MGMT_CD
+        FROM TB_POTI_ORGN
+        WHERE DEL_YN = 'N'
+        START WITH ORGN_CD IN (
+        SELECT orgn_cd
+        FROM tb_coc_oprn
+        WHERE oprn_strt_dttm <![CDATA[ <= ]]> CURRENT_TIMESTAMP
+        )
+        CONNECT BY PRIOR ORGN_MGMT_CD = UPR_ORGN_MGMT_CD
+        )
+        OR e.orgn_mgmt_cd IN ('ORG0000001', 'ORG0000172')
+    </select>
+
+</mapper>

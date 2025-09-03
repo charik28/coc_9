@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.car.load.mapper.CarLoadSlngInfoMapper">
+
+    <!--
+     Voir la liste des Demande de Info du transport !==운송정보 목록 조회한다.==!
+    -->
+    <select id="selectCarLoadSlngInfoList"
+            parameterType="alpass.ipt.car.load.vo.CarLoadSlngInfoVo"
+            resultType="alpass.ipt.car.load.vo.CarLoadSlngInfoVo">
+        /* selectCarLoadSlngInfoList */
+        <include refid="pagination.header" ></include>
+        SELECT
+			  SLNG_RGSR_NO                          /** !==운항등록번호==! */
+			, SLNG_MGMT_NO                       	/** !==운항관리번호==! */
+			, TRNP_MEAN_CD                       	/** !==운송방법코드==! */
+			, TRNP_METH_NM                       	/** !==운송수단명==! */
+			, TRNP_METH_IDFY_NO                  	/** !==운송수단식별번호==! */
+			, TRNP_RFER_NO                       	/** !==운송참고번호==! */
+			, TO_CHAR(TO_DATE(TRNP_METH_RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS TRNP_METH_RGSR_DT /** !==운송수단등록일자==! */
+			, IMO_NO
+			, DPTR_PORT_CD                       	/** !==출발항구코드==! */
+			, FN_CARI_GET_PORT_AIRPT_CITY_CD_NM(DPTR_PORT_CD, #{langCd}) AS DPTR_PORT_NM	/** !==출발항구명==! */
+			, LDUN_PORT_CD                       	/** !==하역항구코드==! */
+			, FN_CARI_GET_PORT_AIRPT_CITY_CD_NM(LDUN_PORT_CD, #{langCd}) AS LDUN_PORT_NM	/** !==하역항구명==! */
+			, TRNP_METH_NAT_CD                   	/** !==운송수단국적코드==! */
+			, SHIP_TTN		/** 선박총톤수 */
+            , SHIP_NTTN		/** 선박순톤수 */
+            , LTSP_YN		/** 공선여부 */
+            , CARR_CD		/** 운송사코드 */
+            , ( SELECT DISTINCT(CO_NM)
+                      FROM TB_COM_CO T1
+                         , TB_COM_CO_DCLR_CD T2
+                     WHERE T1.NIF = T2.NIF
+                       AND T2.CARR_CD = A.CARR_CD
+                       AND T2.DEL_YN = 'N'
+                       AND T2.USE_YN = 'Y'
+                       LIMIT 1
+                  ) AS CARR_NM        /** Nom de société de transport !==운송사명==! */
+            , CARR_ADDR_NM	/** 운송사주소명 */
+            , DRVR_NM		/** 운전자명 */
+            , DRVR_ADIT_INFO_CN	/** 운전자 추가정보 */
+		FROM TB_CARI_LOAD_SLNG_INFO A
+		WHERE A.DEL_YN = 'N'
+		<if test="dptrDttmFrom != null and dptrDttmFrom != ''">
+        AND A.DPTR_DTTM BETWEEN TO_DATE(#{dptrDttmFrom}, 'DD/MM/YYYY') AND TO_DATE(#{dptrDttmTo}, 'DD/MM/YYYY') + 0.99999
+        </if>
+        <if test="slngRgsrNo != null and slngRgsrNo != ''">
+        AND A.SLNG_RGSR_NO = #{slngRgsrNo}
+        </if>
+        <if test="trnpMethIdfyNo != null and trnpMethIdfyNo != ''">
+        AND A.TRNP_METH_IDFY_NO = #{trnpMethIdfyNo}
+        </if>
+        <if test="trnpMethNm != null and trnpMethNm != ''">
+        AND A.TRNP_METH_NM = #{trnpMethNm}
+        </if>
+        <if test="imoNo != null and imoNo != ''">
+        AND A.IMO_NO = #{imoNo}
+        </if>
+        <if test="trnpRferNo != null and trnpRferNo != ''">
+        AND A.TRNP_RFER_NO = #{trnpRferNo}
+        </if>
+        <if test="coatTrnpYn != null and coatTrnpYn != ''">
+        AND A.COAT_TRNP_YN = #{coatTrnpYn}
+        </if>
+        ORDER BY A.DPTR_DTTM DESC
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <!--
+     Enregistrement de la déclaration de Info du transport !==운송정보 정보를 저장한다==!
+    -->
+    <insert id="insertCarLoadSlngInfo" parameterType="alpass.ipt.car.load.vo.CarLoadSlngInfoVo" >
+        /* insertCarLoadSlngInfo */
+        INSERT INTO TB_CARI_LOAD_SLNG_INFO (
+              SLNG_RGSR_NO
+        	, SLNG_MGMT_NO
+        	, TRNP_MEAN_CD
+        	, TRNP_METH_NM
+        	, TRNP_METH_IDFY_NO
+        	, TRNP_RFER_NO
+        	, TRNP_METH_RGSR_DT
+        	, IMO_NO
+        	, DPTR_DTTM
+        	, ARVL_DTTM
+        	, DPTR_PORT_CD
+        	, LDUN_PORT_CD
+        	, TRNP_METH_NAT_CD
+        	, SHIP_TTN
+        	, SHIP_NTTN
+        	, LTSP_YN
+        	, CARR_CD
+        	, CARR_ADDR_NM
+        	, DRVR_NM
+        	, DRVR_ADIT_INFO_CN
+        	, DEL_YN
+        	, FRST_REGST_ID
+        	, FRST_RGSR_DTTM
+        	, LAST_CHPR_ID
+        	, LAST_CHG_DTTM
+        ) VALUES (
+              #{slngRgsrNo}
+            , #{slngMgmtNo}
+            , #{trnpMeanCd}
+            , #{trnpMethNm}
+            , #{trnpMethIdfyNo}
+            , #{trnpRferNo}
+            , TO_CHAR(TO_DATE(#{trnpMethRgsrDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            , #{imoNo}
+            , TO_TIMESTAMP(#{dptrDttm},'DD/MM/YYYY HH24:MI:SS')
+            , TO_TIMESTAMP(#{arvlDttm},'DD/MM/YYYY HH24:MI:SS')
+            , #{dptrPortCd}
+            , #{ldunPortCd}
+            , #{trnpMethNatCd}
+            , #{shipTtn}
+            , #{shipNttn}
+            , #{ltspYn}
+            , #{carrCd}
+            , #{carrAddrNm}
+            , #{drvrNm}
+            , #{drvrAditInfoCn}
+            , 'N'
+            , #{frstRegstId}
+            , SYSTIMESTAMP
+            , #{lastChprId}
+            , SYSTIMESTAMP
+		)
+    </insert>
+
+    <!--
+    Modifier la  déclaration de Info du transport !==운송정보 정보를 수정한다.==!
+    -->
+    <update id="updateCarLoadSlngInfo" parameterType="alpass.ipt.car.load.vo.CarLoadSlngInfoVo" >
+        /* updateCarLoadSlngInfo */
+        UPDATE TB_CARI_LOAD_SLNG_INFO SET
+        	  DEL_YN = 'N'
+        	, LAST_CHPR_ID = #{lastChprId}
+        	, LAST_CHG_DTTM = SYSTIMESTAMP
+        	, TRNP_MEAN_CD = #{trnpMeanCd}
+        	, TRNP_METH_NM = #{trnpMethNm}
+        	, TRNP_METH_IDFY_NO = #{trnpMethIdfyNo}
+        	, TRNP_RFER_NO = #{trnpRferNo}
+        	, TRNP_METH_RGSR_DT = TO_CHAR(TO_DATE(#{trnpMethRgsrDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        	, IMO_NO = #{imoNo}
+        	, DPTR_DTTM = TO_TIMESTAMP(#{dptrDttm},'DD/MM/YYYY HH24:MI:SS')
+        	, ARVL_DTTM = TO_TIMESTAMP(#{arvlDttm},'DD/MM/YYYY HH24:MI:SS')
+        	, DPTR_PORT_CD = #{dptrPortCd}
+        	, LDUN_PORT_CD = #{ldunPortCd}
+        	, TRNP_METH_NAT_CD = #{trnpMethNatCd}
+        	, SHIP_TTN = #{shipTtn}
+        	, SHIP_NTTN = #{shipNttn}
+        	, LTSP_YN = #{ltspYn}
+        	, CARR_CD = #{carrCd}
+        	, CARR_ADDR_NM = #{carrAddrNm}
+        	, DRVR_NM = #{drvrNm}
+        	, DRVR_ADIT_INFO_CN = #{drvrAditInfoCn}
+        WHERE DEL_YN = 'N'
+        AND   SLNG_RGSR_NO = #{slngRgsrNo}
+    </update>
+
+    <!--
+    Supprimer la  déclaration de Info du transport  !==운송정보 정보를 삭제한다.==!
+    -->
+    <update id="deleteCarLoadSlngInfo" parameterType="alpass.ipt.car.load.vo.CarLoadSlngInfoVo" >
+        /* deleteCarLoadSlngInfo */
+        UPDATE TB_CARI_LOAD_SLNG_INFO SET
+            DEL_YN = 'Y'
+          , LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE DEL_YN = 'N'
+        AND   SLNG_RGSR_NO = #{slngRgsrNo}
+    </update>
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+

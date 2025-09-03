@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.mp.mypge.mapper.PotMpMypgeMyInfoMapper">
+
+    <!--
+      Consulter le mot de passe du compte !== 사용자 계정 비밀번호를 조회한다 ==!
+    -->
+    <select id="selectUserPwd" parameterType="string" resultType="string">
+        /** selectUserPwd */
+        SELECT PWD
+        FROM TB_POTI_EMP_ACCT
+        WHERE PBSR_NO = #{pbsrNo}
+          AND DEL_YN = 'N'
+    </select>
+
+    <!--
+      Consulter les informations de compte !== 사용자 계정 정보를 조회한다 ==!
+    -->
+    <select id="selectMyInfo" resultType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeMyInfoVo">
+        /** selectMyInfo */
+
+        SELECT A.PBSR_NO,
+               SUBSTR(A.PBSR_NO, 0, 2)                                          AS PBSR_NO_2,
+               SUBSTR(A.PBSR_NO, 3, 4)                                          AS PBSR_NO_4,
+               A.ORGN_MGMT_CD,
+               (SELECT M.ORGN_NM
+                FROM TB_POTI_ORGN M
+                WHERE M.DEL_YN = 'N'
+                  AND M.ORGN_MGMT_CD = A.ORGN_MGMT_CD)                          AS ORGN_MGMT_NM,
+               A.SCTR_MGMT_CD,
+               (SELECT M.ORGN_CD
+                FROM TB_POTI_ORGN M
+                WHERE M.DEL_YN = 'N'
+                  AND M.ORGN_MGMT_CD = A.SCTR_MGMT_CD)                          AS SCTR_CD,
+               A.CSTM_MGMT_CD,
+               A.DEPT_MGMT_CD,
+               A.EMP_NM,
+               A.CSTM_EMP_NO,
+               A.EMP_STTS_CD,
+               A.EMP_FMNM,
+               A.EMP_BWRK_STTS_CD,
+               C.absn_rsn_cd,
+               A.CTGY_CD,
+               A.GD_CD,
+               A.FONC_CD,
+               A.INHB_RGSR_NO,
+               A.EML,
+               TO_CHAR(TO_DATE(A.BRDY, 'YYYYMMDD'), 'DD/MM/YYYY')               AS BRDY,
+               A.GNDR_CD,
+               A.MOBL_NO,
+               A.DEPT_TLPH_NO,
+               A.EMP_ADDR,
+               A.EMP_POST_CD,
+               A.EMP_POST_NM,
+               TO_CHAR(TO_DATE(A.now_fonc_strt_dt, 'YYYYMMDD'), 'DD/MM/YYYY')   AS now_fonc_strt_dt,
+               TO_CHAR(TO_DATE(A.WRKP_ASN_DT, 'YYYYMMDD'), 'DD/MM/YYYY')        AS WRKP_ASN_DT,
+               TO_CHAR(TO_DATE(A.BF_WRKP_ASN_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS BF_WRKP_ASN_END_DT,
+               TO_CHAR(TO_DATE(A.ENCO_DT, 'YYYYMMDD'), 'DD/MM/YYYY')            AS ENCO_DT,
+               SUBSTR(A.ENCO_DT, 0, 4)                                          AS ENCO_YY,
+               TO_CHAR(TO_DATE(A.RTMN_DT, 'YYYYMMDD'), 'DD/MM/YYYY')            AS RTMN_DT,
+               A.XTRN_EMP_YN,
+               NVL(A.EML_RCPN_YN, 'N')                                          AS EML_RCPN_YN,
+               NVL(A.SMS_RCPN_YN, 'N')                                          AS SMS_RCPN_YN,
+               A.DEL_YN,
+               A.FRST_REGST_ID,
+               TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS')               AS FRST_RGSR_DTTM,
+               A.LAST_CHPR_ID,
+               TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS')                AS LAST_CHG_DTTM,
+               A.PHTO_IMGE_CN,
+               A.BLNG_ITT_CD,
+               (SELECT TO_CHAR(TO_DATE(T.BWRK_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') || ' - ' ||
+                       TO_CHAR(TO_DATE(T.BWRK_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY')
+                FROM TB_POTI_BWRK_MTR T
+                WHERE T.PBSR_NO = A.PBSR_NO
+                  AND T.BWRK_MTR_MGMT_NO = (SELECT MAX(BWRK_MTR_MGMT_NO)
+                                            FROM TB_POTI_BWRK_MTR
+                                            WHERE PBSR_NO = T.PBSR_NO))         AS NOW_BSOP_PRID,
+               A.BSOP_CLSF_CD,
+               A.FAR_NM,
+               A.MOR_FMNM,
+               A.MOR_NM,
+               B.ADIT_CRTF_CD,
+               B.ACCT_LCKED_YN,
+               A.FONC_CD,
+               A.GRD_CD,
+               TO_CHAR(B.LAST_LGN_DTTM, 'DD/MM/YYYY HH24:MI:SS')                AS LAST_LGN_DTTM,
+               A.ATCH_FILE_ID,
+               A.ORGN_CHG_RSN_CD,
+               A.emp_stts_cd,
+               (SELECT ORGN_CD
+                FROM TB_POTI_ORGN ORGN
+                WHERE ORGN.ORGN_MGMT_CD = A.ORGN_MGMT_CD)                       AS ORGN_CD,
+               NVL(A.TEMP_BRDY, 'N')                                            AS TEMP_BRDY
+        FROM TB_POTI_EMP A
+           , TB_POTI_EMP_ACCT B
+           , (SELECT PBSR_NO,
+                     EMP_STTS_CD,
+                     ABSN_RSN_CD
+              FROM TB_POTI_EMP_BWRK_STTS_HIST
+              WHERE PBSR_NO = #{pbsrNo}
+                AND HIST_SRNO =
+                    (SELECT MAX(HIST_SRNO) FROM TB_POTI_EMP_BWRK_STTS_HIST WHERE PBSR_NO = #{pbsrNo} AND DEL_YN = 'N')
+	  			  <![CDATA[AND EMP_STTS_CD <> 'A']]>
+                AND (
+                      TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS') BETWEEN APLY_STRT_DT AND CMBK_STRT_DT
+                      or TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS') >= APLY_STRT_DT AND CMBK_STRT_DT IS NULL
+                  )) C
+        WHERE A.DEL_YN = 'N'
+          AND A.PBSR_NO = B.PBSR_NO
+          AND A.PBSR_NO = C.PBSR_NO(+)
+          AND A.PBSR_NO = #{pbsrNo}
+    </select>
+
+    <!--
+      Modifier les informations personnelles
+    -->
+    <update id="updateMyInfo" parameterType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeMyInfoVo">
+        /** updateMyInfo */
+        UPDATE TB_POTI_EMP
+        SET MOBL_NO = #{moblNo},
+        EMP_FMNM = #{empFmnm},
+        EMP_NM = #{empNm},
+        FAR_NM = #{farNm},
+        MOR_FMNM = #{morFmnm},
+        MOR_NM = #{morNm},
+        BRDY = TO_CHAR(TO_DATE(#{brdy}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+        TEMP_BRDY= #{tempBrdy},
+        GNDR_CD = #{gndrCd},
+        ENCO_DT = TO_CHAR(TO_DATE(#{encoDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+        EMP_BWRK_STTS_CD = #{empBwrkSttsCd},
+        DEPT_TLPH_NO = #{deptTlphNo},
+        WRKP_ASN_DT = TO_CHAR(TO_DATE(#{wrkpAsnDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+        NOW_FONC_STRT_DT = TO_CHAR(TO_DATE(#{nowFoncStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+        EML = #{eml},
+        EMP_ADDR = #{empAddr},
+        <if test='phtoImgeCn != null'>
+            PHTO_IMGE_CN = #{phtoImgeCn:BLOB},
+        </if>
+        EMP_POST_CD = #{empPostCd},
+        EMP_POST_NM = #{empPostNm},
+        LAST_CHG_DTTM = SYSTIMESTAMP,
+        LAST_CHPR_ID = #{pbsrNo}
+        WHERE PBSR_NO = #{pbsrNo}
+    </update>
+
+    <!--
+      Modifier l'authentification supplémentaire du compte !== 사용자 계정 추가인증을 수정한다 ==!
+    -->
+    <update id="updateMyInfoAcct" parameterType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeMyInfoVo">
+        /** updateMyInfoAcct */
+        UPDATE TB_POTI_EMP_ACCT
+        SET ADIT_CRTF_CD  = #{aditCrtfCd},
+            LAST_CHG_DTTM = SYSTIMESTAMP,
+            LAST_CHPR_ID  = #{pbsrNo}
+        WHERE PBSR_NO = #{pbsrNo}
+    </update>
+
+    <!--
+      Consulter l'historique des informations personnelles !== 사용자 개인정보 이력사항을 조회한다 ==!
+    -->
+    <select id="selectSchlList" parameterType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeSchlVo"
+            resultType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeSchlVo">
+        <include refid="pagination.header"/>
+        /** selectSchlList */
+        SELECT PBSR_NO,
+        SRNO,
+        HIST_TP_CD,
+        FN_GET_CD_VDVAL_NM('POT_0007', HIST_TP_CD, #{langCd}) AS HIST_TP_NM,
+        HIST_STRT_YY,
+        HIST_END_YY,
+        HIST_STRT_YY || ' ~ ' || HIST_END_YY AS HIST_TERM_YY,
+        CRQL_NM,
+        CN,
+        PBLS_ITT_NM
+        FROM TB_POTI_HIST_MTR
+        WHERE PBSR_NO = #{pbsrNo}
+        AND DEL_YN = 'N'
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+      Consulter les absences de l'utilisateur !== 사용자의 결근을 조회한다 ==!
+    -->
+    <select id="selectBwrkList" parameterType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeBwrkVo"
+            resultType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeBwrkVo">
+        /** selectBwrkList */
+        <include refid="pagination.header"/>
+        SELECT
+        BWRK_MTR_MGMT_NO
+        , PBSR_NO
+        , FONC_CD
+        , ORGN_MGMT_CD
+        , (SELECT ORGN_CD FROM TB_POTI_ORGN C WHERE C.ORGN_MGMT_CD = TB_POTI_BWRK_MTR.ORGN_MGMT_CD) AS
+        ORGN_NM
+        , BF_ORGN_MGMT_CD
+        , TO_CHAR(TO_DATE(PRSNE_TRSF_APPT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') as PRSNE_TRSF_APPT_DT
+        , PRSNE_TRSF_DTRM_NO
+        , TO_CHAR(TO_DATE(BWRK_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') as BWRK_STRT_DT
+        , TO_CHAR(TO_DATE(BWRK_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') as BWRK_END_DT
+        , BWRK_END_PV_NO
+        , BWRK_STRT_PV_NO
+        , BWRK_END_PV_ATCH_FILE_ID
+        , BWRK_STRT_PV_ATCH_FILE_ID
+        , BWRK_STTS_CD
+        , DEL_YN
+        , FRST_REGST_ID
+        , TO_CHAR(FRST_RGSR_DTTM,'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , TO_CHAR(LAST_CHG_DTTM,'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+        FROM TB_POTI_BWRK_MTR
+        WHERE PBSR_NO = #{pbsrNo}
+        AND DEL_YN = 'N'
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+      Consulter la situation de l'utilisateur !== 사용자의 근무 정보를 조회한다 ==!
+    -->
+    <select id="selectBwrk" parameterType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeBwrkVo"
+            resultType="alpass.ipt.pot.mp.mypge.vo.PotMpMyPgeBwrkVo">
+        /** selectBwrk */
+        SELECT TO_CHAR(TO_DATE(ENCO_DT, 'YYYYMMDD'), 'DD/MM/YYYY')     AS ENCO_DT,
+               TO_CHAR(TO_DATE(WRKP_ASN_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS WRKP_ASN_DT,
+               CASE
+                   WHEN CURR_WRKP_YY > 0 THEN CURR_WRKP_YY ||
+                                              DECODE(#{langCd}, 'KO', ' 년 ', 'EN', ' years ', 'FR', ' ans ', ' ans ')
+                   END || CURR_WRKP_MM || DECODE(#{langCd}, 'KO', ' 개월', 'EN', ' months', 'FR', ' mois',
+                                                 ' mois')              AS CURR_WRKP_TERM,
+               PBSR_NO
+        FROM (SELECT ENCO_DT,
+                     WRKP_ASN_DT,
+                     TRUNC(MONTHS_BETWEEN(TO_DATE(TO_CHAR(SYSDATE, 'YYYYMMDD'), 'YYYYMMDD'),
+                                          TO_DATE(WRKP_ASN_DT, 'YYYYMMDD')) / 12)     AS CURR_WRKP_YY,
+                     ROUND(MOD(MONTHS_BETWEEN(TO_DATE(TO_CHAR(SYSDATE, 'YYYYMMDD'), 'YYYYMMDD'),
+                                              TO_DATE(WRKP_ASN_DT, 'YYYYMMDD')), 12)) AS CURR_WRKP_MM,
+                     PBSR_NO
+              FROM TB_POTI_EMP
+              WHERE PBSR_NO = #{pbsrNo}
+                AND DEL_YN = 'N')
+    </select>
+
+</mapper>

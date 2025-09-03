@@ -1,0 +1,3221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  Mapper : Gestion de l'échange des informations !== 자료교환관리 Mapper ==!
+-->
+<mapper namespace="alpass.ipt.rsm.basc.mapper.RsmBascDatExcgMapper">
+
+    <!--
+    [Gérer la demande d'informations sur les opérateurs à risque] Consulter la liste  !== [위험업체 자료요청관리] 목록조회 ==!
+    -->
+    <select id="selectRskCoDtaRqstList"  
+      parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstInqtVo" 
+      resultType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo"> 
+
+      /* selectRskCoDtaRqstList */
+      <include refid="pagination.header" ></include>
+            SELECT
+                  DECODE( A.OGNL_RQST_NO, null, A.RQST_NO, A.RQST_NO) AS RQST_NO  /** N° De Demande !== 신청번호 ==! */
+                , DECODE( A.OGNL_RQST_NO, null, 'N', 'Y') AS DIVD_YN  /** Éclaté !== 분할여부 ==! */
+                , A.DOC_TTLE                   /** Nom Du Fichier !== 문서제목 ==! */
+                , A.RQST_TP_CD                 /** Code De Type De Demande !== 신청구분코드 ==! */
+                , A.RQST_CSTM_CD               /** Code de bureau de douane !== 신청세관코드 ==! */
+                , A.RQST_ITT_CD                /** Code d'établissement de la demande !== 신청기관코드 ==! */
+                , TO_CHAR(TO_DATE(A.RQST_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RQST_DT                    /** Date De Demande !== 신청일자 ==! */
+                , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+                , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.REGST_ID) AS REGST_NM
+                , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+                , CASE WHEN DECODE( A.OGNL_RQST_NO, null, 'N', 'Y') = 'Y' THEN A.ANSW_DPHD_ID
+                       ELSE ''
+                  END AS ANSW_DPHD_ID          /** ID du chef de service qui répond clairement aux questions !== 답변부서장ID ==! */
+                , CASE WHEN DECODE( A.OGNL_RQST_NO, null, 'N', 'Y') = 'Y' THEN (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.ANSW_DPHD_ID)
+                       ELSE ''
+                  END AS ANSW_DPHD_NM          /** Chef de service qui répond clairement aux questions !== 답변부서장 ==! */
+                , A.RQST_CN                    /** Contenu de la demande !== 신청내용 ==! */
+                , A.RTRN_RSN_CN                /** Motif De Rejet !== 반려사유내용 ==! */
+                , A.TRNSF_RSN_CN               /** Raison du transfert !== 이관사유내용 ==! */
+                , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+                , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+                , A.OGNL_RQST_NO               /** N° de la demande initiale !== 원신청번호 ==! */
+                , B.RQST_NO                    /** N° De Demande !== 신청번호 ==! */
+            FROM   TB_RSMI_RSK_CO_DTA_RQST A
+                 , ( SELECT DISTINCT COALESCE(A.OGNL_RQST_NO, A.RQST_NO) AS RQST_NO
+                     FROM   TB_RSMI_RSK_CO_DTA_RQST A
+                     WHERE  A.DEL_YN = 'N'     /** Suppression ON !== 삭제여부 ==! */
+                    <choose>
+                        <when test='rqstNo != null and !"".equals(rqstNo)'>
+                            AND (  A.RQST_NO = #{rqstNo}
+                                OR A.OGNL_RQST_NO = #{rqstNo}
+                                OR (A.RQST_NO = (SELECT OGNL_RQST_NO FROM TB_RSMI_RSK_CO_DTA_RQST WHERE DEL_YN = 'N' AND RQST_NO = #{rqstNo} AND A.DEL_YN = 'N'))
+                                OR (A.OGNL_RQST_NO = (SELECT OGNL_RQST_NO FROM TB_RSMI_RSK_CO_DTA_RQST WHERE DEL_YN = 'N' AND RQST_NO = #{rqstNo} AND A.DEL_YN = 'N'))
+                                )
+                        </when>
+                        <otherwise>
+                            <if test='(searchStrtDt != null and !"".equals(searchStrtDt)) and (searchEndDt != null and !"".equals(searchEndDt))'>
+                                AND   A.RQST_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{searchEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND A.RQST_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{searchStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                            </if>
+                        </otherwise>
+                    </choose>
+
+                    <if test='nif != null and !"".equals(nif)'>
+                        AND   EXISTS ( SELECT 'Y' FROM TB_RSMI_RSK_CO_DTA_RQST_DCER
+                                       WHERE DEL_YN = 'N'
+                                       AND RQST_NO = A.RQST_NO
+                                       AND NIF = #{nif}
+                                     )
+                    </if>
+
+                    <if test='rqstTpCd != null and !"".equals(rqstTpCd)'>
+                        AND A.RQST_TP_CD = #{rqstTpCd}
+                    </if>
+
+
+
+                    <if test='prcsSttsCd != null and !"".equals(prcsSttsCd)'>
+                        AND A.PRCS_STTS_CD = #{prcsSttsCd}
+                    </if>
+
+                    <if test='rqstCn != null and !"".equals(rqstCn)'>
+                        AND A.RQST_CN LIKE '%'|| #{rqstCn} ||'%'
+                    </if>
+
+                    <if test='answCn != null and !"".equals(answCn)'>
+                        AND A.RQST_NO IN (SELECT RQST_NO FROM TB_RSMI_RSK_CO_DTA_ANSW WHERE DEL_YN = 'N' AND ANSW_CN LIKE '%'|| #{answCn} ||'%' )
+                    </if>
+
+                    <if test='docTtle != null and !"".equals(docTtle)'>
+                        AND A.DOC_TTLE LIKE '%'|| #{docTtle} ||'%'
+                    </if>
+                  ) B
+            WHERE  ( A.RQST_NO = B.RQST_NO OR A.OGNL_RQST_NO = B.RQST_NO )
+            AND NOT EXISTS ( SELECT 1 FROM TB_RSMI_RSK_CO_DTA_RQST
+                             WHERE DEL_YN = 'N'
+                             AND RQST_NO = A.RQST_NO
+                             AND PRCS_STTS_CD = 'K01'
+                             AND REGST_ID != #{lgnId}
+                            )
+            <if test='scrnTp != null and "datReqstRgsr".equals(scrnTp)' >
+                AND (A.REGST_ID = #{lgnId} OR  ( A.ANSW_DPHD_ID = #{lgnId} AND LENGTH(A.OGNL_RQST_NO) > 0 ) )
+            </if>
+
+            ORDER BY B.RQST_NO DESC, A.RQST_NO ASC
+      
+      <include refid="pagination.footer" ></include>
+    </select>
+
+    <select id="selectComPrflRskCoDtaRqstList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+        resultType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo">
+        /* selectComPrflRskCoDtaRqstList */
+        SELECT
+              A.RQST_NO                    /** N° De Demande !== 신청번호 ==! */
+            , A.DOC_TTLE                   /** Nom Du Fichier !== 문서제목 ==! */
+            , A.RQST_TP_CD                 /** Code De Type De Demande !== 신청구분코드 ==! */
+            , A.RQST_CSTM_CD               /** Code de bureau de douane !== 신청세관코드 ==! */
+            , A.RQST_ITT_CD                /** Code d'établissement de la demande !== 신청기관코드 ==! */
+            , TO_CHAR(TO_DATE(A.RQST_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RQST_DT                    /** Date De Demande !== 신청일자 ==! */
+            , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+            , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.REGST_ID) AS REGST_NM   /** Nom De La Personne Enregistrant !== 등록자명 ==! */
+            , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+            , A.ANSW_DPHD_ID               /** ID du chef de service qui répond clairement aux questions !== 답변부서장ID ==! */
+            , A.RQST_CN                    /** Contenu de la demande !== 신청내용 ==! */
+            , A.RTRN_RSN_CN                /** Motif De Rejet !== 반려사유내용 ==! */
+            , A.TRNSF_RSN_CN               /** Raison du transfert !== 이관사유내용 ==! */
+            , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+            , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+        FROM   TB_RSMI_RSK_CO_DTA_RQST A
+        WHERE  DEL_YN = 'N'                /** Suppression ON !== 삭제여부 ==! */
+        AND 1 = 2
+    </select>
+    
+    <!--
+    [Gérer la demande d'informations sur les opérateurs à risque] Consulter les détails  !== [위험업체 자료요청관리] 상세조회 ==!
+    -->
+    <select id="selectRskCoDtaRqstDtl"  
+      parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo" 
+      resultType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo"> 
+
+      /* selectRskCoDtaRqstDtl */
+        SELECT T.*
+            , ( SELECT
+                    C.ORGN_CD AS ANPN_DEPT_CD
+                FROM TB_POTI_EMP A
+                   , TB_POTI_EMP_ACCT B
+                   , TB_POTI_ORGN C
+                WHERE A.PBSR_NO = B.PBSR_NO
+                AND A.DEL_YN = 'N'
+                AND B.DEL_YN = 'N'
+                AND C.DEL_YN(+) = 'N'
+                AND A.ORGN_MGMT_CD = C.ORGN_MGMT_CD(+)
+                AND A.PBSR_NO = T.ANPN_ID
+              )     /** bureau répondeur(code) !== 답변자 부서 코드 ==! */
+            , ( SELECT
+                    C.ORGN_NM AS ANPN_DEPT_NM
+                FROM TB_POTI_EMP A
+                   , TB_POTI_EMP_ACCT B
+                   , TB_POTI_ORGN C
+                WHERE A.PBSR_NO = B.PBSR_NO
+                AND A.DEL_YN = 'N'
+                AND B.DEL_YN = 'N'
+                AND C.DEL_YN(+) = 'N'
+                AND A.ORGN_MGMT_CD = C.ORGN_MGMT_CD(+)
+                AND A.PBSR_NO = T.ANPN_ID
+              )     /** bureau répondeur(nom) !== 답변자 부서명 ==! */
+            , (
+                SELECT CASE WHEN COUNT(1) = 0 THEN 'N' ELSE 'Y' END
+                FROM TB_POTI_APRV PA
+                WHERE PA.APRV_ID = T.APRV_ID
+                AND PA.APRV_BSOP_TP_CD = 'E17'
+                AND PA.APRV_PRCS_STTS_CD = 'I04'
+            ) AS  TRNSF_APRV_APRE_YN
+        FROM
+        (
+            SELECT
+                  A.RQST_NO                    /** N° De Demande !== 신청번호 ==! */
+                , A.DOC_TTLE                   /** Nom Du Fichier !== 문서제목 ==! */
+                , A.RQST_TP_CD                 /** Code De Type De Demande !== 신청구분코드 ==! */
+                , A.RQST_CSTM_CD               /** Code de bureau de douane !== 신청세관코드 ==! */
+                , A.RQST_ITT_CD                /** Code d'établissement de la demande !== 신청기관코드 ==! */
+                , TO_CHAR(TO_DATE(A.RQST_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RQST_DT                    /** Date De Demande !== 신청일자 ==! */
+                , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+                , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.REGST_ID) AS REGST_NM
+                , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+                , A.ANSW_DPHD_ID               /** ID du chef de service qui répond clairement aux questions !== 답변부서장ID ==! */
+                , A.RQST_CN                    /** Contenu de la demande !== 신청내용 ==! */
+                , A.RTRN_RSN_CN                /** Motif De Rejet !== 반려사유내용 ==! */
+                , A.TRNSF_RSN_CN               /** Raison du transfert !== 이관사유내용 ==! */
+                , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+                , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+                , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS RGSR_DT                    /** Date D'Enregistrement !== 등록일자 ==! */
+                , NVL2(A.ANSW_DPHD_ID, A.ANSW_DPHD_ID, (SELECT ANPN_ID FROM TB_RSMI_RSK_CO_DTA_ANSW WHERE DEL_YN = 'N' AND RQST_NO = A.RQST_NO )) AS ANPN_ID /** Id De La Réponse !== 답변자ID ==! */
+                , NVL( A.ANSW_AL_YN, 'N') AS ANSW_AL_YN
+                , A.SGNT_ATCH_FILE_ID          /** ID de pièce jointe signée !== 서명첨부파일ID ==! */
+                , A.OGNL_RQST_NO               /** N° de la demande initiale !== 원신청번호 ==! */
+            FROM   TB_RSMI_RSK_CO_DTA_RQST A
+            WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+            AND   A.RQST_NO = #{rqstNo}
+        ) T
+    </select>
+    
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque] Consulter la liste des réponses aux demandes de données !== [위험업체 자료요청관리] 자료요청답변 목록 조회 ==!
+    -->
+    <select id="selectRskCoDtaAnswList"  
+      parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo" 
+      resultType="alpass.ipt.rsm.com.vo.RsmRskCoDtaAnswVo">
+       
+        /* selectRskCoDtaAnswList */
+        <include refid="pagination.header" ></include>
+            SELECT
+                  A.RQST_NO                    /** N° De Demande !== 신청번호 ==! */
+                , A.ANSW_CSTM_CD               /** Code de douane répondeur !== 답변세관코드 ==! */
+                , A.ANSW_ITT_CD                /** Code de l'organisme répondeur  !== 답변기관코드 ==! */
+                , A.ANSW_CN                    /** Contenu De La Réponse !== 답변내용 ==! */
+                , A.ANSW_DT                    /** Date De Réponse  !== 답변일자 ==! */
+                , A.ANPN_ID                    /** Id De La Réponse !== 답변자ID ==! */
+                , (SELECT EMP_NM FROM TB_POTI_EMP WHERE DEL_YN = 'N' AND PBSR_NO = A.ANPN_ID ) AS ANPN_NM         /** Nom du répondeur !== 답변자명 ==! */
+                , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+                , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+            FROM   TB_RSMI_RSK_CO_DTA_ANSW A
+           WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+             AND  A.RQST_NO = #{rqstNo}                       /** N° De Demande !== 신청번호 ==! */
+        <include refid="pagination.footer" ></include>
+    </select>
+    
+    <!--
+        [Gérer la demande d'informations sur les opérateurs à risque] Enregistrer !== [위험업체 자료요청관리] 등록 ==!
+    -->
+    <insert id="insertRskCoDtaRqst" parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo">
+        /* insertRskCoDtaRqst */
+        INSERT INTO TB_RSMI_RSK_CO_DTA_RQST
+        (
+	          RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+	        , DOC_TTLE                     /** Nom Du Fichier !== 문서제목 ==! */
+	        , RQST_TP_CD                   /** Code De Type De Demande !== 신청구분코드 ==! */
+	        , RQST_CSTM_CD                 /** Code de bureau de douane !== 신청세관코드 ==! */
+	        , RQST_ITT_CD                  /** Code d'établissement de la demande !== 신청기관코드 ==! */
+	        , RQST_DT                      /** Date De Demande !== 신청일자 ==! */
+	        , REGST_ID                     /** Id De La Personne Enregistrant !== 등록자ID ==! */
+	        , CSTM_CD                      /** Code Du Bureau !== 세관코드 ==! */
+	        , ANSW_DPHD_ID                 /** ID du chef de service qui répond clairement aux questions !== 답변부서장ID ==! */
+	        , RQST_CN                      /** Contenu de la demande !== 신청내용 ==! */
+	        , RTRN_RSN_CN                  /** Motif De Rejet !== 반려사유내용 ==! */
+	        , TRNSF_RSN_CN                 /** Raison du transfert !== 이관사유내용 ==! */
+	        , PRCS_STTS_CD                 /** Code De Statut De Traitement !== 처리상태코드 ==! */
+	        , APRV_ID                      /** Id D'Approbation  !== 결재ID ==! */
+	        , ATCH_FILE_ID                 /** Id Du Fichier Joint !== 첨부파일ID ==! */
+	        , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+	        , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+	        , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+	        , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+	        , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        VALUES
+        (
+              #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+            , #{docTtle}                   /** Nom Du Fichier !== 문서제목 ==! */
+            , #{rqstTpCd}                  /** Code De Type De Demande !== 신청구분코드 ==! */
+            , #{rqstCstmCd}                /** Code de bureau de douane !== 신청세관코드 ==! */
+            , #{rqstIttCd}                 /** Code d'établissement de la demande !== 신청기관코드 ==! */
+            , TO_CHAR(TO_DATE(#{rqstDt}, 'DD/MM/YYYY'), 'YYYYMMDD')   /** Date De Demande !== 신청일자 ==! */
+            , #{regstId}                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+            , #{cstmCd}                    /** Code Du Bureau !== 세관코드 ==! */
+            , #{answDphdId}                /** ID du chef de service qui répond clairement aux questions !== 답변부서장ID ==! */
+            , #{rqstCn}                    /** Contenu de la demande !== 신청내용 ==! */
+            , NULL                         /** Motif De Rejet !== 반려사유내용 ==! */
+            , NULL                         /** Raison du transfert !== 이관사유내용 ==! */
+            , 'K01'                        /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , NULL                         /** Id D'Approbation  !== 결재ID ==! */
+            , #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+       )
+    </insert>
+    
+    <!--
+        [Gérer la demande d'informations sur les opérateurs à risque] Modifier !== [위험업체 자료요청관리] 수정 ==!
+    -->
+    <update id="updateRskCoDtaRqst" parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo">
+        /* updateRskCoDtaRqst */
+        UPDATE  TB_RSMI_RSK_CO_DTA_RQST SET 
+              DOC_TTLE = #{docTtle}                       /** Nom Du Fichier !== 문서제목 ==! */
+            , RQST_TP_CD = #{rqstTpCd}                    /** Code De Type De Demande !== 신청구분코드 ==! */
+            , RQST_CSTM_CD = #{rqstCstmCd}                /** Code de bureau de douane !== 신청세관코드 ==! */
+            , RQST_ITT_CD = #{rqstIttCd}                  /** Code d'établissement de la demande !== 신청기관코드 ==! */
+            , RQST_DT = TO_CHAR(TO_DATE(#{rqstDt}, 'DD/MM/YYYY'), 'YYYYMMDD')   /** Date De Demande !== 신청일자 ==! */
+            , CSTM_CD = #{cstmCd}                         /** Code Du Bureau !== 세관코드 ==! */
+            , ANSW_DPHD_ID = #{answDphdId}                /** ID du chef de service qui répond clairement aux questions !== 답변부서장ID ==! */
+            , RQST_CN = #{rqstCn}                         /** Contenu de la demande !== 신청내용 ==! */
+            <if test='rtrnRsnCn != null and !"".equals(rtrnRsnCn)'>
+            , RTRN_RSN_CN = #{rtrnRsnCn}                  /** Motif De Rejet !== 반려사유내용 ==! */
+            </if>
+            <if test='trnsfRsnCn != null and !"".equals(trnsfRsnCn)'>
+            , TRNSF_RSN_CN = #{trnsfRsnCn}                /** Raison du transfert !== 이관사유내용 ==! */
+            </if>
+            , PRCS_STTS_CD = #{prcsSttsCd}                /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , ATCH_FILE_ID = #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                               /** Suppression ON !== 삭제여부 ==! */
+        AND  RQST_NO = #{rqstNo}                          /** N° De Demande !== 신청번호 ==! */
+    </update>
+
+    <!--
+      [Gérer la demande d'informations de l'étranger] Enregistrer les pièces jointes !== [위험업체 자료요청관리] 첨부파일 등록 ==!
+    -->
+    <update id="updateRskCoDtaRqstSgntAtch"
+            parameterType = "alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo" >
+
+        /* updateRskCoDtaRqstSgntAtch */
+        UPDATE  TB_RSMI_RSK_CO_DTA_RQST
+        SET
+              SGNT_ATCH_FILE_ID = #{sgntAtchFileId}       /** Id Du Fichier Joint !== 서명첨부파일ID ==! */
+            , LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                               /** Suppression ON !== 삭제여부 ==! */
+        AND  RQST_NO = #{rqstNo}                          /** N° De Demande !== 신청번호 ==! */
+
+    </update>
+    
+    <!--
+        [Gérer la demande d'informations sur les opérateurs à risque] Supprimer !== [위험업체 자료요청관리] 삭제 ==!
+    -->
+    <update id="deleteRskCoDtaRqst" parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo">
+        /* deleteRskCoDtaRqst */
+        UPDATE  TB_RSMI_RSK_CO_DTA_RQST
+        SET
+                DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+             ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+             ,  LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+         WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+           AND  RQST_NO = #{rqstNo}                           /** N° De Demande !== 신청번호 ==! */
+    </update>
+
+    <!--
+        [Gérer la demande d'informations sur les opérateurs à risque] Supprimer la liste de réponses !== [위험업체 자료요청관리] 답변 목록 삭제 ==!
+    -->
+    <update id="deleteRskCoAnswList" parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo">
+        /* deleteRskCoAnswList */
+        UPDATE TB_RSMI_RSK_CO_DTA_ANSW
+        SET
+                DEL_YN = 'Y'                                 /** Suppression ON !== 삭제여부 ==! */
+             ,  LAST_CHPR_ID = #{lastChprId}                 /** ID du modificateur final !== 최종변경자ID ==! */
+             ,  LAST_CHG_DTTM = SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+        AND  RQST_NO = #{rqstNo}                             /** N° De Demande !== 신청번호 ==! */
+
+    </update>
+    
+    <!--
+    [Gérer la demande d'informations de l'étranger] Consulter la liste !== [해외 자료요청관리] 목록조회 ==!
+    -->
+    <select id="selectOvrsDtaRqstList"  
+      parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstInqtVo"
+      resultType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstVo">
+
+      /* selectOvrsDtaRqstList */
+      <include refid="pagination.header" ></include>
+      SELECT
+                  DECODE( A.OGNL_RQST_NO, null, A.RQST_NO, A.RQST_NO) AS RQST_NO /** N° De Demande !== 신청번호 ==! */
+                , DECODE( A.OGNL_RQST_NO, null, 'N', 'Y') AS DIVD_YN  /** Éclaté !== 분할여부 ==! */
+                , A.DOC_TTLE                   /** Nom Du Fichier !== 문서제목 ==! */
+                , A.RQST_TP_CD                 /** Code De Type De Demande !== 신청구분코드 ==! */
+                , A.RQST_CSTM_CD               /** Code de bureau de douane !== 신청세관코드 ==! */
+                , A.RQST_CNTY_CD               /** Code du pays demandeur !== 신청국가코드 ==! */
+                , TO_CHAR(TO_DATE(A.RQST_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RQST_DT                    /** Date De Demande !== 신청일자 ==! */
+                , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+                , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.REGST_ID) AS REGST_NM
+                , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+                , CASE WHEN DECODE( A.OGNL_RQST_NO, null, 'N', 'Y') = 'Y' THEN A.ANSW_DPHD_ID
+                       ELSE ''
+                  END AS ANSW_DPHD_ID          /** ID du chef de service qui repond clairement aux questions !== 답변부서장ID ==! */
+                , CASE WHEN DECODE( A.OGNL_RQST_NO, null, 'N', 'Y') = 'Y' THEN (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.ANSW_DPHD_ID)
+                       ELSE ''
+                  END AS ANSW_DPHD_NM          /** Chef de service qui répond clairement aux questions !== 답변부서장 ==! */
+                , A.RQST_CN                    /** Contenu de la demande !== 신청내용 ==! */
+                , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+                , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+                , '' as INTN_INFO_CLAB_CDS
+                , A.OGNL_RQST_NO               /** N° de la demande initiale !== 원신청번호 ==! */
+                , B.RQST_NO                    /** N° De Demande !== 신청번호 ==! */
+            FROM   TB_RSMI_OVRS_DTA_RQST A
+                , ( SELECT DISTINCT COALESCE(A.OGNL_RQST_NO, A.RQST_NO) AS RQST_NO
+                    FROM   TB_RSMI_OVRS_DTA_RQST A
+                    WHERE  A.DEL_YN = 'N'      /** Suppression ON !== 삭제여부 ==! */
+                    <choose>
+                        <when test='rqstNo != null and !"".equals(rqstNo)'>
+                            AND (  A.RQST_NO = #{rqstNo}
+                                OR A.OGNL_RQST_NO = #{rqstNo}
+                                OR (A.RQST_NO = (SELECT OGNL_RQST_NO FROM TB_RSMI_OVRS_DTA_RQST WHERE DEL_YN = 'N' AND RQST_NO = #{rqstNo} AND A.DEL_YN = 'N'))
+                                OR (A.OGNL_RQST_NO = (SELECT OGNL_RQST_NO FROM TB_RSMI_OVRS_DTA_RQST WHERE DEL_YN = 'N' AND RQST_NO = #{rqstNo} AND A.DEL_YN = 'N'))
+                                )
+                        </when>
+                        <otherwise>
+                            <if test='(rqstDtFrom != null and !"".equals(rqstDtFrom)) and (rqstDtTo != null and !"".equals(rqstDtTo))'>
+                                AND   A.RQST_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{rqstDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD') AND A.RQST_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{rqstDtFrom}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                            </if>
+                        </otherwise>
+                    </choose>
+
+                    <if test='nif != null and !"".equals(nif)'>
+                        AND   EXISTS ( SELECT 'Y' FROM TB_RSMI_OVRS_DTA_RQST_DCER
+                                       WHERE DEL_YN = 'N'
+                                       AND RQST_NO = A.RQST_NO
+                                       AND NIF = #{nif}
+                                     )
+                    </if>
+
+                    <if test='rqstTpCd != null and !"".equals(rqstTpCd)'>
+                        AND A.RQST_TP_CD = #{rqstTpCd}                          /** Code De Type De Demande !== 신청구분코드 ==! */
+                    </if>
+
+                    <if test='prcsSttsCd != null and !"".equals(prcsSttsCd)'>
+                        AND A.PRCS_STTS_CD = #{prcsSttsCd}                      /** Code De Statut De Traitement !== 처리상태코드 ==! */
+                    </if>
+
+                    <if test='rqstCntyCd != null and !"".equals(rqstCntyCd)'>
+                        AND A.RQST_CNTY_CD = #{rqstCntyCd}                      /** Code du pays demandeur !== 신청국가코드 ==! */
+                    </if>
+
+                    <if test='rqstCn != null and !"".equals(rqstCn)'>
+                        AND A.RQST_CN LIKE '%'|| #{rqstCn} ||'%'                /** Contenu de la demande !== 신청내용 ==! */
+                    </if>
+
+                    <if test='answCn != null and !"".equals(answCn)'>
+                        AND A.RQST_NO IN (SELECT RQST_NO FROM TB_RSMI_OVRS_DTA_ANSW WHERE DEL_YN = 'N' AND ANSW_CN LIKE '%'|| #{answCn} ||'%' )
+                    </if>
+
+                    <if test='docTtle != null and !"".equals(docTtle)'>
+                        AND A.DOC_TTLE LIKE '%'|| #{docTtle} ||'%'              /** Nom Du Fichier !== 문서제목 ==! */
+                    </if>
+            ) B
+            WHERE  ( A.RQST_NO = B.RQST_NO OR A.OGNL_RQST_NO = B.RQST_NO )
+            AND NOT EXISTS ( SELECT 1 FROM TB_RSMI_OVRS_DTA_RQST
+                             WHERE DEL_YN = 'N'
+                             AND RQST_NO = A.RQST_NO
+                             AND PRCS_STTS_CD = 'K01'
+                             AND REGST_ID != #{lgnId}
+                            )
+            <if test='scrnTp != null and "ovrsDatReqstRgsr".equals(scrnTp)' >
+                AND (A.REGST_ID = #{lgnId} OR  ( A.ANSW_DPHD_ID = #{lgnId} AND LENGTH(A.OGNL_RQST_NO) > 0 ) )
+            </if>
+            ORDER BY B.RQST_NO DESC, A.RQST_NO ASC
+      
+      <include refid="pagination.footer" ></include>
+    </select>
+
+    <select id="selectComPrflOvrsDtaRqstList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmPrflComVo"
+        resultType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstVo">
+
+        /* selectComPrflOvrsDtaRqstList */
+        SELECT A.RQST_NO                    /** N° De Demande !== 신청번호 ==! */
+			 , A.DOC_TTLE                   /** Nom Du Fichier !== 문서제목 ==! */
+			 , A.RQST_TP_CD                 /** Code De Type De Demande !== 신청구분코드 ==! */
+             , A.RQST_CSTM_CD               /** Code de bureau de douane !== 신청세관코드 ==! */
+             , A.RQST_CNTY_CD               /** Code du pays demandeur !== 신청국가코드 ==! */
+             , TO_CHAR(TO_DATE(A.RQST_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RQST_DT                    /** Date De Demande !== 신청일자 ==! */
+             , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+             , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.REGST_ID) AS REGST_NM  /** Nom De La Personne Enregistrant !== 등록자명 ==! */
+		FROM TB_RSMI_OVRS_DTA_RQST A
+		WHERE A.RQST_NO IN
+			(
+				SELECT RQST_NO FROM TB_RSMI_OVRS_DTA_RQST_DCER
+				WHERE DEL_YN = 'N'
+				AND NIF = #{nif}
+			)
+    </select>
+    
+    <!--
+    [Gérer la demande d'informations de l'étranger] Consulter les détails !== [해외 자료요청관리] 상세조회 ==!
+    -->
+    <select id="selectOvrsDtaRqstDtl"  
+      parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstVo" 
+      resultType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstVo"> 
+
+      /* selectOvrsDtaRqstDtl */
+        SELECT T.*
+            , ( SELECT
+                    C.ORGN_CD AS ANPN_DEPT_CD
+                FROM TB_POTI_EMP A
+                   , TB_POTI_EMP_ACCT B
+                   , TB_POTI_ORGN C
+                WHERE A.PBSR_NO = B.PBSR_NO
+                AND A.DEL_YN = 'N'
+                AND B.DEL_YN = 'N'
+                AND C.DEL_YN(+) = 'N'
+                AND A.ORGN_MGMT_CD = C.ORGN_MGMT_CD(+)
+                AND A.PBSR_NO = T.ANPN_ID
+              )         /** bureau répondeur(code) !== 답변자 부서 코드 ==! */
+            , ( SELECT
+                    C.ORGN_NM AS ANPN_DEPT_NM
+                FROM TB_POTI_EMP A
+                   , TB_POTI_EMP_ACCT B
+                   , TB_POTI_ORGN C
+                WHERE A.PBSR_NO = B.PBSR_NO
+                AND A.DEL_YN = 'N'
+                AND B.DEL_YN = 'N'
+                AND C.DEL_YN(+) = 'N'
+                AND A.ORGN_MGMT_CD = C.ORGN_MGMT_CD(+)
+                AND A.PBSR_NO = T.ANPN_ID
+              )         /** bureau répondeur(nom) !== 답변자 부서명 ==! */
+            , (
+                SELECT CASE WHEN COUNT(1) = 0 THEN 'N' ELSE 'Y' END
+                FROM TB_POTI_APRV PA
+                WHERE PA.APRV_ID = T.APRV_ID
+                 AND PA.APRV_BSOP_TP_CD = 'E18'
+                 AND PA.APRV_PRCS_STTS_CD = 'I04'
+            ) AS  TRNSF_APRV_APRE_YN
+        FROM
+        (
+            SELECT
+                  A.RQST_NO                    /** N° De Demande !== 신청번호 ==! */
+                , A.DOC_TTLE                   /** Nom Du Fichier !== 문서제목 ==! */
+                , A.RQST_TP_CD                 /** Code De Type De Demande !== 신청구분코드 ==! */
+                , A.RQST_CSTM_CD               /** Code de bureau de douane !== 신청세관코드 ==! */
+                , A.RQST_CNTY_CD               /** Code du pays demandeur !== 신청국가코드 ==! */
+                , TO_CHAR(TO_DATE(A.RQST_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RQST_DT                    /** Date De Demande !== 신청일자 ==! */
+                , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+                , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.REGST_ID) AS REGST_NM
+                , A.CSTM_CD                    /** Code Du Bureau !== 세관코드 ==! */
+                , A.ANSW_DPHD_ID               /** ID du chef de service qui répond clairement aux questions !== 답변부서장ID ==! */
+                , A.RQST_CN                    /** Contenu de la demande !== 신청내용 ==! */
+                , A.RTRN_RSN_CN                /** Motif De Rejet !== 반려사유내용 ==! */
+                , A.TRNSF_RSN_CN               /** Raison du transfert !== 이관사유내용 ==! */
+                , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+                , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+                , A.OVRS_CSTM_NM               /** Nom de la douane étrangère !== 해외세관명 ==! */
+                , NVL2(A.ANSW_DPHD_ID, A.ANSW_DPHD_ID, (SELECT ANPN_ID FROM TB_RSMI_OVRS_DTA_ANSW WHERE DEL_YN = 'N' AND RQST_NO = A.RQST_NO )) AS ANPN_ID
+                , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS RGSR_DT    /** Date D'Enregistrement !== 등록일자 ==! */
+                , NVL( A.ANSW_AL_YN, 'N') AS ANSW_AL_YN     /** Tous les répondeurs !== 답변전체여부 ==! */
+                , A.SGNT_ATCH_FILE_ID          /** ID de pièce jointe signée !== 서명첨부파일ID ==! */
+                , A.OGNL_RQST_NO               /** N° de la demande initiale !== 원신청번호 ==! */
+            FROM   TB_RSMI_OVRS_DTA_RQST A
+            WHERE  DEL_YN = 'N'                /** Suppression ON !== 삭제여부 ==! */
+            AND   A.RQST_NO = #{rqstNo}
+        ) T
+    </select>
+    
+    <!--
+        [Enregistrer la demande d'informations de l'étranger]  Consulter la liste des réponses !== [해외 자료요청등록] 답변 목록 조회 ==!
+    -->
+    <select id="selectOvrsDtaAnswList"  
+      parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstVo" 
+      resultType="alpass.ipt.rsm.com.vo.RsmOvrsDtaAnswVo">
+       
+        /* selectOvrsDtaAnswList */
+        <include refid="pagination.header" ></include>
+            SELECT
+                A.RQST_NO                    /** N° De Demande !== 신청번호 ==! */
+              , A.ANSW_CSTM_CD               /** Code de douane répondeur !== 답변세관코드 ==! */
+              , A.ANSW_CNTY_CD               /** Répondre à l'indicatif du pays !== 답변국가코드 ==! */
+              , A.OVRS_CSTM_NM               /** Nom de la douane étrangère !== 해외세관명 ==! */
+              , A.ANSW_CN                    /** Contenu De La Réponse !== 답변내용 ==! */
+              , A.ANSW_DT                    /** Date De Réponse  !== 답변일자 ==! */
+              , A.ANPN_ID                    /** Id De La Réponse !== 답변자ID ==! */
+              , A.ANPN_NM                    /** Nom du répondeur !== 답변자명 ==! */
+              , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+              , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+              , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+              , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+              , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+           FROM   TB_RSMI_OVRS_DTA_ANSW A
+           WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+             AND  A.RQST_NO = #{rqstNo}                       /** N° De Demande !== 신청번호 ==! */
+        <include refid="pagination.footer" ></include>
+    </select>
+    
+    <!--
+      Code de coopération internationale (Consulter la liste) !== 정보협력코드 목록 조회 ==!
+    -->
+    <select id="selectInfoClabCdList"
+      parameterType="alpass.ipt.rsm.com.vo.RsmInfoClabCdVo"
+      resultType="alpass.ipt.rsm.com.vo.RsmInfoClabCdVo">
+      
+      /* selectInfoClabCdList */
+      SELECT
+           A.RQST_NO                    /** N° De Demande !== 신청번호 ==! */
+         , A.DAT_EXCG_TP_CD             /** Code de type d'échange d'information@TODO : 번역필요 !== 자료교환구분코드 ==! */
+         , A.INFO_CLAB_CD               /** Code de coopération !== 정보협력코드 ==! */
+         , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+         , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+         , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+         , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+         , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+      FROM  TB_RSMI_INFO_CLAB_CD A
+      WHERE DEL_YN = 'N'                 /** Suppression ON !== 삭제여부 ==! */
+      AND   A.RQST_NO = #{rqstNo}        /** N° De Demande !== 신청번호 ==! */
+    </select>
+    
+    <!--
+      [Enregistrer la demande d'informations de l'étranger]  Consulter la liste (Pays d’origine) !== 해외데이터신청 원산지 목록 조회 ==!
+    -->
+    <select id="selectOvrsDtaRqstOrcyList"
+      parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstVo"
+      resultType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstOrcyVo">
+      
+      /* selectOvrsDtaRqstOrcyList */
+      SELECT
+             A.RQST_NO                    /** N° De Demande !== 신청번호 ==! */
+           , A.ORCY_CD                    /** Pays Origine Code  !== 원산지코드 ==! */
+           , A.ORCY_CD AS CNTY_CD         /** Code De Pays !== 국가코드 ==! */
+           , FN_GET_CNTY_NM(A.ORCY_CD, #{langCd}) AS CNTY_NM    /** Nom Du Pays !== 국가명 ==! */
+           , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+           , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+           , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+           , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+           , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+      FROM   TB_RSMI_OVRS_DTA_RQST_ORCY A
+      WHERE  DEL_YN = 'N'                 /** Suppression ON !== 삭제여부 ==! */
+      AND    A.RQST_NO = #{rqstNo}        /** N° De Demande !== 신청번호 ==! */
+    </select>
+
+    <!--
+      Consulter la liste (Particulier) !== 해외데이터신청 원산지 목록 조회 ==!
+    -->
+    <select id="selectOvrsDtaRqstPsnList"
+      parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstVo"
+      resultType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstPsnVo">
+
+      /* selectOvrsDtaRqstPsnList */
+      SELECT
+             A.RQST_NO                    /** N° De Demande !== 신청번호 ==! */
+           , A.DTL_SRNO                   /** N° De Séquence Du Détail !== 상세일련번호 ==! */
+           , A.NTNAL_IDFY_NO              /** Nin !== 자국민식별번호 ==! */
+           , A.NTNAL_FMNM_NM              /** Nom du citoyen !== 자국민성명 ==! */
+           , A.NTNAL_GVNM_NM              /** Prénom du citoyen !== 자국민이름명 ==! */
+           , TO_CHAR(TO_DATE(A.NTNAL_BRDY, 'YYYYMMDD'), 'DD/MM/YYYY') AS NTNAL_BRDY         /** Date De Naissance du citoyen !== 자국민생년월일 ==! */
+           , A.BLNG_ITT_NM                /** Nom du groupe d'appartenance !== 소속기관명 ==! */
+           , A.RELA_DOC_NO                /** N° Document Associé !== 관련문서번호 ==! */
+           , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+           , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+           , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+           , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+           , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+      FROM   TB_RSMI_OVRS_DTA_RQST_PSN A
+      WHERE  DEL_YN = 'N'                 /** Suppression ON !== 삭제여부 ==! */
+      AND    A.RQST_NO = #{rqstNo}        /** N° De Demande !== 신청번호 ==! */
+    </select>
+
+    <!--
+      Consulter la liste (Pays répondeur) !== 해외데이터 답변국가 목록 조회 ==!
+    -->
+    <select id="selectOvrsDtaAnswCntyList"
+      parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstVo"
+      resultType="alpass.ipt.rsm.com.vo.RsmCntyIttInfoClabCdVo">
+      /* selectOvrsDtaAnswCntyList */
+
+        SELECT TT.*
+        FROM
+        (
+            SELECT T.*
+                , ROW_NUMBER() OVER(PARTITION BY T.RNUM ORDER BY T.INFO_CLAB_CD ) AS ROWNUM
+            FROM
+            (
+                SELECT AA.*
+                    , BB.CNTY_NM                            /** Nom Du Pays !== 국가명 ==! */
+                    , BB.RNUM
+                FROM
+                (
+                    SELECT
+                          A.RQST_NO                         /** N° De Demande !== 신청번호 ==! */
+                        , A.DAT_EXCG_TP_CD                  /** Code de type d'échange d'information !== 자료교환구분코드 ==! */
+                        , A.INFO_CLAB_ITT_CD as CNTY_CD     /** Code d'organisme engagé dans la coopération !== 정보협력기관코드 ==! */
+                        , A.INFO_CLAB_CD                    /** Code de coopération  !== 정보협력코드 ==! */
+                    FROM   TB_RSMI_CNTY_ITT_INFO_CLAB_CD A
+                    WHERE  DEL_YN = 'N'                     /** Suppression ON !== 삭제여부 ==! */
+                    AND  A.RQST_NO = #{rqstNo}              /** N° De Demande !== 신청번호 ==! */
+                    AND  A.DAT_EXCG_TP_CD = 'B'             /** Code de type d'échange d'information (Étranger) !== 자료교환구분코드 (해외) ==! */
+                ) AA,
+                (
+                    SELECT L.*
+                        , ROWNUM as RNUM
+                    FROM(
+                        SELECT B.CNTY_CD,
+                               B.CNTY_NM
+                        FROM TB_COM_CNTY_CD A,
+                             TB_COM_CNTY_CD_LANG B
+                        WHERE A.CNTY_CD = B.CNTY_CD
+                        AND A.DEL_YN = 'N'
+                        AND B.DEL_YN = 'N'
+                        AND B.LANG_CD = #{langCd}
+                        ORDER BY B.CNTY_NM
+			        ) L
+                ) BB
+                WHERE AA.CNTY_CD = BB.CNTY_CD
+                ORDER BY AA.INFO_CLAB_CD
+            ) T
+        ) TT
+        WHERE TT.ROWNUM = 1
+
+    </select>
+
+    <!--
+      Consulter la liste (Organisme répondeur) !== 위험업체데이터 답변기관 목록 조회 ==!
+    -->
+    <select id="selectRskCoDtaAnswIttList"
+      parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo"
+      resultType="alpass.ipt.rsm.com.vo.RsmCntyIttInfoClabCdVo">
+      /* selectRskCoDtaAnswIttList */
+
+        SELECT TT.*
+        FROM
+        (
+            SELECT T.*
+                , ROW_NUMBER() OVER(PARTITION BY T.SORT_ORDR ORDER BY T.INFO_CLAB_CD ) AS ROWNUM
+            FROM
+            (
+                SELECT AA.*
+                    , BB.CD_VDVAL_NM AS ITT_NM              /** Nom De L'Organisme !== 기관명 ==! */
+                    , BB.SORT_ORDR
+                FROM
+                (
+                    SELECT
+                          A.RQST_NO                         /** N° De Demande !== 신청번호 ==! */
+                        , A.DAT_EXCG_TP_CD                  /** Code de type d'échange d'information !== 자료교환구분코드 ==! */
+                        , A.INFO_CLAB_ITT_CD as ITT_CD      /** Code d'organisme engagé dans la coopération !== 정보협력기관코드 ==! */
+                        , A.INFO_CLAB_CD                    /** Code de coopération  !== 정보협력코드 ==! */
+                    FROM   TB_RSMI_CNTY_ITT_INFO_CLAB_CD A
+                    WHERE  DEL_YN = 'N'                     /** Suppression ON !== 삭제여부 ==! */
+                    AND  A.RQST_NO = #{rqstNo}              /** N° De Demande !== 신청번호 ==! */
+                    AND  A.DAT_EXCG_TP_CD = 'A'             /** Code de type d'échange d'information (Opérateurs à risque) !== 자료교환구분코드 (위험업체) ==! */
+                ) AA,
+                (
+                    SELECT L.*
+                    FROM(
+                          SELECT
+                              A.COMN_CD
+                            , ( SELECT COMN_CD_NM FROM TB_COM_COMN_CD_LANG
+                                WHERE DEL_YN = 'N'
+                                AND COMN_CD = A.COMN_CD
+                                AND LANG_CD = #{langCd}
+                              ) AS COMN_CD_NM
+                            , A.CD_VDVAL
+                            , ( SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG
+                                WHERE DEL_YN = 'N'
+                                AND COMN_CD = A.COMN_CD
+                                AND CD_VDVAL = A.CD_VDVAL
+                                AND LANG_CD = #{langCd}
+                              ) AS CD_VDVAL_NM
+                            , A.UPR_CD_VDVAL
+                            , A.UPR_COMN_CD
+                            , A.SORT_ORDR
+                            , A.USER_DEFN_VDVAL1
+                        FROM
+                            TB_COM_COMN_CD_D A
+                        WHERE
+                            A.DEL_YN = 'N'
+                            AND A.COMN_CD = 'RSM_0028'
+                        ORDER BY
+                            A.COMN_CD,
+                            A.SORT_ORDR
+			        ) L
+                ) BB
+                WHERE AA.ITT_CD = BB.CD_VDVAL
+                ORDER BY AA.INFO_CLAB_CD
+            ) T
+        ) TT
+        WHERE TT.ROWNUM = 1
+
+    </select>
+
+    <!--
+      Consulter la liste (Organisme répondeur) !== 위험업체데이터 답변기관 목록 조회 ==!
+    -->
+    <select id="selectCntyPrIntnInfoClabCdList"
+        parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstVo"
+        resultType="alpass.ipt.rsm.com.vo.RsmCntyIttInfoClabCdVo">
+        /* selectCntyPrIntnInfoClabCdList */
+        SELECT
+              A.RQST_NO                         /** N° De Demande !== 신청번호 ==! */
+            , A.DAT_EXCG_TP_CD                  /** Code de type d'échange d'information !== 자료교환구분코드 ==! */
+            , A.INFO_CLAB_ITT_CD as CNTY_CD     /** Code d'organisme engagé dans la coopération !== 정보협력기관코드 ==! */
+            , A.INFO_CLAB_CD                    /** Code de coopération  !== 정보협력코드 ==! */
+        FROM   TB_RSMI_CNTY_ITT_INFO_CLAB_CD A
+        WHERE  DEL_YN = 'N'                     /** Suppression ON !== 삭제여부 ==! */
+        AND  A.RQST_NO = #{rqstNo}              /** N° De Demande !== 신청번호 ==! */
+        <if test='answCntyCd != null and !"".equals(answCntyCd)'>
+            AND A.INFO_CLAB_ITT_CD = #{answCntyCd}              /** Code d'organisme engagé dans la coopération !== 정보협력기관코드 ==! */
+        </if>
+        AND  A.DAT_EXCG_TP_CD = 'B'             /** Code de type d'échange d'information !== 자료교환구분코드 ==! */
+
+    </select>
+
+    <select id="selectIttPrDmscInfoClabCdList"
+        parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo"
+        resultType="alpass.ipt.rsm.com.vo.RsmCntyIttInfoClabCdVo">
+        /* selectIttPrDmscInfoClabCdList */
+        SELECT
+              A.RQST_NO                         /** N° De Demande !== 신청번호 ==! */
+            , A.DAT_EXCG_TP_CD                  /** Code de type d'échange d'information !== 자료교환구분코드 ==! */
+            , A.INFO_CLAB_ITT_CD as ITT_CD      /** Code d'organisme engagé dans la coopération !== 정보협력기관코드 ==! */
+            , A.INFO_CLAB_CD                    /** Code de coopération  !== 정보협력코드 ==! */
+        FROM   TB_RSMI_CNTY_ITT_INFO_CLAB_CD A
+        WHERE  DEL_YN = 'N'                     /** Suppression ON !== 삭제여부 ==! */
+        AND  A.RQST_NO = #{rqstNo}              /** N° De Demande !== 신청번호 ==! */
+        <if test='answIttCd != null and !"".equals(answIttCd)'>
+            AND A.INFO_CLAB_ITT_CD = #{answIttCd}               /** Code d'organisme engagé dans la coopération !== 정보협력기관코드 ==! */
+        </if>
+        AND  A.DAT_EXCG_TP_CD = 'A'             /** Code de type d'échange d'information !== 자료교환구분코드 ==! */
+
+    </select>
+
+    
+    <!--
+      [Enregistrer la demande d'informations de l'étranger] SH -  Consulter la liste !== 해외데이터신청 HS 목록 조회 ==!
+    -->
+    <select id="selectOvrsDtaRqstHsList"
+      parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstVo"
+      resultType="alpass.ipt.rsm.com.vo.RsmComHsCdVo">
+      
+      /* selectOvrsDtaRqstHsList */
+      SELECT
+            A.RQST_NO                    /** N° De Demande !== 신청번호 ==! */
+          , A.HS_CD                      /** Code Sh !== HS코드 ==! */
+          , ( SELECT HS_DESC FROM  TB_CLRI_HS_CD WHERE  HS_CD = A.HS_CD
+              AND TO_CHAR(SYSDATE,'YYYYMMDD') BETWEEN TO_CHAR(TO_DATE( HS_APLY_STRT_DT , 'YYYYMMDD'), 'YYYYMMDD') AND TO_CHAR(TO_DATE( HS_APLY_END_DT  , 'YYYYMMDD'), 'YYYYMMDD')
+              AND ROWNUM = 1
+            ) AS HS_DESC
+          , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+          , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+      FROM  TB_RSMI_OVRS_DTA_RQST_HS A
+      WHERE DEL_YN = 'N'                 /** Suppression ON !== 삭제여부 ==! */
+      AND   A.RQST_NO = #{rqstNo}        /** N° De Demande !== 신청번호 ==! */
+    </select>
+    
+    <!--
+      [Enregistrer la demande d'informations de l'étranger] CDA - Consulter la liste !== 해외데이터신청 신고인 목록 조회 ==!
+    -->
+    <select id="selectOvrsDtaRqstDcerList"
+      parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstVo"
+      resultType="alpass.ipt.rsm.com.vo.RsmComNifVo">
+      
+      /* selectOvrsDtaRqstDcerList */
+      SELECT
+            A.RQST_NO                    /** N° De Demande !== 신청번호 ==! */
+          , A.NIF                        /** NIF !== 납세식별번호 ==! */
+          , A.NIF AS NIF
+          , NVL((SELECT CO_NM FROM TB_COM_CO WHERE NIF = A.NIF), (SELECT CONM FROM TB_POTE_NIF WHERE NIF = A.NIF)) AS CO_NM
+          , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+          , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+      FROM  TB_RSMI_OVRS_DTA_RQST_DCER A
+      WHERE DEL_YN = 'N'                /** Suppression ON !== 삭제여부 ==! */
+      AND   A.RQST_NO = #{rqstNo}       /** N° De Demande !== 신청번호 ==! */
+    
+    </select>
+
+    <!--
+      [Gérer la demande d'informations de l'étranger] Enregistrer !== [해외 자료요청관리] 등록 ==!
+    -->
+    <insert id="insertOvrsDtaRqst"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo">
+
+        /* insertOvrsDtaRqst */
+        INSERT INTO TB_RSMI_OVRS_DTA_RQST (
+              RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+            , DOC_TTLE                     /** Nom Du Fichier !== 문서제목 ==! */
+            , RQST_TP_CD                   /** Code De Type De Demande !== 신청구분코드 ==! */
+            , RQST_CSTM_CD                 /** Code de bureau de douane !== 신청세관코드 ==! */
+            , RQST_CNTY_CD                 /** Code du pays demandeur !== 신청국가코드 ==! */
+            , OVRS_CSTM_NM                 /** Nom de la douane étrangère !== 해외세관명 ==! */
+            , RQST_DT                      /** Date De Demande !== 신청일자 ==! */
+            , REGST_ID                     /** Id De La Personne Enregistrant !== 등록자ID ==! */
+            , CSTM_CD                      /** Code Du Bureau !== 세관코드 ==! */
+            , ANSW_DPHD_ID                 /** ID du chef de service qui répond clairement aux questions !== 답변부서장ID ==! */
+            , RQST_CN                      /** Contenu de la demande !== 신청내용 ==! */
+            , PRCS_STTS_CD                 /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , APRV_ID                      /** Id D'Approbation  !== 결재ID ==! */
+            , ATCH_FILE_ID                 /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        ) VALUES (
+              #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+            , #{docTtle}                   /** Nom Du Fichier !== 문서제목 ==! */
+            , #{rqstTpCd}                  /** Code De Type De Demande !== 신청구분코드 ==! */
+            , #{rqstCstmCd}                /** Code de bureau de douane !== 신청세관코드 ==! */
+            , #{rqstCntyCd}                /** Code du pays demandeur !== 신청국가코드 ==! */
+            , #{ovrsCstmNm}                /** Nom de la douane étrangère !== 해외세관명 ==! */
+            , TO_CHAR(TO_DATE(#{rqstDt}, 'DD/MM/YYYY'), 'YYYYMMDD')                    /** Date De Demande !== 신청일자 ==! */
+            , #{regstId}                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+            , #{cstmCd}                    /** Code Du Bureau !== 세관코드 ==! */
+            , #{answDphdId}                /** ID du chef de service qui répond clairement aux questions !== 답변부서장ID ==! */
+            , #{rqstCn}                    /** Contenu de la demande !== 신청내용 ==! */
+            , #{prcsSttsCd}                /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , #{aprvId}                    /** Id D'Approbation  !== 결재ID ==! */
+            , #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+
+    </insert>
+
+    <!--
+      [Gérer la demande d'informations de l'étranger] Enregistrer la réponse !== [해외 자료요청관리] 답변 등록 ==!
+    -->
+    <insert id="insertOvrsDtaAnsw"
+        parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaAnswVo">
+        /* insertOvrsDtaAnsw */
+        INSERT INTO TB_RSMI_OVRS_DTA_ANSW
+        (
+            RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+          , ANSW_CSTM_CD                 /** Code de douane répondeur !== 답변세관코드 ==! */
+          , ANSW_CNTY_CD                 /** Répondre à l'indicatif du pays !== 답변국가코드 ==! */
+          , OVRS_CSTM_NM                 /** Nom de la douane étrangère !== 해외세관명 ==! */
+          , ANSW_CN                      /** Contenu De La Réponse !== 답변내용 ==! */
+          , ANSW_DT                      /** Date De Réponse  !== 답변일자 ==! */
+          , ANPN_ID                      /** Id De La Réponse !== 답변자ID ==! */
+          , ANPN_NM                      /** Nom du répondeur !== 답변자명 ==! */
+          , ATCH_FILE_ID                 /** Id Du Fichier Joint !== 첨부파일ID ==! */
+          , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+          , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        VALUES
+        (
+            #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+          , #{answCstmCd}                /** Code de douane répondeur !== 답변세관코드 ==! */
+          , #{answCntyCd}                /** Répondre à l'indicatif du pays !== 답변국가코드 ==! */
+          , #{ovrsCstmNm}                /** Nom de la douane étrangère !== 해외세관명 ==! */
+          , #{answCn}                    /** Contenu De La Réponse !== 답변내용 ==! */
+          , TO_CHAR(SYSDATE, 'YYYYMMDD') /** Date De Réponse  !== 답변일자 ==! */
+          , #{anpnId}                    /** Id De La Réponse !== 답변자ID ==! */
+          , (SELECT EMP_NM FROM TB_POTI_EMP WHERE DEL_YN = 'N' AND PBSR_NO = #{anpnId} )                    /** Nom du répondeur !== 답변자명 ==! */
+          , #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+          , 'N'                          /** Suppression On !== 삭제여부 ==! */
+          , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      [Enregistrer la demande d'informations de l'étranger] CDA -  Suppression !== 해외데이터신청 신고인 삭제 ==!
+    -->
+    <delete id="deleteOvrsDtaRqstDcer"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo">
+
+        /* deleteOvrsDtaRqstDcer */
+        DELETE FROM TB_RSMI_OVRS_DTA_RQST_DCER
+        WHERE RQST_NO = #{rqstNo}
+    </delete>
+
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque] CDA -  Suppression !== 위험업체데이터신청 신고인 삭제 ==!
+    -->
+    <delete id="deleteRskCoDtaRqstDcer"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstRgsrVo">
+        /* deleteRskCoDtaRqstDcer */
+        DELETE FROM TB_RSMI_RSK_CO_DTA_RQST_DCER
+        WHERE RQST_NO = #{rqstNo}
+    </delete>
+
+    <!--
+      [Enregistrer la demande d'informations de l'étranger] SH - Suppression !== 해외데이터신청 HS 삭제 ==!
+    -->
+    <delete id="deleteOvrsDtaRqstHs"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo">
+        /* deleteOvrsDtaRqstHs */
+        DELETE FROM TB_RSMI_OVRS_DTA_RQST_HS
+        WHERE RQST_NO = #{rqstNo}
+    </delete>
+
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque] SH - Suppression !== 위험업체데이터신청 HS 삭제 ==!
+    -->
+    <delete id="deleteRskCoDtaRqstHs"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstRgsrVo">
+        /* deleteRskCoDtaRqstHs */
+        DELETE FROM TB_RSMI_RSK_CO_DTA_RQST_HS
+        WHERE RQST_NO = #{rqstNo}
+    </delete>
+
+    <!--
+      [Enregistrer la demande d'informations de l'étranger] Pays d’origine - Suppression !== 해외데이터신청 원산지 삭제 ==!
+    -->
+    <delete id="deleteOvrsDtaRqstOrcy"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo">
+        /* deleteOvrsDtaRqstOrcy */
+        DELETE FROM TB_RSMI_OVRS_DTA_RQST_ORCY
+        WHERE RQST_NO = #{rqstNo}
+    </delete>
+
+    <!--
+      [Enregistrer la demande d'informations sur les opérateurs à risque] Pays d’origine - Suppression !== 위험업체데이터신청 원산지 삭제 ==!
+    -->
+    <delete id="deleteRskCoDtaRqstOrcy"
+            parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo">
+        /* deleteRskCoDtaRqstOrcy */
+        DELETE FROM TB_RSMI_RSK_CO_DTA_RQST_ORCY
+        WHERE RQST_NO = #{rqstNo}
+    </delete>
+
+    <!--
+      [Enregistrer la demande d'informations de l'étranger] Suppression (Particulier) !== 해외데이터신청 개인 삭제 ==!
+    -->
+    <delete id="deleteOvrsDtaRqstPsn"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo">
+        /* deleteOvrsDtaRqstPsn */
+        DELETE FROM TB_RSMI_OVRS_DTA_RQST_PSN
+        WHERE RQST_NO = #{rqstNo}
+    </delete>
+
+    <!--
+      [Enregistrer la demande d'informations sur les opérateurs à risque] Supprimer (Particulier) !== 위험업체데이터신청 개인 삭제 ==!
+    -->
+    <delete id="deleteRskCoDtaRqstPsn"
+            parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo">
+        /* deleteRskCoDtaRqstPsn */
+        DELETE FROM TB_RSMI_RSK_CO_DTA_RQST_PSN
+        WHERE RQST_NO = #{rqstNo}
+    </delete>
+
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque] CDA -  Enregistrer !== 위험업체데이터신청 신고인 등록 ==!
+    -->
+    <insert id="insertRskCoDtaRqstDcer"
+            parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstDcerVo">
+
+        /* insertRskCoDtaRqstDcer */
+        INSERT INTO TB_RSMI_RSK_CO_DTA_RQST_DCER (
+              RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+            , NIF                          /** NIF !== 납세식별번호 ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        ) VALUES (
+              #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+            , #{nif}                       /** NIF !== 납세식별번호 ==! */
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      [Gérer la demande d'informations de l'étranger] CDA -  Enregistrer !== 해외데이터신청 신고인 등록 ==!
+    -->
+    <insert id="insertOvrsDtaRqstDcer"
+        parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstDcerVo">
+
+        /* insertOvrsDtaRqstDcer */
+        INSERT INTO TB_RSMI_OVRS_DTA_RQST_DCER (
+              RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+            , NIF                          /** NIF !== 납세식별번호 ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        ) VALUES (
+              #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+            , #{nif}                       /** NIF !== 납세식별번호 ==! */
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque] SH - Enregistrer !== 위험업체데이터신청 HS 등록 ==!
+    -->
+    <insert id="insertRskCoDtaRqstHs"
+        parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstHsVo">
+
+        /* insertRskCoDtaRqstHs */
+        INSERT INTO TB_RSMI_RSK_CO_DTA_RQST_HS (
+              RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+            , HS_CD                        /** Code Sh !== HS코드 ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        ) VALUES (
+              #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+            , #{hsCd}                      /** Code Sh !== HS코드 ==! */
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      [Gérer la demande d'informations de l'étranger] SH - Enregistrer !== 해외데이터신청 HS 등록 ==!
+    -->
+    <insert id="insertOvrsDtaRqstHs"
+        parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstHsVo">
+
+        /* insertOvrsDtaRqstHs */
+        INSERT INTO TB_RSMI_OVRS_DTA_RQST_HS (
+              RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+            , HS_CD                        /** Code Sh !== HS코드 ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        ) VALUES (
+              #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+            , #{hsCd}                      /** Code Sh !== HS코드 ==! */
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque] Pays d’origine - Enregistrer !== 위험업체데이터신청 원산지 등록 ==!
+    -->
+    <insert id="insertRskCoDtaRqstOrcy"
+        parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstOrcyVo">
+
+        /* insertRskCoDtaRqstOrcy */
+        INSERT INTO TB_RSMI_RSK_CO_DTA_RQST_ORCY (
+              RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+            , ORCY_CD                      /** Pays Origine Code  !== 원산지코드 ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        ) VALUES (
+              #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+            , #{orcyCd}                    /** Pays Origine Code  !== 원산지코드 ==! */
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      [Enregistrer la demande d'informations de l'étranger] Pays d’origine - Enregistrer !== 해외데이터신청 원산지 등록 ==!
+    -->
+    <insert id="insertOvrsDtaRqstOrcy"
+        parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstOrcyVo">
+
+        /* insertOvrsDtaRqstOrcy */
+        INSERT INTO TB_RSMI_OVRS_DTA_RQST_ORCY (
+              RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+            , ORCY_CD                      /** Pays Origine Code  !== 원산지코드 ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        ) VALUES (
+              #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+            , #{orcyCd}                    /** Pays Origine Code  !== 원산지코드 ==! */
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      Enregistrer (Particulier) !== 위험업체데이터신청 개인 등록 ==!
+    -->
+    <insert id="insertRskCoDtaRqstPsn"
+        parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstPsnVo">
+
+        /* insertRskCoDtaRqstPsn */
+        INSERT INTO TB_RSMI_RSK_CO_DTA_RQST_PSN (
+              RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+            , DTL_SRNO                     /** N° De Séquence Du Détail !== 상세일련번호 ==! */
+            , NTNAL_IDFY_NO                /** Nin !== 자국민식별번호 ==! */
+            , NTNAL_FMNM_NM                /** Nom du citoyen !== 자국민성명 ==! */
+            , NTNAL_GVNM_NM                /** Prénom du citoyen !== 자국민이름명 ==! */
+            , NTNAL_BRDY                   /** Date De Naissance du citoyen !== 자국민생년월일 ==! */
+            , BLNG_ITT_NM                  /** Nom du groupe d'appartenance !== 소속기관명 ==! */
+            , RELA_DOC_NO                  /** N° Document Associé !== 관련문서번호 ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        ) VALUES (
+              #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+            , (SELECT NVL(MAX(DTL_SRNO), 0) + 1 FROM TB_RSMI_OVRS_DTA_RQST_PSN WHERE RQST_NO = #{rqstNo})
+            , #{ntnalIdfyNo}
+            , #{ntnalFmnmNm}
+            , #{ntnalGvnmNm}
+            , TO_CHAR(TO_DATE(#{ntnalBrdy}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            , #{blngIttNm}
+            , #{relaDocNo}
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      Enregistrer (Particulier) !== 해외데이터신청 개인 등록 ==!
+    -->
+    <insert id="insertOvrsDtaRqstPsn"
+        parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstPsnVo">
+
+        /* insertOvrsDtaRqstPsn */
+        INSERT INTO TB_RSMI_OVRS_DTA_RQST_PSN (
+              RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+            , DTL_SRNO                     /** N° De Séquence Du Détail !== 상세일련번호 ==! */
+            , NTNAL_IDFY_NO                /** Nin !== 자국민식별번호 ==! */
+            , NTNAL_FMNM_NM                /** Nom du citoyen !== 자국민성명 ==! */
+            , NTNAL_GVNM_NM                /** Prénom du citoyen !== 자국민이름명 ==! */
+            , NTNAL_BRDY                   /** Date De Naissance du citoyen !== 자국민생년월일 ==! */
+            , BLNG_ITT_NM                  /** Nom du groupe d'appartenance !== 소속기관명 ==! */
+            , RELA_DOC_NO                  /** N° Document Associé !== 관련문서번호 ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        ) VALUES (
+              #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+            , (SELECT NVL(MAX(DTL_SRNO), 0) + 1 FROM TB_RSMI_OVRS_DTA_RQST_PSN WHERE RQST_NO = #{rqstNo})
+            , #{ntnalIdfyNo}
+            , #{ntnalFmnmNm}
+            , #{ntnalGvnmNm}
+            , TO_CHAR(TO_DATE(#{ntnalBrdy}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            , #{blngIttNm}
+            , #{relaDocNo}
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      Code de coopération internationale (Enregistrer) !== 정보협력코드 등록 ==!
+    -->
+    <insert id="insertInfoClbaCd"
+         parameterType="alpass.ipt.rsm.com.vo.RsmInfoClabCdVo">
+
+        /* insertInfoClbaCd */
+        INSERT INTO TB_RSMI_INFO_CLAB_CD
+        (
+              RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+            , DAT_EXCG_TP_CD               /** Code de type d'échange d'information !== 자료교환구분코드 ==! */
+            , INFO_CLAB_CD                 /** Code de coopération  !== 정보협력코드 ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        ) VALUES (
+              #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+            , #{datExcgTpCd}
+            , #{infoClabCd}
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      [Gérer la demande d'informations de l'étranger] Modifier !== [해외 자료요청관리] 수정 ==!
+    -->
+    <update id="updateOvrsDtaRqst"
+        parameterType = "alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo" >
+
+        /* updateOvrsDtaRqst */
+        UPDATE  TB_RSMI_OVRS_DTA_RQST SET
+              DOC_TTLE = #{docTtle}                       /** Nom Du Fichier !== 문서제목 ==! */
+            , RQST_TP_CD = #{rqstTpCd}                    /** Code De Type De Demande !== 신청구분코드 ==! */
+            , RQST_CSTM_CD = #{rqstCstmCd}                /** Code de bureau de douane !== 신청세관코드 ==! */
+            , RQST_CNTY_CD = #{rqstCntyCd}                /** Code du pays demandeur !== 신청국가코드 ==! */
+            , OVRS_CSTM_NM = #{ovrsCstmNm}                /** Nom de la douane étrangère !== 해외세관명 ==! */
+            , RQST_DT = TO_CHAR(TO_DATE(#{rqstDt}, 'DD/MM/YYYY'), 'YYYYMMDD')                         /** Date De Demande !== 신청일자 ==! */
+            , CSTM_CD = #{cstmCd}                         /** Code Du Bureau !== 세관코드 ==! */
+            , ANSW_DPHD_ID = #{answDphdId}                /** ID du chef de service qui répond clairement aux questions !== 답변부서장ID ==! */
+            , RQST_CN = #{rqstCn}                         /** Contenu de la demande !== 신청내용 ==! */
+            <if test='rtrnRsnCn != null and rtrnRsnCn != ""'>
+            , RTRN_RSN_CN = #{rtrnRsnCn}                  /** Motif De Rejet !== 반려사유내용 ==! */
+            </if>
+            <if test='trnsfRsnCn != null and !"".equals(trnsfRsnCn)'>
+            , TRNSF_RSN_CN = #{trnsfRsnCn}                /** Raison du transfert !== 이관사유내용 ==! */
+            </if>
+            , PRCS_STTS_CD = #{prcsSttsCd}                /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , ATCH_FILE_ID = #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                               /** Suppression ON !== 삭제여부 ==! */
+        AND  RQST_NO = #{rqstNo}                          /** N° De Demande !== 신청번호 ==! */
+
+    </update>
+
+    <!--
+      [Gérer la demande d'informations de l'étranger] Enregistrer les pièces jointes !== [해외 자료요청관리] 첨부파일 등록 ==!
+    -->
+    <update id="updateOvrsDtaRqstSgntAtch"
+        parameterType = "alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo" >
+
+        /* updateOvrsDtaRqstSgntAtch */
+        UPDATE  TB_RSMI_OVRS_DTA_RQST SET
+              SGNT_ATCH_FILE_ID = #{sgntAtchFileId}       /** Id Du Fichier Joint !== 서명첨부파일ID ==! */
+            , LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                               /** Suppression ON !== 삭제여부 ==! */
+        AND  RQST_NO = #{rqstNo}                          /** N° De Demande !== 신청번호 ==! */
+
+    </update>
+
+    <!--
+      Code de coopération internationale - Suppression !== 정보협력코드 삭제 ==!
+    -->
+    <delete id="deleteInfoClabCd"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo">
+        /* deleteInfoClabCd */
+        DELETE FROM TB_RSMI_INFO_CLAB_CD
+        WHERE RQST_NO = #{rqstNo}
+    </delete>
+
+    <!--
+      [Gérer la demande d'informations de l'étranger] Liste de réponses (Suppression) !== [해외 자료요청관리] 답변 목록 삭제 ==!
+    -->
+    <delete id="deleteOvsrDtaAnswList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo">
+        /* deleteOvsrDtaAnswList */
+        UPDATE TB_RSMI_OVRS_DTA_ANSW
+        SET
+               DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+            ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+            ,  LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+        AND  RQST_NO = #{rqstNo}                             /** N° De Demande !== 신청번호 ==! */
+    </delete>
+
+    <!--
+      [Gérer la demande d'informations de l'étranger] Supprimer !== [해외 자료요청관리] 삭제 ==!
+    -->
+    <delete id="deleteOvrsDtaRqst"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo">
+        /* deleteOvrsDtaRqst */
+        UPDATE TB_RSMI_OVRS_DTA_RQST
+        SET
+               DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+            ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+            ,  LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+        WHERE RQST_NO = #{rqstNo}
+    </delete>
+
+    <!--
+      [Gérer le rapport confidentiel] Consulter la liste !== [기밀보고서관리] 목록조회 ==!
+    -->
+    <select id="selectSeciBscsList"
+       parameterType="alpass.ipt.rsm.com.vo.RsmSeciBscsVo"
+       resultType="alpass.ipt.rsm.com.vo.RsmSeciBscsVo">
+        /* selectSeciBscsList */
+        <include refid="pagination.header" ></include>
+        SELECT
+              A.SECI_RPDC_RQST_NO          /** Numéro de demande de rapport secret !== 기밀보고서신청번호 ==! */
+            , A.RPDC_TTLE                  /** Titre du rapport !== 보고서제목 ==! */
+            , TO_CHAR(TO_DATE(A.RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RGSR_DT                    /** Date D'Enregistrement !== 등록일자 ==! */
+            , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+            , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.REGST_ID) AS REGST_NM
+            , A.SECI_CN                    /** Contenu de la confidentiel !== 기밀내용 ==! */
+            , A.SECI_OFR_ITT_CD            /** Code d'organisme destinataire du rapport confidentiel !== 기밀제공기관코드 ==! */
+            , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+            , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+            , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        FROM   TB_RSMI_SECI_BSCS A
+        WHERE  DEL_YN = 'N'                /** Suppression ON !== 삭제여부 ==! */
+        <if test='(rgsrDtFrom != null and !"".equals(rgsrDtFrom)) and (rgsrDtTo != null and !"".equals(rgsrDtTo))'>
+            AND A.RGSR_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{rgsrDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            AND A.RGSR_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{rgsrDtFrom}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        </if>
+        <if test='prcsSttsCd != null and !"".equals(prcsSttsCd)'>
+            AND A.PRCS_STTS_CD = #{prcsSttsCd}
+        </if>
+        ORDER BY A.SECI_RPDC_RQST_NO DESC
+        <include refid="pagination.footer" ></include>
+
+    </select>
+
+    <!--
+      [Gérer le rapport confidentiel] Consulter les détails !== [기밀보고서관리] 상세조회 ==!
+    -->
+    <select id="selectSeciBscs"
+       parameterType="alpass.ipt.rsm.com.vo.RsmSeciBscsVo"
+       resultType="alpass.ipt.rsm.com.vo.RsmSeciBscsVo">
+
+        /* selectSeciBscs */
+        SELECT
+              A.SECI_RPDC_RQST_NO          /** Numéro de demande de rapport secret !== 기밀보고서신청번호 ==! */
+            , A.RPDC_TTLE                  /** Titre du rapport !== 보고서제목 ==! */
+            , TO_CHAR(TO_DATE(A.RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS RGSR_DT                    /** Date D'Enregistrement !== 등록일자 ==! */
+            , A.REGST_ID                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+            , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.REGST_ID) AS REGST_NM
+            , A.SECI_CN                    /** Contenu de la confidentiel !== 기밀내용 ==! */
+            , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , A.SECI_OFR_ITT_CD            /** Code d'organisme destinataire du rapport confidentiel !== 기밀제공기관코드 ==! */
+            , A.APRV_ID                    /** Id D'Approbation  !== 결재ID ==! */
+            , A.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+            , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS RGSR_DT        /** Date D'Enregistrement !== 등록일자 ==! */
+            , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        FROM   TB_RSMI_SECI_BSCS A
+        WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+        AND  A.SECI_RPDC_RQST_NO = #{seciRpdcRqstNo}       /** Numéro de demande de rapport secret !== 기밀보고서신청번호 ==! */
+
+    </select>
+
+    <!--
+      [Gérer le rapport confidentiel] Enregistrer !== [기밀보고서관리] 등록 ==!
+    -->
+    <insert id="insertSeciBscs"
+        parameterType="alpass.ipt.rsm.com.vo.RsmSeciBscsVo">
+        /* insertSeciBscs */
+        INSERT INTO TB_RSMI_SECI_BSCS
+        (
+              SECI_RPDC_RQST_NO            /** Numéro de demande de rapport secret !== 기밀보고서신청번호 ==! */
+            , RPDC_TTLE                    /** Titre du rapport !== 보고서제목 ==! */
+            , RGSR_DT                      /** Date D'Enregistrement !== 등록일자 ==! */
+            , REGST_ID                     /** Id De La Personne Enregistrant !== 등록자ID ==! */
+            , SECI_CN                      /** Contenu de la confidentiel !== 기밀내용 ==! */
+            , SECI_OFR_ITT_CD              /** Code d'organisme destinataire du rapport confidentiel !== 기밀제공기관코드 ==! */
+            , PRCS_STTS_CD                 /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , APRV_ID                      /** Id D'Approbation  !== 결재ID ==! */
+            , ATCH_FILE_ID                 /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        ) VALUES (
+              #{seciRpdcRqstNo}            /** Numéro de demande de rapport secret !== 기밀보고서신청번호 ==! */
+            , #{rpdcTtle}                  /** Titre du rapport !== 보고서제목 ==! */
+            , TO_CHAR(SYSDATE, 'YYYYMMDD') /** Date D'Enregistrement !== 등록일자 ==! */
+            , #{regstId}                   /** Id De La Personne Enregistrant !== 등록자ID ==! */
+            , #{seciCn}                    /** Contenu de la confidentiel !== 기밀내용 ==! */
+            , #{seciOfrIttCd}              /** Code d'organisme destinataire du rapport confidentiel !== 기밀제공기관코드 ==! */
+            , #{prcsSttsCd}                /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , #{aprvId}                    /** Id D'Approbation  !== 결재ID ==! */
+            , #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      [Gérer le rapport confidentiel] Modifier !== [기밀보고서관리] 수정 ==!
+    -->
+    <update id="updateSeciBscs"
+        parameterType="alpass.ipt.rsm.com.vo.RsmSeciBscsVo">
+        /* updateSeciBscs */
+
+        UPDATE  TB_RSMI_SECI_BSCS SET
+              RPDC_TTLE = #{rpdcTtle}                     /** Titre du rapport !== 보고서제목 ==! */
+            , RGSR_DT = TO_CHAR(TO_DATE(#{rgsrDt}, 'DD/MM/YYYY'), 'YYYYMMDD')                         /** Date D'Enregistrement !== 등록일자 ==! */
+            , REGST_ID = #{regstId}                       /** Id De La Personne Enregistrant !== 등록자ID ==! */
+            , SECI_CN = #{seciCn}                         /** Contenu de la confidentiel !== 기밀내용 ==! */
+            , SECI_OFR_ITT_CD = #{seciOfrIttCd}           /** Code d'organisme destinataire du rapport confidentiel !== 기밀제공기관코드 ==! */
+            , PRCS_STTS_CD = #{prcsSttsCd}                /** Code De Statut De Traitement !== 처리상태코드 ==! */
+            , APRV_ID = #{aprvId}                         /** Id D'Approbation  !== 결재ID ==! */
+            , ATCH_FILE_ID = #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                               /** Suppression ON !== 삭제여부 ==! */
+        AND  SECI_RPDC_RQST_NO = #{seciRpdcRqstNo}        /** Numéro de demande de rapport secret !== 기밀보고서신청번호 ==! */
+    </update>
+
+    <!--
+      [Gérer le rapport confidentiel] Supprimer !== [기밀보고서관리] 삭제 ==!
+    -->
+    <delete id="deleteSeciBscs"
+        parameterType="alpass.ipt.rsm.com.vo.RsmSeciBscsVo">
+        /* deleteSeciBscs */
+        DELETE FROM TB_RSMI_SECI_BSCS
+        WHERE SECI_RPDC_RQST_NO = #{seciRpdcRqstNo}       /** Numéro de demande de rapport secret !== 기밀보고서신청번호 ==! */
+    </delete>
+
+    <!--
+      [Gérer le rapport confidentiel] Données de référence - Consulter la liste !== 기밀보고서 참고데이터 목록 조회 ==!
+    -->
+    <select id="selectSeciRtdaList"
+        parameterType="alpass.ipt.rsm.com.vo.RsmSeciBscsVo"
+        resultType="alpass.ipt.rsm.com.vo.RsmSeciAnswRtdaVo">
+        /* selectSeciRtdaList */
+        SELECT
+              A.SECI_RPDC_RQST_NO          /** Numéro de demande de rapport secret !== 기밀보고서신청번호 ==! */
+            , A.RFER_DTA_CD                /** Code de données de réference !== 참고데이터코드 ==! */
+            , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+            , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        FROM   TB_RSMI_SECI_RTDA A
+        WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+        AND  A.SECI_RPDC_RQST_NO = #{seciRpdcRqstNo}       /** Numéro de demande de rapport secret !== 기밀보고서신청번호 ==! */
+    </select>
+
+    <!--
+      [Gérer le rapport confidentiel] Données de référence - Enregistrer !== 기밀보고서 참고데이터 등록 ==!
+    -->
+    <insert id="insertSeciRtda"
+        parameterType="alpass.ipt.rsm.com.vo.RsmSeciAnswRtdaVo">
+        /* insertSeciRtda */
+        INSERT INTO TB_RSMI_SECI_RTDA
+        (
+              SECI_RPDC_RQST_NO            /** Numéro de demande de rapport secret !== 기밀보고서신청번호 ==! */
+            , RFER_DTA_CD                  /** Code de données de réference !== 참고데이터코드 ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        ) VALUES
+        (
+              #{seciRpdcRqstNo}            /** Numéro de demande de rapport secret !== 기밀보고서신청번호 ==! */
+            , #{rferDtaCd}                 /** Code de données de réference !== 참고데이터코드 ==! */
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      [Gérer le rapport confidentiel] Données de référence - Suppression !== 기밀보고서 참고데이터 삭제 ==!
+    -->
+    <delete id="deleteSeciRtda"
+        parameterType="alpass.ipt.rsm.com.vo.RsmSeciAnswRtdaVo">
+        /* deleteSeciRtda */
+        DELETE FROM TB_RSMI_SECI_RTDA
+        WHERE SECI_RPDC_RQST_NO = #{seciRpdcRqstNo}
+    </delete>
+
+    <!--
+      Opérateurs à risqué -  Statistiques sur les échanges d'information - Consulter la liste !== 위험업체 자료교환통계 목록 조회 ==!
+    -->
+    <select id="selectRskCoDtaExcgStatsList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmDatExcgStatsRsltVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmDatExcgStatsRsltVo">
+        /* selectRskCoDtaExcgStatsList */
+        SELECT
+            ITT.*
+          , CASE WHEN ITT.RQST_TP_CD = 'D' THEN (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE DEL_YN = 'N' AND ORGN_CD = ITT.CSTM_ITT_CD)
+                 WHEN ITT.RQST_TP_CD = 'E' THEN (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'RSM_0028' AND LANG_CD = #{langCd} AND CD_VDVAL = ITT.CSTM_ITT_CD)
+            END AS CSTM_ITT_NM      /** Nom Du Bureau et Nom D'Agence !== 세관기관명 ==! */
+        FROM
+        (
+
+            WITH RECENT_YEAR AS
+            (
+                SELECT RQST_YEAR, ROWNUM AS RNUM
+                FROM
+                (
+                    SELECT DISTINCT SUBSTR(RQST_DT,0,4) AS RQST_YEAR
+                    FROM TB_RSMI_RSK_CO_DTA_RQST
+                    WHERE DEL_YN = 'N'
+                    AND PRCS_STTS_CD = 'J04'
+                    ORDER BY 1 DESC
+                )
+                WHERE ROWNUM <![CDATA[ <= ]]> 3
+                ORDER BY 1
+            )
+            SELECT RQST_TP_CD,      /** Code De Type De Demande !== 신청구분코드 ==! */
+                DECODE(RQST_TP_CD, 'D', RQST_CSTM_CD, 'E', RQST_ITT_CD) AS CSTM_ITT_CD,     /** Code Du Bureau et Code D'Agence !== 세관기관코드 ==! */
+                COUNT(CASE WHEN SUBSTR(RQST_DT,0,4) = (SELECT RQST_YEAR FROM RECENT_YEAR WHERE RNUM = 3) THEN 1 END) AS CNT_1,      /** Nombre1 !== 건수(count)1 ==! */
+                COUNT(CASE WHEN SUBSTR(RQST_DT,0,4) = (SELECT RQST_YEAR FROM RECENT_YEAR WHERE RNUM = 2) THEN 1 END) AS CNT_2,      /** Nombre2 !== 건수(count)2 ==! */
+                COUNT(CASE WHEN SUBSTR(RQST_DT,0,4) = (SELECT RQST_YEAR FROM RECENT_YEAR WHERE RNUM = 1) THEN 1 END) AS CNT_3       /** Nombre3 !== 건수(count)3 ==! */
+            FROM TB_RSMI_RSK_CO_DTA_RQST A
+            WHERE A.DEL_YN = 'N'
+            AND A.PRCS_STTS_CD = 'J04'
+            GROUP BY RQST_TP_CD, DECODE(RQST_TP_CD, 'D', RQST_CSTM_CD, 'E', RQST_ITT_CD)
+            ORDER BY RQST_TP_CD, DECODE(RQST_TP_CD, 'D', RQST_CSTM_CD, 'E', RQST_ITT_CD)
+        ) ITT
+    </select>
+
+    <!--
+      Opérateurs à risqué -  Statistiques sur les échanges d'information - Consulter la liste (Code De Type De Demande : DGD) !== 위험업체 자료교환통계 목록 조회 (신청구분 : 관세청) ==!
+    -->
+    <select id="selectRskCoDtaExcgStatsDgdList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmDatExcgStatsInqtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmDatExcgStatsRsltVo">
+        /* selectRskCoDtaExcgStatsDgdList */
+        SELECT
+               S.ANSW_ITT_CD as ITT_CD      /** Code D'Agence !== 기관코드 ==! */
+             , NVL((SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'RSM_0028' AND LANG_CD = #{langCd} AND CD_VDVAL = S.ANSW_ITT_CD),
+                   (SELECT 	LBL_NM FROM TB_COM_LBL_LANG WHERE LANG_CD =  #{langCd} AND LBL_ID  = 'L_SUM')
+                  ) as ITT_NM       /** Nom D'Agence !== 기관명 ==! */
+             , SUM(S.RQST_CNT) as RQST_CNT      /** Nombre de la demande !== 요청건수 ==! */
+             , SUM(S.ANSW_CNT) as ANSW_CNT      /** Nombre de réponses !== 응답건수 ==! */
+             , SUM(S.RQST_CNT) - SUM(S.ANSW_CNT) as PRCS_CNT        /** Nombre de traitement !== 처리건수 ==! */
+        FROM
+        (
+            SELECT
+                  T.ANSW_ITT_CD
+                , COUNT(T.RQST_NO) as RQST_CNT
+                , COUNT(CASE WHEN( T.ANSW_ITT_CD IS NOT NULL and T.PRCS_STTS_CD = 'J04' ) THEN 1  END) as ANSW_CNT
+            FROM
+            (
+                SELECT A.RQST_NO
+                     , A.PRCS_STTS_CD
+                     , (
+                          SELECT B.RQST_NO FROM TB_RSMI_RSK_CO_DTA_ANSW B
+                          WHERE B.DEL_YN = 'N'
+                          AND B.RQST_NO = A.RQST_NO
+                       ) as ANSW_RQST_NO
+                     , (
+                          SELECT B.ANSW_ITT_CD FROM TB_RSMI_RSK_CO_DTA_ANSW B
+                          WHERE B.DEL_YN = 'N'
+                          AND B.RQST_NO = A.RQST_NO
+                       ) as ANSW_ITT_CD
+                FROM TB_RSMI_RSK_CO_DTA_RQST A
+                WHERE A.DEL_YN = 'N'
+                AND A.RQST_TP_CD = #{rqstTpCd}
+                AND SUBSTR(A.RQST_DT,0,4) = #{searchYear}
+                <if test='dmscInfoClabCd != null and !"".equals(dmscInfoClabCd)'>
+                    AND EXISTS ( SELECT 1 FROM TB_RSMI_INFO_CLAB_CD
+                                 WHERE DEL_YN = 'N'
+                                 AND RQST_NO = A.RQST_NO
+                                 AND INFO_CLAB_CD = #{dmscInfoClabCd}
+                               )
+                </if>
+            ) T
+            WHERE T.ANSW_ITT_CD IS NOT NULL
+            GROUP BY T.ANSW_ITT_CD, T.PRCS_STTS_CD
+        ) S
+        GROUP BY ROLLUP(ANSW_ITT_CD)
+    </select>
+
+    <!--
+      Opérateurs à risqué -  Statistiques sur les échanges d'information - Consulter la liste (Code De Type De Demande : Externe) !== 위험업체 자료교환통계 목록 조회 (신청구분 : 외부기관) ==!
+    -->
+    <select id="selectRskCoDtaExcgStatsXtrnIttList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmDatExcgStatsInqtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmDatExcgStatsRsltVo">
+        /* selectRskCoDtaExcgStatsXtrnIttList */
+        SELECT ITT.RQST_ITT_CD as ITT_CD        /** Code D'Agence !== 기관코드 ==! */
+            , ITT.ITT_NM                        /** Nom D'Agence !== 기관명 ==! */
+            , ITT.RQST_CNT                      /** Nombre de la demande !== 요청건수 ==! */
+            , ITT.ANSW_CNT                      /** Nombre de réponses !== 응답건수 ==! */
+            , ITT.PRCS_CNT                      /** Nombre de traitement !== 처리건수 ==! */
+        FROM
+        (
+            SELECT
+                  T.RQST_ITT_CD
+                , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'RSM_0028' AND LANG_CD = #{langCd} AND CD_VDVAL = T.RQST_ITT_CD) as ITT_NM
+                , COUNT(T.RQST_NO) as RQST_CNT
+                , COUNT(T.ANSW_RQST_NO) as ANSW_CNT
+                , COUNT(T.RQST_NO) - COUNT(T.ANSW_RQST_NO) as PRCS_CNT
+                , T.SORT_ORDR
+            FROM
+            (
+
+                   SELECT A.RQST_NO
+                        , A.RQST_ITT_CD
+                        , SUBSTR(A.RQST_DT,0,4) as RQST_YY
+                        , ( SELECT B.RQST_NO FROM TB_RSMI_RSK_CO_DTA_ANSW B
+                            WHERE B.DEL_YN = 'N'
+                            AND B.RQST_NO = A.RQST_NO
+                          ) as ANSW_RQST_NO
+                        , ( SELECT SORT_ORDR FROM TB_COM_COMN_CD_D
+                            WHERE DEL_YN = 'N'
+                            AND COMN_CD = 'RSM_0028'
+                            AND CD_VDVAL = A.RQST_ITT_CD
+                          )  as SORT_ORDR
+                   FROM TB_RSMI_RSK_CO_DTA_RQST A
+                   WHERE A.DEL_YN = 'N'
+                   AND A.RQST_TP_CD = #{rqstTpCd}
+                   AND SUBSTR(RQST_DT,0,4) = #{searchYear}
+                   AND A.OGNL_RQST_NO IS NULL
+                   <if test='dmscInfoClabCd != null and !"".equals(dmscInfoClabCd)'>
+                    AND EXISTS ( SELECT 1 FROM TB_RSMI_INFO_CLAB_CD
+                                 WHERE DEL_YN = 'N'
+                                 AND RQST_NO = A.RQST_NO
+                                 AND INFO_CLAB_CD = #{dmscInfoClabCd}
+                               )
+                   </if>
+            ) T
+            WHERE T.RQST_ITT_CD IS NOT NULL
+            GROUP BY T.RQST_ITT_CD, T.SORT_ORDR
+
+            UNION ALL
+
+            SELECT NULL as RQST_ITT_CD
+                , (SELECT 	LBL_NM FROM TB_COM_LBL_LANG WHERE LANG_CD =  #{langCd} AND LBL_ID  = 'L_SUM') as ITT_NM
+                , SUM(1) as RQST_CNT
+                , SUM ( CASE WHEN EXISTS( SELECT 1 FROM TB_RSMI_RSK_CO_DTA_ANSW B
+                                          WHERE B.DEL_YN = 'N'
+                                          AND B.RQST_NO = A.RQST_NO
+                                        ) THEN 1 END) as ANSW_CNT
+                , SUM(1) -  SUM ( CASE WHEN EXISTS( SELECT 1 FROM TB_RSMI_RSK_CO_DTA_ANSW B
+                                                    WHERE B.DEL_YN = 'N'
+                                                    AND B.RQST_NO = A.RQST_NO
+                                                  )
+                                        THEN 1
+                                   END ) as PRCS_CNT
+                , 999 as SORT_ORDR
+            FROM TB_RSMI_RSK_CO_DTA_RQST A
+            WHERE A.DEL_YN = 'N'
+            AND A.RQST_TP_CD = #{rqstTpCd}
+            AND SUBSTR(RQST_DT,0,4) = #{searchYear}
+            AND A.OGNL_RQST_NO IS NULL
+            <if test='dmscInfoClabCd != null and !"".equals(dmscInfoClabCd)'>
+                AND EXISTS ( SELECT 1 FROM TB_RSMI_INFO_CLAB_CD
+                             WHERE DEL_YN = 'N'
+                             AND RQST_NO = A.RQST_NO
+                             AND INFO_CLAB_CD = #{dmscInfoClabCd}
+                           )
+            </if>
+
+         ) ITT
+         ORDER BY ITT.SORT_ORDR
+    </select>
+
+    <select id="selectRskCoDtaExcgStatsNewList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmDatExcgStatsRsltVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmDatExcgStatsRsltVo">
+        /* selectRskCoDtaExcgStatsNewList */
+        SELECT ITT.RQST_ITT_CD      /** Code d'établissement de la demande !== 신청기관코드 ==! */
+            , ITT.RQST_ITT_NM       /** Nom d'établissement de la demande !== 신청기관명 ==! */
+            , ITT.RQST_CNT          /** Nombre de la demande !== 요청건수 ==! */
+            , ITT.ANSW_CNT          /** Nombre de réponses !== 응답건수 ==! */
+            , ITT.PRCS_CNT          /** Nombre de traitement !== 처리건수 ==! */
+        FROM
+        (
+            SELECT
+                  T.RQST_ITT_CD
+                , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'RSM_0028' AND LANG_CD = #{langCd} AND CD_VDVAL = T.RQST_ITT_CD) as RQST_ITT_NM
+                , COUNT(T.RQST_NO) as RQST_CNT
+                , COUNT(T.ANSW_RQST_NO) as ANSW_CNT
+                , COUNT(T.RQST_NO) - COUNT(T.ANSW_RQST_NO) as PRCS_CNT
+                , T.SORT_ORDR
+            FROM
+            (
+
+                   SELECT A.RQST_NO
+                        , A.RQST_ITT_CD
+                        , SUBSTR(A.RQST_DT,0,4) as RQST_YY
+                        , ( SELECT B.RQST_NO FROM TB_RSMI_RSK_CO_DTA_ANSW B
+                            WHERE B.DEL_YN = 'N'
+                            AND B.RQST_NO = A.RQST_NO
+                          ) as ANSW_RQST_NO
+                        , ( SELECT SORT_ORDR FROM TB_COM_COMN_CD_D WHERE DEL_YN = 'N' AND COMN_CD = 'RSM_0028' AND CD_VDVAL = A.RQST_ITT_CD) as SORT_ORDR
+                   FROM TB_RSMI_RSK_CO_DTA_RQST A
+                   WHERE A.DEL_YN = 'N'
+                   AND A.RQST_TP_CD = #{rqstTpCd}
+                   AND SUBSTR(RQST_DT,0,4) = #{searchYear}
+            ) T
+            WHERE T.RQST_ITT_CD IS NOT NULL
+            GROUP BY T.RQST_ITT_CD, T.SORT_ORDR
+
+
+            UNION ALL
+
+            SELECT (SELECT 	LBL_NM FROM TB_COM_LBL_LANG WHERE LANG_CD =  #{langCd} AND LBL_ID  = 'L_SUM') as RQST_ITT_CD
+                , NULL as ITT_NM
+                , SUM(1) as RQST_CNT
+                , SUM ( CASE WHEN EXISTS( SELECT 1 FROM TB_RSMI_RSK_CO_DTA_ANSW B
+                                          WHERE B.DEL_YN = 'N'
+                                          AND B.RQST_NO = A.RQST_NO
+                                        )
+                            THEN 1
+                        END
+                      ) as ANSW_CNT
+                , SUM(1) -   SUM ( CASE WHEN EXISTS( SELECT 1 FROM TB_RSMI_RSK_CO_DTA_ANSW B
+                                                     WHERE B.DEL_YN = 'N'
+                                                     AND B.RQST_NO = A.RQST_NO
+                                                    )
+                                        THEN 1
+                                   END
+                                 ) as PRCS_CNT
+                , 999 as SORT_ORDR
+            FROM   TB_RSMI_RSK_CO_DTA_RQST A
+            WHERE A.DEL_YN = 'N'
+            AND A.RQST_TP_CD = #{rqstTpCd}
+            AND SUBSTR(RQST_DT,0,4) = #{searchYear}
+
+         ) ITT
+         ORDER BY ITT.SORT_ORDR
+    </select>
+
+    <!--
+      [Statistiques sur les échanges d'information] Consulter la liste par année (opérateurs à risque) !== 위험업체 자료교환 년도 조회 ==!
+    -->
+    <select id="selectRskCoDtaExcgYearList"
+        resultType="String">
+        /* selectRskCoDtaExcgYearList */
+        SELECT RQST_YEAR        /** Année de la demande !== 신청년도 ==! */
+        FROM
+        (
+            SELECT DISTINCT SUBSTR(RQST_DT,0,4) AS RQST_YEAR
+            FROM TB_RSMI_RSK_CO_DTA_RQST
+            WHERE DEL_YN = 'N'
+            ORDER BY 1 DESC
+        )
+        WHERE ROWNUM <![CDATA[ <= ]]> 3
+        ORDER BY 1
+    </select>
+
+    <!--
+      [Statistiques sur les échanges d'information] Consulter la liste par année (demande d'informations de l'étranger) !== 해외 자료교환 년도 조회 ==!
+    -->
+    <select id="selectOvrsDtaExcgYearList"
+        resultType="String">
+        /* selectOvrsDtaExcgYearList */
+        SELECT RQST_YEAR            /** Année de la demande !== 신청년도 ==! */
+        FROM
+        (
+            SELECT DISTINCT SUBSTR(RQST_DT,0,4) AS RQST_YEAR
+            FROM TB_RSMI_OVRS_DTA_RQST
+            WHERE DEL_YN = 'N'
+            ORDER BY 1 DESC
+        )
+        WHERE ROWNUM <![CDATA[ <= ]]> 3
+        ORDER BY 1
+    </select>
+
+    <!--
+      [Statistiques sur les échanges d'information] Consulter la liste par année (Rapport confidential) !== 기밀보고 자료교환 년도 조회 ==!
+    -->
+    <select id="selectSeciRtdaDtaExcgYearList"
+        resultType="String">
+        /* selectSeciRtdaDtaExcgYearList */
+        SELECT RQST_YEAR        /** Année de la demande !== 신청년도 ==! */
+        FROM
+        (
+            SELECT DISTINCT SUBSTR(RGSR_DT,0,4) AS RQST_YEAR
+            FROM TB_RSMI_SECI_BSCS
+            WHERE DEL_YN = 'N'
+            ORDER BY 1 DESC
+        )
+        WHERE ROWNUM <![CDATA[ <= ]]> 3
+        ORDER BY 1
+    </select>
+
+    <!--
+      [Statistiques sur les échanges d'information] Consulter la liste (demande d'informations de l'étranger)  !== 해외 자료교환통계 목록 조회 ==!
+    -->
+    <select id="selectOvrsDtaExcgStatsList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmDatExcgStatsRsltVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmDatExcgStatsRsltVo">
+        /* selectOvrsDtaExcgStatsList */
+        SELECT
+            CSTM_CNTY.*
+          , CASE WHEN CSTM_CNTY.RQST_TP_CD = 'B' THEN (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE DEL_YN = 'N' AND ORGN_CD = CSTM_CNTY.CSTM_CNTY_CD)
+                 WHEN CSTM_CNTY.RQST_TP_CD = 'D' THEN (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'RSM_0031' AND LANG_CD = #{langCd} AND CD_VDVAL = CSTM_CNTY.CSTM_CNTY_CD)
+            END AS CSTM_CNTY_NM     /* 	Nom Du Bureau et Nom Du Pays !== 세관/국가명 ==! */
+        FROM
+        (
+
+            WITH RECENT_YEAR AS
+            (
+                SELECT RQST_YEAR, ROWNUM AS RNUM
+                FROM
+                (
+                    SELECT DISTINCT SUBSTR(RQST_DT,0,4) AS RQST_YEAR
+                    FROM TB_RSMI_OVRS_DTA_RQST
+                    WHERE DEL_YN = 'N'
+                    AND PRCS_STTS_CD = 'J04'
+                    ORDER BY 1 DESC
+                )
+                WHERE ROWNUM  <![CDATA[ <= ]]> 3
+                ORDER BY 1
+            )
+            SELECT RQST_TP_CD,          /** Code De Type De Demande !== 신청구분코드 ==! */
+                DECODE(RQST_TP_CD, 'B', RQST_CSTM_CD, 'D', RQST_CNTY_CD) AS CSTM_CNTY_CD,       /* 	Code Du Bureau et Code Du Pays !== 세관/국가코드 ==! */
+                COUNT(CASE WHEN SUBSTR(RQST_DT,0,4) = (SELECT RQST_YEAR FROM RECENT_YEAR WHERE RNUM = 3) THEN 1 END) AS CNT_1,      /** Nombre1 !== 건수(count)1 ==! */
+                COUNT(CASE WHEN SUBSTR(RQST_DT,0,4) = (SELECT RQST_YEAR FROM RECENT_YEAR WHERE RNUM = 2) THEN 1 END) AS CNT_2,      /** Nombre2 !== 건수(count)2 ==! */
+                COUNT(CASE WHEN SUBSTR(RQST_DT,0,4) = (SELECT RQST_YEAR FROM RECENT_YEAR WHERE RNUM = 1) THEN 1 END) AS CNT_3       /** Nombre3 !== 건수(count)3 ==! */
+            FROM TB_RSMI_OVRS_DTA_RQST A
+            WHERE A.DEL_YN = 'N'
+            AND A.PRCS_STTS_CD = 'J04'
+            GROUP BY RQST_TP_CD, DECODE(RQST_TP_CD, 'B', RQST_CSTM_CD, 'D', RQST_CNTY_CD)
+            ORDER BY RQST_TP_CD, DECODE(RQST_TP_CD, 'B', RQST_CSTM_CD, 'D', RQST_CNTY_CD)
+        ) CSTM_CNTY
+    </select>
+
+    <!--
+      [Enregistrer la demande d'informations de l'étranger] Statistiques sur les échanges d'information - Consulter la liste (Code De Type De Demande : Bureau de douane) !== 해외 자료교환통계 목록 조회 (신청구분 : 세관) ==!
+    -->
+    <select id="selectOvrsDtaExcgStatsCstmList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmDatExcgStatsRsltVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmDatExcgStatsRsltVo">
+        /* selectOvrsDtaExcgStatsCstmList */
+        SELECT
+               S.ANSW_CNTY_CD as CNTY_CD        /** Code De Pays !== 국가코드 ==! */
+             , NVL((SELECT CNTY_NM FROM TB_COM_CNTY_CD_LANG WHERE CNTY_CD = S.ANSW_CNTY_CD AND LANG_CD = #{langCd}),
+                   (SELECT LBL_NM FROM TB_COM_LBL_LANG WHERE LANG_CD = #{langCd} AND LBL_ID  = 'L_SUM')
+                  ) as CNTY_NM                  /** Nom Du Pays !== 국가명 ==! */
+             , SUM(S.RQST_CNT) as RQST_CNT      /** Nombre de la demande !== 요청건수 ==! */
+             , SUM(S.ANSW_CNT) as ANSW_CNT      /** Nombre de réponses !== 응답건수 ==! */
+             , SUM(S.RQST_CNT) - SUM(S.ANSW_CNT) as PRCS_CNT    /** Nombre de traitement !== 처리건수 ==! */
+        FROM
+        (
+            SELECT
+                  T.ANSW_CNTY_CD
+                ,  COUNT(T.RQST_NO) as RQST_CNT
+                ,  COUNT(CASE WHEN( T.ANSW_CNTY_CD IS NOT NULL and T.PRCS_STTS_CD = 'J04' ) THEN 1  END) as ANSW_CNT
+            FROM
+            (
+                SELECT
+                      A.RQST_NO
+                    , A.PRCS_STTS_CD
+                    , B.INFO_CLAB_ITT_CD AS ANSW_CNTY_CD
+                FROM TB_RSMI_OVRS_DTA_RQST A
+                   , TB_RSMI_CNTY_ITT_INFO_CLAB_CD B
+                WHERE A.DEL_YN = 'N'
+                AND SUBSTR(A.RQST_DT,0,4) = #{searchYear}
+                AND A.RQST_TP_CD = #{rqstTpCd}
+                AND A.PRCS_STTS_CD IN ('D01', 'J07', 'J02', 'L04', 'J08', 'J10', 'I01', 'J04', 'J05', 'J06')
+                AND B.RQST_NO = A.RQST_NO
+                AND A.OGNL_RQST_NO IS NULL
+                <if test='intnInfoClabCd != null and !"".equals(intnInfoClabCd)'>
+                AND B.INFO_CLAB_CD = #{intnInfoClabCd}
+                </if>
+                GROUP BY A.RQST_NO, A.PRCS_STTS_CD, B.INFO_CLAB_ITT_CD 
+            ) T
+            WHERE T.ANSW_CNTY_CD IS NOT NULL
+            GROUP BY T.ANSW_CNTY_CD, T.PRCS_STTS_CD
+        ) S
+        GROUP BY ROLLUP(ANSW_CNTY_CD)
+    </select>
+
+    <!--
+      [Enregistrer la demande d'informations de l'étranger] Statistiques sur les échanges d'information - Consulter la liste (Code De Type De Demande : Douane étrangère) !== 해외 자료교환통계 목록 조회 (신청구분 : 해외세관) ==!
+    -->
+    <select id="selectOvrsDtaExcgStatsOvrsList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmDatExcgStatsInqtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmDatExcgStatsRsltVo">
+        /* selectOvrsDtaExcgStatsOvrsList */
+        SELECT
+              S.RQST_CNTY_CD as CNTY_CD         /** Code De Pays !== 국가코드 ==! */
+            , NVL((SELECT CNTY_NM FROM TB_COM_CNTY_CD_LANG WHERE CNTY_CD = S.RQST_CNTY_CD AND LANG_CD = #{langCd}),
+                  (SELECT LBL_NM FROM TB_COM_LBL_LANG WHERE LANG_CD = #{langCd} AND LBL_ID = 'L_SUM')
+                 ) as CNTY_NM                   /** Nom Du Pays !== 국가명 ==! */
+            , SUM(S.RQST_CNT) as RQST_CNT       /** Nombre de la demande !== 요청건수 ==! */
+            , SUM(S.ANSW_CNT) as ANSW_CNT       /** Nombre de réponses !== 응답건수 ==! */
+            , SUM(S.RQST_CNT) - SUM(S.ANSW_CNT) as PRCS_CNT         /** Nombre de traitement !== 처리건수 ==! */
+        FROM
+        (
+            SELECT
+                   T.RQST_NO              
+                ,  T.RQST_CNTY_CD
+                ,  COUNT(T.RQST_NO) as RQST_CNT
+                ,  COUNT(CASE WHEN( T.PRCS_STTS_CD = 'J04' ) THEN 1  END) as ANSW_CNT
+            FROM
+            (
+                SELECT
+                      A.RQST_NO
+                    , A.RQST_CNTY_CD
+                    , A.PRCS_STTS_CD
+                    , SUBSTR(A.RQST_DT,0,4) as RQST_YY
+                    , ( SELECT B.RQST_NO FROM TB_RSMI_OVRS_DTA_ANSW B
+                        WHERE B.DEL_YN = 'N'
+                        AND B.RQST_NO = A.RQST_NO
+                      ) as ANSW_RQST_NO
+                FROM TB_RSMI_OVRS_DTA_RQST A
+                WHERE SUBSTR(A.RQST_DT,0,4) = #{searchYear}
+                AND A.RQST_TP_CD = #{rqstTpCd}
+                AND A.OGNL_RQST_NO IS NULL
+                AND A.PRCS_STTS_CD IN ('D01', 'J07', 'J02', 'L04', 'J08', 'J10', 'I01', 'J04', 'J05', 'J06')
+                <if test='intnInfoClabCd != null and !"".equals(intnInfoClabCd)'>
+                AND EXISTS ( SELECT 1 FROM TB_RSMI_INFO_CLAB_CD
+                             WHERE DEL_YN = 'N'
+                             AND RQST_NO = A.RQST_NO
+                             AND INFO_CLAB_CD = #{intnInfoClabCd}
+                           )
+                </if>
+
+            ) T
+            WHERE 1=1
+            GROUP BY T.RQST_NO, T.RQST_CNTY_CD, T.PRCS_STTS_CD
+        ) S
+        GROUP BY ROLLUP(S.RQST_CNTY_CD)
+        ORDER BY 1
+
+    </select>
+
+    <!--
+      [Rapport confidential] - Statistiques sur les échanges d'information - Consulter la liste !== [기밀보고서] 자료교환통계 목록 조회 ==!
+    -->
+    <select id="selectSeciRtdaDtaExcgStatsList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmDatExcgStatsInqtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmDatExcgStatsRsltVo">
+        /* selectSeciRtdaDtaExcgStatsList */
+        WITH RECENT_YEAR AS
+        (
+            SELECT RGSR_YEAR, ROWNUM AS RNUM
+            FROM
+            (
+                SELECT DISTINCT SUBSTR(RGSR_DT,0,4) AS RGSR_YEAR
+                FROM TB_RSMI_SECI_BSCS
+                WHERE DEL_YN = 'N'
+                AND PRCS_STTS_CD = 'J04'
+                ORDER BY 1 DESC
+            )
+            WHERE ROWNUM  <![CDATA[ <= ]]> 3
+            ORDER BY 1
+        )
+        SELECT A.SECI_OFR_ITT_CD AS OFR_TRGT_ITT_CD     /** Code d'organisation fourni !== 제공대상기관코드 ==! */
+             , ( SELECT CD_VDVAL_NM
+                 FROM TB_COM_COMN_CD_D_LANG
+                 WHERE DEL_YN = 'N'
+                 AND COMN_CD = 'RSM_0040'
+                 AND LANG_CD = #{langCd}
+                 AND CD_VDVAL = A.SECI_OFR_ITT_CD
+                ) AS OFR_TRGT_ITT_NM                    /** Nom d'organisation fourni !== 제공대상기관명 ==! */
+             , COUNT(CASE WHEN SUBSTR(A.RGSR_DT,0,4) = (SELECT RGSR_YEAR FROM RECENT_YEAR WHERE RNUM = 3) THEN 1 END) AS CNT_1      /** Nombre1 !== 건수(count)1 ==! */
+             , COUNT(CASE WHEN SUBSTR(A.RGSR_DT,0,4) = (SELECT RGSR_YEAR FROM RECENT_YEAR WHERE RNUM = 2) THEN 1 END) AS CNT_2      /** Nombre2 !== 건수(count)2 ==! */
+             , COUNT(CASE WHEN SUBSTR(A.RGSR_DT,0,4) = (SELECT RGSR_YEAR FROM RECENT_YEAR WHERE RNUM = 1) THEN 1 END) AS CNT_3      /** Nombre3 !== 건수(count)3 ==! */
+        FROM TB_RSMI_SECI_BSCS A
+        WHERE A.DEL_YN = 'N'
+        AND A.PRCS_STTS_CD = 'J04'
+        GROUP BY A.SECI_OFR_ITT_CD
+        ORDER BY A.SECI_OFR_ITT_CD
+    </select>
+
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque] Réceptionner !== [위험업체 자료요청관리] 접수 ==!
+    -->
+    <update id="updateRskCoDtaAcap"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstRgsrVo">
+        /* updateRskCoDtaAcap */
+        UPDATE TB_RSMI_RSK_CO_DTA_RQST
+        SET PRCS_STTS_CD = 'D01'
+          , LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                             /** Suppression ON !== 삭제여부 ==! */
+        AND RQST_NO = #{rqstNo}
+
+    </update>
+
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque] Renvoyer !== [위험업체 자료요청관리] 반려 ==!
+    -->
+    <update id="updateRskCoDtaRtrn"
+            parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstRgsrVo">
+        /* updateRskCoDtaRtrn */
+        UPDATE TB_RSMI_RSK_CO_DTA_RQST
+        SET PRCS_STTS_CD = 'J02'
+            , RTRN_RSN_CN = #{rtrnRsnCn}                /** Motif De Rejet !== 반려사유내용 ==! */
+            , LAST_CHPR_ID = #{lastChprId}              /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                             /** Suppression ON !== 삭제여부 ==! */
+        AND RQST_NO = #{rqstNo}
+
+    </update>
+
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque] Enregistrer la réponse !== [위험업체 자료요청관리] 답변 등록 ==!
+    -->
+    <insert id="insertRskCoDtaAnsw"
+        parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaAnswVo">
+        /* insertRskCoDtaAnsw */
+        INSERT INTO TB_RSMI_RSK_CO_DTA_ANSW
+        (
+              RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+            , ANSW_CSTM_CD                 /** Code de douane répondeur !== 답변세관코드 ==! */
+            , ANSW_ITT_CD                  /** Code de l'organisme répondeur  !== 답변기관코드 ==! */
+            , ANSW_CN                      /** Contenu De La Réponse !== 답변내용 ==! */
+            , ANSW_DT                      /** Date De Réponse  !== 답변일자 ==! */
+            , ANPN_ID                      /** Id De La Réponse !== 답변자ID ==! */
+            , ATCH_FILE_ID                 /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+            , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )VALUES
+        (
+              #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+            , #{answCstmCd}                /** Code de douane répondeur !== 답변세관코드 ==! */
+            , #{answIttCd}                 /** Code de l'organisme répondeur  !== 답변기관코드 ==! */
+            , #{answCn}                    /** Contenu De La Réponse !== 답변내용 ==! */
+            , TO_CHAR(SYSDATE,'YYYYMMDD')  /** Date De Réponse  !== 답변일자 ==! */
+            , #{anpnId}                    /** Id De La Réponse !== 답변자ID ==! */
+            , #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+            , 'N'                          /** Suppression On !== 삭제여부 ==! */
+            , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque] Modifier la réponse !== [위험업체 자료요청관리] 답변 수정 ==!
+    -->
+    <update id="updateRskCoDtaAnsw"
+        parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaAnswVo">
+        /* updateRskCoDtaAnsw */
+        WITH UPSERT AS (
+
+            UPDATE TB_RSMI_RSK_CO_DTA_ANSW
+            SET   ANSW_CSTM_CD = #{answCstmCd}                /** Code de douane répondeur !== 답변세관코드 ==! */
+                , ANSW_ITT_CD = #{answIttCd}                  /** Code de l'organisme répondeur  !== 답변기관코드 ==! */
+                , ANSW_CN = #{answCn}                         /** Contenu De La Réponse !== 답변내용 ==! */
+                , ANSW_DT = TO_CHAR(SYSDATE,'YYYYMMDD')       /** Date De Réponse  !== 답변일자 ==! */
+                , ANPN_ID = #{anpnId}                         /** Id De La Réponse !== 답변자ID ==! */
+                , ATCH_FILE_ID = #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+            WHERE  DEL_YN = 'N'                               /** Suppression ON !== 삭제여부 ==! */
+            AND RQST_NO = #{rqstNo}
+            RETURNING *
+        )
+        INSERT INTO TB_RSMI_RSK_CO_DTA_ANSW
+        SELECT
+              #{rqstNo}
+            , #{answCstmCd}
+            , #{answIttCd}
+            , #{answCn}
+            , TO_CHAR(SYSDATE,'YYYYMMDD')
+            , #{anpnId}
+            , #{atchFileId}
+            , 'N'                                              /* Suppression ON !== 삭제여부==!*/
+            , #{frstRegstId}                                   /* ID du premier enregistrant  !== 최초등록자ID ==!*/
+            , SYSTIMESTAMP                                     /* Date et heure de premier enregistrement !== 최초등록일시==!*/
+            , #{lastChprId}                                    /* ID du modificateur final !== 최종변경자ID ==!*/
+            , SYSTIMESTAMP                                     /* Date et heure de modification finale !== 최종변경일시==!*/
+        WHERE NOT EXISTS (SELECT * FROM UPSERT)
+
+    </update>
+
+    <!--
+      [Gérer la demande d'informations de l'étranger] Modifier la réponse !== [해외 자료요청관리] 답변 수정 ==!
+    -->
+    <update id="updateOvrsDtaAnsw"
+        parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaAnswVo">
+        /* updateOvrsDtaAnsw */
+        WITH UPSERT AS (
+            UPDATE TB_RSMI_OVRS_DTA_ANSW
+            SET   ANSW_CSTM_CD = #{answCstmCd}                /** Code de douane répondeur !== 답변세관코드 ==! */
+                , ANSW_CNTY_CD = #{answCntyCd}                /** Répondre à l'indicatif du pays !== 답변국가코드 ==! */
+                , OVRS_CSTM_NM = #{ovrsCstmNm}                /** Nom de la douane étrangère !== 해외세관명 ==! */
+                , ANSW_CN = #{answCn}                         /** Contenu De La Réponse !== 답변내용 ==! */
+                , ANSW_DT = TO_CHAR(SYSDATE,'YYYYMMDD')       /** Date De Réponse  !== 답변일자 ==! */
+                , ANPN_ID = #{anpnId}                         /** Id De La Réponse !== 답변자ID ==! */
+                , ANPN_NM = (SELECT EMP_NM FROM TB_POTI_EMP WHERE DEL_YN = 'N' AND PBSR_NO = #{anpnId} )    /** Nom du répondeur !== 답변자명 ==! */
+                , ATCH_FILE_ID = #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+            WHERE  DEL_YN = 'N'                               /** Suppression ON !== 삭제여부 ==! */
+            AND RQST_NO = #{rqstNo}
+            RETURNING *
+        )
+        INSERT INTO TB_RSMI_OVRS_DTA_ANSW
+        SELECT
+            #{rqstNo}
+          , #{answCstmCd}
+          , #{answCntyCd}
+          , #{ovrsCstmNm}
+          , #{answCn}
+          , TO_CHAR(SYSDATE,'YYYYMMDD')
+          , #{anpnId}
+          , (SELECT EMP_NM FROM TB_POTI_EMP WHERE DEL_YN = 'N' AND PBSR_NO = #{anpnId} )
+          , #{atchFileId}
+          , 'N'                                              /* Suppression ON !== 삭제여부==!*/
+          , #{frstRegstId}                                   /* ID du premier enregistrant  !== 최초등록자ID ==!*/
+          , SYSTIMESTAMP                                     /* Date et heure de premier enregistrement !== 최초등록일시==!*/
+          , #{lastChprId}                                    /* ID du modificateur final !== 최종변경자ID ==!*/
+          , SYSTIMESTAMP                                     /* Date et heure de modification finale !== 최종변경일시==!*/
+        WHERE NOT EXISTS (SELECT * FROM UPSERT)
+
+    </update>
+
+    <!--
+      [Gérer la demande d'informations de l'étranger] Réceptionner !== [해외 자료요청관리] 접수 ==!
+    -->
+    <update id="updateOvrsDtaAcap"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo">
+        /* updateOvrsDtaAcap */
+        UPDATE TB_RSMI_OVRS_DTA_RQST
+        SET PRCS_STTS_CD = 'D01'                        /** Code De Statut De Traitement !== 처리상태코드 ==! */
+          , LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                             /** Suppression ON !== 삭제여부 ==! */
+        AND RQST_NO = #{rqstNo}
+
+    </update>
+
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque] Transférer !== [위험업체 자료요청관리] 이관 ==!
+    -->
+    <update id="updateRskCoDtaTrnsf"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstRgsrVo">
+        /* updateRskCoDtaTrnsf */
+        UPDATE TB_RSMI_RSK_CO_DTA_RQST
+        SET
+              ANSW_DPHD_ID = #{answDphdId}              /** ID du chef de service qui répond clairement aux questions !== 답변부서장ID ==! */
+            , TRNSF_RSN_CN = #{trnsfRsnCn}              /** Raison du transfert !== 이관사유내용 ==! */
+            , ANSW_AL_YN = NVL(#{answAlYn}, 'N')        /** Tous les répondeurs !== 답변전체여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}              /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                             /** Suppression ON !== 삭제여부 ==! */
+        AND RQST_NO = #{rqstNo}
+    </update>
+
+    <select id="selectRskCoDtaAnswDphdList"
+        parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaAnswDphdPrcsVo">
+        /* selectRskCoDtaAnswDphdList */
+        SELECT 	RQST_NO                             /** N° De Demande !== 신청번호 ==! */
+            , ANSW_DPHD_PT_CD                       /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+            , ANSW_DPHD_EMP_ID as PBSR_NO           /** Matricule Solde !== 공무원번호 ==! */
+            , ( SELECT EMP_NM FROM TB_POTI_EMP A
+                WHERE A.DEL_YN = 'N'
+                AND A.PBSR_NO = ANSW_DPHD_EMP_ID
+              ) as EMP_NM                           /** Nom De L'Employé !== 직원명 ==! */
+            , ( SELECT ORGN_MGMT_CD FROM TB_POTI_EMP A
+                WHERE A.DEL_YN = 'N'
+                AND A.PBSR_NO = ANSW_DPHD_EMP_ID
+              ) as ORGN_MGMT_CD                     /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA
+                WHERE AA.ORGN_MGMT_CD = ( SELECT ORGN_MGMT_CD FROM TB_POTI_EMP A
+                                          WHERE A.DEL_YN = 'N'
+                                          AND A.PBSR_NO = ANSW_DPHD_EMP_ID
+                                        )
+              ) as ORGN_NM                          /** Nom D'Organisme !== 조직명 ==! */
+        FROM TB_RSMI_RSK_CO_DTA_ANSW_DPHD
+        WHERE DEL_YN = 'N'
+        AND RQST_NO = #{rqstNo}
+        AND DPHD_PT_CHG_TP_CD = 'F'
+    </select>
+
+    <select id="selectRskCoDtaAnswDphdChgList"
+        parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaAnswDphdPrcsVo">
+        /* selectRskCoDtaAnswDphdChgList */
+        SELECT 	RQST_NO             /** N° De Demande !== 신청번호 ==! */
+            , ANSW_DPHD_PT_CD       /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+            , ANSW_DPHD_EMP_ID as PBSR_NO       /** Matricule Solde !== 공무원번호 ==! */
+            , ( SELECT EMP_NM FROM TB_POTI_EMP A
+                WHERE A.DEL_YN = 'N'
+                AND A.PBSR_NO = ANSW_DPHD_EMP_ID
+              ) as EMP_NM           /** Nom De L'Employé !== 직원명 ==! */
+            , ( SELECT ORGN_MGMT_CD FROM TB_POTI_EMP A
+                WHERE A.DEL_YN = 'N'
+                AND A.PBSR_NO = ANSW_DPHD_EMP_ID
+              ) as ORGN_MGMT_CD     /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA
+                WHERE AA.ORGN_MGMT_CD = ( SELECT ORGN_MGMT_CD FROM TB_POTI_EMP A
+                                          WHERE A.DEL_YN = 'N'
+                                          AND A.PBSR_NO = ANSW_DPHD_EMP_ID
+                                        )
+              ) as ORGN_NM          /** Nom D'Organisme !== 조직명 ==! */
+        FROM TB_RSMI_RSK_CO_DTA_ANSW_DPHD
+        WHERE DEL_YN = 'N'
+        AND RQST_NO = #{rqstNo}
+        AND DPHD_PT_CHG_TP_CD = 'V'
+    </select>
+
+    <!--
+      [Gérer la demande d'informations de l'étranger] Transférer !== [해외 자료요청관리] 이관 ==!
+    -->
+    <update id="updateOvrsDtaTrnsf"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo">
+        /* updateOvrsDtaTrnsf */
+        UPDATE TB_RSMI_OVRS_DTA_RQST
+        SET
+              ANSW_DPHD_ID = #{answDphdId}              /** ID du chef de service qui répond clairement aux questions !== 답변부서장ID ==! */
+            , TRNSF_RSN_CN = #{trnsfRsnCn}              /** Raison du transfert !== 이관사유내용 ==! */
+            , ANSW_AL_YN = NVL(#{answAlYn}, 'N')        /** Tous les répondeurs !== 답변전체여부 ==! */
+            , LAST_CHPR_ID = #{lastChprId}              /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                             /** Suppression ON !== 삭제여부 ==! */
+        AND RQST_NO = #{rqstNo}
+    </update>
+
+    <!--
+      [Enregistrer la demande d'informations de l'étranger] Renvoyer !== [해외 자료요청등록] 반려 ==!
+    -->
+    <update id="updateOvrsDtaRtrn"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo">
+        /* updateOvrsDtaRtrn */
+        UPDATE TB_RSMI_OVRS_DTA_RQST
+        SET PRCS_STTS_CD = 'J02'                      /** Code De Statut De Traitement !== 처리상태코드 ==! */
+          , RTRN_RSN_CN = #{rtrnRsnCn}                /** Motif De Rejet !== 반려사유내용 ==! */
+          , LAST_CHPR_ID = #{lastChprId}              /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM = SYSTIMESTAMP              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE  DEL_YN = 'N'                           /** Suppression ON !== 삭제여부 ==! */
+        AND RQST_NO = #{rqstNo}
+
+    </update>
+
+    <!--
+      Consulter la liste complète des chefs de service répondeur !== 답변부서장 전체 목록 조회 ==!
+    -->
+    <select id="selectAnswDphdAllList"
+            parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstInqtVo"
+            resultType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaAnswDphdPrcsVo">
+        /* selectAnswDphdAllList */
+        SELECT 'A' as ANSW_DPHD_PT_CD   /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+            , A.PBSR_NO                 /** Matricule Solde !== 공무원번호 ==! */
+            , A.ORGN_MGMT_CD            /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )   /** Nom D'Organisme !== 조직명 ==! */
+            , A.EMP_NM                  /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.FONC_CD='500'
+        AND    ORGN_MGMT_CD IN (
+                                    SELECT B.ORGN_MGMT_CD
+                                    FROM   TB_POTI_ORGN B
+                                    WHERE  B.ORGN_TP_CD='DIR'
+                                    AND    B.UPR_ORGN_MGMT_CD='ORG0000205'
+        )
+        UNION ALL
+        SELECT 'B' as ANSW_DPHD_PT_CD
+             , A.PBSR_NO
+             , A.ORGN_MGMT_CD
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+             , A.EMP_NM
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.FONC_CD ='600'
+        UNION ALL
+        SELECT 'C' as ANSW_DPHD_PT_CD
+             , A.PBSR_NO
+             , A.ORGN_MGMT_CD
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+             , A.EMP_NM
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.ORGN_MGMT_CD='ORG0000106'
+        AND    A.FONC_CD ='300'
+        UNION ALL
+        SELECT 'D' as ANSW_DPHD_PT_CD
+            , A.PBSR_NO
+            , A.ORGN_MGMT_CD
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+            , A.EMP_NM
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.ORGN_MGMT_CD='ORG0000093'
+        AND    A.FONC_CD ='300'
+        UNION ALL
+        SELECT 'E' as ANSW_DPHD_PT_CD
+             , A.PBSR_NO                    /** Matricule Solde !== 공무원번호 ==! */
+             , A.ORGN_MGMT_CD               /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )        /** Nom D'Organisme !== 조직명 ==! */
+             , A.EMP_NM                     /** Nom De L'Employe !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.PBSR_NO IN (
+                               SELECT B.PBSR_NO
+                               FROM   VW_POTI_ROLE_UNFC B
+                               WHERE  B.ROLE_ID ='RSM004'
+                            )
+        UNION ALL
+        SELECT 'F' as ANSW_DPHD_PT_CD
+             , A.PBSR_NO
+             , A.ORGN_MGMT_CD
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+             , A.EMP_NM
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.FONC_CD ='300'
+
+    </select>
+
+    <!--
+      Consulter la liste des chefs de service répondeur (Directeur régional) !== 답변부서장 목록 (본부세관장) 조회 ==!
+    -->
+    <select id="selectAnswDphdAList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstInqtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaAnswDphdPrcsVo">
+        /* selectAnswDphdAList */
+        SELECT 'A' as ANSW_DPHD_PT_CD       /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+            , A.PBSR_NO                     /** Matricule Solde !== 공무원번호 ==! */
+            , A.ORGN_MGMT_CD                /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )     /** Nom D'Organisme !== 조직명 ==! */
+            , A.EMP_NM                      /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.FONC_CD='500'
+        AND    ORGN_MGMT_CD IN (
+                                    SELECT B.ORGN_MGMT_CD
+                                    FROM   TB_POTI_ORGN B
+                                    WHERE  B.ORGN_TP_CD='DIR'
+                                    AND    B.UPR_ORGN_MGMT_CD='ORG0000205'
+        )
+    </select>
+
+    <!--
+      Consulter la liste des chefs de service répondeur (Chef de service régional des contrôles a posteriori) !== 답변부서장 목록 (계획심사부서장) 조회 ==!
+    -->
+    <select id="selectAnswDphdBList"
+         parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstInqtVo"
+         resultType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaAnswDphdPrcsVo">
+        /* selectAnswDphdBList */
+        SELECT 'B' as ANSW_DPHD_PT_CD       /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+             , A.PBSR_NO                    /** Matricule Solde !== 공무원번호 ==! */
+             , A.ORGN_MGMT_CD               /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )   /** Nom D'Organisme !== 조직명 ==! */
+             , A.EMP_NM                     /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.FONC_CD ='600'
+    </select>
+
+    <!--
+      Consulter la liste des chefs de service répondeur (Directeur des enquêtes douanières) !== 답변부서장 목록 (세관(관세) 조사국장) 조회 ==!
+    -->
+    <select id="selectAnswDphdCList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstInqtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaAnswDphdPrcsVo">
+        /* selectAnswDphdCList */
+        SELECT 'C' as ANSW_DPHD_PT_CD       /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+             , A.PBSR_NO                    /** Matricule Solde !== 공무원번호 ==! */
+             , A.ORGN_MGMT_CD               /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )    /** Nom D'Organisme !== 조직명 ==! */
+             , A.EMP_NM                     /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.ORGN_MGMT_CD='ORG0000106'
+        AND    A.FONC_CD ='300'
+    </select>
+
+    <!--
+      Consulter la liste des chefs de service répondeur (Directeur du contentieux et de l’encadrement des recettes des douanes) !== 답변부서장 목록 (쟁송 및 징수관리국장) 조회 ==!
+    -->
+    <select id="selectAnswDphdDList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstInqtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaAnswDphdPrcsVo">
+        /* selectAnswDphdDList */
+        SELECT 'D' as ANSW_DPHD_PT_CD       /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+            , A.PBSR_NO                     /** Matricule Solde !== 공무원번호 ==! */
+            , A.ORGN_MGMT_CD                /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )         /** Nom D'Organisme !== 조직명 ==! */
+            , A.EMP_NM                      /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.ORGN_MGMT_CD='ORG0000093'
+        AND    A.FONC_CD ='300'
+    </select>
+
+    <!-- Consulter la liste des chefs de service répondeur (Analyste régional de la gestion des risques) !== 답변부서장 목록 (RM세관분석가) ==! -->
+    <select id="selectAnswDphdEList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstInqtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaAnswDphdPrcsVo">
+        SELECT 'E' as ANSW_DPHD_PT_CD
+             , A.PBSR_NO                    /** Matricule Solde !== 공무원번호 ==! */
+             , A.ORGN_MGMT_CD               /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )        /** Nom D'Organisme !== 조직명 ==! */
+             , A.EMP_NM                     /** Nom De L'Employe !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.PBSR_NO IN (
+                               SELECT B.PBSR_NO
+                               FROM   VW_POTI_ROLE_UNFC B
+                               WHERE  B.ROLE_ID ='RSM004'
+                            )
+    </select>
+
+    <!-- Consulter la liste des chefs de service répondeur (DIRECTEUR CENTRAL) !== 답변부서장 목록 (중앙국 국장) ==! -->
+    <select id="selectAnswDphdFList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstInqtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaAnswDphdPrcsVo">
+        SELECT 'F' as ANSW_DPHD_PT_CD
+            , A.PBSR_NO
+            , A.ORGN_MGMT_CD
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+            , A.EMP_NM
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.FONC_CD ='300'
+
+    </select>
+
+    <!--
+      Consulter les informations du chef de service qui répond clairement aux questions !== 입력 답변부서장 정보 조회 ==!
+    -->
+    <select id="selectInputAnswDphd"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstInqtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaAnswDphdPrcsVo">
+        /* selectInputAnswDphd */
+        SELECT #{answDphdPtCd} as ANSW_DPHD_PT_CD       /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+          , A.PBSR_NO                                   /** Matricule Solde !== 공무원번호 ==! */
+          , A.ORGN_MGMT_CD                              /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+          , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )   /** Nom D'Organisme !== 조직명 ==! */
+          , A.EMP_NM                                    /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND A.PBSR_NO = #{answDphdId}
+    </select>
+
+    <!--
+      [Gérer la demande d'informations de l'étranger] Supprimer la liste des chefs de service répondeur !== [해외 자료요청관리] 답변부서장 목록 삭제 ==!
+    -->
+    <delete id="deleteAllOvrsDtaAnswDphd"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo">
+        /* deleteAllOvrsDtaAnswDphd */
+        DELETE FROM TB_RSMI_OVRS_DTA_ANSW_DPHD
+        WHERE RQST_NO = #{rqstNo}
+    </delete>
+
+    <!--
+      [Gérer la demande d'informations de l'étranger] Supprimer la liste des codes de coopération nationale et internationale  !== [해외 자료요청관리] 국가기관정보협력코드(답변국가) 목록 삭제 ==!
+    -->
+    <delete id="deleteAllCntyIttInfoClabCd"
+       parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstRgsrVo">
+        /* deleteAllCntyIttInfoClabCd*/
+        DELETE FROM TB_RSMI_CNTY_ITT_INFO_CLAB_CD
+        WHERE RQST_NO = #{rqstNo}
+    </delete>
+
+    <!--
+      Enregistrer le chef du service répondeur !== 해외데이터 답변부서장 등록 ==!
+    -->
+    <insert id="insertOvrsDtaRqstAnswDphd"
+        parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaAnswDphdVo">
+        /* insertOvrsDtaRqstAnswDphd */
+        INSERT INTO TB_RSMI_OVRS_DTA_ANSW_DPHD
+        (
+            RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+          , ANSW_DPHD_PT_CD              /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+          , ANSW_DPHD_EMP_ID             /** ID du chef du service répondeur !== 답변부서장직원ID ==! */
+          , DPHD_PT_CHG_TP_CD            /** Code de distinction de changement de type de chef du serivce !== 부서장유형변경구분코드 ==! */
+          , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+          , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        VALUES
+        (
+            #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+          , #{answDphdPtCd}              /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+          , #{pbsrNo}                    /** ID du chef du service répondeur !== 답변부서장직원ID ==! */
+          , #{dphdPtChgTpCd}             /** Code de distinction de changement de type de chef du serivce !== 부서장유형변경구분코드 ==! */
+          , 'N'                          /** Suppression On !== 삭제여부 ==! */
+          , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      Sélectionner et insérer le code de coopération internationale par pays répondeur !== 해외데이터 국가기관정보협력코드 등록 ==!
+    -->
+    <insert id="insertOvrsDtaCntyIttInfoClabCd"
+        parameterType="alpass.ipt.rsm.com.vo.RsmCntyIttInfoClabCdVo">
+        /* insertOvrsDtaCntyIttInfoClabCd */
+        INSERT INTO TB_RSMI_CNTY_ITT_INFO_CLAB_CD
+        (
+            RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+          , DAT_EXCG_TP_CD               /** Code de type d'échange d'information !== 자료교환구분코드 ==! */
+          , INFO_CLAB_ITT_CD             /** Code d'organisme engagé dans la coopération !== 정보협력기관코드 ==! */
+          , INFO_CLAB_CD                 /** Code de coopération  !== 정보협력코드 ==! */
+          , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+          , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        VALUES
+        (
+            #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+          , #{datExcgTpCd}               /** Code de type d'échange d'information !== 자료교환구분코드 ==! */
+          , #{infoClabIttCd}             /** Code d'organisme engagé dans la coopération !== 정보협력기관코드 ==! */
+          , #{infoClabCd}                /** Code de coopération  !== 정보협력코드 ==! */
+          , 'N'                          /** Suppression On !== 삭제여부 ==! */
+          , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+
+    </insert>
+
+    <!--
+      Sélectionner et insérer le code de coopération nationale par organisme répondeur !== 위험업체데이터 국가기관정보협력코드 등록 ==!
+    -->
+    <insert id="insertRskCoDtaCntyIttInfoClabCd"
+        parameterType="alpass.ipt.rsm.com.vo.RsmCntyIttInfoClabCdVo">
+        /* insertRskCoDtaCntyIttInfoClabCd */
+        INSERT INTO TB_RSMI_CNTY_ITT_INFO_CLAB_CD
+        (
+            RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+          , DAT_EXCG_TP_CD               /** Code de type d'échange d'information !== 자료교환구분코드 ==! */
+          , INFO_CLAB_ITT_CD             /** Code d'organisme engagé dans la coopération !== 정보협력기관코드 ==! */
+          , INFO_CLAB_CD                 /** Code de coopération  !== 정보협력코드 ==! */
+          , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+          , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        VALUES
+        (
+            #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+          , #{datExcgTpCd}               /** Code de type d'échange d'information !== 자료교환구분코드 ==! */
+          , #{infoClabIttCd}             /** Code d'organisme engagé dans la coopération !== 정보협력기관코드 ==! */
+          , #{infoClabCd}                /** Code de coopération  !== 정보협력코드 ==! */
+          , 'N'                          /** Suppression On !== 삭제여부 ==! */
+          , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+
+    </insert>
+
+    <!--
+      [Gérer la demande d'informations de l'étranger] Consulter la liste des chefs de service répondeur !== [해외 자료요청관리] 해외자료 답변부서장 목록 조회 ==!
+    -->
+    <select id="selectOvrsDtaAnswDphdList"
+        parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaAnswDphdPrcsVo">
+        /* selectOvrsDtaAnswDphdList */
+        SELECT 	RQST_NO                         /** N° De Demande !== 신청번호 ==! */
+            , ANSW_DPHD_PT_CD                   /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+            , ANSW_DPHD_EMP_ID as PBSR_NO               /** Matricule Solde !== 공무원번호 ==! */
+            , ( SELECT EMP_NM FROM TB_POTI_EMP A
+                WHERE A.DEL_YN = 'N'
+                AND A.PBSR_NO = ANSW_DPHD_EMP_ID
+              ) as EMP_NM                       /** Nom De L'Employé !== 직원명 ==! */
+            , ( SELECT ORGN_MGMT_CD FROM TB_POTI_EMP A
+                WHERE A.DEL_YN = 'N'
+                AND A.PBSR_NO = ANSW_DPHD_EMP_ID
+              ) as ORGN_MGMT_CD                 /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA
+                WHERE AA.ORGN_MGMT_CD = ( SELECT ORGN_MGMT_CD FROM TB_POTI_EMP A
+                                          WHERE A.DEL_YN = 'N'
+                                          AND A.PBSR_NO = ANSW_DPHD_EMP_ID
+                                        )
+              ) as ORGN_NM                      /** Nom D'Organisme !== 조직명 ==! */
+        FROM TB_RSMI_OVRS_DTA_ANSW_DPHD
+        WHERE DEL_YN = 'N'
+        AND RQST_NO = #{rqstNo}
+        AND DPHD_PT_CHG_TP_CD = 'F'
+    </select>
+
+    <!--
+      [Gérer la demande d'informations de l'étranger] Consulter la liste des chefs de service répondeur (modification) !== [해외 자료요청관리] 해외자료 답변부서장(변경) 목록 조회 ==!
+    -->
+    <select id="selectOvrsDtaAnswDphdChgList"
+        parameterType="alpass.ipt.rsm.com.vo.RsmOvrsDtaRqstVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaAnswDphdPrcsVo">
+        /* selectOvrsDtaAnswDphdChgList */
+        SELECT 	RQST_NO                             /** N° De Demande !== 신청번호 ==! */
+            , ANSW_DPHD_PT_CD                       /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+            , ANSW_DPHD_EMP_ID as PBSR_NO                           /** Matricule Solde !== 공무원번호 ==! */
+            , ( SELECT EMP_NM FROM TB_POTI_EMP A
+                WHERE A.DEL_YN = 'N'
+                AND A.PBSR_NO = ANSW_DPHD_EMP_ID
+              ) as EMP_NM                           /** Nom De L'Employé !== 직원명 ==! */
+            , ( SELECT ORGN_MGMT_CD FROM TB_POTI_EMP A
+                WHERE A.DEL_YN = 'N'
+                AND A.PBSR_NO = ANSW_DPHD_EMP_ID
+              ) as ORGN_MGMT_CD                     /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA
+                WHERE AA.ORGN_MGMT_CD = ( SELECT ORGN_MGMT_CD FROM TB_POTI_EMP A
+                                          WHERE A.DEL_YN = 'N'
+                                          AND A.PBSR_NO = ANSW_DPHD_EMP_ID
+                                        )
+              ) as ORGN_NM                          /** Nom D'Organisme !== 조직명 ==! */
+        FROM TB_RSMI_OVRS_DTA_ANSW_DPHD
+        WHERE DEL_YN = 'N'
+        AND RQST_NO = #{rqstNo}
+        AND DPHD_PT_CHG_TP_CD = 'V'
+    </select>
+
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque]  Pays d’origine - Consulter la liste !== 위험업체데이터신청 원산지 목록 조회 ==!
+    -->
+    <select id="selectRskCoDtaRqstOrcyList"
+        parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo"
+        resultType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstOrcyVo">
+
+        /* selectRskCoDtaRqstOrcyList */
+        SELECT
+            A.RQST_NO                           /** N° De Demande !== 신청번호 ==! */
+          , A.ORCY_CD                           /** Pays Origine Code  !== 원산지코드 ==! */
+          , A.ORCY_CD AS CNTY_CD                /** Code De Pays !== 국가코드 ==! */
+          , FN_GET_CNTY_NM(A.ORCY_CD, #{langCd}) AS CNTY_NM         /** Nom Du Pays !== 국가명 ==! */
+          , A.DEL_YN                            /** Suppression On !== 삭제여부 ==! */
+          , A.FRST_REGST_ID                     /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , A.FRST_RGSR_DTTM                    /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , A.LAST_CHPR_ID                      /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , A.LAST_CHG_DTTM                     /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        FROM   TB_RSMI_RSK_CO_DTA_RQST_ORCY A
+        WHERE  DEL_YN = 'N'                     /** Suppression ON !== 삭제여부 ==! */
+        AND    A.RQST_NO = #{rqstNo}
+    </select>
+
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque] SH -  Consulter la liste !== 위험업체데이터신청 HS 목록 조회 ==!
+    -->
+    <select id="selectRskCoDtaRqstHsList"
+        parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo"
+        resultType="alpass.ipt.rsm.com.vo.RsmComHsCdVo">
+
+        /* selectRskCoDtaRqstHsList */
+        SELECT
+            A.RQST_NO                           /** N° De Demande !== 신청번호 ==! */
+          , A.HS_CD                             /** Code Sh !== HS코드 ==! */
+          , ( SELECT HS_DESC FROM  TB_CLRI_HS_CD WHERE  HS_CD = A.HS_CD
+              AND TO_CHAR(SYSDATE,'YYYYMMDD') BETWEEN TO_CHAR(TO_DATE( HS_APLY_STRT_DT , 'YYYYMMDD'), 'YYYYMMDD') AND TO_CHAR(TO_DATE( HS_APLY_END_DT  , 'YYYYMMDD'), 'YYYYMMDD')
+              AND ROWNUM = 1
+            ) AS HS_DESC                        /** Description Du Sh !== HS설명 ==! */
+          , A.DEL_YN                            /** Suppression On !== 삭제여부 ==! */
+          , A.FRST_REGST_ID                     /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , A.FRST_RGSR_DTTM                    /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , A.LAST_CHPR_ID                      /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , A.LAST_CHG_DTTM                     /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        FROM  TB_RSMI_RSK_CO_DTA_RQST_HS A
+        WHERE DEL_YN = 'N'                      /** Suppression ON !== 삭제여부 ==! */
+        AND   A.RQST_NO = #{rqstNo}             /** N° De Demande !== 신청번호 ==! */
+    </select>
+
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque] CDA - Consulter la liste !== 위험업체데이터신청 신고인 목록 조회 ==!
+    -->
+    <select id="selectRskCoDtaRqstDcerList"
+        parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo"
+        resultType="alpass.ipt.rsm.com.vo.RsmComNifVo">
+
+        /* selectRskCoDtaRqstDcerList */
+        SELECT
+            A.RQST_NO                    /** N° De Demande !== 신청번호 ==! */
+          , A.NIF                        /** NIF !== 납세식별번호 ==! */
+          , NVL((SELECT CO_NM FROM TB_COM_CO WHERE NIF = A.NIF), (SELECT CONM FROM TB_POTE_NIF WHERE NIF = A.NIF)) AS CO_NM     /** Nom De L'Entreprise !== 업체명 ==! */
+          , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+          , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        FROM  TB_RSMI_RSK_CO_DTA_RQST_DCER A
+        WHERE DEL_YN = 'N'                /** Suppression ON !== 삭제여부 ==! */
+        AND   A.RQST_NO = #{rqstNo}       /** N° De Demande !== 신청번호 ==! */
+
+    </select>
+
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque] Consulter la liste (Particulier) !== 위험업체데이터신청 개인 목록 조회 ==!
+    -->
+    <select id="selectRskCoDtaRqstPsnList"
+        parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstVo"
+        resultType="alpass.ipt.rsm.com.vo.RsmRskCoDtaRqstPsnVo">
+
+        /* selectRskCoDtaRqstPsnList */
+        SELECT
+             A.RQST_NO                    /** N° De Demande !== 신청번호 ==! */
+           , A.DTL_SRNO                   /** N° De Séquence Du Détail !== 상세일련번호 ==! */
+           , A.NTNAL_IDFY_NO              /** Nin !== 자국민식별번호 ==! */
+           , A.NTNAL_FMNM_NM              /** Nom du citoyen !== 자국민성명 ==! */
+           , A.NTNAL_GVNM_NM              /** Prénom du citoyen !== 자국민이름명 ==! */
+           , TO_CHAR(TO_DATE(A.NTNAL_BRDY, 'YYYYMMDD'), 'DD/MM/YYYY') AS NTNAL_BRDY         /** Date De Naissance du citoyen !== 자국민생년월일 ==! */
+           , A.BLNG_ITT_NM                /** Nom du groupe d'appartenance !== 소속기관명 ==! */
+           , A.RELA_DOC_NO                /** N° Document Associé !== 관련문서번호 ==! */
+           , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+           , A.FRST_REGST_ID              /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+           , A.FRST_RGSR_DTTM             /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+           , A.LAST_CHPR_ID               /** Id Du Modificateur Final !== 최종변경자ID ==! */
+           , A.LAST_CHG_DTTM              /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        FROM   TB_RSMI_RSK_CO_DTA_RQST_PSN A
+        WHERE  DEL_YN = 'N'                 /** Suppression ON !== 삭제여부 ==! */
+        AND    A.RQST_NO = #{rqstNo}
+    </select>
+
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque] Consulter la liste complète des chefs de service répondeur  !== 답변부서장 전체 목록 조회 ==!
+    -->
+    <select id="selectRskCoAnswDphdAllList"
+            parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstInqtVo"
+            resultType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaAnswDphdPrcsVo">
+        /* selectRskCoAnswDphdAllList */
+        SELECT 'A' as ANSW_DPHD_PT_CD       /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+            , A.PBSR_NO                     /** Matricule Solde !== 공무원번호 ==! */
+            , A.ORGN_MGMT_CD                /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )         /** Nom D'Organisme !== 조직명 ==! */
+            , A.EMP_NM                      /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.FONC_CD ='500'
+        AND    ORGN_MGMT_CD IN (
+                                    SELECT B.ORGN_MGMT_CD
+                                    FROM   TB_POTI_ORGN B
+                                    WHERE  B.ORGN_TP_CD='DIR'
+                                    AND    B.UPR_ORGN_MGMT_CD='ORG0000205'
+        )
+        UNION ALL
+        SELECT 'B' as ANSW_DPHD_PT_CD
+             , A.PBSR_NO
+             , A.ORGN_MGMT_CD
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+             , A.EMP_NM
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.FONC_CD ='600'
+        UNION ALL
+        SELECT 'C' as ANSW_DPHD_PT_CD
+             , A.PBSR_NO
+             , A.ORGN_MGMT_CD
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+             , A.EMP_NM
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.ORGN_MGMT_CD='ORG0000106'
+        AND    A.FONC_CD ='300'
+        UNION ALL
+        SELECT 'D' as ANSW_DPHD_PT_CD
+            , A.PBSR_NO
+            , A.ORGN_MGMT_CD
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+            , A.EMP_NM
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.ORGN_MGMT_CD='ORG0000093'
+        AND    A.FONC_CD ='300'
+        UNION ALL
+        SELECT 'E' as ANSW_DPHD_PT_CD
+             , A.PBSR_NO                    /** Matricule Solde !== 공무원번호 ==! */
+             , A.ORGN_MGMT_CD               /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )        /** Nom D'Organisme !== 조직명 ==! */
+             , A.EMP_NM                     /** Nom De L'Employe !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.PBSR_NO IN (
+                               SELECT B.PBSR_NO
+                               FROM   VW_POTI_ROLE_UNFC B
+                               WHERE  B.ROLE_ID ='RSM004'
+                            )
+        UNION ALL
+        SELECT 'F' as ANSW_DPHD_PT_CD
+             , A.PBSR_NO
+             , A.ORGN_MGMT_CD
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+             , A.EMP_NM
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.FONC_CD ='300'
+
+
+    </select>
+
+    <!--
+      Consulter la liste des chefs de service répondeur (A - Directeur régional) !== 위험업체데이터 답변부서장 목록 조회 (A - 본부세관장)  ==!
+    -->
+    <select id="selectRskCoAnswDphdAList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstInqtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaAnswDphdPrcsVo">
+        /* selectRskCoAnswDphdAList */
+        SELECT 'A' as ANSW_DPHD_PT_CD       /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+            , A.PBSR_NO                     /** Matricule Solde !== 공무원번호 ==! */
+            , A.ORGN_MGMT_CD                /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )         /** Nom D'Organisme !== 조직명 ==! */
+            , A.EMP_NM                      /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.FONC_CD ='500'
+        AND    ORGN_MGMT_CD IN (
+                                    SELECT B.ORGN_MGMT_CD
+                                    FROM   TB_POTI_ORGN B
+                                    WHERE  B.ORGN_TP_CD='DIR'
+                                    AND    B.UPR_ORGN_MGMT_CD='ORG0000205'
+        )
+    </select>
+
+    <!--
+      Consulter la liste des chefs de service répondeur (B - Chef de service régional des contrôles a posteriori) !== 위험업체데이터 답변부서장 목록 조회 (B - 계획심사부서장)  ==!
+    -->
+    <select id="selectRskCoAnswDphdBList"
+         parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstInqtVo"
+         resultType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaAnswDphdPrcsVo">
+        /* selectRskCoAnswDphdBList */
+        SELECT 'B' as ANSW_DPHD_PT_CD       /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+             , A.PBSR_NO                    /** Matricule Solde !== 공무원번호 ==! */
+             , A.ORGN_MGMT_CD               /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )        /** Nom D'Organisme !== 조직명 ==! */
+             , A.EMP_NM                     /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.FONC_CD ='600'
+    </select>
+
+    <!--
+      Consulter la liste des chefs de service répondeur (C - Directeur des enquêtes douanières) !== 위험업체데이터 답변부서장 목록 조회 (C - 세관(관세)조사국장)  ==!
+    -->
+    <select id="selectRskCoAnswDphdCList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstInqtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaAnswDphdPrcsVo">
+        /* selectRskCoAnswDphdCList */
+        SELECT 'C' as ANSW_DPHD_PT_CD       /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+             , A.PBSR_NO                    /** Matricule Solde !== 공무원번호 ==! */
+             , A.ORGN_MGMT_CD               /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )        /** Nom D'Organisme !== 조직명 ==! */
+             , A.EMP_NM                     /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.ORGN_MGMT_CD='ORG0000106'
+        AND    A.FONC_CD ='300'
+    </select>
+
+    <!--
+      Consulter la liste des chefs de service répondeur (D - Directeur du contentieux et de l’encadrement des recettes des douanes) !== 위험업체데이터 답변부서장 목록 조회 (D - 징수 및 징수관리국장)  ==!
+    -->
+    <select id="selectRskCoAnswDphdDList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstInqtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaAnswDphdPrcsVo">
+        /* selectRskCoAnswDphdDList */
+        SELECT 'D' as ANSW_DPHD_PT_CD       /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+            , A.PBSR_NO                     /** Matricule Solde !== 공무원번호 ==! */
+            , A.ORGN_MGMT_CD                /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+            , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )         /** Nom D'Organisme !== 조직명 ==! */
+            , A.EMP_NM                      /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.ORGN_MGMT_CD='ORG0000093'
+        AND    A.FONC_CD ='300'
+    </select>
+
+    <!--
+      Consulter la liste des chefs de service répondeur (E - Analyste régional de la gestion des risques) !== 위험업체데이터 답변부서장 목록 조회 (E - RM세관분석가)  ==!
+    -->
+    <select id="selectRskCoAnswDphdEList"
+       parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstInqtVo"
+       resultType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaAnswDphdPrcsVo">
+       /* selectRskCoAnswDphdEList */
+       SELECT 'E' as ANSW_DPHD_PT_CD
+             , A.PBSR_NO                    /** Matricule Solde !== 공무원번호 ==! */
+             , A.ORGN_MGMT_CD               /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )        /** Nom D'Organisme !== 조직명 ==! */
+             , A.EMP_NM                     /** Nom De L'Employe !== 직원명 ==! */
+       FROM   TB_POTI_EMP A
+       WHERE  A.DEL_YN ='N'
+       AND    A.PBSR_NO IN (
+                               SELECT B.PBSR_NO
+                               FROM   VW_POTI_ROLE_UNFC B
+                               WHERE  B.ROLE_ID ='RSM004'
+                           )
+    </select>
+
+    <!--
+      Consulter la liste des chefs de service répondeur (F - DIRECTEUR CENTRAL) !== 위험업체데이터 답변부서장 목록 조회 (F - 중앙국 국장)  ==!
+    -->
+    <select id="selectRskCoAnswDphdFList"
+       parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstInqtVo"
+       resultType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaAnswDphdPrcsVo">
+        /* selectRskCoAnswDphdFList */
+        SELECT 'F' as ANSW_DPHD_PT_CD
+             , A.PBSR_NO
+             , A.ORGN_MGMT_CD
+             , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+             , A.EMP_NM
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND    A.FONC_CD ='300'
+    </select>
+
+    <!--
+      [Gérer la demande d'informations sur les opérateurs à risque] Consulter les informations du chef de service qui répond clairement aux questions !== [위험업체 자료요청관리] 입력 답변부서장 정보 조회 ==!
+    -->
+    <select id="selectRskCoInputAnswDphd"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstInqtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaAnswDphdPrcsVo">
+        /* selectRskCoInputAnswDphd */
+        SELECT #{answDphdPtCd} as ANSW_DPHD_PT_CD       /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+          , A.PBSR_NO                                   /** Matricule Solde !== 공무원번호 ==! */
+          , A.ORGN_MGMT_CD                              /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+          , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )       /** Nom D'Organisme !== 조직명 ==! */
+          , A.EMP_NM                                    /** Nom De L'Employé !== 직원명 ==! */
+        FROM   TB_POTI_EMP A
+        WHERE  A.DEL_YN ='N'
+        AND A.PBSR_NO = #{answDphdId}                   /** Matricule Solde !== 공무원번호 ==! */
+    </select>
+
+    <!--
+      Supprimer la liste des chefs de service répondeur !== [위험업체 자료요청관리] 답변부서장 목록 삭제 ==!
+    -->
+    <delete id="deleteAllRskCoDtaAnswDphd"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstRgsrVo">
+        /* deleteAllRskCoDtaAnswDphd */
+        DELETE FROM TB_RSMI_RSK_CO_DTA_ANSW_DPHD
+        WHERE RQST_NO = #{rqstNo}                       /** N° De Demande !== 신청번호 ==! */
+    </delete>
+
+    <!--
+      Enregistrer le chef du service répondeur !== 위험업체데이터 답변부서장 등록 ==!
+    -->
+    <insert id="insertRskCoDtaRqstAnswDphd"
+        parameterType="alpass.ipt.rsm.com.vo.RsmRskCoDtaAnswDphdVo">
+        /* insertRskCoDtaRqstAnswDphd */
+        INSERT INTO TB_RSMI_RSK_CO_DTA_ANSW_DPHD
+        (
+            RQST_NO                      /** N° De Demande !== 신청번호 ==! */
+          , ANSW_DPHD_PT_CD              /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+          , ANSW_DPHD_EMP_ID             /** ID du chef du service répondeur !== 답변부서장직원ID ==! */
+          , DPHD_PT_CHG_TP_CD            /** Code de distinction de changement de type de chef du serivce !== 부서장유형변경구분코드 ==! */
+          , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+          , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+        VALUES
+        (
+            #{rqstNo}                    /** N° De Demande !== 신청번호 ==! */
+          , #{answDphdPtCd}              /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+          , #{pbsrNo}                    /** ID du chef du service répondeur !== 답변부서장직원ID ==! */
+          , #{dphdPtChgTpCd}             /** Code de distinction de changement de type de chef du serivce !== 부서장유형변경구분코드 ==! */
+          , 'N'                          /** Suppression On !== 삭제여부 ==! */
+          , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+          , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+          , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+          , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        )
+    </insert>
+
+    <!--
+      Vérifier si parmi les employés figurant dans la rubrique Service répondant, il existe un chef de service répondant (opérateurs à risque) !== 답변부서장 유형의 직원에 답변부서장이 존재하는지 체크 (위험업체) ==!
+    -->
+    <select id="selectRskCoAnswDphdExstInfo" parameterType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaRqstInqtVo" resultType="alpass.ipt.rsm.basc.vo.RsmRskCoDtaAnswDphdPrcsVo">
+        /* selectRskCoAnswDphdExstInfo */
+        SELECT T.*
+        FROM
+        (
+            SELECT 'A' as ANSW_DPHD_PT_CD       /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+                , A.PBSR_NO                     /** Matricule Solde !== 공무원번호 ==! */
+                , A.ORGN_MGMT_CD                /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+                , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )         /** Nom D'Organisme !== 조직명 ==! */
+                , A.EMP_NM                      /** Nom De L'Employé !== 직원명 ==! */
+            FROM   TB_POTI_EMP A
+            WHERE  A.DEL_YN ='N'
+            AND    A.FONC_CD ='500'
+            AND    ORGN_MGMT_CD IN (
+                                        SELECT B.ORGN_MGMT_CD
+                                        FROM   TB_POTI_ORGN B
+                                        WHERE  B.ORGN_TP_CD='DIR'
+                                        AND    B.UPR_ORGN_MGMT_CD='ORG0000205'
+            )
+            UNION ALL
+            SELECT 'B' as ANSW_DPHD_PT_CD
+                 , A.PBSR_NO
+                 , A.ORGN_MGMT_CD
+                 , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+                 , A.EMP_NM
+            FROM   TB_POTI_EMP A
+            WHERE  A.DEL_YN ='N'
+            AND    A.FONC_CD ='600'
+            UNION ALL
+            SELECT 'C' as ANSW_DPHD_PT_CD
+                 , A.PBSR_NO
+                 , A.ORGN_MGMT_CD
+                 , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+                 , A.EMP_NM
+            FROM   TB_POTI_EMP A
+            WHERE  A.DEL_YN ='N'
+            AND    A.ORGN_MGMT_CD='ORG0000106'
+            AND    A.FONC_CD ='300'
+            UNION ALL
+            SELECT 'D' as ANSW_DPHD_PT_CD
+                , A.PBSR_NO
+                , A.ORGN_MGMT_CD
+                , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+                , A.EMP_NM
+            FROM   TB_POTI_EMP A
+            WHERE  A.DEL_YN ='N'
+            AND    A.ORGN_MGMT_CD='ORG0000093'
+            AND    A.FONC_CD ='300'
+            UNION ALL
+            SELECT 'E' as ANSW_DPHD_PT_CD
+                 , A.PBSR_NO                    /** Matricule Solde !== 공무원번호 ==! */
+                 , A.ORGN_MGMT_CD               /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+                 , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )        /** Nom D'Organisme !== 조직명 ==! */
+                 , A.EMP_NM                     /** Nom De L'Employe !== 직원명 ==! */
+            FROM   TB_POTI_EMP A
+            WHERE  A.DEL_YN ='N'
+            AND    A.PBSR_NO IN (
+                                   SELECT B.PBSR_NO
+                                   FROM   VW_POTI_ROLE_UNFC B
+                                   WHERE  B.ROLE_ID ='RSM004'
+                                )
+            UNION ALL
+            SELECT 'F' as ANSW_DPHD_PT_CD
+                 , A.PBSR_NO
+                 , A.ORGN_MGMT_CD
+                 , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+                 , A.EMP_NM
+            FROM   TB_POTI_EMP A
+            WHERE  A.DEL_YN ='N'
+            AND    A.FONC_CD ='300'
+
+        ) T
+        WHERE T.PBSR_NO = #{answDphdId}
+    </select>
+
+    <!--
+      Vérifier si parmi les employés figurant dans la rubrique Service répondant, il existe un chef de service répondant (l'étranger) !== 답변부서장 유형의 직원에 답변부서장이 존재하는지 체크 (해외) ==!
+    -->
+    <select id="selectOvrsAnswDphdExstInfo" parameterType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaRqstInqtVo" resultType="alpass.ipt.rsm.basc.vo.RsmOvrsDtaAnswDphdPrcsVo">
+        /* selectOvrsAnswDphdExstInfo */
+        SELECT T.*
+        FROM
+        (
+            SELECT 'A' as ANSW_DPHD_PT_CD   /** Code de Type de chef de service répondeur !== 답변부서장유형코드 ==! */
+                , A.PBSR_NO                 /** Matricule Solde !== 공무원번호 ==! */
+                , A.ORGN_MGMT_CD            /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+                , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )   /** Nom D'Organisme !== 조직명 ==! */
+                , A.EMP_NM                  /** Nom De L'Employé !== 직원명 ==! */
+            FROM   TB_POTI_EMP A
+            WHERE  A.DEL_YN ='N'
+            AND    A.FONC_CD='500'
+            AND    ORGN_MGMT_CD IN (
+                                        SELECT B.ORGN_MGMT_CD
+                                        FROM   TB_POTI_ORGN B
+                                        WHERE  B.ORGN_TP_CD='DIR'
+                                        AND    B.UPR_ORGN_MGMT_CD='ORG0000205'
+            )
+            UNION ALL
+            SELECT 'B' as ANSW_DPHD_PT_CD
+                 , A.PBSR_NO
+                 , A.ORGN_MGMT_CD
+                 , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+                 , A.EMP_NM
+            FROM   TB_POTI_EMP A
+            WHERE  A.DEL_YN ='N'
+            AND    A.FONC_CD ='600'
+            UNION ALL
+            SELECT 'C' as ANSW_DPHD_PT_CD
+                 , A.PBSR_NO
+                 , A.ORGN_MGMT_CD
+                 , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+                 , A.EMP_NM
+            FROM   TB_POTI_EMP A
+            WHERE  A.DEL_YN ='N'
+            AND    A.ORGN_MGMT_CD='ORG0000106'
+            AND    A.FONC_CD ='300'
+            UNION ALL
+            SELECT 'D' as ANSW_DPHD_PT_CD
+                , A.PBSR_NO
+                , A.ORGN_MGMT_CD
+                , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+                , A.EMP_NM
+            FROM   TB_POTI_EMP A
+            WHERE  A.DEL_YN ='N'
+            AND    A.ORGN_MGMT_CD='ORG0000093'
+            AND    A.FONC_CD ='300'
+            UNION ALL
+            SELECT 'E' as ANSW_DPHD_PT_CD
+                 , A.PBSR_NO                    /** Matricule Solde !== 공무원번호 ==! */
+                 , A.ORGN_MGMT_CD               /** Code De Gestion De L'Organisation !== 조직관리코드 ==! */
+                 , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )        /** Nom D'Organisme !== 조직명 ==! */
+                 , A.EMP_NM                     /** Nom De L'Employe !== 직원명 ==! */
+            FROM   TB_POTI_EMP A
+            WHERE  A.DEL_YN ='N'
+            AND    A.PBSR_NO IN (
+                                   SELECT B.PBSR_NO
+                                   FROM   VW_POTI_ROLE_UNFC B
+                                   WHERE  B.ROLE_ID ='RSM004'
+                                )
+            UNION ALL
+            SELECT 'F' as ANSW_DPHD_PT_CD
+                 , A.PBSR_NO
+                 , A.ORGN_MGMT_CD
+                 , ( SELECT AA.ORGN_NM FROM TB_POTI_ORGN AA WHERE AA.ORGN_MGMT_CD = A.ORGN_MGMT_CD )
+                 , A.EMP_NM
+            FROM   TB_POTI_EMP A
+            WHERE  A.DEL_YN ='N'
+            AND    A.FONC_CD ='300'
+        ) T
+        WHERE T.PBSR_NO = #{answDphdId}
+    </select>
+
+
+
+</mapper>

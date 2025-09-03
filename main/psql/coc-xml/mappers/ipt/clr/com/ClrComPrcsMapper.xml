@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.clr.com.mapper.ClrComDcshPrcsMapper">
+	<!-- 통관 상위관리자 목록 조회 -->
+	<select id="selectCsclUprMngrList" parameterType="alpass.ipt.clr.com.vo.ClrCsclUprMngrVo"
+			resultType="alpass.ipt.clr.com.vo.ClrCsclUprMngrVo">
+		WITH LGN_EMP_UPR_MNGR AS (
+		SELECT *
+		FROM
+			(
+			SELECT
+				level lvl,
+				A.ORGN_MGMT_CD,
+				A.ORGN_NM,
+				A.ORGN_CD
+			FROM (
+				SELECT
+					ORGN_MGMT_CD ,
+					ORGN_CD ,
+					ORGN_NM ,
+					HSRK_ORGN_MGMT_CD ,
+					UPR_ORGN_MGMT_CD ,
+				   (SELECT ORGN_MGMT_CD
+					FROM TB_POTI_ORGN
+					WHERE DEL_YN = 'N'
+					AND ORGN_MGMT_CD = A.UPR_ORGN_MGMT_CD) AS UP_CD
+				FROM TB_POTI_ORGN A
+				WHERE DEL_YN = 'N'
+				) A
+			WHERE 1 = 1
+			START WITH A.ORGN_MGMT_CD = ( SELECT E.ORGN_MGMT_CD
+										  FROM TB_POTI_EMP E WHERE E.PBSR_NO = #{userId}
+										)
+			CONNECT BY PRIOR A.UPR_ORGN_MGMT_CD = A.ORGN_MGMT_CD
+			)
+		)
+		SELECT  A.*,
+				CASE LVL
+				WHEN 1 THEN (
+				( SELECT LISTAGG( PBSR_NO, ',') WITHIN GROUP (ORDER BY PBSR_NO)
+		          FROM ( SELECT PBSR_NO FROM TB_POTI_EMP
+						  WHERE ORGN_MGMT_CD = A.ORGN_MGMT_CD
+						  AND   fn_get_emp_bwrk_stts(PBSR_NO,'Y') = 'TRUE'   /** 부재중건이 없으면 근무중 상태로 봄 */
+						  AND   CLPS_CD =  '03' /* COM_0064  03 : DIRECTEUR */
+						)
+					)
+				)
+
+				WHEN 2 THEN (
+				( SELECT LISTAGG( PBSR_NO, ',') WITHIN GROUP (ORDER BY PBSR_NO)
+				  FROM ( SELECT PBSR_NO FROM TB_POTI_EMP
+						 WHERE ORGN_MGMT_CD = A.ORGN_MGMT_CD
+						 AND   fn_get_emp_bwrk_stts(PBSR_NO,'Y') = 'TRUE'   /** 부재중건이 없으면 근무중 상태로 봄 */
+						 AND   CLPS_CD = '11'/* COM_0064  11 : CHEF DE SECTEUR (섹터장) */
+						)
+					)
+				)
+				WHEN 3 THEN (
+				( SELECT LISTAGG( PBSR_NO, ',') WITHIN GROUP (ORDER BY PBSR_NO)
+				  FROM ( SELECT PBSR_NO
+						 FROM TB_POTI_EMP B
+							, TB_POTI_ORGN C
+						 WHERE B.ORGN_MGMT_CD = A.ORGN_MGMT_CD
+						 AND   B.ORGN_MGMT_CD = C.ORGN_MGMT_CD
+						 AND   fn_get_emp_bwrk_stts(B.PBSR_NO,'Y') = 'TRUE'   /** 부재중건이 없으면 근무중 상태로 봄 */
+						 AND   B.CLPS_CD = '10' /* 10 : 세관장 */
+						)
+					)
+				)
+				WHEN 4 THEN (
+				( SELECT LISTAGG( PBSR_NO, ',') WITHIN GROUP (ORDER BY PBSR_NO)
+				  FROM ( SELECT PBSR_NO FROM TB_POTI_EMP
+						 WHERE ORGN_MGMT_CD = A.ORGN_MGMT_CD
+						 AND   fn_get_emp_bwrk_stts(PBSR_NO,'Y') = 'TRUE'   /** 부재중건이 없으면 근무중 상태로 봄 */
+						 AND   CLPS_CD = '25'	/* COM_0064 25 : CHEF DE SERVICE (서비스장) */
+						)
+					)
+				)
+				END AS HEAD_PBSR_NO
+      	FROM LGN_EMP_UPR_MNGR A
+
+	</select>
+
+	<!--
+    Consultation de l'historique de traitement final !== 최종 처리내역 조회 ==!
+    (차주원)
+    -->
+	<select id="selectLastPrcsHist" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo" resultType="alpass.ipt.clr.com.vo.ClrDedPrcsBrkdVo">
+		SELECT *
+		FROM
+			(
+				SELECT PRCS_STTS_CD
+					 , PRCS_STTS_PR_PRFR_CD
+				FROM TB_CLRI_DED_PRCS_BRKD
+				WHERE DTL_DCSH_NO = #{dtlDcshNo}
+				  AND DEL_YN = 'N'
+				ORDER BY PRCS_SRNO DESC
+			)
+		WHERE ROWNUM = 1
+	</select>
+
+	<!--
+	Consultation du code de l'état de traitement !== 처리상태코드 조회 ==!
+	-->
+	<select id="selectPrcsSttsCd" parameterType="java.lang.String" resultType="java.lang.String">
+		/* selectPrcsSttsCd */
+		SELECT PRCS_STTS_CD
+		FROM TB_CLRI_DED_COMN
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		  AND DEL_YN = 'N'
+	</select>
+
+	<!--
+	Consultation du contrôle O/N !== 심사중 여부 조회 ==!
+	 -->
+	<select id="selectAudtStrtYn" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo" resultType="java.lang.String">
+		/* selectAudtStrtYn */
+		SELECT 1 AS AUDT_STRT_YN
+		FROM TB_CLRI_DED_VLUT_AUDT_COMN
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		  AND LAST_YN = 'Y'
+		  AND VLUT_PRCS_STTS_CD IN ('R','T') /* R : 가격평가 등록상태, T : 가격평가 통보상태 (심사결과 )*/
+	</select>
+
+	<!--
+	Modification de code de l'état de traitement !== 처리상태코드 수정 ==!
+	-->
+	<update id="updatePrcsSttsCd" parameterType="alpass.ipt.clr.com.vo.ClrDedPrcsBrkdVo">
+		/* updatePrcsSttsCd */
+		UPDATE TB_CLRI_DED_COMN
+		SET PRCS_STTS_CD = #{prcsSttsCd}
+		  , LAST_CHPR_ID = #{lastChprId}
+		  , LAST_CHG_DTTM =  SYSTIMESTAMP
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		  AND DEL_YN = 'N'
+	</update>
+
+	<!--
+	Modification de code de l'état de traitement !== 처리상태코드 수정 ==!
+	-->
+	<update id="updateLastPrcsSttsCd" parameterType="java.lang.String">
+		/* updatePrcsSttsCd */
+		UPDATE TB_CLRI_DED_COMN
+		SET PRCS_STTS_CD = #{prcsSttsCd}
+		  , LAST_CHPR_ID = #{lastChprId}
+		  , LAST_CHG_DTTM =  SYSTIMESTAMP
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		  AND DEL_YN = 'N'
+	</update>
+
+	<!--
+    Enregistrement de l'historique de traitement de DED !== DED 처리내역 등록 ==!
+    -->
+	<insert id="insertDedPrcsBrkd" parameterType="alpass.ipt.clr.com.vo.ClrDedPrcsBrkdVo">
+		<selectKey keyProperty="prcsSrno" resultType="BigDecimal" order="BEFORE">
+			SELECT NVL(MAX(PRCS_SRNO), 0) + 1 FROM TB_CLRI_DED_PRCS_BRKD WHERE DTL_DCSH_NO =  #{dtlDcshNo}
+		</selectKey>
+		INSERT INTO TB_CLRI_DED_PRCS_BRKD
+		(
+		DTL_DCSH_NO                       /** Numero du DAU !== DED번호 ==! */
+		, PRCS_SRNO                    /** N° de sequence de traitement !== 처리일련번호 ==! */
+		<if test="prcsSttsCd != null and prcsSttsCd != ''">
+			, PRCS_STTS_CD                 /** Code de statut de traitement !== 처리상태코드 ==! */
+		</if>
+		<if test="prcsSttsPrPrfrCd != null and prcsSttsPrPrfrCd != ''">
+			, PRCS_STTS_PR_PRFR_CD         /** Code d'execution par statut de traitement !== 처리상태별수행코드 ==! */
+		</if>
+		, PRCS_DTRM_DTTM               /** Date et heure de la decision de traitement !== 처리결정일시 ==! */
+		<choose>
+			<when test="aprvId != null and aprvId != ''">
+				, PRCS_STTS_CN                 /** Contenu du statut de traitement !== 처리상태내용 ==! */
+			</when>
+			<otherwise>
+				<if test="prcsSttsCn != null and prcsSttsCn != ''">
+					, PRCS_STTS_CN                 /** Contenu du statut de traitement !== 처리상태내용 ==! */
+				</if>
+			</otherwise>
+		</choose>
+		, HIST_SRNO                    /** N° de sequence de l'histoire !== 이력일련번호 ==! */
+		, DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+		, FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+		, FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+		, LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+		, LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+		)
+		VALUES
+		(
+		#{dtlDcshNo}                     /** Numero du DAU !== DED번호 ==! */
+		, #{prcsSrno}                  /** N° de sequence de traitement !== 처리일련번호 ==! */
+		<if test="prcsSttsCd != null and prcsSttsCd != ''">
+			, #{prcsSttsCd}                /** Code de statut de traitement !== 처리상태코드 ==! */
+		</if>
+		<if test="prcsSttsPrPrfrCd != null and prcsSttsPrPrfrCd != ''">
+			, #{prcsSttsPrPrfrCd}          /** Code d'execution par statut de traitement !== 처리상태별수행코드 ==! */
+		</if>
+		, SYSDATE		               /** Date et heure de la decision de traitement !== 처리결정일시 ==! */
+		<choose>
+			<when test="aprvId != null and aprvId != ''">
+				, ( SELECT APRV_OPIN_CN
+				FROM TB_POTI_APRV_D
+				WHERE APRV_ID = #{aprvId}
+				AND APRV_SRNO = (SELECT MAX(APRV_SRNO) FROM TB_POTI_APRV_D
+				WHERE APRV_ID = #{aprvId}
+				)
+				)                				/** Contenu du statut de traitement !== 처리상태내용 ==! */
+			</when>
+			<otherwise>
+				<if test="prcsSttsCn != null and prcsSttsCn != ''">
+					, #{prcsSttsCn}
+				</if>
+			</otherwise>
+		</choose>
+		, (SELECT HIST_SRNO FROM TB_CLRI_DED_COMN WHERE DTL_DCSH_NO = #{dtlDcshNo})
+		, 'N'                          /** Suppression ON !== 삭제여부 ==! */
+		, #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+		, SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+		, #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+		, SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+		)
+	</insert>
+
+	<!--
+	Consultation des supérieurs de dédouanement !== 통관 상위관리자 조회 ==!
+	-->
+	<select id="selectCsclUprMngr" parameterType="alpass.ipt.clr.com.vo.ClrCsclUprMngrVo" resultType="java.lang.String">
+		/* ClriComPrcs_selectCsclUprMngr */
+		SELECT PBSR_NO
+		FROM TB_POTI_EMP
+		WHERE DEL_YN = 'N'
+		<if test='inqtTp != null and inqtTp == "SCTR"'>
+			AND   CLPS_CD = '11'
+		</if>
+		<if test='inqtTp != null and inqtTp == "CSTM"'>
+			AND   CLPS_CD IN ('10','24')
+		</if>
+		<if test='inqtTp != null and inqtTp == "SRVC"'>
+			AND   CLPS_CD = '25'
+		</if>
+		AND fn_get_emp_bwrk_stts(PBSR_NO,'Y') = 'TRUE'   /** 부재중건이 없으면 근무중 상태로 봄 */
+		AND ORGN_MGMT_CD IN
+		(  SELECT
+		<if test='inqtTp != null and inqtTp == "SCTR"'>
+			SCTR_MGMT_CD
+		</if>
+		<if test='inqtTp != null and inqtTp == "CSTM"'>
+			CSTM_MGMT_CD
+		</if>
+		<if test='inqtTp != null and inqtTp == "SRVC"'>
+			DEPT_MGMT_CD
+		</if>
+
+		FROM TB_POTI_EMP
+		WHERE PBSR_NO =
+		(
+		SELECT AUDT_EMP_ID
+		FROM TB_CLRI_DED_COMN
+		WHERE DTL_DCSH_NO = #{dtlDcshNo} AND DEL_YN = 'N'
+		)
+		)
+		AND  PBSR_NO = #{userId}
+	</select>
+
+	<!--
+    Consultation de l'historique de traitement !== 처리내역 조회 ==!
+    -->
+	<select id="selectPrcsBrkd" parameterType="alpass.ipt.clr.com.vo.ClrDedPrcsBrkdVo" resultType="alpass.ipt.clr.com.vo.ClrDedPrcsBrkdVo">
+		/* ClriComPrcs_selectPrcsBrkd */
+		SELECT *
+		FROM
+		(
+		SELECT PRCS_STTS_CD
+		, TO_CHAR(PRCS_DTRM_DTTM,'DD/MM/YYYY HH24:MI:SS') AS PRCS_DTRM_DTTM
+		FROM TB_CLRI_DED_PRCS_BRKD
+		WHERE DEL_YN = 'N'
+		AND   DTL_DCSH_NO = #{dtlDcshNo}
+		<if test="prcsSttsCd != null and prcsSttsCd != ''">
+			AND PRCS_STTS_CD = #{prcsSttsCd}
+		</if>
+		<if test="prcsSttsPrPrfrCd != null and prcsSttsPrPrfrCd != ''">
+			AND PRCS_STTS_PR_PRFR_CD = #{prcsSttsPrPrfrCd}
+		</if>
+		ORDER BY PRCS_SRNO DESC
+		)
+		WHERE ROWNUM = 1
+
+	</select>
+
+	<!--
+    Consultation de O/N l'hitorique de l'état de traitement !== 처리상태 이력여부 조회 ==!
+    -->
+	<select id="selectPrcsSttsHistYn" parameterType="alpass.ipt.clr.com.vo.ClrDedPrcsBrkdVo" resultType="java.lang.String">
+		/* ClriComPrcs_selectPrcsSttsHistYn */
+		SELECT 1
+		FROM TB_CLRI_DED_PRCS_BRKD
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		AND DEL_YN = 'N'
+		AND PRCS_STTS_CD = #{prcsSttsCd}
+		<if test="prcsSttsPrPrfrCd != null and prcsSttsPrPrfrCd != ''">
+			AND PRCS_STTS_PR_PRFR_CD = #{prcsSttsPrPrfrCd}
+		</if>
+		AND ROWNUM = 1
+		ORDER BY PRCS_SRNO DESC
+
+	</select>
+
+	<!--
+    Consultation de la liste de l'état de traitement de la déclaration après le dédouanement !== 통관이후신고서 처리내역 목록 조회 ==!
+    -->
+	<select id="selectPrcsBrkdList" parameterType="alpass.ipt.clr.com.vo.ClrAfdSrchVo" resultType="alpass.ipt.clr.pdr.dre.vo.ClrAfdPrcsBrkdVo">
+		/* ClriAfdDcsh_selectPrcsBrkdList */
+		SELECT COUNT(*) OVER() AS totCnt, SQLRSLT.*, rownum as rnum FROM (
+		SELECT A.PRCS_SRNO
+		,  TO_CHAR(A.PRCS_DTRM_DTTM,'DD/MM/YYYY HH24:MI:SS') AS PRCS_DTRM_DTTM
+		,  A.PRCS_STTS_CD
+		, (SELECT FN_GET_CD_VDVAL_NM('CLR_0011', A.PRCS_STTS_CD, #{langCd}) FROM DUAL) AS PRCS_STTS_NM
+		, DECODE( A.PRCS_STTS_CD, 'A04', 'ST'
+		, 'B01', 'ST'
+		, 'C02', 'ST'
+		, 'B02', 'ST'
+		, 'D01', 'PB'
+		, 'F01', 'PB'
+		, 'D02', 'PB'
+		, 'D03', 'PB'
+		, 'D04', 'ST', 'DC') AS ACT_TP
+		, A.PRCS_STTS_PR_PRFR_CD
+		, (SELECT FN_GET_CD_VDVAL_NM('CLR_0012', A.PRCS_STTS_PR_PRFR_CD, #{langCd}) FROM DUAL) AS PRCS_STTS_PR_PRFR_NM
+		, CASE WHEN REGEXP_SUBSTR(A.PRCS_STTS_CN, '\[msg.[0-9]{5}\]', 1, 1) IS NOT NULL THEN ( SELECT MSG_NM FROM TB_COM_MSG_LANG WHERE MSG_ID = SUBSTR(A.PRCS_STTS_CN, 2, 9) and LANG_CD = #{langCd} and DEL_YN = 'N' )
+		ELSE A.PRCS_STTS_CN
+		END AS PRCS_STTS_CN
+		, A.LAST_CHPR_ID
+		, NVL((SELECT USER_NM
+		FROM
+		(
+		SELECT USER_NM
+		FROM TB_COM_CO_USER
+		WHERE USER_ID = A.LAST_CHPR_ID
+		UNION ALL
+		SELECT C.EMP_NM FROM  TB_POTI_EMP C, TB_POTI_ORGN D
+		WHERE C.ORGN_MGMT_CD = D.ORGN_MGMT_CD
+		AND   C.DEL_YN = 'N'
+		AND   D.DEL_YN = 'N'
+		AND	C.PBSR_NO = A.LAST_CHPR_ID
+		)
+		WHERE ROWNUM = 1
+		) , 'SYSTEM') AS LAST_CHPR_NM
+
+		FROM TB_CLRI_DED_PRCS_BRKD A
+		WHERE A.DEL_YN = 'N'
+		<if test="dtlDcshNo != null and dtlDcshNo != ''">
+			AND DTL_DCSH_NO = #{dtlDcshNo}
+		</if>
+		ORDER BY PRCS_SRNO DESC
+		) SQLRSLT
+	</select>
+
+	<!--
+	Consultation du traitement d'annulation O/N !== 취소 처리 여부 조회 ==!
+	-->
+	<select id="selectCnclPrcsYn" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo" resultType="java.lang.String">
+		/* ClriComPrcs_selectCnclPrcsYn */
+		SELECT 1 AS CNCL_PRCS_YN
+		FROM TB_CLRI_DED_CLDL_CLOA
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		  AND DEL_YN = 'N'
+		  AND LAST_YN = 'Y'
+		  AND ROWNUM = 1
+	</select>
+
+	<!--
+    Modification de l'indicateur(O/N) du contentieux !== 쟁송여부 수정 ==!
+    -->
+	<update id="updateDputYn" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		/* ClriComPrcs_updateDputYn */
+		UPDATE TB_CLRI_DED_COMN
+		SET DPUT_YN = #{dputYn}
+		  , LAST_CHPR_ID = #{lastChprId}
+		  , LAST_CHG_DTTM =  SYSTIMESTAMP
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		  AND DEL_YN = 'N'
+	</update>
+
+	<!--
+    Modification de la réception O/N de la demande de l'annulation !== 취소신고수신여부 수정 ==!
+    -->
+	<update id="updateCnclDclrRcpnYn" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedComnVo">
+		/* ClriComPrcs_updateCnclDclrRcpnYn */
+		UPDATE TB_CLRI_DED_COMN
+		SET CNCL_DCLR_RCPN_YN = #{cnclDclrRcpnYn}
+		  , LAST_CHPR_ID = #{lastChprId}
+		  , LAST_CHG_DTTM =  SYSTIMESTAMP
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		  AND DEL_YN = 'N'
+	</update>
+
+	<!--
+    Consultation de O/N de type de déclaration de suivi des marchandises !== 화물추적 신고유형 여부 조회 ==!
+    -->
+	<select id="selectCagTrcnDclrPtYn" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo" resultType="java.lang.String">
+		/* ClriComPrcs_selectCagTrcnDclrPtYn */
+		SELECT 1 AS CAG_TRCN_DCLR_PT_YN
+		FROM TB_CLRI_DED_COMN
+		WHERE DTL_DCSH_NO = #{dtlDcshNo}
+		  AND DCLR_PT_CD IN ('IM4', 'IM5', 'IM6', 'IM7', 'IM9')
+		  AND DEL_YN = 'N'
+
+	</select>
+
+	<!--
+		Consultqtion de montant de la caution pour le numéro de la DED concernée !== 해당 DED 번호의 담보금액 조회 ==!
+	-->
+	<select id="selectDedMgAmt" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo" resultType="java.math.BigDecimal">
+		SELECT NVL(SUM(FLOOR(PAY_TAX_AMT)), 0)
+		FROM (SELECT NVL(SUM(PAY_TAX_AMT), 0) AS PAY_TAX_AMT
+			  FROM TB_CLRI_DED_TAX
+			  WHERE DTL_DCSH_NO = #{dtlDcshNo}
+				AND PAY_KND_CD = '0'
+				AND DEL_YN = 'N'
+				GROUP BY TAX_CD
+			 )
+	</select>
+
+	<!-- Valeur calculée de la taxe précédente !== 이전세액계산결과금액 ==! -->
+	<select id="selectBfAsedPymnTax" parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedVlutAudtDcshVo" resultType="alpass.ipt.clr.pdr.dre.vo.ClrDedVlutAudtDcshVo">
+		/* ClriComPrcs_selectBfAsedPymnTax */
+		SELECT ASED_PYMN_TAX_TAMT FROM (
+				   SELECT ASED_TAX_TAMT + ASED_OTHS_PCFE_AMT AS ASED_PYMN_TAX_TAMT
+				   FROM TB_CLRI_DED_VLUT_AUDT_COMN
+				   WHERE ( NTFC_NO IS NOT NULL OR VLUT_PRCS_STTS_CD = 'D08' )
+					 AND DTL_DCSH_NO = #{dtlDcshNo}
+					 AND PRC_EV_DGCNT <![CDATA[ < ]]> #{prcEvDgcnt}
+				   ORDER BY PRC_EV_DGCNT DESC
+									   )
+		WHERE ROWNUM = 1
+	</select>
+
+	<!--
+   Consulter l'état précédent de la demande de rectification de la déclaration
+   !== 신고서 정정신청 이전 상태 조회하기 ==!
+   -->
+	<select id="selectBfAtrPrcsSttsCd"
+			resultType="java.lang.String"
+			parameterType="alpass.ipt.clr.pdr.dre.vo.ClrDedSrchVo">
+		SELECT A.prcs_stts_cd
+		FROM tb_clri_ded_prcs_brkd A
+		WHERE A.dtl_dcsh_no = #{dtlDcshNo}
+		  AND A.del_yn = 'N'
+		  AND A.prcs_srno = (
+			SELECT B.prcs_srno - 1 FROM tb_clri_ded_prcs_brkd B
+			WHERE B.dtl_dcsh_no = A.dtl_dcsh_no AND
+				B.prcs_stts_cd = 'F01'
+			ORDER BY B.prcs_srno desc LIMIT 1)
+	</select>
+
+	<!--
+   Consulter l'état précédent de la demande de rectification de la déclaration
+   !== 신고서 정정신청 이전 상태 조회하기 ==!
+   -->
+	<select id="selectLastPrcsSttsCd"
+			resultType="java.lang.String"
+			parameterType="java.lang.String">
+		SELECT A.prcs_stts_cd
+		FROM tb_clri_ded_prcs_brkd A
+		WHERE A.dtl_dcsh_no = #{dtlDcshNo}
+		  AND A.del_yn = 'N'
+		ORDER BY prcs_srno DESC LIMIT 1
+	</select>
+
+</mapper>

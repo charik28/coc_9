@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.psc.tpd.rgsr.mapper.PscTpdAccyMapper">
+
+  <!--
+ @TODO:번역필요 !== TPD 목록 조회 ==!
+ -->
+  <select id="selectPscTpdAccyList"
+    parameterType="alpass.ipt.psc.tpd.rgsr.vo.PscTpdAccyVo" resultType="alpass.ipt.psc.tpd.rgsr.vo.PscTpdAccyVo">
+    /* selectPscTpdAccyList */
+    SELECT
+    A.TPD_TEMP_NO                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+    , A.PDLS_SRNO                  /** N° de séquence de l'article !== 품목일련번호 ==! */
+    , A.PDLS_NM                    /** Nom De L'Article !== 품목명 ==! */
+    , A.PDLS_GCNT                  /** Nombre D'Articles !== 품목개수 ==! */
+    , A.VHCL_PDLS_NO AS PDLS_NO                    /** N° D'Article !== 품목번호 ==! */
+    , A.PDLS_BRND_NM               /** Marque de l'article !== 품목브랜드명 ==! */
+    , A.PDLS_RGSR_NO               /** Numéro d'immatriculation de l'article !== 품목등록번호 ==! */
+    , A.PDLS_SPFT_CN               /** Caractéristiques de l'article !== 품목특징내용 ==! */
+    , A.DEL_YN                     /** Suppression On !== 삭제여부 ==! */
+    FROM   TB_PSCI_TPD_ACCY A
+    WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+    AND  A.TPD_TEMP_NO = #{tpdTempNo}                /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+  </select>
+
+
+  <!--
+  @TODO:번역필요 !== TPD 등록 ==!
+  (deKim)
+  -->
+  <insert id="insertPscTpdAccy" parameterType="alpass.ipt.psc.tpd.rgsr.vo.PscTpdAccyVo">
+    /* insertPscTpdAccy */
+    <selectKey keyProperty="pdlsSrno" order="BEFORE" resultType="java.math.BigDecimal">
+      SELECT NVL(MAX(PDLS_SRNO),0)+1 FROM TB_PSCI_TPD_ACCY WHERE TPD_TEMP_NO = #{tpdTempNo}
+    </selectKey>
+
+    INSERT INTO TB_PSCI_TPD_ACCY
+    (
+    TPD_TEMP_NO                  /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+    , PDLS_SRNO                    /** N° de séquence de l'article !== 품목일련번호 ==! */
+    , PDLS_NM                      /** Nom De L'Article !== 품목명 ==! */
+    , PDLS_GCNT                    /** Nombre D'Articles !== 품목개수 ==! */
+    , VHCL_PDLS_NO                      /** N° D'Article !== 품목번호 ==! */
+    , PDLS_BRND_NM                 /** Marque de l'article !== 품목브랜드명 ==! */
+    , PDLS_RGSR_NO                 /** Numéro d'immatriculation de l'article !== 품목등록번호 ==! */
+    , PDLS_SPFT_CN                 /** Caractéristiques de l'article !== 품목특징내용 ==! */
+    , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+    , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+    , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+    , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+    , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    )
+    VALUES
+    (
+    #{tpdTempNo}                 /** @TODO : 번역필요 !== TPD임시번호 ==! */
+    , #{pdlsSrno}                  /** N° de séquence de l'article !== 품목일련번호 ==! */
+    , #{pdlsNm}                    /** Nom De L'Article !== 품목명 ==! */
+    , #{pdlsGcnt}                  /** Nombre D'Articles !== 품목개수 ==! */
+    , #{pdlsNo}                    /** N° D'Article !== 품목번호 ==! */
+    , #{pdlsBrndNm}                /** Marque de l'article !== 품목브랜드명 ==! */
+    , #{pdlsRgsrNo}                /** Numéro d'immatriculation de l'article !== 품목등록번호 ==! */
+    , #{pdlsSpftCn}                /** Caractéristiques de l'article !== 품목특징내용 ==! */
+    , 'N'                          /** Suppression On !== 삭제여부 ==! */
+    , #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+    , SYSTIMESTAMP                 /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+    , #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+    , SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    )
+     
+
+  </insert>
+
+
+  <!--
+  @TODO:번역필요 !== TPD 수정 ==!
+  (deKim)
+  -->
+  <update id="updatePscTpdAccy" parameterType="alpass.ipt.psc.tpd.rgsr.vo.PscTpdAccyVo">
+    /* updatePscTpdAccy */
+    UPDATE  TB_PSCI_TPD_ACCY SET
+       PDLS_NM = #{pdlsNm}                         /** Nom De L'Article !== 품목명 ==! */
+      , PDLS_GCNT = #{pdlsGcnt}                     /** Nombre D'Articles !== 품목개수 ==! */
+      , LAST_CHPR_ID = #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+      , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+    WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+    AND  TPD_TEMP_NO = #{tpdTempNo}                  /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+    AND  PDLS_SRNO = #{pdlsSrno}                     /** N° de séquence de l'article !== 품목일련번호 ==! */
+  </update>
+
+
+  <!--
+  @TODO:번역필요 !== TPD 품목 일괄삭제 ==!
+  (deKim)
+  -->
+  <update id="deletePscTpdAccy" parameterType="alpass.ipt.psc.tpd.rgsr.vo.PscTpdAccyVo">
+    /* deletePscTpdAccy */
+    DELETE  TB_PSCI_TPD_ACCY
+    WHERE  1=1
+    AND  TPD_TEMP_NO = #{tpdTempNo}                    /** Numéro provisoire de TPD !== TPD임시번호 ==! */
+  </update>
+
+
+
+</mapper>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+Mapper : Gérer l'auditeur. !== 심사자관리 Mapper. ==!
+(wonjun.cha)
+-->
+<mapper namespace="alpass.ipt.aeo.athr.entr.mapper.AeoAthrEntrMgmtMapper">
+
+    <!--
+    [Gérer l'OEA] Consulter la liste !== [공인업체관리] 목록조회 ==!
+    -->
+	<select id="selectAeoAthrEntrMgmtList"
+	    parameterType="alpass.ipt.aeo.athr.entr.vo.AeoAthrEntrMgmtVo"
+	    resultType="alpass.ipt.aeo.athr.entr.vo.AeoAthrEntrMgmtVo">
+		/* selectAeoAthrEntrMgmtList */
+	    <include refid="pagination.header"/>
+		SELECT
+			       A.AEO_ATHR_NO                                                                                    /** Numéro d'OEA !== AEO공인번호 ==! */
+			     , B.AEO_ATHR_RQST_NO                                                                               /** Numéro de demande du statut OEA !== AEO신청번호 ==! */
+			     , B.CO_NM                                                                                          /** Nom De L'Entreprise !== 업체명 ==! */
+			     , A.NIF                                                                                            /** NIF !== 납세번호 ==! */
+			     , A.CO_CD                                                                                          /** Code De La Compagnie !== 업체코드 ==! */
+			     , (SELECT CO_NM FROM TB_COM_CO AA WHERE AA.NIF = A.NIF ) AS CO_NM                                  /** Nom De L'Entreprise !== 업체명 ==! */
+                 , A.AEO_ATHR_GD_CD                                                                                 /** Code de classement d'OEA !== AEO공인등급코드 ==! */
+                 , FN_GET_CD_VDVAL_NM('AEO_0005', A.AEO_ATHR_GD_CD, #{langCd}) AS AEO_ATHR_GD_NM                    /** Code de classement d'OEA !== AEO공인등급코드 ==! */
+                 , TO_CHAR(TO_DATE(A.ATHR_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS ATHR_STRT_DT                       /** Date de commencement d'agrément !== 공인시작일자 ==! */
+                 , TO_CHAR(TO_DATE(A.ATHR_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS ATHR_END_DT                         /** Date de fermeture d'agrément !== 공인종료일자 ==! */
+                 , A.ATHR_STTS_CD                                                                                   /** Code d'état d'agrément !== 공인상태코드 ==! */
+                 , FN_GET_CD_VDVAL_NM('AEO_0006', A.ATHR_STTS_CD, #{langCd}) AS ATHR_STTS_NM                        /** Code d'état d'agrément !== 공인상태코드 ==! */
+                 , A.JRSD_CSTM_CD                                                                                   /** Code de bureau compétent !== 관할세관코드 ==! */
+                 , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = UPPER(A.JRSD_CSTM_CD)) AS JRSD_CSTM_NM    /** Code de bureau compétent !== 관할세관코드 ==! */
+                 , A.NEW_SYS_YN                                                                                     /** Nouveau Système On !== 신규시스템여부 ==! */
+                 , (SELECT C.AEO_AFFC_MGMT_RQST_NO FROM TB_AEOI_AFFC_RQST C WHERE C.AEO_ATHR_NO = A.AEO_ATHR_NO AND C.DEL_YN = 'N' AND C.PRCS_STTS_CD = 'D29' AND C.DTL_PRCS_STTS_CD = 'U32') AS AEO_AFFC_MGMT_RQST_NO      /** Numéro de demande de gestion ultérieure d'OEA !== AEO사후관리신청번호 ==! */
+		FROM
+		  		   TB_AEOI_ATHR_CO A
+				 , TB_AEOI_ATHR_RQST B
+		 WHERE
+		 		   A.AEO_ATHR_NO = B.AEO_ATHR_NO(+)
+			AND	   B.DEL_YN(+) = 'N'                     			/** Suppression On !== 삭제여부 ==! */
+			AND	   A.ATHR_STRT_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{srchAthrEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+			AND	   A.ATHR_END_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{srchAthrStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+	    <if test='srchAthrSttsCd != null and !"".equals(srchAthrSttsCd)'>
+			AND	   A.ATHR_STTS_CD = #{srchAthrSttsCd}       		/** Code d'état d'agrément !== 공인상태코드 ==! */
+	    </if>
+	    <if test='srchAeoAthrNo != null and !"".equals(srchAeoAthrNo)'>
+			AND	   A.AEO_ATHR_NO = #{srchAeoAthrNo}       			/** Numéro d'OEA !== AEO공인번호 ==! */
+	    </if>
+		<if test='srchCoCd != null and !"".equals(srchCoCd)'>
+			AND	   A.NIF = #{srchCoCd}
+		</if>
+	     ORDER BY  A.LAST_CHG_DTTM DESC
+		<include refid="pagination.footer"/>
+	</select>
+
+	<!--
+    [Gérer l'OEA] Consulter la liste (Télécharger en Excel) !== [공인업체관리] 목록조회 (엑셀다운로드) ==!
+    -->
+	<select id="selectAeoAthrEntrMgmtXlsList"
+			parameterType="alpass.ipt.aeo.athr.entr.vo.AeoAthrEntrMgmtVo"
+			resultType="alpass.ipt.aeo.athr.entr.vo.AeoAthrEntrMgmtVo">
+		/* selectAeoAthrEntrMgmtXlsList */
+      SELECT COUNT(*) OVER() AS TOT_CNT,
+		     SQLRSLT.*,
+		     ROWNUM as RNUM
+      FROM (
+		SELECT
+			       A.AEO_ATHR_NO                                                                                    /** Numéro d'OEA !== AEO공인번호 ==! */
+			     , B.AEO_ATHR_RQST_NO                                                                               /** Numéro de demande du statut OEA !== AEO신청번호 ==! */
+			     , B.CO_NM                                                                                          /** Nom De L'Entreprise !== 업체명 ==! */
+			     , A.NIF                                                                                            /** NIF !== 납세번호 ==! */
+			     , A.CO_CD                                                                                          /** Code De La Compagnie !== 업체코드 ==! */
+			     , (SELECT CO_NM FROM TB_COM_CO AA WHERE AA.NIF = A.NIF ) AS CO_NM                                  /** Nom De L'Entreprise !== 업체명 ==! */
+                 , A.AEO_ATHR_GD_CD                                                                                 /** Code de classement d'OEA !== AEO공인등급코드 ==! */
+                 , FN_GET_CD_VDVAL_NM('AEO_0005', A.AEO_ATHR_GD_CD, #{langCd}) AS AEO_ATHR_GD_NM                    /** Code de classement d'OEA !== AEO공인등급코드 ==! */
+                 , TO_CHAR(TO_DATE(A.ATHR_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS ATHR_STRT_DT                       /** Date de commencement d'agrément !== 공인시작일자 ==! */
+                 , TO_CHAR(TO_DATE(A.ATHR_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS ATHR_END_DT                         /** Date de fermeture d'agrément !== 공인종료일자 ==! */
+                 , A.ATHR_STTS_CD                                                                                   /** Code d'état d'agrément !== 공인상태코드 ==! */
+                 , FN_GET_CD_VDVAL_NM('AEO_0006', A.ATHR_STTS_CD, #{langCd}) AS ATHR_STTS_NM                        /** Code d'état d'agrément !== 공인상태코드 ==! */
+                 , A.JRSD_CSTM_CD                                                                                   /** Code de bureau compétent !== 관할세관코드 ==! */
+                 , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = UPPER(A.JRSD_CSTM_CD)) AS JRSD_CSTM_NM    /** Code de bureau compétent !== 관할세관코드 ==! */
+                 , A.NEW_SYS_YN                                                                                     /** Nouveau Système On !== 신규시스템여부 ==! */
+                 , (SELECT C.AEO_AFFC_MGMT_RQST_NO FROM TB_AEOI_AFFC_RQST C WHERE C.AEO_ATHR_NO = A.AEO_ATHR_NO AND C.DEL_YN = 'N' AND C.PRCS_STTS_CD = 'D29' AND C.DTL_PRCS_STTS_CD = 'U32') AS AEO_AFFC_MGMT_RQST_NO      /** Numéro de demande de gestion ultérieure d'OEA !== AEO사후관리신청번호 ==! */
+		  FROM
+		  		   TB_AEOI_ATHR_CO A
+				 , TB_AEOI_ATHR_RQST B
+		 WHERE
+		 		   A.AEO_ATHR_NO = B.AEO_ATHR_NO(+)
+		   AND	   B.DEL_YN(+) = 'N'                     			/** Suppression On !== 삭제여부 ==! */
+           AND	   A.ATHR_STRT_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{srchAthrEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+           AND	   A.ATHR_END_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{srchAthrStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+	    <if test='srchAthrSttsCd != null and !"".equals(srchAthrSttsCd)'>
+		   AND	   A.ATHR_STTS_CD = #{srchAthrSttsCd}       			/** Code d'état d'agrément !== 공인상태코드 ==! */
+	    </if>
+	    <if test='srchAeoAthrNo != null and !"".equals(srchAeoAthrNo)'>
+		   AND	   A.AEO_ATHR_NO = #{srchAeoAthrNo}       			/** Numéro d'OEA !== AEO공인번호 ==! */
+	    </if>
+		<if test='srchCoCd != null and !"".equals(srchCoCd)'>
+			AND	   A.NIF = #{srchCoCd}
+		</if>
+	     ORDER BY  A.LAST_CHG_DTTM DESC
+      ) SQLRSLT
+	</select>
+
+</mapper>

@@ -1,0 +1,415 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.auth.mapper.PotPmAuthUserRoleMapper">
+
+    <!--
+       Consulter la liste de rôle de l'utilisateur !==사용자역할 목록를 조회한다==!
+    -->
+    <select id="selectUserRoleList"
+            parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleVo"
+            resultType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleVo">
+        /** selectUserRoleList */
+        <include refid="pagination.header"/>
+        SELECT
+        A.ROLE_ID
+        , A.ROLE_ID AS ORG_ROLE_ID
+        , ( SELECT B.ROLE_NM FROM TB_COM_ROLE_LANG B WHERE B.DEL_YN = 'N' AND B.ROLE_ID = A.ROLE_ID AND B.LANG_CD = #{langCd} ) AS ROLE_NM
+        , A.APP_CLSF_CD
+        , A.APP_CLSF_CD AS ORG_APP_CLSF_CD
+        , A.BSOP_CLSF_CD
+        , A.BSOP_CLSF_CD AS ORG_BSOP_CLSF_CD
+        , A.ROLE_DESC
+        , A.ROLE_DESC AS ORG_ROLE_DESC
+        , A.USE_YN
+        , TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS frstRgsrDttm
+        , A.FRST_REGST_ID
+        , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY') AS lastChgDttm
+        , A.LAST_CHPR_ID
+        , A.CO_DCLR_TP_CD
+        , A.ITT_TP_CD
+        , A.ROLE_BSOP_TP_CD
+        , A.ROLE_USER_TP_CD
+        , A.ROLE_PT_CD
+        , ITT_CD
+        FROM  TB_COM_ROLE A
+        WHERE A.DEL_YN = 'N'
+        <if test="searRoleId != null and searRoleId != ''">
+            AND   UPPER(A.ROLE_ID) LIKE '%'||UPPER(#{searRoleId})||'%'
+        </if>
+        <if test="searAppClsfCd != null and searAppClsfCd != ''">
+            AND   A.APP_CLSF_CD = #{searAppClsfCd}
+        </if>
+        <if test="searBsopClsfCd != null and searBsopClsfCd != ''">
+            AND   A.BSOP_CLSF_CD = #{searBsopClsfCd}
+        </if>
+        <if test="searRoleDesc != null and searRoleDesc != ''">
+            AND   UPPER(A.ROLE_DESC) LIKE '%'||UPPER(#{searRoleDesc})||'%'
+        </if>
+        <if test="searRoleNm != null and searRoleNm != ''">
+            AND  A.ROLE_ID IN ( SELECT B.ROLE_ID
+            FROM TB_COM_ROLE_LANG B
+            WHERE B.DEL_YN = 'N'
+            AND UPPER(B.ROLE_NM)  LIKE '%'||UPPER(#{searRoleNm})||'%'
+            )
+        </if>
+        <if test="searRolePtCd != null and searRolePtCd != ''">
+            AND   A.ROLE_PT_CD = #{searRolePtCd}
+        </if>
+        <if test="searRoleBsopTpCd != null and searRoleBsopTpCd != ''">
+            AND   A.ROLE_BSOP_TP_CD = #{searRoleBsopTpCd}
+        </if>
+        ORDER BY A.ROLE_ID, A.APP_CLSF_CD, A.BSOP_CLSF_CD, A.ROLE_DESC, A.USE_YN, A.FRST_RGSR_DTTM, A.FRST_REGST_ID, A.LAST_CHG_DTTM,  A.LAST_CHPR_ID, A.CO_DCLR_TP_CD, A.ITT_TP_CD, A.ROLE_BSOP_TP_CD, A.ROLE_USER_TP_CD, A.ROLE_PT_CD, A.ITT_CD
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+       Consulter la liste de rôle de l'utilisateur (détail) !==사용자역할(상세) 목록를 조회한다==!
+    -->
+    <select id="selectUserRoleDetailList" parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleVo" resultType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleLangVo">
+        /** selectUserRoleDetailList */
+        SELECT
+        B.ROLE_ID AS KEY1
+        , A.CD_VDVAL AS LANG_CD
+        , B.ROLE_NM AS LANG_CN
+        FROM TB_COM_COMN_CD_D A,
+        TB_COM_ROLE_LANG B
+        WHERE A.COMN_CD = 'COM_0057'
+        AND B.DEL_YN(+) = 'N'
+        AND B.ROLE_ID(+) = #{roleId}
+        AND A.CD_VDVAL  = B.LANG_CD(+)
+        ORDER BY TO_NUMBER(A.SORT_ORDR) ASC
+    </select>
+
+    <!--
+       Consulter la liste de rôle de l'utilisateur (utilisateur du rôle) !==사용자역할(역할사용자) 목록를 조회한다==!
+    -->
+    <select id="selectRgsrRoleList"
+            parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleVo"
+            resultType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleVo">
+        /** selectRgsrRoleList */
+      <include refid="pagination.header"/>
+      SELECT
+        BASE_DATA.appClsfCd
+      , BASE_DATA.ROLE_ID
+      , BASE_DATA.PBSR_NO
+      , BASE_DATA.ROLE_NM
+      ,(
+      WITH RECURSIVE ORGN_NM_LIST(ORGN_CD, ORGN_MGMT_CD, upr_orgn_mgmt_cd, depth)
+      AS (
+          SELECT ORGN_CD, ORGN_MGMT_CD, upr_orgn_mgmt_cd, 1
+          FROM TB_POTI_ORGN
+          WHERE ORGN_MGMT_CD = BASE_DATA.ORGN_MGMT_CD
+          UNION
+          SELECT ORGN.ORGN_CD, ORGN.ORGN_MGMT_CD, ORGN.upr_orgn_mgmt_cd, ORGN_LIST.depth+1
+          FROM ORGN_NM_LIST ORGN_LIST
+          INNER JOIN TB_POTI_ORGN ORGN on (ORGN_LIST.upr_orgn_mgmt_cd = ORGN.ORGN_MGMT_CD)
+          AND ORGN.ORGN_MGMT_CD != BASE_DATA.ORGN_MGMT_CD
+          )
+          SELECT STRING_AGG(ORGN_CD,'/') AS ORGN_PATH FROM ORGN_NM_LIST
+      ) AS ORGN_NM
+      , BASE_DATA.EMP_FMNM
+      , BASE_DATA.EMP_NM
+      , BASE_DATA.lastChgDttm
+      FROM
+      (
+      SELECT
+        'IPT' AS appClsfCd
+        , A.ROLE_ID
+        , A.PBSR_NO AS PBSR_NO
+        , (SELECT ROLE_NM FROM TB_COM_ROLE_LANG WHERE ROLE_ID = A.ROLE_ID AND DEL_YN = 'N' AND LANG_CD =  #{langCd} ) AS ROLE_NM
+        , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = (SELECT ORGN_MGMT_CD FROM TB_POTI_EMP WHERE PBSR_NO = A.PBSR_NO AND DEL_YN = 'N')  ) AS ORGN_NM
+        , (SELECT EMP_NM FROM TB_POTI_EMP WHERE PBSR_NO = A.PBSR_NO AND DEL_YN = 'N') AS EMP_NM
+        , (SELECT EMP_FMNM FROM TB_POTI_EMP WHERE PBSR_NO = A.PBSR_NO AND DEL_YN = 'N') AS EMP_FMNM
+        , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY') AS lastChgDttm
+        , (SELECT ORGN_MGMT_CD FROM TB_POTI_EMP WHERE PBSR_NO = A.PBSR_NO AND DEL_YN = 'N') ORGN_MGMT_CD
+      FROM TB_POTI_EMP_AUTH A
+      WHERE  A.DEL_YN = 'N'
+      AND    A.ROLE_ID =  #{roleId}
+      )BASE_DATA
+      UNION ALL
+      SELECT
+        'EPT' AS appClsfCd
+        , A.ROLE_ID
+        , A.USER_ID   AS PBSR_NO
+        , (SELECT ROLE_NM FROM TB_COM_ROLE_LANG WHERE ROLE_ID = A.ROLE_ID AND DEL_YN = 'N' AND LANG_CD =  #{langCd} ) AS ROLE_NM
+        , (SELECT CO_NM FROM TB_COM_CO WHERE NIF = (SELECT NIF FROM TB_COM_CO_USER WHERE USER_ID = A.USER_ID AND DEL_YN = 'N')  ) AS ORGN_NM
+        , (SELECT USER_NM FROM TB_COM_CO_USER WHERE USER_ID = A.USER_ID AND DEL_YN = 'N') AS EMP_NM
+        , (SELECT USER_FMNM FROM TB_COM_CO_USER WHERE USER_ID = A.USER_ID AND DEL_YN = 'N') AS EMP_FMNM
+        , TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY') AS lastChgDttm
+      FROM TB_COM_CO_USER_AUTH A
+      WHERE  A.DEL_YN = 'N'
+      AND A.ROLE_ID = #{roleId}
+      <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+       Enregistrer le rôle de l'utilisateur !==사용자역할을 등록한다==!
+    -->
+    <insert id="insertUserRole" parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleVo">
+        /** insertUserRole */
+        <selectKey keyProperty="roleId" resultType="string" order="BEFORE">
+            SELECT
+            #{bsopClsfCd}||LPAD( (NVL( (TO_NUMBER(REPLACE(MAX(ROLE_ID) ,TRANSLATE(MAX(ROLE_ID) ,'X0123456789.','X'),''))) , 0) + 1), 3, '0') AS ROLE_ID
+            FROM  TB_COM_ROLE
+            WHERE BSOP_CLSF_CD = #{bsopClsfCd}
+        </selectKey>
+        with upsert as
+        (
+            UPDATE TB_COM_ROLE SET
+                    LAST_CHPR_ID = #{lastChprId}
+                    , LAST_CHG_DTTM = SYSTIMESTAMP
+                    , DEL_YN = 'N'
+                    , APP_CLSF_CD = #{appClsfCd}
+                    , BSOP_CLSF_CD = #{bsopClsfCd}
+                    , ROLE_DESC =	#{roleDesc}
+                    , USE_YN = #{useYn}
+                    , CO_DCLR_TP_CD = #{coDclrTpCd}
+                    , ITT_TP_CD = #{ittTpCd}
+                    , ROLE_BSOP_TP_CD = #{roleBsopTpCd}
+                    , ROLE_USER_TP_CD = #{roleUserTpCd}
+                    , ROLE_PT_CD = #{rolePtCd}
+                    , ITT_CD = #{ittCd}
+            WHERE ROLE_ID = #{roleId} AND DEL_YN = 'Y'
+            returning *
+        )
+        INSERT INTO TB_COM_ROLE
+        (
+            ROLE_ID
+            , APP_CLSF_CD
+            , BSOP_CLSF_CD
+            , ROLE_DESC
+            , USE_YN
+            , DEL_YN
+            , CO_DCLR_TP_CD
+            , ITT_TP_CD
+            , ROLE_BSOP_TP_CD
+            , ROLE_USER_TP_CD
+            , ROLE_PT_CD
+            , ITT_CD
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+        )
+        SELECT
+            #{roleId}
+            , #{appClsfCd}
+            , #{bsopClsfCd}
+            , #{roleDesc}
+            , #{useYn}
+            , 'N'
+            , #{coDclrTpCd}
+            , #{ittTpCd}
+            , #{roleBsopTpCd}
+            , #{roleUserTpCd}
+            , #{rolePtCd}
+            , #{ittCd}
+            , #{frstRegstId}
+            , SYSTIMESTAMP
+            , #{lastChprId}
+            , SYSTIMESTAMP
+        WHERE NOT exists(select * from upsert)
+    </insert>
+
+    <!--
+       Enregistrer le rôle de l'utilisateur (multilingue) !==사용자역할(다국어)을 등록한다==!
+    -->
+    <insert id="insertUserRoleLang" parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleVo">
+        /** insertUserRoleLang */
+        with upsert as
+        (
+            UPDATE TB_COM_ROLE_LANG SET
+                    LAST_CHPR_ID = #{lastChprId}
+                    , LAST_CHG_DTTM = SYSTIMESTAMP
+                    , DEL_YN = 'N'
+                    , ROLE_NM = #{langCn}
+            WHERE ROLE_ID = #{key1}
+            AND LANG_CD = #{langCd}
+            returning *
+        )
+        INSERT INTO TB_COM_ROLE_LANG
+        (
+                ROLE_ID
+                , LANG_CD
+                , ROLE_NM
+                , DEL_YN
+                , FRST_REGST_ID
+                , FRST_RGSR_DTTM
+                , LAST_CHPR_ID
+                , LAST_CHG_DTTM
+        )
+        SELECT
+            #{key1}
+            , #{langCd}
+            , #{langCn}
+            , 'N'
+            , #{frstRegstId}
+            , SYSTIMESTAMP
+            , #{lastChprId}
+            , SYSTIMESTAMP
+        WHERE NOT exists(select * from upsert)
+    </insert>
+
+    <!--
+       Modifier le rôle de l'utilisateur !==사용자역할을 수정한다==!
+    -->
+    <update id="updateUserRole" parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleVo">
+        /** updateUserRole */
+        UPDATE TB_COM_ROLE
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , APP_CLSF_CD = #{appClsfCd}
+          , BSOP_CLSF_CD = #{bsopClsfCd}
+          , ROLE_DESC =	#{roleDesc}
+          , USE_YN = #{useYn}
+          , CO_DCLR_TP_CD = #{coDclrTpCd}
+          , ITT_TP_CD = #{ittTpCd}
+          , ROLE_BSOP_TP_CD = #{roleBsopTpCd}
+          , ROLE_USER_TP_CD = #{roleUserTpCd}
+          , ROLE_PT_CD = #{rolePtCd}
+          , ITT_CD = #{ittCd}
+        WHERE ROLE_ID = #{roleId}
+        AND   DEL_YN = 'N'
+    </update>
+
+    <!--
+       Modifier le rôle de l'utilisateur (multilingue) !==사용자역할(다국어)을 수정한다==!
+    -->
+    <insert id="mergeUserRoleLang" parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleVo">
+        /** mergeUserRoleLang */
+        with upsert as
+        (
+                UPDATE TB_COM_ROLE_LANG SET
+                        LAST_CHPR_ID = #{lastChprId}
+                        , LAST_CHG_DTTM = SYSTIMESTAMP
+                        , DEL_YN = 'N'
+                        , ROLE_NM = #{langCn}
+                WHERE ROLE_ID = #{key1}
+                AND LANG_CD = #{langCd}
+                returning *
+        )
+        INSERT INTO TB_COM_ROLE_LANG
+        (
+                ROLE_ID
+                , LANG_CD
+                , ROLE_NM
+                , DEL_YN
+                , FRST_REGST_ID
+                , FRST_RGSR_DTTM
+                , LAST_CHPR_ID
+                , LAST_CHG_DTTM
+        )
+        SELECT
+                #{key1}
+                , #{langCd}
+                , #{langCn}
+                , 'N'
+                , #{frstRegstId}
+                , SYSTIMESTAMP
+                , #{lastChprId}
+                , SYSTIMESTAMP
+        WHERE NOT exists(select * from upsert)
+    </insert>
+
+    <!--
+       Supprimer le rôle de l'utilisateur !==사용자역할을 삭제한다==!
+    -->
+    <update id="deleteUserRole" parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleVo">
+        /** deleteUserRole */
+        UPDATE TB_COM_ROLE
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+        WHERE ROLE_ID = #{orgRoleId}
+          AND   DEL_YN = 'N'
+    </update>
+
+    <!--
+       Supprimer le rôle de l'utilisateur !==사용자역할을 삭제한다==!
+    -->
+    <delete id="deleteCstmEmpAuthRole" parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleVo">
+        /** deleteCstmEmpAuthRole */
+        DELETE FROM TB_POTI_EMP_AUTH
+        WHERE  ROLE_ID = #{orgRoleId}
+    </delete>
+
+    <!--
+       Supprimer le rôle de l'utilisateur (rôle de l'organisation) !==사용자역할(조직역할)을 삭제한다==!
+    -->
+    <delete id="deleteCstmRoleRelRoleBass" parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleVo">
+        /** deleteCstmRoleRelRoleBass */
+        DELETE FROM TB_POTI_ORGN_ROLE_REL
+        WHERE  ROLE_ID = #{orgRoleId}
+    </delete>
+
+    <!--
+       Supprimer le rôle de l'utilisateur (rôle de l'utilisateur de l'entreprise) !==사용자역할(업체사용자역할)을 삭제한다==!
+    -->
+    <delete id="deletCoUserAuthRoleBass" parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleVo">
+        /** deletCoUserAuthRoleBass */
+        DELETE FROM TB_COM_CO_USER_AUTH
+        WHERE  ROLE_ID = #{orgRoleId}
+    </delete>
+
+    <!--
+       Supprimer le rôle de l'utilisateur  !==사용자역할을 삭제한다==!
+    -->
+    <update id="deleteUserRoleLang" parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleVo">
+        /** deleteUserRoleLang */
+        UPDATE TB_COM_ROLE_LANG
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+        WHERE ROLE_ID = #{orgRoleId}
+          AND   DEL_YN = 'N'
+    </update>
+
+    <!--
+        Récupérer le rôle de l'utilisateur  !== 사용자역활 회수한다 ==!
+     -->
+    <update id="deleteUserRoleWdrw" parameterType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleVo">
+        /** deleteUserRoleWdrw */
+        UPDATE
+        <if test="appClsfCd == 'IPT'">
+            TB_POTI_EMP_AUTH
+        </if>
+        <if test="appClsfCd == 'EPT'">
+            TB_COM_CO_USER_AUTH
+        </if>
+        SET
+        LAST_CHPR_ID = #{lastChprId}
+        , LAST_CHG_DTTM = SYSTIMESTAMP
+        , DEL_YN = 'Y'
+        <if test="appClsfCd == 'IPT'">
+            WHERE ROLE_ID = #{roleId}
+            AND   PBSR_NO = #{pbsrNo}
+        </if>
+        <if test="appClsfCd == 'EPT'">
+            WHERE ROLE_ID = #{roleId}
+            AND   USER_ID = #{pbsrNo}
+        </if>
+        AND   DEL_YN = 'N'
+    </update>
+
+    <!--
+       Consulter la liste des administrateurs finaux !== 최종관리자 목록을 조회한다 ==!
+    -->
+    <select id="selectLastMngrList"  resultType="alpass.ipt.pot.pm.auth.vo.PotPmAuthMgmtUserRoleVo">
+        /** selectLastMngrList */
+        SELECT
+               PBSR_NO
+             , EML
+             , MOBL_NO
+        FROM TB_POTI_EMP
+        WHERE DEL_YN = 'N'
+        AND PBSR_NO IN
+        (
+            SELECT PBSR_NO FROM TB_POTI_EMP_AUTH
+            WHERE ROLE_ID = 'POT091'
+        )
+    </select>
+
+</mapper>

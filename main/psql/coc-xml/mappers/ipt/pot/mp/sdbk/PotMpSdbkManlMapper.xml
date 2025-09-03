@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.pot.mp.sdbk.mapper.PotMpSdbkManlMapper">
+
+  <!--
+		Consulter la liste des guides d'utilisation !==매뉴얼 목록을 조회 한다.==!
+	-->
+    <select id="selectManlList" parameterType="alpass.ipt.pot.mp.sdbk.vo.PotMpSdbkManlVo" resultType="alpass.ipt.pot.mp.sdbk.vo.PotMpSdbkManlVo">
+        /* selectManlList */
+			<include refid="pagination.header"/>
+      SELECT 
+             *
+      FROM
+      (
+	          SELECT
+                      A.SCRN_ID    
+                    , (SELECT LBL_NM FROM TB_COM_LBL_LANG WHERE DEL_YN = 'N' AND LBL_ID = A.SCRN_NM AND LANG_CD = #{langCd} ) AS SCRN_NM
+                    , A.APP_CLSF_CD
+                    , A.BSOP_CLSF_CD
+                    , A.FRST_REGST_ID                
+                    , A.FRST_RGSR_DTTM            
+                    , A.LAST_CHPR_ID                
+                    , A.LAST_CHG_DTTM
+                    , A.USE_YN
+                    , A.MANL_BLTN_YN
+                    , (SELECT MANL.MANL_FILE_ID FROM TB_COM_SYS_MANL MANL WHERE MANL.SCRN_ID = A.SCRN_ID AND MANL.LANG_CD = 'EN') AS MANL_EN
+                    , (SELECT MANL.MANL_FILE_ID FROM TB_COM_SYS_MANL MANL WHERE MANL.SCRN_ID = A.SCRN_ID AND MANL.LANG_CD = 'FR') AS MANL_FR
+                    , (SELECT MANL.MANL_FILE_ID FROM TB_COM_SYS_MANL MANL WHERE MANL.SCRN_ID = A.SCRN_ID AND MANL.LANG_CD = 'KO') AS MANL_KO
+                    , (SELECT MANL.MANL_FILE_ID FROM TB_COM_SYS_MANL MANL WHERE MANL.SCRN_ID = A.SCRN_ID AND MANL.LANG_CD = 'AR') AS MANL_AR
+	          FROM   TB_COM_SYS_SCRN A 
+	          WHERE  A.DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+	          AND	 A.APP_CLSF_CD = 'IPT'
+        ) A
+        WHERE 1 = 1
+        <if test="scrnId != null and scrnId != ''">
+        AND   UPPER(A.SCRN_ID) LIKE '%'||UPPER(#{scrnId})||'%'
+        </if>	
+        <if test="scrnNm != null and scrnNm != ''">
+        AND   UPPER(A.SCRN_NM) LIKE '%'||UPPER(#{scrnNm})||'%'
+        </if>
+        <if test="bsopClsfCd != null and bsopClsfCd != ''">
+        AND   A.BSOP_CLSF_CD = #{bsopClsfCd}
+        </if>
+      ORDER BY A.SCRN_ID, A.APP_CLSF_CD
+      <include refid="pagination.footer"/>
+    </select>
+    
+  <!--
+		Consulter l'article du guide d'utilisation !==매뉴얼 게시물을 조회한다.==!
+	-->
+    <select id="selectManl" parameterType="alpass.ipt.pot.mp.sdbk.vo.PotMpSdbkManlVo" resultType="alpass.ipt.pot.mp.sdbk.vo.PotMpSdbkManlVo">
+        /* selectManl */
+         SELECT
+            		  A.SCRN_ID    
+                    , (SELECT LBL_NM FROM TB_COM_LBL_LANG WHERE DEL_YN = 'N' AND LBL_ID = A.SCRN_NM AND LANG_CD = #{langCd} ) AS SCRN_NM
+                    , A.APP_CLSF_CD
+                    , A.BSOP_CLSF_CD
+                    , A.FRST_REGST_ID                
+                    , A.FRST_RGSR_DTTM            
+                    , A.LAST_CHPR_ID                
+                    , A.LAST_CHG_DTTM
+                    , A.USE_YN
+                    , A.MANL_BLTN_YN
+                    , (SELECT MANL.MANL_FILE_ID FROM TB_COM_SYS_MANL MANL WHERE MANL.SCRN_ID = A.SCRN_ID AND MANL.LANG_CD = 'EN') AS MANL_EN
+                    , (SELECT MANL.MANL_FILE_ID FROM TB_COM_SYS_MANL MANL WHERE MANL.SCRN_ID = A.SCRN_ID AND MANL.LANG_CD = 'FR') AS MANL_FR
+                    , (SELECT MANL.MANL_FILE_ID FROM TB_COM_SYS_MANL MANL WHERE MANL.SCRN_ID = A.SCRN_ID AND MANL.LANG_CD = 'KO') AS MANL_KO
+                    , (SELECT MANL.MANL_FILE_ID FROM TB_COM_SYS_MANL MANL WHERE MANL.SCRN_ID = A.SCRN_ID AND MANL.LANG_CD = 'AR') AS MANL_AR
+           FROM   TB_COM_SYS_SCRN A
+           WHERE   UPPER(SCRN_ID) = UPPER(#{scrnId})   
+    </select>
+    
+</mapper>

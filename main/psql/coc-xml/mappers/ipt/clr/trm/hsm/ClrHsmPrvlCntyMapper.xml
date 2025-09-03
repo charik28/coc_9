@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="alpass.ipt.clr.trm.hsm.mapper.ClrHsmPrvlCntyMapper">
+
+    <sql id="sqlSearchQuery">
+        <if test="prvlCd != null and prvlCd != ''">
+            AND		A.PRVL_CD = #{prvlCd}
+        </if>
+        <if test="prvlAplyStrtDt != null and prvlAplyStrtDt != ''">
+            <![CDATA[
+		AND			A.PRVL_APLY_STRT_DT >= TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		]]>
+        </if>
+        <if test="prvlAplyEndDt != null and prvlAplyEndDt != ''">
+            <![CDATA[
+		AND			A.PRVL_APLY_END_DT <= TO_CHAR(TO_DATE(#{prvlAplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		]]>
+        </if>
+        <if test="baseDt != null and baseDt != ''">
+            <![CDATA[
+		AND		 TO_CHAR(TO_DATE(#{baseDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN A.PRVL_APLY_STRT_DT AND A.PRVL_APLY_END_DT
+		]]>
+        </if>
+    </sql>
+
+    <sql id="sqlSelectQuery">
+        SELECT
+              ROW_NUMBER() OVER(PARTITION BY B.CD_VDVAL ORDER BY A.PRVL_APLY_STRT_DT DESC) RN
+             , B.CD_VDVAL PRVL_CD
+             , B.CD_VDVAL_NM PRVL_CD_NM
+             , B.SORT_ORDR
+             , A.PRVL_APLY_STRT_DT ORG_PRVL_APLY_STRT_DT
+             , A.PRVL_APLY_END_DT ORG_PRVL_APLY_END_DT
+             , TO_CHAR(TO_DATE(A.PRVL_APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') PRVL_APLY_STRT_DT
+             , TO_CHAR(TO_DATE(A.PRVL_APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') PRVL_APLY_END_DT
+             , NVL(A.USE_YN,B.USE_YN)  USE_YN
+             , TO_CHAR(TO_DATE(A.SGNT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') SGNT_DT
+             , TO_CHAR(TO_DATE(A.APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APRE_DT
+             , TO_CHAR(TO_DATE(A.RATI_DT, 'YYYYMMDD'), 'DD/MM/YYYY') RATI_DT
+             , TO_CHAR(TO_DATE(A.PBLN_DT, 'YYYYMMDD'), 'DD/MM/YYYY') PBLN_DT
+             , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COM_0016' AND LANG_CD = #{langCd} AND CD_VDVAL = A.USE_YN) USE_YN_NM
+             , A.DEL_YN
+             , A.FRST_REGST_ID
+             , A.FRST_RGSR_DTTM
+             , A.LAST_CHPR_ID
+             , A.LAST_CHG_DTTM
+        FROM (SELECT A.COMN_CD, B.CD_VDVAL,B.CD_VDVAL_NM, A.SORT_ORDR, A.USE_YN FROM TB_COM_COMN_CD_D A, TB_COM_COMN_CD_D_LANG B
+                   WHERE A.COMN_CD = B.COMN_CD AND A.CD_VDVAL = B.CD_VDVAL AND A.DEL_YN = 'N' AND B.LANG_CD = #{langCd} AND A.COMN_CD = #{comnCd})  B
+            LEFT OUTER JOIN TB_CLRI_PRVL_COMN A
+        ON( A.PRVL_CD = B.CD_VDVAL AND A.DEL_YN = 'N' )
+        WHERE 1=1
+    </sql>
+
+    <select id="selectPrvlCdList" parameterType="alpass.ipt.clr.com.vo.ClrPrvlComnVo" resultType="alpass.ipt.clr.com.vo.ClrPrvlComnVo">
+        /** selectPrvlCdList : 특혜국가코드 목록 쿼리 **/
+        <include refid="pagination.header" />
+        SELECT
+        PRVL_CD
+        , PRVL_CD_NM
+        , SORT_ORDR
+        , ORG_PRVL_APLY_STRT_DT
+        , ORG_PRVL_APLY_END_DT
+        , PRVL_APLY_STRT_DT
+        , PRVL_APLY_END_DT
+        , USE_YN
+        , USE_YN_NM
+        , SGNT_DT
+        , APRE_DT
+        , RATI_DT
+        , PBLN_DT
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM
+        FROM (
+        <include refid="sqlSelectQuery" />
+        <include refid="sqlSearchQuery" />
+        )
+        ORDER BY SORT_ORDR ASC
+        <include refid="pagination.footer" />
+    </select>
+
+    <select id="selectAplyPrvlComnCnt" parameterType="alpass.ipt.clr.com.vo.ClrPrvlComnVo" resultType="alpass.ipt.clr.com.vo.ClrPrvlComnVo">
+        /** selectAplyPrvlComnCnt : 특혜국가코드 적용일자 중복 데이터 카운트 조회 **/
+        SELECT
+        PRVL_CD,
+        USE_YN
+        FROM (
+        <include refid="sqlSelectQuery" />
+        ) A
+        <![CDATA[
+		WHERE		A.PRVL_CD = #{prvlCd}
+		]]>
+        <if test='prvlYn != null and prvlYn.equals("N")'>
+            <if test="prvlAplyStrtDt != null and prvlAplyStrtDt != ''">
+                AND TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN A.ORG_PRVL_APLY_STRT_DT AND A.ORG_PRVL_APLY_END_DT
+            </if>
+        </if>
+    </select>
+
+    <select id="selectAplyPrvlCntyCnt" parameterType="alpass.ipt.clr.com.vo.ClrPrvlCntyVo" resultType="Integer">
+        /** selectAplyPrvlCntyCnt : 특혜국가코드 적용일자 중복 데이터 카운트 조회 **/
+        SELECT
+        COUNT(*)
+        FROM (
+        <include refid="sqlSelectQuery" />
+        ) A,TB_CLRI_PRVL_CNTY B
+
+		WHERE A.RN = 1
+		AND A.PRVL_CD = B.PRVL_CD
+		AND A.PRVL_CD = #{prvlCd}
+		AND	B.CNTY_CD = #{cntyCd}
+
+    </select>
+
+    <select id="selectPrvlCntyList" parameterType="alpass.ipt.clr.com.vo.ClrPrvlCntyVo" resultType="alpass.ipt.clr.com.vo.ClrPrvlCntyVo">
+        /** selectPrvlCntyList : 특혜국가코드 조회 **/
+        <include refid="pagination.header" />
+        		SELECT A.PRVL_CD
+					       , A.CNTY_CD
+					       , (SELECT CNTY_NM FROM TB_COM_CNTY_CD_LANG WHERE DEL_YN = 'N' AND CNTY_CD = A.CNTY_CD AND LANG_CD = #{langCd}) AS CNTY_NM
+					       , TO_CHAR(TO_DATE(B.PRVL_APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') PRVL_APLY_STRT_DT
+					       , TO_CHAR(TO_DATE(B.PRVL_APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') PRVL_APLY_END_DT
+					       , A.USE_YN
+                           , TO_CHAR(TO_DATE(A.APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APLY_STRT_DT
+                           , TO_CHAR(TO_DATE(A.APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APLY_END_DT
+					       , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COM_0016' AND LANG_CD = #{langCd} AND CD_VDVAL = A.USE_YN) USE_YN_NM
+        		           , 'Y' FIX_YN
+        		           , CASE WHEN APLY_STRT_DT > TO_CHAR(CURRENT_DATE,'YYYYMMDD') THEN 'N' ELSE 'Y' END MODIFY_YN
+        		           , CASE WHEN TO_CHAR(CURRENT_DATE,'YYYYMMDD') > APLY_END_DT THEN 'Y' ELSE 'N' END MODIFY_END_DT_YN
+		       FROM    TB_CLRI_PRVL_CNTY A
+					       , TB_CLRI_PRVL_COMN B
+		       WHERE	 A.DEL_YN = 'N'
+		       AND      A.PRVL_CD = B.PRVL_CD
+		       AND      A.PRVL_APLY_STRT_DT = B.PRVL_APLY_STRT_DT
+               AND      A. PRVL_CD = #{prvlCd}
+        <if test="prvlAplyStrtDt != null and prvlAplyStrtDt != ''">
+               AND      A.PRVL_APLY_STRT_DT = TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        </if>
+        <include refid="pagination.footer" />
+    </select>
+
+    <insert id="insertPrvlComn" parameterType="alpass.ipt.clr.com.vo.ClrPrvlComnVo">
+        /** insertPrvlCnty : 특혜국가코드 정보 저장 **/
+        INSERT INTO TB_CLRI_PRVL_COMN (
+                                        PRVL_CD
+                                      , PRVL_CD_NM
+                                      , PRVL_APLY_STRT_DT
+                                      , PRVL_APLY_END_DT
+                                      , USE_YN
+                                      , DEL_YN
+                                      , SGNT_DT
+                                      , APRE_DT
+                                      , RATI_DT
+                                      , PBLN_DT
+                                      , RMRK_CN
+                                      , FRST_REGST_ID
+                                      , FRST_RGSR_DTTM
+                                      , LAST_CHPR_ID
+                                      , LAST_CHG_DTTM
+        ) VALUES (
+                   #{prvlCd}
+                 , #{prvlCdNm}
+                 , TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                 , TO_CHAR(TO_DATE(#{prvlAplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                 , #{useYn}
+                 , 'N'
+                 , TO_CHAR(TO_DATE( #{sgntDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                 , TO_CHAR(TO_DATE( #{apreDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                 , TO_CHAR(TO_DATE( #{ratiDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                 , TO_CHAR(TO_DATE( #{pblnDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                 , #{rmrkCn}
+                 , #{frstRegstId}
+                 , SYSTIMESTAMP
+                 , #{lastChprId}
+                 , SYSTIMESTAMP
+                 )
+    </insert>
+    <update id="updatePrvlComnYn"  parameterType="alpass.ipt.clr.com.vo.ClrPrvlComnVo">
+        UPDATE		TB_CLRI_PRVL_COMN
+        SET USE_YN = 'N'
+          , LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+            WHERE		DEL_YN = 'N'
+            AND			PRVL_CD = #{prvlCd}
+    </update>
+    <update id="updatePrvlComn" parameterType="alpass.ipt.clr.com.vo.ClrPrvlComnVo">
+        /** updatePrvlCnty : 특혜국가코드 정보 변경 **/
+        WITH UPSERT AS (
+                UPDATE		TB_CLRI_PRVL_COMN
+                SET
+                <trim prefixOverrides="," >
+                    , PRVL_APLY_END_DT = TO_CHAR(TO_DATE(#{prvlAplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                    , USE_YN = #{useYn}
+                    , SGNT_DT = TO_CHAR(TO_DATE( #{sgntDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                    , APRE_DT = TO_CHAR(TO_DATE( #{apreDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                    , RATI_DT = TO_CHAR(TO_DATE( #{ratiDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                    , PBLN_DT = TO_CHAR(TO_DATE( #{pblnDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                    , LAST_CHPR_ID = #{lastChprId}
+                    , LAST_CHG_DTTM = SYSTIMESTAMP
+                    , RMRK_CN = #{rmrkCn}
+                    , DEL_YN ='N'
+                </trim>
+                WHERE		1=1
+                AND			PRVL_CD = #{prvlCd}
+                AND			PRVL_APLY_STRT_DT =  TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        RETURNING *)
+        INSERT INTO TB_CLRI_PRVL_COMN (
+        PRVL_CD
+        , PRVL_CD_NM
+        , PRVL_APLY_STRT_DT
+        , PRVL_APLY_END_DT
+        , USE_YN
+        , DEL_YN
+        , SGNT_DT
+        , APRE_DT
+        , RATI_DT
+        , PBLN_DT
+        , RMRK_CN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM
+        ) SELECT
+        #{prvlCd}
+        , #{prvlCdNm}
+        , TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        , TO_CHAR(TO_DATE(#{prvlAplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        , #{useYn}
+        , 'N'
+        , TO_CHAR(TO_DATE( #{sgntDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        , TO_CHAR(TO_DATE( #{apreDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        , TO_CHAR(TO_DATE( #{ratiDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        , TO_CHAR(TO_DATE( #{pblnDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        , #{rmrkCn}
+        , #{frstRegstId}
+        , SYSTIMESTAMP
+        , #{lastChprId}
+        , SYSTIMESTAMP
+        WHERE NOT EXISTS(SELECT * FROM UPSERT)
+    </update>
+
+    <select id="SelectPrvlCdCntyExcelList" parameterType="alpass.ipt.clr.com.vo.ClrPrvlCntyVo" resultType="alpass.ipt.clr.com.vo.ClrPrvlCntyVo">
+        /** SelectPrvlCdCntyExcelList : 특혜코드별 국가코드 목록 쿼리 **/
+        <include refid="pagination.header" />
+        SELECT
+        PRVL_CD
+        ,(SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD ='CLR_0019' AND CD_VDVAL = PRVL_CD AND LANG_CD = NVL(#{langCd}, 'KO') ) PRVL_CD_NM
+        , CNTY_CD
+        , CNTY_NM
+        , ORG_PRVL_APLY_STRT_DT
+        , ORG_PRVL_APLY_END_DT
+        , PRVL_APLY_STRT_DT
+        , PRVL_APLY_END_DT
+        , SGNT_DT
+        , APRE_DT
+        , RATI_DT
+        , PBLN_DT
+        , USE_YN
+        , USE_YN_NM
+        , CNTY_CD
+        , CNTY_NM
+        , APLY_STRT_DT
+        , APLY_END_DT
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM
+        FROM (
+        SELECT
+        ROW_NUMBER() OVER(PARTITION BY B.CD_VDVAL ORDER BY A.PRVL_APLY_STRT_DT DESC) RN
+        , B.CD_VDVAL PRVL_CD
+        , B.CD_VDVAL_NM PRVL_CD_NM
+        , B.SORT_ORDR
+        , A.PRVL_APLY_STRT_DT ORG_PRVL_APLY_STRT_DT
+        , A.PRVL_APLY_END_DT ORG_PRVL_APLY_END_DT
+        , TO_CHAR(TO_DATE(A.PRVL_APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') PRVL_APLY_STRT_DT
+        , TO_CHAR(TO_DATE(A.PRVL_APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') PRVL_APLY_END_DT
+        , CASE WHEN A.USE_YN ='Y' AND C.USE_YN ='Y' THEN 'Y' ELSE 'N' END USE_YN
+        , TO_CHAR(TO_DATE(A.SGNT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') SGNT_DT
+        , TO_CHAR(TO_DATE(A.APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APRE_DT
+        , TO_CHAR(TO_DATE(A.RATI_DT, 'YYYYMMDD'), 'DD/MM/YYYY') RATI_DT
+        , TO_CHAR(TO_DATE(A.PBLN_DT, 'YYYYMMDD'), 'DD/MM/YYYY') PBLN_DT
+        , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COM_0016' AND LANG_CD = 'KO' AND CD_VDVAL = A.USE_YN) USE_YN_NM
+        , C.CNTY_CD
+        , (SELECT CNTY_NM FROM TB_COM_CNTY_CD_LANG WHERE DEL_YN = 'N' AND CNTY_CD = C.CNTY_CD AND LANG_CD = #{langCd}) AS CNTY_NM
+        , TO_CHAR(TO_DATE(C.APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APLY_STRT_DT
+        , TO_CHAR(TO_DATE(C.APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APLY_END_DT
+        , A.DEL_YN
+        , A.FRST_REGST_ID
+        , A.FRST_RGSR_DTTM
+        , A.LAST_CHPR_ID
+        , A.LAST_CHG_DTTM
+        FROM (SELECT A.COMN_CD, B.CD_VDVAL,B.CD_VDVAL_NM, A.SORT_ORDR, A.USE_YN FROM TB_COM_COMN_CD_D A, TB_COM_COMN_CD_D_LANG B
+        WHERE A.COMN_CD = B.COMN_CD AND A.CD_VDVAL = B.CD_VDVAL AND A.DEL_YN = 'N' AND B.LANG_CD = 'KO' AND A.COMN_CD = 'CLR_0019')  B
+        LEFT OUTER JOIN TB_CLRI_PRVL_COMN A
+        ON( A.PRVL_CD = B.CD_VDVAL AND A.DEL_YN = 'N' )
+        INNER JOIN TB_CLRI_PRVL_CNTY C
+        ON ( A.PRVL_CD = C.PRVL_CD AND A.PRVL_APLY_STRT_DT = C.PRVL_APLY_STRT_DT AND C.DEL_YN ='N')
+        WHERE 1=1
+        )
+        ORDER BY SORT_ORDR, CNTY_CD ASC, ORG_PRVL_APLY_STRT_DT DESC
+        <include refid="pagination.footer" />
+    </select>
+
+    <delete id="deletePrvlCnty"  parameterType="alpass.ipt.clr.com.vo.ClrPrvlComnVo">
+        UPDATE TB_CLRI_PRVL_CNTY SET DEL_YN ='Y', LAST_CHPR_ID = #{lastChprId}, LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE PRVL_APLY_STRT_DT = TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'),'YYYYMMDD') AND PRVL_CD = #{prvlCd}
+    </delete>
+
+    <insert id="insertPrvlCnty" parameterType="alpass.ipt.clr.com.vo.ClrPrvlCntyVo">
+        INSERT INTO TB_CLRI_PRVL_CNTY(
+              PRVL_CD
+            , PRVL_APLY_STRT_DT
+            , CNTY_CD
+            , APLY_STRT_DT
+            , APLY_END_DT
+            , USE_YN
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+            ) VALUES (
+                  #{prvlCd}
+                , TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                , #{cntyCd}
+                , TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                , TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                , #{useYn}
+                , 'N'
+                , #{frstRegstId}
+                , SYSTIMESTAMP
+                , #{lastChprId}
+                , SYSTIMESTAMP
+            )
+            ON CONFLICT(PRVL_CD,PRVL_APLY_STRT_DT,CNTY_CD)
+             DO UPDATE
+               SET LAST_CHG_DTTM = SYSTIMESTAMP
+                   , LAST_CHPR_ID = #{lastChprId}
+                   , USE_YN = #{useYn}
+                   , DEL_YN ='N'
+                   , APLY_END_DT = TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+    </insert>
+
+
+</mapper>

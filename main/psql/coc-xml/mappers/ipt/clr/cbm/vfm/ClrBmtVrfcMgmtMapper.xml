@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="alpass.ipt.clr.cbm.vfm.mapper.ClrBmtVrfcMgmtMapper">
+
+    <!--
+     Consultation de la liste des criètres de pré-vérification !== 사전검증기준관리 목록 조회 ==!
+     (Park Byoungkyu)
+     -->
+    <select id="selectClrBmtVrfcMgmtList" parameterType="alpass.ipt.clr.cbm.vfm.vo.ClrBmtVrfcMgmtVo" resultType="alpass.ipt.clr.cbm.vfm.vo.ClrBmtVrfcMgmtVo">
+        /** selectClrBmtVrfcMgmtList */
+        <include refid="pagination.header" />
+        SELECT
+              A.EPC_CD
+            , A.TRGT_TBL_NM
+            , A.TRGT_COL_NM
+            , A.LBL_ID
+		    , (SELECT B.LBL_NM FROM TB_COM_LBL_LANG B WHERE B.LBL_ID = A.LBL_ID AND B.LANG_CD = #{langCd} AND ROWNUM = 1 ) AS LBL_NM
+            , A.ESNT_INP_VRFC_YN
+            , A.USE_YN
+            , A.CLUS_LEN_VRFC_YN
+            , A.CLUS_LEN
+            , A.DEL_YN
+            , A.FRST_RGSR_DTTM
+            , A.FRST_REGST_ID
+            , A.LAST_CHG_DTTM
+            , A.LAST_CHPR_ID
+        FROM  TB_CLRI_DED_VRFC_BASE A
+            , TB_COM_LBL_LANG B
+        WHERE A.DEL_YN = 'N'
+        AND   B.LBL_ID = A.LBL_ID
+        <if test="epcCd != null and epcCd != ''">
+        AND   A.EPC_CD = #{epcCd}
+        </if>
+        <if test="lblId != null and lblId != ''">
+        AND   A.LBL_ID = #{lblId}
+        </if>
+        <if test="trgtTblNm != null and trgtTblNm != ''">
+        AND   UPPER(A.TRGT_TBL_NM) LIKE '%' || UPPER(#{trgtTblNm}) || '%'
+        </if>
+        <if test="lblNm != null and lblNm != ''">
+        AND   UPPER(B.LBL_NM) LIKE '%' || UPPER(#{lblNm}) || '%'
+        </if>
+        ORDER BY A.EPC_CD, A.TRGT_TBL_NM, A.TRGT_COL_NM
+        <include refid="pagination.footer" />
+    </select>
+
+    <!--
+     Enregistrement des critères de pré-vérification !== 사전검증기준관리 등록 ==!
+     (Park Byoungkyu)
+     -->
+    <insert id="insertClrBmtVrfcMgmt" parameterType="alpass.ipt.clr.cbm.vfm.vo.ClrBmtVrfcMgmtVo">
+        /** insertClrBmtVrfcMgmt */
+        INSERT INTO TB_CLRI_DED_VRFC_BASE
+            (
+              EPC_CD
+            , TRGT_TBL_NM
+            , TRGT_COL_NM
+            , LBL_ID
+            , ESNT_INP_VRFC_YN
+            , USE_YN
+            , CLUS_LEN_VRFC_YN
+            , CLUS_LEN
+            , DEL_YN
+            , FRST_REGST_ID
+            , FRST_RGSR_DTTM
+            , LAST_CHPR_ID
+            , LAST_CHG_DTTM
+            )
+        VALUES
+            (
+              #{epcCd}
+            , #{trgtTblNm}
+            , #{trgtColNm}
+            , #{lblId}
+            , #{esntInpVrfcYn}
+            , #{useYn}
+            , #{clusLenVrfcYn}
+            , #{clusLen}
+            , 'N'
+            , #{frstRegstId}
+            , SYSTIMESTAMP
+            , #{lastChprId}
+            , SYSTIMESTAMP
+            )
+    </insert>
+
+    <!--
+     Enregistrement des critères de pré-vérification !== 사전검증기준관리 등록 ==!
+     (Park Byoungkyu)
+     -->
+    <update id="updateClrBmtVrfcMgmt" parameterType="alpass.ipt.clr.cbm.vfm.vo.ClrBmtVrfcMgmtVo">
+        /** updateClrBmtVrfcMgmt */
+        UPDATE TB_CLRI_DED_VRFC_BASE
+        SET
+              LBL_ID = #{lblId}
+            , ESNT_INP_VRFC_YN = #{esntInpVrfcYn}
+            , USE_YN = #{useYn}
+            , CLUS_LEN_VRFC_YN = #{clusLenVrfcYn}
+            , CLUS_LEN = #{clusLen}
+            , LAST_CHPR_ID = #{lastChprId}
+            , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE EPC_CD = #{epcCd}
+        AND   DEL_YN = 'N'
+        AND   TRGT_TBL_NM = #{trgtTblNm}
+        AND   TRGT_COL_NM = #{trgtColNm}
+    </update>
+
+    <!--
+     Enregistrement des critères de pré-vérification !== 사전검증기준관리 등록 ==!
+     (Park Byoungkyu)
+     -->
+    <update id="deleteClrBmtVrfcMgmt" parameterType="alpass.ipt.clr.cbm.vfm.vo.ClrBmtVrfcMgmtVo">
+        /** deleteClrBmtVrfcMgmt */
+        DELETE TB_CLRI_DED_VRFC_BASE
+        WHERE  EPC_CD = #{epcCd}
+        AND    TRGT_TBL_NM = #{trgtTblNm}
+        AND    TRGT_COL_NM = #{trgtColNm}
+    </update>
+
+</mapper>

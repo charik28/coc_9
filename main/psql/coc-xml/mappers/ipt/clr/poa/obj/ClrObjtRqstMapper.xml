@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.clr.poa.obj.mapper.ClrObjtRqstMapper">
+    <select id="selectClrObjtRqstList" parameterType ="alpass.ipt.clr.poa.obj.vo.ClrObjtRqstVo"  resultType="alpass.ipt.clr.poa.obj.vo.ClrObjtRqstVo">
+        /* selectClrObjtRqstList : Consulter la liste des recours formulés !==이의신청 목록조회==! */
+        <include refid="pagination.header" />
+        SELECT
+            OBJT_RQST_NO,
+            OBJT_RQST_KND_CD,
+            (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'CLR_0107' AND LANG_CD = #{langCd} AND CD_VDVAL = OBJT_RQST_KND_CD) OBJT_RQST_KND_NM,
+            OBJT_RQST_DGCNT,
+            RQST_DT,
+            DCER_CD,
+            RQST_CSTM_CD,
+            RQST_CSTM_NM || '(' || RQST_CSTM_CD ||')' AS RQST_CSTM_NM,
+            RELA_BSOP_CD,
+            (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'CLR_0108' AND LANG_CD = #{langCd} AND CD_VDVAL = RELA_BSOP_CD) RELA_BSOP_NM,
+            RELA_BSOP_RQST_NO,
+            OBJT_RQST_TTLE_NM,
+            OBJT_RQST_CN,
+            OBJT_RQST_ANPN_ID,
+            OBJT_RQST_ANSW_CN,
+            PRCS_STTS_CD,
+            ATCH_FILE_ID,
+            DEL_YN,
+            ANSW_DT,
+            SPLM_QRY_CN
+        FROM
+        (
+            WITH WORGN AS (
+            SELECT
+                ORGN_MGMT_CD
+            FROM
+            (
+                SELECT LEVEL AS LEV
+                , ORGN.ORGN_MGMT_CD
+                FROM ALPASSINT.TB_POTI_ORGN ORGN
+                START WITH ORGN.ORGN_MGMT_CD = (SELECT ORGN_MGMT_CD FROM ALPASSINT.TB_POTI_ORGN WHERE ORGN_CD = #{pbsrOrgnCd})
+                CONNECT BY PRIOR ORGN.UPR_ORGN_MGMT_CD = ORGN.ORGN_MGMT_CD
+            ) WHERE ORGN_MGMT_CD NOT IN (#{ldrOrgnMgmtCd},#{dgdOrgnMgmtCd})
+            ORDER BY LEV DESC LIMIT 1
+        )
+        SELECT
+            ROW_NUMBER() OVER(PARTITION BY A.OBJT_RQST_NO ORDER BY A.OBJT_RQST_DGCNT DESC ) RN,
+            A.OBJT_RQST_NO,
+            A.OBJT_RQST_KND_CD,
+            A.OBJT_RQST_DGCNT,
+            TO_CHAR(TO_DATE(A.RQST_DT, 'YYYYMMDD'), 'DD/MM/YYYY') RQST_DT,
+            A.DCER_CD,
+            A.RQST_CSTM_CD,
+            (SELECT ORGN_NM FROM ALPASSINT.TB_POTI_ORGN WHERE ORGN_CD = A.RQST_CSTM_CD  ) RQST_CSTM_NM,
+            A.RELA_BSOP_CD,
+            A.RELA_BSOP_RQST_NO,
+            A.OBJT_RQST_TTLE_NM,
+            A.OBJT_RQST_CN,
+            NVL(B.OBJT_RQST_ANPN_ID,(SELECT OBJT_RQST_ANPN_ID FROM ALPASSINT.TB_CLRI_OBJT_RQST_AUDT AUDT  WHERE AUDT.OBJT_RQST_NO = A.OBJT_RQST_NO AND AUDT.OBJT_RQST_KND_CD = A.OBJT_RQST_KND_CD AND AUDT.OBJT_RQST_DGCNT = 1 )) OBJT_RQST_ANPN_ID ,
+            B.OBJT_RQST_ANSW_CN,
+            A.PRCS_STTS_CD,
+            A.ATCH_FILE_ID,
+            A.DEL_YN,
+            TO_CHAR(TO_DATE(B.ANSW_DT, 'YYYYMMDD'), 'DD/MM/YYYY') ANSW_DT,
+            B.SPLM_QRY_CN
+        FROM ALPASSEXT.TB_CLRE_OBJT_RQST A
+        LEFT OUTER JOIN ALPASSINT.TB_CLRI_OBJT_RQST_AUDT B
+        ON(A.OBJT_RQST_NO = B.OBJT_RQST_NO AND A.OBJT_RQST_KND_CD = B.OBJT_RQST_KND_CD AND A.OBJT_RQST_DGCNT = B.OBJT_RQST_DGCNT AND A.DEL_YN ='N')
+        WHERE A.PRCS_STTS_CD IN ('B','D','G','C','I01','I04','I05','I06')
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(rqstDtFrom)">
+            <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(rqstDtTo)">
+                AND A.RQST_DT BETWEEN TO_CHAR(TO_DATE(#{rqstDtFrom}, 'DD/MM/YYYY'), 'YYYYMMDD')  AND TO_CHAR(TO_DATE(#{rqstDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            </if>
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(objtRqstKndCd)">
+            AND A.OBJT_RQST_KND_CD = #{objtRqstKndCd}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(objtRqstNo)">
+            AND UPPER(A.OBJT_RQST_NO) LIKE '%' || UPPER(#{objtRqstNo}) || '%'
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(relaBsopRqstNo)">
+            AND UPPER(A.RELA_BSOP_RQST_NO) LIKE '%' || UPPER(#{relaBsopRqstNo}) || '%'
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(dcerCd)">
+            AND A.DCER_CD =#{dcerCd}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(prcsSttsCd)">
+            AND A.PRCS_STTS_CD =#{prcsSttsCd}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(relaBsopCd)">
+            AND A.RELA_BSOP_CD =#{relaBsopCd}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isBlank(popupYn)">
+            <![CDATA[
+            AND EXISTS(
+                      SELECT
+                         *
+                      FROM
+                      (
+                          SELECT '0' AS LEV, ORGN.* FROM TB_POTI_ORGN ORGN WHERE ORGN_MGMT_CD = #{dgdOrgnMgmtCd}
+                          UNION
+                          SELECT LEVEL AS LEV,ORGN.* FROM TB_POTI_ORGN ORGN
+                          START WITH  ORGN_MGMT_CD = CASE WHEN A.OBJT_RQST_KND_CD IN('001','002')  THEN (SELECT ORGN_MGMT_CD FROM WORGN) END
+                          CONNECT BY PRIOR    ORGN_MGMT_CD = UPR_ORGN_MGMT_CD
+                  )ORGN WHERE A.RQST_CSTM_CD = CASE WHEN A.OBJT_RQST_KND_CD ='003' THEN #{pbsrOrgnCd}  ELSE ORGN.ORGN_CD END
+            )
+            AND EXISTS(
+                SELECT 1
+                FROM
+                TB_POTI_EMP EMP,VW_POTI_ROLE_UNFC AUTH
+                WHERE EMP.PBSR_NO = AUTH.PBSR_NO
+                AND EMP.DEL_YN ='N'
+                AND EMP.PBSR_NO = #{pbsrNo}
+                AND A.OBJT_RQST_KND_CD = CASE WHEN A.OBJT_RQST_KND_CD = '003' THEN '003' ELSE  DECODE(AUTH.ROLE_ID,'CLR055', '001','CLR055','002','') END
+            )
+        ]]>
+        </if>
+        ORDER BY RQST_DT DESC,OBJT_RQST_NO DESC ,PRCS_STTS_CD
+        )WHERE RN = 1
+
+        <include refid="pagination.footer" />
+    </select>
+
+    <select id="selectClrObjtRqstDtl" parameterType ="alpass.ipt.clr.poa.obj.vo.ClrObjtRqstVo"  resultType="alpass.ipt.clr.poa.obj.vo.ClrObjtRqstVo">
+        /* selectClrObjtRqstDtl : Consulter la Formuler un recours !==이의신청 상세조회==! */
+        SELECT
+            A.OBJT_RQST_NO,
+            A.OBJT_RQST_KND_CD,
+            A.OBJT_RQST_DGCNT,
+            TO_CHAR(TO_DATE(A.RQST_DT, 'YYYYMMDD'), 'DD/MM/YYYY') RQST_DT,
+            A.DCER_CD,
+            A.RQST_CSTM_CD,
+            A.RELA_BSOP_CD,
+            A.RELA_BSOP_RQST_NO,
+            A.OBJT_RQST_TTLE_NM,
+            A.OBJT_RQST_CN,
+            NVL(B.OBJT_RQST_ANPN_ID,(SELECT OBJT_RQST_ANPN_ID FROM ALPASSINT.TB_CLRI_OBJT_RQST_AUDT AUDT  WHERE AUDT.OBJT_RQST_NO = #{objtRqstNo} AND AUDT.OBJT_RQST_DGCNT = 1 )) OBJT_RQST_ANPN_ID ,
+            B.OBJT_RQST_ANSW_CN,
+            A.PRCS_STTS_CD,
+            A.ATCH_FILE_ID,
+            A.DEL_YN,
+            B.APRV_ID,
+            TO_CHAR(TO_DATE(B.ANSW_DT, 'YYYYMMDD'), 'DD/MM/YYYY') ANSW_DT,
+            B.SPLM_QRY_CN
+        FROM ALPASSEXT.TB_CLRE_OBJT_RQST A
+        LEFT OUTER JOIN ALPASSINT.TB_CLRI_OBJT_RQST_AUDT B
+         ON (A.OBJT_RQST_NO = B.OBJT_RQST_NO AND A.OBJT_RQST_KND_CD = B.OBJT_RQST_KND_CD AND A.OBJT_RQST_DGCNT = B.OBJT_RQST_DGCNT
+         AND A.DEL_YN ='N' )
+        WHERE A.OBJT_RQST_NO = #{objtRqstNo}
+        AND A.OBJT_RQST_DGCNT = #{objtRqstDgcnt}
+    </select>
+
+    <update id="updateClreObjtRqst" parameterType ="alpass.ipt.clr.poa.obj.vo.ClrObjtRqstVo">
+        UPDATE ALPASSEXT.TB_CLRE_OBJT_RQST
+        SET PRCS_STTS_CD = #{prcsSttsCd},
+            LAST_CHPR_ID = #{lastChprId},                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+            LAST_CHG_DTTM = SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+        WHERE OBJT_RQST_NO = #{objtRqstNo} AND OBJT_RQST_DGCNT =#{objtRqstDgcnt}
+    </update>
+
+    <update id="updateClriObjtRqstAudt" parameterType ="alpass.ipt.clr.poa.obj.vo.ClrObjtRqstVo">
+      WITH upset AS (
+          UPDATE ALPASSINT.TB_CLRI_OBJT_RQST_AUDT
+          SET PRCS_STTS_CD = #{prcsSttsCd},
+              <if test='prcsSttsCd.equals("C")'>
+                  OBJT_RQST_ANPN_ID = #{objtRqstAnpnId},
+                  OBJT_RQST_ANSW_CN = #{objtRqstAnswCn},
+              </if>
+              <if test='prcsSttsCd.equals("I01")'>
+                  OBJT_RQST_ANSW_CN = #{objtRqstAnswCn},
+                  APRV_ID = #{aprvId},
+              </if>
+              <if test='prcsSttsCd.equals("D")'>
+                  ANSW_DT = TO_CHAR(TO_DATE(#{answDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+                  OBJT_RQST_ANSW_CN = #{objtRqstAnswCn},
+              </if>
+              <if test='prcsSttsCd.equals("F")'>
+                  SPLM_QRY_CN = #{splmQryCn},
+                  OBJT_RQST_ANPN_ID = #{objtRqstAnpnId},
+              </if>
+              DEL_YN = 'N',
+              LAST_CHPR_ID = #{lastChprId},                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+              LAST_CHG_DTTM = SYSTIMESTAMP                 /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+          WHERE OBJT_RQST_NO = #{objtRqstNo} AND OBJT_RQST_DGCNT =#{objtRqstDgcnt}
+          RETURNING *
+      )
+      INSERT INTO ALPASSINT.TB_CLRI_OBJT_RQST_AUDT
+      (
+          OBJT_RQST_NO,
+          OBJT_RQST_KND_CD,
+          OBJT_RQST_DGCNT,
+    <if test='prcsSttsCd.equals("C")'>
+          OBJT_RQST_ANPN_ID ,
+          OBJT_RQST_ANSW_CN,
+    </if>
+    <if test='prcsSttsCd.equals("I01")'>
+          OBJT_RQST_ANSW_CN ,
+          APRV_ID,
+    </if>
+    <if test='prcsSttsCd.equals("D")'>
+          ANSW_DT,
+          OBJT_RQST_ANSW_CN,
+    </if>
+    <if test='prcsSttsCd.equals("F")'>
+          SPLM_QRY_CN,
+          OBJT_RQST_ANPN_ID,
+    </if>
+          DEL_YN,
+          FRST_REGST_ID,
+          FRST_RGSR_DTTM,
+          LAST_CHPR_ID,
+          LAST_CHG_DTTM
+      )
+      SELECT
+          #{objtRqstNo},
+          #{objtRqstKndCd},
+          #{objtRqstDgcnt},
+        <if test='prcsSttsCd.equals("C")'>
+          #{objtRqstAnpnId},
+          #{objtRqstAnswCn},
+        </if>
+        <if test='prcsSttsCd.equals("I01")'>
+          #{objtRqstAnswCn},
+          #{aprvId},
+        </if>
+        <if test='prcsSttsCd.equals("D")'>
+           TO_CHAR(TO_DATE(#{answDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+           #{objtRqstAnswCn},
+        </if>
+        <if test='prcsSttsCd.equals("F")'>
+           #{splmQryCn},
+           #{objtRqstAnpnId},
+        </if>
+          'N',
+          #{frstRegstId},
+          systimestamp,
+          #{lastChprId},
+          systimestamp
+          WHERE NOT EXISTS(SELECT * FROM upset)
+    </update>
+
+    <select id="selectClrObjtRqstMdfyDgcnt" parameterType ="alpass.ipt.clr.poa.obj.vo.ClrObjtRqstVo" resultType="int">
+        SELECT NVL(MAX(OBJT_RQST_DGCNT),1) OBJT_RQST_DGCNT FROM  ALPASSEXT.TB_CLRE_OBJT_RQST WHERE OBJT_RQST_NO = #{objtRqstNo}
+    </select>
+
+    <insert id="insertClrObjtRqstAudtPrcsBkrd" parameterType ="alpass.ipt.clr.poa.obj.vo.ClrObjtRqstVo">
+        /*insertClrObjtRqstAudtPrcsBkrd : historical */
+        <selectKey keyProperty="prcsSrno" order="BEFORE" resultType="java.math.BigDecimal">
+            SELECT NVL(MAX(PRCS_SRNO),0)+1 FROM ALPASSINT.TB_CLRI_OBJT_RQST_AUDT_PRCS_BRKD WHERE OBJT_RQST_NO = #{objtRqstNo}
+        </selectKey>
+        INSERT INTO ALPASSINT.TB_CLRI_OBJT_RQST_AUDT_PRCS_BRKD
+        (
+        OBJT_RQST_NO,
+        OBJT_RQST_KND_CD,
+        OBJT_RQST_DGCNT,
+        PRCS_SRNO,
+        PRCS_STTS_CD,
+        PRCS_DTRM_DTTM,
+        PRCS_STTS_CN,
+        DEL_YN,
+        FRST_REGST_ID,
+        FRST_RGSR_DTTM,
+        LAST_CHPR_ID,
+        LAST_CHG_DTTM
+        )
+        VALUES
+        (
+        #{objtRqstNo},
+        #{objtRqstKndCd},
+        #{objtRqstDgcnt},
+        #{prcsSrno},
+        #{prcsSttsCd},
+        SYSTIMESTAMP,
+        #{prcsSttsCn},
+        'N',
+        #{frstRegstId},
+        SYSTIMESTAMP,
+        #{lastChprId},
+        SYSTIMESTAMP
+        )
+    </insert>
+
+    <select id="selectClrObjtRqstAudtPrcsBrkdList" parameterType ="alpass.ipt.clr.poa.obj.vo.ClrObjtRqstVo"  resultType="alpass.ipt.clr.poa.obj.vo.ClrObjtRqstVo">
+        SELECT
+            OBJT_RQST_NO,
+            OBJT_RQST_KND_CD,
+            OBJT_RQST_DGCNT,
+            PRCS_SRNO,
+            PRCS_STTS_CD,
+            TO_CHAR(PRCS_DTRM_DTTM,'DD/MM/YYYY HH24:MI:SS') PRCS_DTRM_DTTM,
+            PRCS_STTS_CN,
+            DEL_YN
+        FROM TB_CLRI_OBJT_RQST_AUDT_PRCS_BRKD
+        WHERE OBJT_RQST_NO = #{objtRqstNo}
+    </select>
+
+
+</mapper>

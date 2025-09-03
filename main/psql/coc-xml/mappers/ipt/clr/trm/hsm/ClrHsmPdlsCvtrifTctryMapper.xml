@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="alpass.ipt.clr.trm.hsm.mapper.ClrHsmPdlsCvtrifTctryMapper">
+
+    <sql id="sqlSearchQuery">
+        <if test="taxCd != null and taxCd != ''">
+            AND		A.TAX_CD = #{taxCd}
+        </if>
+        <if test="basedDt != null and basedDt != ''">
+            AND		TO_CHAR(TO_DATE(#{basedDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN A.APLY_STRT_DT AND A.APLY_END_DT
+        </if>
+        <if test="trftAplyStrtDt != null and trftAplyStrtDt != ''">
+            AND		TO_CHAR(TO_DATE(#{trftAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD') = A.APLY_STRT_DT
+        </if>
+        <if test="prvlCd != null and prvlCd != ''">
+            AND A.PRVL_CD = #{prvlCd}
+        </if>
+    </sql>
+
+    <sql id="sqlSelectQuery">
+        SELECT
+            *
+        FROM (
+                 SELECT
+                     A.HS_CD
+                      , A.TAX_CD
+                      , D.TAX_CD_NM
+                      , D.TAX_CTGY_CD
+                      , D.APLY_PROR_RNK
+                      , C.PRVL_CD
+                      , C.PRVL_CNTY_CDS
+                      , A.TFRT_CTGY_CD
+                      , A.SRNO
+                      , D.TRIF_RT_TP_CD
+                      , NVL((SELECT LSPR_TXBS_CN FROM TB_CLRI_TAX_CLCU_BASE B WHERE B.TAX_CD = D.TAX_CD AND TO_DATE(TO_CHAR(SYSTIMESTAMP,'YYYYMMDD'),'YYYYMMDD') BETWEEN TO_DATE(APLY_STRT_DT,'YYYYMMDD') AND TO_DATE(APLY_END_DT,'YYYYMMDD') ORDER BY BASE_SRNO DESC LIMIT 1),(SELECT LSPR_TXBS_CN FROM TB_CLRI_TAX_CLCU_BASE WHERE TAX_CD = D.TAX_CD AND USE_YN = 'Y' ORDER BY BASE_SRNO DESC LIMIT 1)) LSPR_TXBS_CN
+                      , A.VLTX_RT_CN
+                      , NVL((SELECT CRLN_TXBS_CN FROM TB_CLRI_TAX_CLCU_BASE B WHERE B.TAX_CD = D.TAX_CD AND TO_DATE(TO_CHAR(SYSTIMESTAMP,'YYYYMMDD'),'YYYYMMDD') BETWEEN TO_DATE(APLY_STRT_DT,'YYYYMMDD') AND TO_DATE(APLY_END_DT,'YYYYMMDD') ORDER BY BASE_SRNO DESC LIMIT 1),(SELECT CRLN_TXBS_CN FROM TB_CLRI_TAX_CLCU_BASE WHERE TAX_CD = D.TAX_CD AND USE_YN = 'Y' ORDER BY BASE_SRNO DESC LIMIT 1)) CRLN_TXBS_CN
+                      , A.SPTX_RT_CN
+                      , A.NWPR_SCAR_CMDT_CD
+                      , A.USE_YN
+                      , A.RMRK_CN
+                      , A.APLY_STRT_DT
+                      , A.APLY_END_DT
+                      , A.FRST_REGST_ID
+                      , A.FRST_RGSR_DTTM
+                      , A.LAST_CHPR_ID
+                      , A.LAST_CHG_DTTM
+                 FROM 	TB_CLRI_PDLS_TFRT A
+                    , (SELECT
+                              A.PRVL_CD
+                            , A.PRVL_APLY_STRT_DT
+                            , A.PRVL_APLY_END_DT
+                            , LISTAGG(B.CNTY_CD, ', ') WITHIN GROUP(ORDER BY B.CNTY_CD) AS PRVL_CNTY_CDS
+                       FROM	   ALPASSINT.TB_CLRI_PRVL_COMN A
+                             , ALPASSINT.TB_CLRI_PRVL_CNTY B
+                       WHERE	A.PRVL_CD = B.PRVL_CD
+                         AND	A.PRVL_APLY_STRT_DT = B.PRVL_APLY_STRT_DT
+                         AND	A.DEL_YN = 'N'
+                         AND    A.USE_YN = 'Y'
+                         AND    B.USE_YN = 'Y'
+                         AND    B.DEL_YN = 'N'
+                        <if test="basedDt != null and basedDt != ''">
+                         AND		TO_CHAR(TO_DATE(#{basedDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN B.APLY_STRT_DT AND B.APLY_END_DT
+                        </if>
+                       GROUP BY	 A.PRVL_CD
+                                , A.PRVL_APLY_STRT_DT
+                                , A.PRVL_APLY_END_DT) C
+                    , TB_CLRI_TAX_CD D
+                 WHERE		A.DEL_YN = 'N'
+                   AND      A.PRVL_CD = C.PRVL_CD
+                   AND		A.TAX_CD = D.TAX_CD
+                   AND		A.TFRT_CTGY_CD = 'CO'
+                   <if test="hsCd != null and hsCd != ''">
+                   AND		A.HS_CD = #{hsCd}
+                   </if>
+             ) A
+        WHERE 1 = 1
+    </sql>
+
+    <select id="selectClrPdlsCvtrifTctryList" parameterType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmPdlsTfrtVo" resultType="alpass.ipt.clr.trm.hsm.vo.ClrTrmHsmPdlsTfrtVo">
+        /* selectClrPdlsCvtrifTctryList */
+        <include refid="pagination.header"/>
+        SELECT
+        A.HS_CD
+        , A.TAX_CD
+        , A.TAX_CD_NM
+        , (
+        SELECT
+        TAX_CLCU_BASE_CN
+        FROM		TB_CLRI_TAX_CLCU_BASE
+        WHERE		TAX_CD = A.TAX_CD
+        AND			USE_YN = 'Y'
+        AND			NVL(A.APLY_STRT_DT, TO_CHAR(SYSDATE, 'YYYYMMDD')) BETWEEN APLY_STRT_DT AND APLY_END_DT
+        ) TAX_CLCU_BASE_CN
+        , A.TAX_CTGY_CD
+        , A.APLY_PROR_RNK
+        , A.PRVL_CD
+        , A.PRVL_CNTY_CDS
+        , A.TFRT_CTGY_CD
+        , A.SRNO
+        , A.TRIF_RT_TP_CD
+        , A.LSPR_TXBS_CN
+        , A.VLTX_RT_CN
+        , A.CRLN_TXBS_CN
+        , A.SPTX_RT_CN
+        , A.NWPR_SCAR_CMDT_CD
+        , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COM_0016' AND LANG_CD = #{langCd} AND CD_VDVAL = A.NWPR_SCAR_CMDT_CD) SCAR_YN_NM
+        , A.RMRK_CN
+        , A.USE_YN
+        , (SELECT CD_VDVAL_NM FROM TB_COM_COMN_CD_D_LANG WHERE COMN_CD = 'COM_0016' AND LANG_CD = #{langCd} AND CD_VDVAL = A.USE_YN) USE_YN_NM
+        , TO_CHAR(TO_DATE(A.APLY_STRT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APLY_STRT_DT
+        , TO_CHAR(TO_DATE(A.APLY_END_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APLY_END_DT
+        , A.FRST_REGST_ID
+        , A.FRST_RGSR_DTTM
+        , A.LAST_CHPR_ID
+        , A.LAST_CHG_DTTM
+        FROM (
+        <include refid="sqlSelectQuery" />
+        <include refid="sqlSearchQuery" />
+        ) A
+        ORDER BY	A.HS_CD ASC, DECODE(A.TAX_CTGY_CD, 'G', 1, 'I', 2, 'P', 3, 'O', 4) ASC, A.TAX_CD ASC,A.PRVL_CD ASC, A.APLY_STRT_DT DESC, TO_NUMBER(A.APLY_PROR_RNK) ASC
+        <include refid="pagination.footer" />
+    </select>
+
+</mapper>

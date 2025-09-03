@@ -1,0 +1,847 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.clr.epm.epm.mapper.ClrExmpAffcMgmtMapper">
+
+	<!--
+    Consultation de la liste de gestion et suivi des marchandises en franchise !== 면제 사후관리 목록 조회 ==!
+    (Song JunYoung)
+    -->
+    <select id="selectClrExmpAffcMgmtList" parameterType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo" resultType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo">
+        /* ClriPmtExmp_selectClriPmtExmpPsmgtMgmtList */
+        <include refid="pagination.header" ></include>
+            SELECT
+                   C.DTL_DCSH_NO                                                       /** Numéro du DAU !== DED번호 ==! */
+                 , E.PDLS_NO                                                      /** N° d'article !== 품목번호 ==! */
+                 , TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS DCLR_DT /** Date de DAU !== DED일자 ==! */
+                 , B.IMPPN_CO_NM                                                  /** Nom de société de l'importateur !== 수입자업체명 ==! */
+                 , A.IMPPN_IDFY_NO                                                /** Code de type du N° d'identification de l'importateur !== 수입자식별번호구분코드 ==! */
+                 , E.HS_CD                                                        /** Code SH !== HS코드 ==! */
+                 , H.HS_DESC                                                      /** Description du SH !== HS설명 ==! */
+                 , E.APC_CD                                                       /** Code APC !== APC코드 ==! */
+                 , E.QTY                                                          /** Quantité !== 수량 ==! */
+                 , E.QTY_UT_CD                                                    /** Code de l'unité de quantité !== 수량단위코드 ==! */
+                 , M.PDLS_TXBS_NCY_AMT                                            /** Montant Nyc De La Base Taxable De L'Article !== 품목과세기준NCY금액 ==! */
+                 , TO_CHAR(TO_DATE(C.PSMGT_FFMN_XPIR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PSMGT_FFMN_XPIR_DT    /** Date d'échéance de l'apurement de régime suspensif !== 사후관리이행만료일자 ==! */
+                 , CASE WHEN C.PSMGT_FFMN_CMPL_DT IS NOT NULL
+                        THEN CASE WHEN C.PSMGT_FFMN_CMPL_DT <![CDATA[ <= ]]> C.PSMGT_FFMN_XPIR_DT
+                                  THEN 'AVL'
+                                  ELSE 'APL'
+                             END
+                        ELSE CASE WHEN TO_CHAR(SYSDATE, 'YYYYMMDD') <![CDATA[ <= ]]> C.PSMGT_FFMN_XPIR_DT
+                                  THEN 'NAP'
+                                  ELSE 'NAL'
+                             END
+                   END AS FFMN_PRCS_STTS_CD                                       /** Code de l'état de traitement de l'apurement !== 이행처리상태코드 ==! */
+            FROM
+                   TB_CLRI_PSMGT_COMN C
+                 , TB_CLRI_DED_COMN A
+                 , TB_CLRI_DED_CO B
+                 , TB_CLRI_DED_VLUT_COMN D
+                 , TB_CLRI_DED_PDLS E
+                 , TB_CLRI_DED_VLUT_PDLS M
+                 , TB_CLRI_HS_CD H
+            WHERE
+                   C.DTL_DCSH_NO = A.DTL_DCSH_NO
+            AND    C.DTL_DCSH_NO = B.DTL_DCSH_NO
+            AND    C.DTL_DCSH_NO = D.DTL_DCSH_NO
+            AND    C.DTL_DCSH_NO = E.DTL_DCSH_NO
+            AND    E.DTL_DCSH_NO = M.DTL_DCSH_NO
+            AND    E.PDLS_NO = M.PDLS_NO
+            AND    E.HS_CD = H.HS_CD(+)
+            AND    A.DCLR_PT_CD = 'IM4'
+            AND    C.DEL_YN = 'N'
+            AND    A.DEL_YN = 'N'
+            AND    B.DEL_YN = 'N'
+            AND    D.DEL_YN = 'N'
+            AND    E.DEL_YN = 'N'
+            AND    M.DEL_YN = 'N'
+            AND    H.DEL_YN(+) = 'N'
+            AND    A.DCLR_DT BETWEEN H.HS_APLY_STRT_DT AND H.HS_APLY_END_DT
+            <if test="dclrCstmCd != null and dclrCstmCd != ''">
+            AND    A.DCLR_CSTM_CD = #{dclrCstmCd}
+            </if>
+            <if test="deptCd != null and deptCd != ''">
+            AND    A.DEPT_CD = #{deptCd}
+            </if>
+            <if test="dtlDcshNo != null and dtlDcshNo != ''">
+            AND    A.DTL_DCSH_NO = #{dtlDcshNo}
+            </if>
+            <if test="rqstDtFrom != null and rqstDtFrom != ''">
+            AND    A.DCLR_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE( #{rqstDtFrom}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            AND    A.DCLR_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE( #{rqstDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            </if>
+            <if test="imppnIdfyNo != null and imppnIdfyNo != ''">
+            AND    A.IMPPN_IDFY_NO = #{imppnIdfyNo}
+            </if>
+            <if test="hsCd != null and hsCd != ''">
+            AND    E.HS_CD = #{hsCd}
+            </if>
+            <if test="apcCd != null and apcCd != ''">
+            AND    E.APC_CD = #{apcCd}
+            </if>
+            <if test="ffmnPrcsSttsCd != null and ffmnPrcsSttsCd != '' and ffmnPrcsSttsCd == 'AVL'">
+            AND    C.PSMGT_FFMN_CMPL_DT IS NOT NULL
+            AND    C.PSMGT_FFMN_CMPL_DT <![CDATA[ <= ]]> C.PSMGT_FFMN_XPIR_DT
+            </if>
+            <if test="ffmnPrcsSttsCd != null and ffmnPrcsSttsCd != '' and ffmnPrcsSttsCd == 'APL'">
+            AND    C.PSMGT_FFMN_CMPL_DT IS NOT NULL
+            AND    C.PSMGT_FFMN_CMPL_DT <![CDATA[ > ]]> C.PSMGT_FFMN_XPIR_DT
+            </if>
+            <if test="ffmnPrcsSttsCd != null and ffmnPrcsSttsCd != '' and ffmnPrcsSttsCd == 'NAP'">
+            AND    C.PSMGT_FFMN_CMPL_DT IS NULL
+            AND    TO_CHAR(SYSDATE, 'YYYYMMDD') <![CDATA[ <= ]]> C.PSMGT_FFMN_XPIR_DT
+            </if>
+            <if test="ffmnPrcsSttsCd != null and ffmnPrcsSttsCd != '' and ffmnPrcsSttsCd == 'NAL'">
+            AND    C.PSMGT_FFMN_CMPL_DT IS NULL
+            AND    TO_CHAR(SYSDATE, 'YYYYMMDD') <![CDATA[ > ]]> C.PSMGT_FFMN_XPIR_DT
+            </if>
+            ORDER BY A.DCLR_DT DESC, A.DTL_DCSH_NO DESC, TO_NUMBER(E.PDLS_NO)
+        <include refid="pagination.footer" ></include>
+    </select>
+
+	<!--
+    Consultation en détail de la gestion et suivi des marchandises en franchise !== 면제 사후관리 상세 조회 ==!
+    (Song JunYoung)
+    -->
+    <select id="selectClrExmpAffcMgmt" parameterType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo" resultType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo">
+        /* ClriPmtExmp_selectClriPmtExmpPsmgtMgmt */
+            SELECT
+                   C.DTL_DCSH_NO                                                       /** Numéro du DAU !== DED번호 ==! */
+                 , TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS DCLR_DT /** Date de DAU !== DED일자 ==! */
+                 , A.DCER_CD                                                      /** Code du déclarant !== 신고인코드 ==! */
+                 , (SELECT
+                           NVL2(MAX(S1.CO_NM), A.DCER_CD || ' | ' || MAX(S1.CO_NM), A.DCER_CD)
+                    FROM
+                           TB_COM_CO S1
+                         , TB_COM_CO_DCLR_CD S2
+                    WHERE
+                           S1.NIF = S2.NIF
+                    AND    S2.CO_DCLR_TP_CD = 'H'
+                    AND    S2.CO_DCLR_CD = A.DCER_CD) AS DCER_NM                  /** Nom de l'entreprise !== 업체명 ==! */
+                 , A.IMPPN_IDFY_NO                                                /** Code de type du N° d'identification de l'importateur !== 수입자식별번호구분코드 ==! */
+                 , A.IMPPN_IDFY_NO || ' | ' || B.IMPPN_CO_NM AS IMPPN_CO_NM       /** Nom de société de l'importateur !== 수입자업체명 ==! */
+                 , A.CSCL_PLN_CD                                                  /** Code de plan de dédouanement !== 통관계획코드 ==! */
+                 , A.DCLR_PT_CD                                                   /** Code de type de déclaration !== 신고유형코드 ==! */
+                 , E.PDLS_NO                                                      /** N° d'article !== 품목번호 ==! */
+                 , E.HS_CD                                                        /** Code SH !== HS코드 ==! */
+                 , (SELECT
+                           E1.PDLS_NM
+                    FROM
+                           TB_CLRI_DED_PDLS E1
+                    WHERE
+                           E1.DTL_DCSH_NO = A.DTL_DCSH_NO
+                    AND    E1.PDLS_NO = (SELECT
+                                                MIN(E11.PDLS_NO)
+                                         FROM
+                                                TB_CLRI_DED_PDLS E11
+                                         WHERE
+                                                E11.DTL_DCSH_NO = E1.DTL_DCSH_NO)
+                   ) AS PDLS_NM                                                   /** Nom de l'article !== 품목명 ==! */
+                 , A.EXP_CNTY_CD                                                  /** Code de pays exportateur !== 수출국가코드 ==! */
+                 , M.PDLS_TXBS_NCY_AMT                                            /** Montant Nyc De La Base Taxable De L'Article !== 품목과세기준NCY금액 ==! */
+                 , E.APC_CD                                                       /** Code APC !== APC코드 ==! */
+                 , E.QTY                                                          /** Quantité !== 수량 ==! */
+                 , E.QTY_UT_CD                                                    /** Code de l'unité de quantité !== 수량단위코드 ==! */
+                 , E.PDLS_NTWG AS NTWG                                            /** Poids net !==순중량==! */
+                 , TO_CHAR(TO_DATE(C.PSMGT_FFMN_XPIR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PSMGT_FFMN_XPIR_DT    /** Date d'échéance de l'apurement de régime suspensif !== 사후관리이행만료일자 ==! */
+                 , TO_CHAR(TO_DATE(N.PSMGT_CONC_RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PSMGT_CONC_RGSR_DT    /** Date de l'enregistrement de la clôture de suivi !== 사후관리종결등록일자 ==! */
+                 , N.PSMGT_CONC_RSN_CD                                            /** Code de motif de la clôture de suivi !== 사후관리종결사유코드 ==! */
+                 , N.PSMGT_CONC_RSN_CN                                            /** Contenu de la clôture de suivi !== 사후관리종결사유내용 ==! */
+            FROM
+                   TB_CLRI_PSMGT_COMN C
+                 , TB_CLRI_DED_COMN A
+                 , TB_CLRI_DED_CO B
+                 , TB_CLRI_DED_VLUT_COMN D
+                 , TB_CLRI_DED_PDLS E
+                 , TB_CLRI_DED_VLUT_PDLS M
+                 , TB_CLRI_HS_CD H
+                 , TB_CLRI_PSMGT_CONC N
+            WHERE
+                   C.DTL_DCSH_NO = A.DTL_DCSH_NO
+            AND    C.DTL_DCSH_NO = B.DTL_DCSH_NO
+            AND    C.DTL_DCSH_NO = D.DTL_DCSH_NO
+            AND    C.DTL_DCSH_NO = E.DTL_DCSH_NO
+            AND    E.DTL_DCSH_NO = M.DTL_DCSH_NO
+            AND    E.PDLS_NO = M.PDLS_NO
+            AND    E.HS_CD = H.HS_CD(+)
+            AND    E.DTL_DCSH_NO = N.DTL_DCSH_NO(+)
+            AND    E.PDLS_NO = N.PDLS_NO(+)
+            AND    C.DEL_YN = 'N'
+            AND    A.DEL_YN = 'N'
+            AND    B.DEL_YN = 'N'
+            AND    D.DEL_YN = 'N'
+            AND    E.DEL_YN = 'N'
+            AND    M.DEL_YN = 'N'
+            AND    H.DEL_YN(+) = 'N'
+            AND    N.DEL_YN(+) = 'N'
+            AND    N.PRCS_STTS_CD(+) = 'D08'
+            AND    A.DCLR_DT BETWEEN H.HS_APLY_STRT_DT AND H.HS_APLY_END_DT
+            AND    C.DTL_DCSH_NO = #{dtlDcshNo}
+            AND    E.PDLS_NO = #{pdlsNo}
+    </select>
+
+	<!--
+    Détails de la gestion et suivi des marchandises en franchise - Consultation de l'historique de la gestion et suivi !== 면제 사후관리 상세 - 사후관리내역 조회 ==!
+    (Song JunYoung)
+    -->
+    <select id="selectClrPsmgtRdexCmdtIprtList" parameterType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo" resultType="alpass.ipt.clr.epm.epm.vo.ClrPsmgtRdexCmdtIprtVo">
+        /* ClriPmtExmp_selectClriPmtExmpPsmgtMgmtBrkd */
+        <include refid="pagination.header" ></include>
+            SELECT
+                   O.DTL_DCSH_NO                     /** Numéro du DAU !== DED번호 ==! */
+                 , O.PDLS_NO                    /** N° d'article !== 품목번호 ==! */
+                 , O.INSC_DGCNT                 /** Degrée de l'inspection !== 검사차수 ==! */
+                 , TO_CHAR(TO_DATE(O.INSC_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS INSC_DT                    /** Date de l'inspection !== 검사일자 ==! */
+                 , O.INSC_EMP_ID                /** ID de l'inspecteur !== 검사직원ID ==! */
+                 , O.PSMGT_INSC_RSLT_CD         /** Code de résultat de la vérification du suivi !== 사후관리검사결과코드 ==! */
+                 , O.PSMGT_INSC_FLWN_TKAC_CD    /** Code de mesure postérieure de la vérification du suivi !== 사후관리검사후속조치코드 ==! */
+                 , O.INSC_RSLT_CN               /** Contenu du résultat de l'inspection !== 검사결과내용 ==! */
+            FROM   TB_CLRI_PSMGT_RDEX_CMDT_IPRT O
+            WHERE  O.DEL_YN = 'N'
+            AND    O.DTL_DCSH_NO = #{dtlDcshNo}
+            AND    O.PDLS_NO = #{pdlsNo}
+            AND    O.PRCS_STTS_CD = 'D08'
+            ORDER BY O.INSC_DGCNT
+        <include refid="pagination.footer" ></include>
+    </select>
+
+	<!--
+    Consultation de la liste des visites de gestion et suivi des marchandises en franchise !== 면제 사후관리 검사 목록 조회 ==!
+    (Song JunYoung)
+    -->
+    <select id="selectClrExmpAffcMgmtInscList" parameterType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo" resultType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo">
+        /* ClriPmtExmpInsc_selectClriPmtExmpPsmgtMgmtInscList */
+        <include refid="pagination.header" ></include>
+            SELECT
+                   O.DTL_DCSH_NO                                                       /** Numéro du DAU !== DED번호 ==! */
+                 , E.PDLS_NO                                                      /** N° d'article !== 품목번호 ==! */
+                 , O.INSC_DGCNT                                                   /** Degrée de l'inspection !== 검사차수 ==! */
+                 , TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS DCLR_DT /** Date de DAU !== DED일자 ==! */
+                 , E.HS_CD                                                        /** Code SH !== HS코드 ==! */
+                 , H.HS_DESC                                                      /** Description du SH !== HS설명 ==! */
+                 , E.APC_CD                                                       /** Code APC !== APC코드 ==! */
+                 , M.PDLS_TXBS_NCY_AMT                                            /** Montant Nyc De La Base Taxable De L'Article !== 품목과세기준NCY금액 ==! */
+                 , TO_CHAR(TO_DATE(O.INSC_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS INSC_DT                                         /** Date de l'inspection !== 검사일자 ==! */
+                 , TO_CHAR(F.APRV_RQST_DTTM, 'DD/MM/YYYY') AS APRV_RSOF_DT                                                  /** Date de demande d'appobation !== 결재신청일시 ==! */
+                 , DECODE(O.PRCS_STTS_CD, 'D08', TO_CHAR((SELECT MAX(S.APRV_PRCS_DTTM)
+                                                          FROM   TB_POTI_APRV_D S
+                                                          WHERE  S.APRV_ID = O.APRV_ID), 'DD/MM/YYYY'), NULL) AS APRE_DT    /** Date et heure du traitement de l'approbation !== 결재처리일시 ==! */
+                 , O.INSC_EMP_ID                                                  /** ID de l'inspecteur !== 검사직원ID ==! */
+                 , O.PRCS_STTS_CD                                                 /** Code de statut de traitement !== 처리상태코드 ==! */
+            FROM
+                   TB_CLRI_PSMGT_RDEX_CMDT_IPRT O
+                 , TB_CLRI_DED_COMN A
+                 , TB_CLRI_DED_PDLS E
+                 , TB_CLRI_DED_VLUT_PDLS M
+                 , TB_CLRI_HS_CD H
+                 , TB_POTI_APRV F
+            WHERE
+                   O.DTL_DCSH_NO = A.DTL_DCSH_NO
+            AND    O.DTL_DCSH_NO = E.DTL_DCSH_NO
+            AND    O.DTL_DCSH_NO = E.DTL_DCSH_NO
+            AND    O.PDLS_NO = E.PDLS_NO
+            AND    O.DTL_DCSH_NO = M.DTL_DCSH_NO
+            AND    O.PDLS_NO = M.PDLS_NO
+            AND    E.HS_CD = H.HS_CD(+)
+            AND    O.APRV_ID = F.APRV_ID(+)
+            AND    A.DCLR_PT_CD = 'IM4'
+            AND    O.DEL_YN = 'N'
+            AND    A.DEL_YN = 'N'
+            AND    E.DEL_YN = 'N'
+            AND    M.DEL_YN = 'N'
+            AND    H.DEL_YN(+) = 'N'
+            AND    F.DEL_YN(+) = 'N'
+            AND    A.DCLR_DT BETWEEN H.HS_APLY_STRT_DT AND H.HS_APLY_END_DT
+            <if test="dclrCstmCd != null and dclrCstmCd != ''">
+            AND    A.DCLR_CSTM_CD = #{dclrCstmCd}
+            </if>
+            <if test="deptCd != null and deptCd != ''">
+            AND    A.DEPT_CD = #{deptCd}
+            </if>
+            <if test="dtlDcshNo != null and dtlDcshNo != ''">
+            AND    A.DTL_DCSH_NO = #{dtlDcshNo}
+            </if>
+            <if test="rqstDtFrom != null and rqstDtFrom != ''">
+            AND    A.DCLR_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE( #{rqstDtFrom}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            AND    A.DCLR_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE( #{rqstDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            </if>
+            <if test="imppnIdfyNo != null and imppnIdfyNo != ''">
+            AND    A.IMPPN_IDFY_NO = #{imppnIdfyNo}
+            </if>
+            <if test="hsCd != null and hsCd != ''">
+            AND    E.HS_CD = #{hsCd}
+            </if>
+            <if test="apcCd != null and apcCd != ''">
+            AND    E.APC_CD = #{apcCd}
+            </if>
+            <if test="prcsSttsCd != null and prcsSttsCd != ''">
+            AND    O.PRCS_STTS_CD = #{prcsSttsCd}
+            </if>
+            ORDER BY A.DCLR_DT DESC, A.DTL_DCSH_NO DESC, TO_NUMBER(E.PDLS_NO), O.INSC_DGCNT DESC
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <!--
+    Vérification de la possibilité d'enregistrement et du traitement O/N de la visite de gestion et suivi des marchandises en franchise - Vérification de l'achèvement de la gestion et suivi des marchandises en franchise !== 면제 사후관리 검사 등록 가능 및 처리 여부 조회 - 면제 사후관리 종료 여부 체크 ==!
+    (Song JunYoung)
+    -->
+    <select id="selectClrPsmgtConcPrcsSttsCd" parameterType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo" resultType="string">
+        SELECT
+               N.PRCS_STTS_CD
+        FROM
+               TB_CLRI_PSMGT_CONC N
+        WHERE
+               N.DTL_DCSH_NO = #{dtlDcshNo}
+        AND    N.PDLS_NO = #{pdlsNo}
+    </select>
+
+    <!--
+    Vérification de la possibilité d'enregistrement et du traitement O/N de la visite de gestion et suivi de l'exemption  !== 면제 사후관리 검사 등록 가능 및 처리 여부 조회 ==!
+    (Song JunYoung)
+    -->
+    <select id="selectClrEpmEpmChkExist" parameterType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo" resultType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo">
+        /* ClriPmtExmpInsc_selectClriPmtExmpChkExist */
+        SELECT
+               A.DTL_DCSH_NO                      /** Numéro du DAU !== DED번호 ==! */
+             , A.PDLS_NO                     /** N° d'article !== 품목번호 ==! */
+             , A.DCLR_PT_CD                  /** Code de type de déclaration !== 신고유형코드 ==! */
+             , (CASE WHEN O.PRCS_STTS_CD IN ('D08', 'D09') THEN NULL ELSE O.INSC_DGCNT END) AS INSC_DGCNT   /** Degrée de l'inspection !== 검사차수 ==! */
+             , C.DEL_YN                      /** Suppression ON !== 삭제여부 ==! */
+             , N.PRCS_STTS_CD                /** Code de statut de traitement !== 처리상태코드 ==! */
+        FROM (SELECT
+                     A.DTL_DCSH_NO
+                   , K.PDLS_NO
+                   , MAX(O.INSC_DGCNT) AS INSC_DGCNT
+                   , A.DCLR_PT_CD
+              FROM
+                     TB_CLRI_DED_COMN A
+                   , TB_CLRI_PSMGT_PDLS K
+                   , TB_CLRI_PSMGT_RDEX_CMDT_IPRT O
+              WHERE
+                     A.DTL_DCSH_NO = K.DTL_DCSH_NO(+)
+              AND    A.DTL_DCSH_NO = O.DTL_DCSH_NO(+)
+--               AND    K.PDLS_NO = O.PDLS_NO(+)
+              AND    A.DTL_DCSH_NO = #{dtlDcshNo}
+              AND    K.PDLS_NO(+) = #{pdlsNo}
+              AND    A.DEL_YN = 'N'
+              AND    K.DEL_YN(+) = 'N'
+              AND    O.DEL_YN(+) = 'N'
+              GROUP BY A.DTL_DCSH_NO, K.PDLS_NO, A.DCLR_PT_CD) A
+             , TB_CLRI_PSMGT_RDEX_CMDT_IPRT O
+             , TB_CLRI_PSMGT_COMN C
+             , TB_CLRI_PSMGT_CONC N
+        WHERE  A.DTL_DCSH_NO = O.DTL_DCSH_NO(+)
+        AND    A.PDLS_NO = O.PDLS_NO(+)
+        AND    A.INSC_DGCNT = O.INSC_DGCNT(+)
+        AND    A.DTL_DCSH_NO = C.DTL_DCSH_NO(+)
+        AND    A.DTL_DCSH_NO = N.DTL_DCSH_NO(+)
+        AND    A.PDLS_NO = N.PDLS_NO(+)
+        AND    O.DEL_YN(+) = 'N'
+        AND    C.DEL_YN(+) = 'N'
+        AND    N.DEL_YN(+) = 'N'
+    </select>
+
+    <!--
+    Consultation en détail de la visite de gestion et suivi des marchandises en franchise (nouveau) !== 면제 사후관리 검사 상세 조회(신규) ==!
+    (Song JunYoung)
+    -->
+    <select id="selectClrPsmgtRdexCmdtIprtNotExist" parameterType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo" resultType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo">
+        /* ClriPmtExmpInsc_selectClriPmtExmpPsmgtMgmtInscNotExist */
+        SELECT
+               A.DTL_DCSH_NO                                                                                      /** Numéro du DAU !== DED번호 ==! */
+             , E.PDLS_NO                                                                                     /** N° d'article !== 품목번호 ==! */
+             , TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS DCLR_DT                                /** Date de DAU !== DED일자 ==! */
+             , A.DCER_CD                                                                                     /** Code du déclarant !== 신고인코드 ==! */
+             , (SELECT
+                       NVL2(MAX(S1.CO_NM), A.DCER_CD || ' | ' || MAX(S1.CO_NM), A.DCER_CD)
+                FROM
+                       TB_COM_CO S1
+                     , TB_COM_CO_DCLR_CD S2
+                WHERE
+                       S1.NIF = S2.NIF
+                AND    S2.CO_DCLR_TP_CD = 'H'
+                AND    S2.CO_DCLR_CD = A.DCER_CD) AS DCER_NM                                                 /** Nom de l'entreprise !== 업체명 ==! */
+             , A.IMPPN_IDFY_NO                                                                               /** N° d'identification de l'importateur !== 수입자식별번호 ==! */
+             , A.IMPPN_IDFY_NO || ' | ' || B.IMPPN_CO_NM AS IMPPN_CO_NM                                      /** Nom de société de l'importateur !== 수입자업체명 ==! */
+             , A.CSCL_PLN_CD                                                                                 /** Code de plan de dédouanement !== 통관계획코드 ==! */
+             , A.DCLR_PT_CD                                                                                  /** Code de type de déclaration !== 신고유형코드 ==! */
+             , E.HS_CD                                                                                       /** Code SH !== HS코드 ==! */
+             , E.PDLS_NM                                                                                     /** Nom de l'article !== 품목명 ==! */
+             , A.EXP_CNTY_CD                                                                                 /** Code de pays exportateur !== 수출국가코드 ==! */
+             , M.PDLS_TXBS_NCY_AMT                                                                           /** Montant Nyc De La Base Taxable De L'Article !== 품목과세기준NCY금액 ==! */
+             , E.PDLS_NTWG AS NTWG                                                                           /** Poids net !==순중량==! */
+             , TO_CHAR(TO_DATE(C.PSMGT_FFMN_XPIR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PSMGT_FFMN_XPIR_DT        /** Date d'échéance de l'apurement de régime suspensif !== 사후관리이행만료일자 ==! */
+        FROM
+               TB_CLRI_DED_COMN A
+             , TB_CLRI_DED_CO B
+             , TB_CLRI_PSMGT_COMN C
+             , TB_CLRI_DED_VLUT_COMN D
+             , TB_CLRI_DED_PDLS E
+             , TB_CLRI_DED_VLUT_PDLS M
+        WHERE
+                A.DTL_DCSH_NO = B.DTL_DCSH_NO
+        AND     A.DTL_DCSH_NO = C.DTL_DCSH_NO
+        AND     A.DTL_DCSH_NO = D.DTL_DCSH_NO
+        AND     A.DTL_DCSH_NO = E.DTL_DCSH_NO
+        AND     A.DTL_DCSH_NO = #{dtlDcshNo}
+        AND     E.PDLS_NO = #{pdlsNo}
+        AND     A.DTL_DCSH_NO = M.DTL_DCSH_NO
+        AND     M.PDLS_NO = E.PDLS_NO
+        AND     A.DEL_YN = 'N'
+        AND     B.DEL_YN = 'N'
+        AND     C.DEL_YN = 'N'
+        AND     D.DEL_YN = 'N'
+        AND     E.DEL_YN = 'N'
+        AND     M.DEL_YN = 'N'
+        AND     A.DCLR_PT_CD = 'IM4'
+    </select>
+
+    <!--
+    Consultation en détail de la visite de gestion et suivi des marchandises en franchise !== 면제 사후관리 검사 상세 조회 ==!
+    (Song JunYoung)
+    -->
+    <select id="selectClrExmpAffcMgmtInsc" parameterType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo" resultType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo">
+        /* ClriPmtExmpInsc_selectClriPmtExmpPsmgtMgmtInsc */
+        SELECT
+               A.DTL_DCSH_NO                                                                                              /** Numéro du DAU !== DED번호 ==! */
+             , TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS DCLR_DT                                        /** Date de DAU !== DED일자 ==! */
+             , A.DCER_CD                                                                                             /** Code du déclarant !== 신고인코드 ==! */
+             , (SELECT
+                       NVL2(MAX(S1.CO_NM), A.DCER_CD || ' | ' || MAX(S1.CO_NM), A.DCER_CD)
+                FROM
+                       TB_COM_CO S1
+                     , TB_COM_CO_DCLR_CD S2
+                WHERE
+                       S1.NIF = S2.NIF
+                AND    S2.CO_DCLR_TP_CD = 'H'
+                AND    S2.CO_DCLR_CD = A.DCER_CD) AS DCER_NM                                                         /** Nom de l'entreprise !== 업체명 ==! */
+             , A.IMPPN_IDFY_NO                                                                                       /** N° d'identification de l'importateur !== 수입자식별번호 ==! */
+             , A.IMPPN_IDFY_NO || ' | ' || B.IMPPN_CO_NM AS IMPPN_CO_NM                                              /** Nom de société de l'importateur !== 수입자업체명 ==! */
+             , A.CSCL_PLN_CD                                                                                         /** Code de plan de dédouanement !== 통관계획코드 ==! */
+             , A.DCLR_PT_CD                                                                                          /** Code de type de déclaration !== 신고유형코드 ==! */
+             , E.PDLS_NO                                                                                             /** N° d'article !== 품목번호 ==! */
+             , E.HS_CD                                                                                               /** Code SH !== HS코드 ==! */
+             , E.PDLS_NM                                                                                             /** Nom de l'article !== 품목명 ==! */
+             , A.EXP_CNTY_CD                                                                                         /** Code de pays exportateur !== 수출국가코드 ==! */
+             , M.PDLS_TXBS_NCY_AMT                                                                                   /** Montant Nyc De La Base Taxable De L'Article !== 품목과세기준NCY금액 ==! */
+             , TO_CHAR(TO_DATE(C.PSMGT_FFMN_XPIR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PSMGT_FFMN_XPIR_DT                /** Date d'échéance de l'apurement de régime suspensif !== 사후관리이행만료일자 ==! */
+             , O.INSC_DT                                                                                             /** Date de l'inspection !== 검사일자 ==! */
+             , O.INSC_DGCNT                                                                                          /** Degrée de l'inspection !== 검사차수 ==! */
+             , O.PSMGT_INSC_RSLT_CD                                                                                  /** Code de résultat de la vérification du suivi !== 사후관리검사결과코드 ==! */
+             , O.PSMGT_INSC_FLWN_TKAC_CD                                                                             /** Code de mesure postérieure de la vérification du suivi !== 사후관리검사후속조치코드 ==! */
+             , O.INSC_RSLT_CN                                                                                        /** Contenu du résultat de l'inspection !== 검사결과내용 ==! */
+             , O.PRCS_STTS_CD                                                                                        /** Code de statut de traitement !== 처리상태코드 ==! */
+             , E.PDLS_NTWG AS NTWG                                                                                   /** Poids net !==순중량==! */
+             , O.APRV_ID                                                                                             /** ID d'approbation  !== 결재ID ==! */
+             , F.APRV_PRCS_STTS_CD                                                                                   /** Code de statut du traitement d'approbation !== 결재처리상태코드 ==! */
+        FROM
+               TB_CLRI_PSMGT_RDEX_CMDT_IPRT O
+             , TB_CLRI_DED_COMN A
+             , TB_CLRI_DED_CO B
+             , TB_CLRI_PSMGT_COMN C
+             , TB_CLRI_DED_VLUT_COMN D
+             , TB_CLRI_DED_PDLS E
+             , TB_CLRI_DED_VLUT_PDLS M
+             , TB_POTI_APRV F
+        WHERE
+                O.DTL_DCSH_NO = A.DTL_DCSH_NO
+        AND     O.DTL_DCSH_NO = B.DTL_DCSH_NO
+        AND     O.DTL_DCSH_NO = C.DTL_DCSH_NO
+        AND     O.DTL_DCSH_NO = D.DTL_DCSH_NO
+        AND     O.DTL_DCSH_NO = E.DTL_DCSH_NO
+        AND     O.PDLS_NO = E.PDLS_NO
+        AND     E.DTL_DCSH_NO = M.DTL_DCSH_NO
+        AND     E.PDLS_NO = M.PDLS_NO
+        AND     O.APRV_ID = F.APRV_ID(+)
+        AND     O.DEL_YN = 'N'
+        AND     A.DEL_YN = 'N'
+        AND     C.DEL_YN = 'N'
+        AND     D.DEL_YN = 'N'
+        AND     E.DEL_YN = 'N'
+        AND     M.DEL_YN = 'N'
+        AND     F.DEL_YN(+) = 'N'
+        AND     A.DCLR_PT_CD = 'IM4'
+        AND     O.DTL_DCSH_NO = #{dtlDcshNo}
+        AND     O.PDLS_NO = #{pdlsNo}
+        AND     O.INSC_DGCNT = #{inscDgcnt}
+    </select>
+
+    <!--
+    Enregistrement du résultat de la visite de gestion et suivi des marchandises en franchise pour les marchandises faisant l'objet d'une réduction  !== 면제 사후관리 감면물품 검사 결과 등록 ==!
+    (Song JunYoung)
+    -->
+    <insert id="insertClrPsmgtRdexCmdtIprt" parameterType="alpass.ipt.clr.epm.epm.vo.ClrPsmgtRdexCmdtIprtVo">
+        /* ClriPmtExmpInsc_insertClriPsmgtRdexCmdtIprt */
+        <selectKey keyProperty="inscDgcnt" resultType="Integer" order="BEFORE">
+            SELECT NVL(MAX(INSC_DGCNT), 0) + 1 FROM TB_CLRI_PSMGT_RDEX_CMDT_IPRT WHERE DTL_DCSH_NO = #{dtlDcshNo} AND PDLS_NO = #{pdlsNo} AND DEL_YN = 'N'
+        </selectKey>
+        WITH UPSERT AS (
+            UPDATE TB_CLRI_PSMGT_RDEX_CMDT_IPRT
+            SET
+              INSC_DT = TO_CHAR(TO_DATE(#{inscDt}, 'DD/MM/YYYY'), 'YYYYMMDD')    /** Date de l'inspection !== 검사일자 ==! */
+              , INSC_EMP_ID = #{inscEmpId}                  /** ID de l'inspecteur !== 검사직원ID ==! */
+              , PSMGT_INSC_RSLT_CD = #{psmgtInscRsltCd}     /** Code de résultat de la vérification du suivi !== 사후관리검사결과코드 ==! */
+              , PSMGT_INSC_FLWN_TKAC_CD = #{psmgtInscFlwnTkacCd}  /** Code de mesure postérieure de la vérification du suivi !== 사후관리검사후속조치코드 ==! */
+              , INSC_RSLT_CN = #{inscRsltCn}                /** Contenu du résultat de l'inspection !== 검사결과내용 ==! */
+              , PRCS_STTS_CD = #{prcsSttsCd}                /** Code de statut de traitement !== 처리상태코드 ==! */
+              , APRV_ID = #{aprvId}                         /** ID d'approbation  !== 결재ID ==! */
+              , DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+              , FRST_REGST_ID = #{frstRegstId}              /** ID du premier enregistrant  !== 최초등록자ID ==! */
+              , FRST_RGSR_DTTM = SYSTIMESTAMP               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+              , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+              , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+            WHERE
+              DTL_DCSH_NO = #{dtlDcshNo}                           /** Numéro du DAU !== DED번호 ==! */
+              AND PDLS_NO = #{pdlsNo}                         /** N° d'article !== 품목번호 ==! */
+              AND INSC_DGCNT = #{inscDgcnt}                   /** Degrée de l'inspection !== 검사차수 ==! */
+              RETURNING *
+        )
+          INSERT INTO TB_CLRI_PSMGT_RDEX_CMDT_IPRT
+                (
+                  DTL_DCSH_NO                       /** Numéro du DAU !== DED번호 ==! */
+                , PDLS_NO                      /** N° d'article !== 품목번호 ==! */
+                , INSC_DGCNT                   /** Degrée de l'inspection !== 검사차수 ==! */
+                , INSC_DT                      /** Date de l'inspection !== 검사일자 ==! */
+                , INSC_EMP_ID                  /** ID de l'inspecteur !== 검사직원ID ==! */
+                , PSMGT_INSC_RSLT_CD           /** Code de résultat de la vérification du suivi !== 사후관리검사결과코드 ==! */
+                , PSMGT_INSC_FLWN_TKAC_CD      /** Code de mesure postérieure de la vérification du suivi !== 사후관리검사후속조치코드 ==! */
+                , INSC_RSLT_CN                 /** Contenu du résultat de l'inspection !== 검사결과내용 ==! */
+                , PRCS_STTS_CD                 /** Code de statut de traitement !== 처리상태코드 ==! */
+                , APRV_ID                      /** ID d'approbation  !== 결재ID ==! */
+                , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+                , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+                )
+              SELECT
+                  #{dtlDcshNo}                     /** Numéro du DAU !== DED번호 ==! */
+                , #{pdlsNo}                    /** N° d'article !== 품목번호 ==! */
+                , #{inscDgcnt}                 /** Degrée de l'inspection !== 검사차수 ==! */
+                , TO_CHAR(TO_DATE(#{inscDt}, 'DD/MM/YYYY'), 'YYYYMMDD') /** Date de l'inspection !== 검사일자 ==! */
+                , #{inscEmpId}                 /** ID de l'inspecteur !== 검사직원ID ==! */
+                , #{psmgtInscRsltCd}           /** Code de résultat de la vérification du suivi !== 사후관리검사결과코드 ==! */
+                , #{psmgtInscFlwnTkacCd}       /** Code de mesure postérieure de la vérification du suivi !== 사후관리검사후속조치코드 ==! */
+                , #{inscRsltCn}                /** Contenu du résultat de l'inspection !== 검사결과내용 ==! */
+                , #{prcsSttsCd}                /** Code de statut de traitement !== 처리상태코드 ==! */
+                , #{aprvId}                    /** ID d'approbation  !== 결재ID ==! */
+                , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+                , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+              WHERE
+                NOT EXISTS(SELECT * FROM UPSERT)
+    </insert>
+
+
+    <!--
+    Modification du résultat de la visite de gestion et suivi des marchandises en franchise pour les marchandises faisant l'objet d'une réduction  !== 면제 사후관리 감면물품 검사 결과 수정 ==!
+    (Song JunYoung)
+    -->
+    <update id="updateClrPsmgtRdexCmdtIprt" parameterType="alpass.ipt.clr.epm.epm.vo.ClrPsmgtRdexCmdtIprtVo">
+        /* ClriPmtExmpInsc_updateClriPsmgtRdexCmdtIprt */
+        UPDATE  TB_CLRI_PSMGT_RDEX_CMDT_IPRT SET
+        <trim prefixOverrides="," >
+            <if test="inscDt != null and inscDt != ''">
+                  INSC_DT = TO_CHAR(TO_DATE(#{inscDt}, 'DD/MM/YYYY'), 'YYYYMMDD') /** Date de l'inspection !== 검사일자 ==! */
+            </if>
+            <if test="psmgtInscRsltCd != null and psmgtInscRsltCd != ''">
+                , PSMGT_INSC_RSLT_CD = #{psmgtInscRsltCd}     /** Code de résultat de la vérification du suivi !== 사후관리검사결과코드 ==! */
+            </if>
+            <if test="psmgtInscFlwnTkacCd != null and psmgtInscFlwnTkacCd != ''">
+                , PSMGT_INSC_FLWN_TKAC_CD = #{psmgtInscFlwnTkacCd}  /** Code de mesure postérieure de la vérification du suivi !== 사후관리검사후속조치코드 ==! */
+            </if>
+            <if test="inscRsltCn != null and inscRsltCn != ''">
+                , INSC_RSLT_CN = #{inscRsltCn}                /** Contenu du résultat de l'inspection !== 검사결과내용 ==! */
+            </if>
+            <if test="prcsSttsCd != null and prcsSttsCd != ''">
+                , PRCS_STTS_CD = #{prcsSttsCd}                /** Code de statut de traitement !== 처리상태코드 ==! */
+            </if>
+            <if test="aprvId != null and aprvId != ''">
+                , APRV_ID = #{aprvId}                         /** ID d'approbation  !== 결재ID ==! */
+            </if>
+                , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        </trim>
+           WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+             AND  DTL_DCSH_NO = #{dtlDcshNo}                           /** Numéro du DAU !== DED번호 ==! */
+             AND  PDLS_NO = #{pdlsNo}                         /** N° d'article !== 품목번호 ==! */
+             AND  INSC_DGCNT = #{inscDgcnt}                   /** Degrée de l'inspection !== 검사차수 ==! */
+    </update>
+
+
+    <!--
+    Suppression du résultat de la visite de gestion et suivi des marchandises en franchise pour les marchandises faisant l'objet d'une réduction  !== 면제 사후관리 감면물품 검사 결과 삭제 ==!
+    (Song JunYoung)
+    -->
+    <update id="deleteClrPsmgtRdexCmdtIprt" parameterType="alpass.ipt.clr.epm.epm.vo.ClrPsmgtRdexCmdtIprtVo">
+        /* ClriPmtExmpInsc_deleteClriPsmgtRdexCmdtIprt */
+        UPDATE  TB_CLRI_PSMGT_RDEX_CMDT_IPRT SET
+                DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+             ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+             ,  LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+         WHERE  DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+           AND  DTL_DCSH_NO = #{dtlDcshNo}                             /** Numéro du DAU !== DED번호 ==! */
+           AND  PDLS_NO = #{pdlsNo}                           /** N° d'article !== 품목번호 ==! */
+           AND  INSC_DGCNT = #{inscDgcnt}                     /** Degrée de l'inspection !== 검사차수 ==! */
+    </update>
+
+	<!--
+    Consultation de la liste des gestions et suivis terminés des marchandises en franchise !== 면제 사후관리 종료 목록 조회 ==!
+    (Song JunYoung)
+    -->
+    <select id="selectClrExmpAffcMgmtEndList" parameterType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo" resultType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo">
+        /* ClriPmtExmpEnd_selectClriPmtExmpPsmgtMgmtEndList */
+        <include refid="pagination.header" ></include>
+            SELECT
+                   N.DTL_DCSH_NO                                                                                      /** Numéro du DAU !== DED번호 ==! */
+                 , N.PDLS_NO                                                                                     /** N° d'article !== 품목번호 ==! */
+                 , TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS DCLR_DT                                /** Date de DAU !== DED일자 ==! */
+                 , E.HS_CD                                                                                       /** Code SH !== HS코드 ==! */
+                 , H.HS_DESC                                                                                     /** Description du SH !== HS설명 ==! */
+                 , E.APC_CD                                                                                      /** Code APC !== APC코드 ==! */
+                 , M.PDLS_TXBS_NCY_AMT                                                                           /** Montant Nyc De La Base Taxable De L'Article !== 품목과세기준NCY금액 ==! */
+                 , TO_CHAR(TO_DATE(N.PSMGT_CONC_RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PSMGT_CONC_RGSR_DT        /** Date d'enregistrement !==등록일자==! */
+                 , N.PSMGT_CONC_RSN_CD                                                                           /** Code de motif de la clôture de suivi !== 사후관리종결사유코드 ==! */
+                 , TO_CHAR(F.APRV_RQST_DTTM, 'DD/MM/YYYY') AS APRV_RSOF_DT                                       /** Date de demande d'appobation !== 결재신청일시 ==! */
+                 , DECODE(N.PRCS_STTS_CD, 'D08', TO_CHAR((SELECT MAX(S.APRV_PRCS_DTTM)
+                                                          FROM   TB_POTI_APRV_D S
+                                                          WHERE  S.APRV_ID = N.APRV_ID), 'DD/MM/YYYY'), NULL) AS APRE_DT    /** Date et heure du traitement de l'approbation !== 결재처리일시 ==! */
+                 , N.CONC_RGSR_EMP_ID                                                                            /** ID de la personne enregistrant la clôture !== 종결등록직원ID ==! */
+                 , N.PRCS_STTS_CD                                                                                /** Code de statut de traitement !== 처리상태코드 ==! */
+            FROM
+                   TB_CLRI_PSMGT_CONC N
+                 , TB_CLRI_DED_COMN A
+                 , TB_CLRI_DED_PDLS E
+                 , TB_CLRI_DED_VLUT_PDLS M
+                 , TB_CLRI_HS_CD H
+                 , TB_POTI_APRV F
+            WHERE
+                   N.DTL_DCSH_NO = A.DTL_DCSH_NO
+            AND    N.DTL_DCSH_NO = E.DTL_DCSH_NO
+            AND    N.PDLS_NO = E.PDLS_NO
+            AND    N.DTL_DCSH_NO = M.DTL_DCSH_NO
+            AND    N.PDLS_NO = M.PDLS_NO
+            AND    E.HS_CD = H.HS_CD(+)
+            AND    N.APRV_ID = F.APRV_ID(+)
+            AND    A.DCLR_PT_CD = 'IM4'
+            AND    N.DEL_YN = 'N'
+            AND    A.DEL_YN = 'N'
+            AND    E.DEL_YN = 'N'
+            AND    M.DEL_YN = 'N'
+            AND    H.DEL_YN(+) = 'N'
+            AND    F.DEL_YN(+) = 'N'
+            AND    A.DCLR_DT BETWEEN H.HS_APLY_STRT_DT AND H.HS_APLY_END_DT
+            <if test="dclrCstmCd != null and dclrCstmCd != ''">
+            AND    A.DCLR_CSTM_CD = #{dclrCstmCd}
+            </if>
+            <if test="deptCd != null and deptCd != ''">
+            AND    A.DEPT_CD = #{deptCd}
+            </if>
+            <if test="dtlDcshNo != null and dtlDcshNo != ''">
+            AND    A.DTL_DCSH_NO = #{dtlDcshNo}
+            </if>
+            <if test="rqstDtFrom != null and rqstDtFrom != ''">
+            AND    A.DCLR_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE( #{rqstDtFrom}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            AND    A.DCLR_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE( #{rqstDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            </if>
+            <if test="hsCd != null and hsCd != ''">
+            AND    E.HS_CD = #{hsCd}
+            </if>
+            <if test="apcCd != null and apcCd != ''">
+            AND    E.APC_CD = #{apcCd}
+            </if>
+            <if test="prcsSttsCd != null and prcsSttsCd != ''">
+            AND    N.PRCS_STTS_CD = #{prcsSttsCd}
+            </if>
+            ORDER BY N.PSMGT_CONC_RGSR_DT DESC, N.DTL_DCSH_NO DESC, TO_NUMBER(N.PDLS_NO)
+        <include refid="pagination.footer" ></include>
+    </select>
+
+	<!--
+    Consultation en détail des gestions et suivis terminés de l'exemption (Généralité de DED) !== 면제 사후관리 종료 상세 조회(DED 일반내역) ==!
+    (Song JunYoung)
+    -->
+    <select id="selectClrExmpAffcMgmtEnd" parameterType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo" resultType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo">
+        /* ClriPmtExmpEnd_selectClriPmtExmpPsmgtMgmtEndSadInfo */
+        SELECT
+               A.DTL_DCSH_NO                                                                                      /** Numéro du DAU !== DED번호 ==! */
+             , E.PDLS_NO                                                                                     /** N° d'article !== 품목번호 ==! */
+             , TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS DCLR_DT                                /** Date de DAU !== DED일자 ==! */
+             , A.DCER_CD                                                                                     /** Code du déclarant !== 신고인코드 ==! */
+             , (SELECT
+                           NVL2(MAX(S1.CO_NM), A.DCER_CD || ' | ' || MAX(S1.CO_NM), A.DCER_CD)
+                    FROM
+                           TB_COM_CO S1
+                         , TB_COM_CO_DCLR_CD S2
+                    WHERE
+                           S1.NIF = S2.NIF
+                    AND    S2.CO_DCLR_TP_CD = 'H'
+                    AND    S2.CO_DCLR_CD = A.DCER_CD) AS DCER_NM                                             /** Nom de l'entreprise !== 업체명 ==! */
+             , A.IMPPN_IDFY_NO                                                                               /** N° d'identification de l'importateur !== 수입자식별번호 ==! */
+             , A.IMPPN_IDFY_NO || ' | ' || B.IMPPN_CO_NM AS IMPPN_CO_NM                                      /** Nom de société de l'importateur !== 수입자업체명 ==! */
+             , A.CSCL_PLN_CD                                                                                 /** Code de plan de dédouanement !== 통관계획코드 ==! */
+             , A.DCLR_PT_CD                                                                                  /** Code de type de déclaration !== 신고유형코드 ==! */
+             , E.HS_CD                                                                                       /** Code SH !== HS코드 ==! */
+             , E.PDLS_NM                                                                                     /** Nom de l'article !== 품목명 ==! */
+             , A.EXP_CNTY_CD                                                                                 /** Code de pays exportateur !== 수출국가코드 ==! */
+             , M.PDLS_TXBS_NCY_AMT                                                                           /** Montant NCY total de la valeur statistique !== 총과세기준NCY금액 ==! */
+             , TO_CHAR(TO_DATE(C.PSMGT_FFMN_XPIR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PSMGT_FFMN_XPIR_DT        /** Date d'échéance de l'apurement de régime suspensif !== 사후관리이행만료일자 ==! */
+        FROM
+               TB_CLRI_DED_COMN A
+             , TB_CLRI_DED_CO B
+             , TB_CLRI_PSMGT_COMN C
+             , TB_CLRI_DED_VLUT_COMN D
+             , TB_CLRI_DED_PDLS E
+             , TB_CLRI_DED_VLUT_PDLS M
+        WHERE
+                A.DTL_DCSH_NO = B.DTL_DCSH_NO
+        AND     A.DTL_DCSH_NO = C.DTL_DCSH_NO
+        AND     A.DTL_DCSH_NO = D.DTL_DCSH_NO
+        AND     A.DTL_DCSH_NO = E.DTL_DCSH_NO
+        AND     A.DTL_DCSH_NO = M.DTL_DCSH_NO
+        AND     M.PDLS_NO = E.PDLS_NO
+        AND     A.DEL_YN = 'N'
+        AND     B.DEL_YN = 'N'
+        AND     C.DEL_YN = 'N'
+        AND     D.DEL_YN = 'N'
+        AND     E.DEL_YN = 'N'
+        AND     A.DCLR_PT_CD = 'IM4'
+        AND     A.DTL_DCSH_NO = #{dtlDcshNo}
+        AND     E.PDLS_NO = #{pdlsNo}
+    </select>
+
+	<!--
+    Consultation en détail des gestions et suivis terminés des marchandises en franchise (Processus terminé) !== 면제 사후관리 종료 상세 조회(종결 내역) ==!
+    (Song JunYoung)
+    -->
+    <select id="selectClrExmpAffcMgmtEndInfo" parameterType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo" resultType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo">
+        /* ClriPmtExmpEnd_selectClriPmtExmpPsmgtMgmtEndInfo */
+        SELECT
+               N.DTL_DCSH_NO                         /** Numéro du DAU !== DED번호 ==! */
+             , N.PDLS_NO                        /** N° d'article !== 품목번호 ==! */
+             , TO_CHAR(TO_DATE(N.PSMGT_CONC_RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS PSMGT_CONC_RGSR_DT             /** Date d'enregistrement !==등록일자==! */
+             , N.PSMGT_CONC_RSN_CD              /** Code de motif de la clôture de suivi !== 사후관리종결사유코드 ==! */
+             , N.PSMGT_CONC_RSN_CN              /** Contenu de la clôture de suivi !== 사후관리종결사유내용 ==! */
+             , N.PRCS_STTS_CD                   /** Code de statut de traitement !== 처리상태코드 ==! */
+             , N.APRV_ID                        /** ID d'approbation  !== 결재ID ==! */
+             , F.APRV_PRCS_STTS_CD              /** Code de statut du traitement d'approbation !== 결재처리상태코드 ==! */
+        FROM
+               TB_CLRI_PSMGT_CONC N
+             , TB_POTI_APRV F
+        WHERE
+               N.APRV_ID = F.APRV_ID(+)
+        AND    N.DTL_DCSH_NO = #{dtlDcshNo}
+        AND    N.PDLS_NO = #{pdlsNo}
+        AND    N.DEL_YN = 'N'
+    </select>
+
+    <!--
+    Enregistrement du processus terminé de la gestion et suivi des marchandises en franchise !== 면제 사후관리 종결 내역 등록 ==!
+    (Song JunYoung)
+    -->
+    <insert id="insertClrExmpAffcMgmtEndInfo" parameterType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo">
+        /* ClriPmtExmpEnd_insertClriPmtExmpPsmgtMgmtEndInfo */
+        WITH UPSERT AS (
+          UPDATE TB_CLRI_PSMGT_CONC
+          SET
+            PSMGT_CONC_RGSR_DT = TO_CHAR(TO_DATE(#{psmgtConcRgsrDt}, 'DD/MM/YYYY'), 'YYYYMMDD')          /** Date de l'enregistrement de la clôture de suivi !== 사후관리종결등록일자 ==! */
+            , PSMGT_CONC_RSN_CD = #{psmgtConcRsnCd}            /** Code de motif de la clôture de suivi !== 사후관리종결사유코드 ==! */
+            , PSMGT_CONC_RSN_CN = #{psmgtConcRsnCn}            /** Contenu de la clôture de suivi !== 사후관리종결사유내용 ==! */
+            , CONC_RGSR_EMP_ID = #{concRgsrEmpId}              /** ID de la personne enregistrant la clôture !== 종결등록직원ID ==! */
+            , APRV_ID = #{aprvId}                              /** ID d'approbation  !== 결재ID ==! */
+            , PRCS_STTS_CD = #{prcsSttsCd}                     /** Code de statut de traitement !== 처리상태코드 ==! */
+            , DEL_YN = 'N'                                     /** Suppression ON !== 삭제여부 ==! */
+            , FRST_REGST_ID = #{frstRegstId}                   /** ID du premier enregistrant  !== 최초등록자ID ==! */
+            , FRST_RGSR_DTTM = SYSTIMESTAMP                    /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+            , LAST_CHPR_ID = #{lastChprId}                     /** ID du modificateur final !== 최종변경자ID ==! */
+            , LAST_CHG_DTTM = SYSTIMESTAMP                     /** Date et heure de modification finale !== 최종변경일시 ==! */
+          WHERE
+            DTL_DCSH_NO = #{dtlDcshNo}                                /** Numéro du DAU !== DED번호 ==! */
+            AND PDLS_NO = #{pdlsNo}                              /** N° d'article !== 품목번호 ==! */
+            RETURNING *
+        )
+          INSERT INTO TB_CLRI_PSMGT_CONC
+                (
+                  DTL_DCSH_NO                       /** Numéro du DAU !== DED번호 ==! */
+                , PDLS_NO                      /** N° d'article !== 품목번호 ==! */
+                , PSMGT_CONC_RGSR_DT           /** Date de l'enregistrement de la clôture de suivi !== 사후관리종결등록일자 ==! */
+                , PSMGT_CONC_RSN_CD            /** Code de motif de la clôture de suivi !== 사후관리종결사유코드 ==! */
+                , PSMGT_CONC_RSN_CN            /** Contenu de la clôture de suivi !== 사후관리종결사유내용 ==! */
+                , CONC_RGSR_EMP_ID             /** ID de la personne enregistrant la clôture !== 종결등록직원ID ==! */
+                , APRV_ID                      /** ID d'approbation  !== 결재ID ==! */
+                , PRCS_STTS_CD                 /** Code de statut de traitement !== 처리상태코드 ==! */
+                , DEL_YN                       /** Suppression ON !== 삭제여부 ==! */
+                , FRST_REGST_ID                /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , FRST_RGSR_DTTM               /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , LAST_CHPR_ID                 /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM                /** Date et heure de modification finale !== 최종변경일시 ==! */
+                )
+              SELECT
+                  #{dtlDcshNo}                     /** Numéro du DAU !== DED번호 ==! */
+                , #{pdlsNo}                    /** N° d'article !== 품목번호 ==! */
+                , TO_CHAR(TO_DATE(#{psmgtConcRgsrDt}, 'DD/MM/YYYY'), 'YYYYMMDD')           /** Date de l'enregistrement de la clôture de suivi !== 사후관리종결등록일자 ==! */
+                , #{psmgtConcRsnCd}            /** Code de motif de la clôture de suivi !== 사후관리종결사유코드 ==! */
+                , #{psmgtConcRsnCn}            /** Contenu de la clôture de suivi !== 사후관리종결사유내용 ==! */
+                , #{concRgsrEmpId}             /** ID de la personne enregistrant la clôture !== 종결등록직원ID ==! */
+                , #{aprvId}                    /** ID d'approbation  !== 결재ID ==! */
+                , #{prcsSttsCd}                /** Code de statut de traitement !== 처리상태코드 ==! */
+                , 'N'                          /** Suppression ON !== 삭제여부 ==! */
+                , #{frstRegstId}               /** ID du premier enregistrant  !== 최초등록자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                , #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , SYSTIMESTAMP                 /** Date et heure de modification finale !== 최종변경일시 ==! */
+              WHERE
+                NOT EXISTS(SELECT * FROM UPSERT)
+    </insert>
+
+    <!--
+    Modificaiton du processus terminé de la gestion et suivi des marchandises en franchise !== 면제 사후관리 종결 수정 ==!
+    (Song JunYoung)
+    -->
+    <update id="updateClrExmpAffcMgmtEndInfo" parameterType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo">
+        /* ClriPmtExmpEnd_updateClriPmtExmpPsmgtMgmtEndInfo */
+        UPDATE  TB_CLRI_PSMGT_CONC SET
+        <trim prefixOverrides="," >
+            <if test="psmgtConcRgsrDt != null and psmgtConcRgsrDt != ''">
+                  PSMGT_CONC_RGSR_DT = TO_CHAR(TO_DATE(#{psmgtConcRgsrDt}, 'DD/MM/YYYY'), 'YYYYMMDD')     /** Date de l'enregistrement de la clôture de suivi !== 사후관리종결등록일자 ==! */
+            </if>
+            <if test="psmgtConcRsnCd != null and psmgtConcRsnCd != ''">
+                , PSMGT_CONC_RSN_CD = #{psmgtConcRsnCd}       /** Code de motif de la clôture de suivi !== 사후관리종결사유코드 ==! */
+            </if>
+            <if test="psmgtConcRsnCn != null and psmgtConcRsnCn != ''">
+                , PSMGT_CONC_RSN_CN = #{psmgtConcRsnCn}       /** Contenu de la clôture de suivi !== 사후관리종결사유내용 ==! */
+            </if>
+            <if test="concRgsrEmpId != null and concRgsrEmpId != ''">
+                , CONC_RGSR_EMP_ID = #{concRgsrEmpId}         /** ID de la personne enregistrant la clôture !== 종결등록직원ID ==! */
+            </if>
+            <if test="aprvId != null and aprvId != ''">
+                , APRV_ID = #{aprvId}                         /** ID d'approbation  !== 결재ID ==! */
+            </if>
+            <if test="prcsSttsCd != null and prcsSttsCd != ''">
+                , PRCS_STTS_CD = #{prcsSttsCd}                /** Code de statut de traitement !== 처리상태코드 ==! */
+            </if>
+                , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+        </trim>
+           WHERE  DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+             AND  DTL_DCSH_NO = #{dtlDcshNo}                           /** Numéro du DAU !== DED번호 ==! */
+             AND  PDLS_NO = #{pdlsNo}                         /** N° d'article !== 품목번호 ==! */
+    </update>
+
+    <!--
+    Suppression du processus terminé de la gesiton et suivi des marchandises en franchise !== 면제 사후관리 종결 삭제 ==!
+    (Song JunYoung)
+    -->
+    <delete id="deleteClrExmpAffcMgmtEndInfo" parameterType="alpass.ipt.clr.epm.epm.vo.ClrEpmEpmVo">
+        /* ClriPmtExmpEnd_deleteClriPmtExmpPsmgtMgmtEndInfo */
+        DELETE
+        FROM
+               TB_CLRI_PSMGT_CONC N
+        WHERE
+               N.DTL_DCSH_NO = #{dtlDcshNo}
+        AND    N.PDLS_NO = #{pdlsNo}
+    </delete>
+
+</mapper>

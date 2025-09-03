@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.baseinfo.mapper.PotPmBaseInfoFnncIttBranchMapper">
+
+  <!--
+    Consulter la liste des succursale d'insitutions financières !==금융기관지점 목록를 조회한다==!
+  -->
+    <select id="selectFnncittBranchList"
+            parameterType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoFnncIttBranchVo"
+            resultType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoFnncIttBranchVo">
+        /** selectFnncittBranchList */
+        <include refid="pagination.header"/>
+      SELECT
+      A.BNK_CD AS BNK_CD
+      , A.BNK_CD AS ORG_BNK_CD
+      , A.BNK_NM
+      , B.BNK_BRNH_CD
+      , B.BNK_BRNH_CD AS ORG_BNK_BRNH_CD
+      , B.BNK_BRNH_NM
+      , B.BNK_BRNH_TLPH_NO
+      , B.BNK_BRNH_FAX_NO
+      , B.BNK_BRNH_ADDR_NM
+      , B.WLY_CD AS BRNH_MGMT_WLY_CD
+      , B.FRST_REGST_ID
+      , TO_CHAR(B.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM
+      , B.LAST_CHPR_ID
+      , TO_CHAR(B.LAST_CHG_DTTM, 'DD/MM/YYYY') AS LAST_CHG_DTTM
+      , B.BNK_BRNH_POST_CD
+      FROM TB_COM_BNK_CD A, TB_COM_BNK_BRNH_CD B
+      WHERE A.BNK_CD = B.BNK_CD
+      AND A.DEL_YN = 'N'
+      AND B.DEL_YN = 'N'
+      <if test="searBnkCd != null and searBnkCd != ''">
+        AND A.BNK_CD = #{searBnkCd}
+      </if>
+      <if test="bnkBrnhCd != null and bnkBrnhCd != ''">
+        AND B.BNK_BRNH_CD = #{bnkBrnhCd}
+      </if>
+      <if test="bnkBrnhNm != null and bnkBrnhNm != ''">
+        AND B.BNK_BRNH_NM LIKE '%'||#{bnkBrnhNm}||'%'
+      </if>
+      ORDER BY A.BNK_CD, LPAD(B.BNK_BRNH_NM, 6)
+      <include refid="pagination.footer"/>
+    </select>
+
+  <!--
+     Consulter la liste des succursale d'insitutions financières !==금융기관지점 목록를 조회한다==!
+  -->
+  <select id="selectFnncittBranchRegYnCnt" parameterType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoFnncIttBranchVo" resultType="java.lang.Integer">
+    /** selectFnncittBranchRegYnCnt */
+    SELECT COUNT(1) AS CNT
+    FROM TB_COM_BNK_BRNH_CD
+    WHERE DEL_YN = 'N'
+      AND BNK_CD = #{bnkCd}
+      AND BNK_BRNH_Cd = #{bnkBrnhCd}
+  </select>
+
+  <!--
+     Enregistrer des succursale d'insitutions financières !==금융기관지점을 등록한다==!
+  -->
+  <insert id="insertFnncittBranch" parameterType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoFnncIttBranchVo">
+    /** insertFnncittBranch */
+    with upsert as
+             (
+    UPDATE TB_COM_BNK_BRNH_CD
+    SET LAST_CHPR_ID     = #{lastChprId}
+      , LAST_CHG_DTTM    = SYSTIMESTAMP
+      , DEL_YN           = 'N'
+      , BNK_BRNH_NM      = #{bnkBrnhNm}
+      , BNK_BRNH_TLPH_NO = #{bnkBrnhTlphNo}
+      , BNK_BRNH_FAX_NO  = #{bnkBrnhFaxNo}
+      , BNK_BRNH_ADDR_NM = #{bnkBrnhAddrNm}
+      , WLY_CD           = #{brnhMgmtWlyCd}
+      , BNK_BRNH_POST_CD = #{bnkBrnhPostCd}
+    WHERE BNK_CD = #{bnkCd}
+      AND BNK_BRNH_CD = #{bnkBrnhCd}
+      AND DEL_YN = 'Y' returning *
+      )
+    INSERT
+    INTO TB_COM_BNK_BRNH_CD
+    ( BNK_CD
+    , BNK_BRNH_CD
+    , BNK_BRNH_NM
+    , BNK_BRNH_TLPH_NO
+    , BNK_BRNH_FAX_NO
+    , BNK_BRNH_ADDR_NM
+    , WLY_CD
+    , BNK_BRNH_POST_CD
+    , DEL_YN
+    , FRST_REGST_ID
+    , FRST_RGSR_DTTM
+    , LAST_CHPR_ID
+    , LAST_CHG_DTTM)
+    SELECT #{bnkCd}
+         , #{bnkBrnhCd}
+         , #{bnkBrnhNm}
+         , #{bnkBrnhTlphNo}
+         , #{bnkBrnhFaxNo}
+         , #{bnkBrnhAddrNm}
+         , #{brnhMgmtWlyCd}
+         , #{bnkBrnhPostCd}
+         , #{delYn}
+         , #{frstRegstId}
+         , SYSTIMESTAMP
+         , #{lastChprId}
+         , SYSTIMESTAMP WHERE NOT exists(select * from upsert)
+  </insert>
+
+  <!--
+     Modifier des succursale d'insitutions financières !==금융기관지점을 수정한다==!
+  -->
+  <update id="updateFnncittBranch" parameterType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoFnncIttBranchVo">
+    /** updateFnncittBranch */
+    UPDATE TB_COM_BNK_BRNH_CD
+    SET LAST_CHPR_ID     = #{lastChprId}
+      , LAST_CHG_DTTM    = SYSTIMESTAMP
+      , BNK_BRNH_NM      = #{bnkBrnhNm}
+      , BNK_BRNH_TLPH_NO = #{bnkBrnhTlphNo}
+      , BNK_BRNH_FAX_NO  = #{bnkBrnhFaxNo}
+      , BNK_BRNH_ADDR_NM = #{bnkBrnhAddrNm}
+      , WLY_CD           = #{brnhMgmtWlyCd}
+      , BNK_BRNH_POST_CD = #{bnkBrnhPostCd}
+      , DEL_YN           = #{delYn}
+    WHERE BNK_CD = #{bnkCd}
+      AND BNK_BRNH_CD = #{bnkBrnhCd}
+  </update>
+
+  <!--
+     Supprimer des succursale d'insitutions financières !==금융기관지점을 삭제한다==!
+  -->
+  <update id="deleteFnncittBranch" parameterType="alpass.ipt.pot.pm.baseinfo.vo.PotPmBaseInfoFnncIttBranchVo">
+    /** deleteFnncittBranch */
+    UPDATE TB_COM_BNK_BRNH_CD
+    SET LAST_CHPR_ID  = #{lastChprId}
+      , LAST_CHG_DTTM = SYSTIMESTAMP
+      , DEL_YN        = 'Y'
+    WHERE BNK_CD = #{bnkCd}
+      AND BNK_BRNH_CD = #{bnkBrnhCd}
+  </update>
+
+</mapper>

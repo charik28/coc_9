@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.car.pvinf.cgtr.mapper.CarCntrRfunInfoMapper">
+
+	<!--
+	[Rechercher] TODO  !== 컨테이너 반환정보 목록을 조회한다. ==!
+	-->
+	<select id="selectCntrRfunInfoList" resultType="alpass.ipt.car.pvinf.cgtr.vo.CarCntrRfunInfoVo">
+		/* selectCntrRfunInfoList */
+		<include refid="pagination.header" ></include>
+
+		SELECT A.TRSN_CO_CD 	/** Code d'entreprise transmettrice !== 전송업체코드 ==! */
+			  || ' | ' ||(SELECT A1.CO_NM
+			  			  FROM  ALPASSINT.TB_COM_CO A1
+          					 ,  ALPASSINT.TB_COM_CO_DCLR_CD B1
+          				  WHERE A1.NIF = B1.NIF
+          				  AND   A1.DEL_YN = 'N'
+          				  AND   B1.CO_DCLR_CD = A.TRSN_CO_CD
+          				  LIMIT 1 ) AS TRSN_CO_CD
+		     , A.CO_RQST_NO		/** N° de demande d'entreprise !== 업체신청번호 ==! */
+		     , A.JRSD_ORGN_CD	/**  Code D'Unité Compétente  					!== 관할조직코드 ==!  */
+		     , (SELECT A.JRSD_ORGN_CD || '|'  ||ORGN_NM    /** Service compétent !== 관할조직 ==! */
+				 FROM TB_POTI_ORGN
+				WHERE ORGN_CD = A.JRSD_ORGN_CD) AS JRSD_ORGN_NM
+		     , TO_CHAR(A.TRSN_DTTM, 'DD/MM/YYYY') AS TRSN_DT	/* Date et heure de transmission !== 전송일자 ==! */
+		     , B.CNTR_NO 	 	/** N° De Conteneur !== 컨테이너번호 ==! */
+		     , B.CNTR_SRNO
+		     , TO_CHAR(TO_DATE(B.RFUN_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS RFUN_DT	/* Date de retour !== 반환일자 ==! */
+		     , B.MRN 			/** Mrn !== MRN ==! */
+		FROM ALPASSINT.TB_CARI_CNTR_RFUN_INFO A		/* TB_CARI_CONTENEUR_RESTITUTION_INFOS !== CARI_컨테이너_반환_정보 ==! */
+		   , ALPASSINT.TB_CARI_CNTR_RFUN_INFO_DTL B
+		WHERE A.CO_RQST_NO = B.CO_RQST_NO
+		AND   A.DEL_YN = 'N'
+		AND   B.DEL_YN = 'N'
+
+		<if test="searTrsnCoCd != null and searTrsnCoCd != ''">
+			AND A.TRSN_CO_CD = #{searTrsnCoCd}	/**  Nom de l'entreprise transmettrice  !== 전송업체코드 ==!  */
+		</if>
+
+		<if test="searCoRqstNo != null and searCoRqstNo != ''">
+			AND A.CO_RQST_NO = #{searCoRqstNo}	/**  N° de demande d'entreprise  !== 업체신청번호 ==!  */
+		</if>
+
+		<if test="searCntrNo != null and searCntrNo != ''">
+			AND B.CNTR_NO = #{searCntrNo}		/**  N° de conteneur  !== 컨테이너번호 ==!  */
+		</if>
+
+		<if test="searMrn != null and searMrn != ''">
+			AND B.MRN = #{searMrn}	/**  MRN  !== MRN ==!  */
+		</if>
+		<if test="searRfunDtFrom != '' and searRfunDtTo != '' and searRfunDtFrom != null and searRfunDtTo != null">
+			AND TO_DATE(B.RFUN_DT, 'YYYYMMDD') BETWEEN TO_DATE(#{searRfunDtFrom},'DD/MM/YYYY') AND TO_DATE(#{searRfunDtTo},'DD/MM/YYYY') /**  Date de restitution  !== 반환일자 ==!  */
+		</if>
+		<if test="searTrsnDtFrom != '' and searTrsnDtTo != '' and searTrsnDtFrom != null and searTrsnDtTo != null">
+			 AND TO_DATE(TO_CHAR(A.TRSN_DTTM, 'DD/MM/YYYY'), 'DD/MM/YYYY') BETWEEN TO_DATE(#{searTrsnDtFrom},'DD/MM/YYYY') AND TO_DATE(#{searTrsnDtTo},'DD/MM/YYYY') /**  Date et heure de transmission  !== 전송일자 ==!  */
+		</if>
+		ORDER BY A.FRST_RGSR_DTTM DESC, B.CNTR_SRNO
+		<include refid="pagination.footer" ></include>
+	</select>
+
+</mapper>

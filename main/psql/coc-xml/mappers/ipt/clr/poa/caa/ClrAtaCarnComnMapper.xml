@@ -1,0 +1,1013 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="alpass.ipt.clr.poa.caa.mapper.ClrAtaCarnComnMapper">
+    <select id="selectClrAtaCarnComnList"  parameterType ="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnComnVo" resultType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnComnVo">
+        /* selectClrAtaCarnComnList : Consulter la liste des demandes du Carnet ATA != 까르네 신청 목록조회*/
+        <include refid="pagination.header" />
+        SELECT
+            #{blngCstmCd} BLNG_CSTM_CD,
+            CARN_NO,
+            CARN_MGMT_NO,
+            CARN_TP_CD,
+            RQST_CSTM_CD,
+            TO_CHAR(TO_DATE(CARN_RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') CARN_RGSR_DT,
+            PSSR_NM,
+            PSSR_POST_NO,
+            PSSR_ADDR,
+            RPPN_NM,
+            CMDT_USG_NM,
+            CARN_PBLS_ITT_NM,
+            TO_CHAR(TO_DATE(CARN_VALD_PRID, 'YYYYMMDD'), 'DD/MM/YYYY') CARN_VALD_PRID,
+            TO_CHAR(TO_DATE(PBLS_DT, 'YYYYMMDD'), 'DD/MM/YYYY') PBLS_DT,
+            INSC_TRGT_YN,
+            DPRP_CSTM_OPIN_CN,
+            REFF_NO,
+            DPRP_CSTM_NM,
+            DPRP_CSTM_APRE_DT,
+            DPRP_PLC_NM,
+            ISS_PLC_NM,
+            TO_CHAR(TO_DATE(ISS_DT, 'YYYYMMDD'), 'DD/MM/YYYY') ISS_DT,
+            PRCS_STTS_CD
+        FROM ALPASSEXT.TB_CLRE_ATA_CARN_COMN A
+        WHERE DEL_YN ='N'
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(carnMgmtNo)">
+        AND   UPPER(CARN_MGMT_NO) LIKE '%' || REPLACE(UPPER(#{carnMgmtNo}),'-','') || '%'
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(carnNo)">
+            AND   UPPER(CARN_NO)  LIKE '%' || UPPER(#{carnNo}) || '%'
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(issDtFrom)">
+            <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(issDtTo)">
+                AND ISS_DT BETWEEN TO_CHAR(TO_DATE(#{issDtFrom}, 'DD/MM/YYYY'), 'YYYYMMDD')  AND TO_CHAR(TO_DATE(#{issDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            </if>
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(carnTpCd)">
+            AND   CARN_TP_CD = #{carnTpCd}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(prcsSttsCd)">
+            AND   PRCS_STTS_CD = #{prcsSttsCd}
+        </if>
+        AND EXISTS (
+            SELECT 1 FROM ALPASSEXT.TB_CLRE_ATA_CARN_IMEX B WHERE A.CARN_MGMT_NO = B.CARN_MGMT_NO
+            AND B.PRCS_STTS_CD NOT IN ('A00','D00')
+            AND (B.RQST_CSTM_CD = #{blngCstmCd} OR B.RLBR_CSTM_CD = #{blngCstmCd})
+            <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(carnRgsrDtFrom)">
+                <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(carnRgsrDtTo)">
+                    AND RGSR_DT BETWEEN TO_CHAR(TO_DATE(#{carnRgsrDtFrom}, 'DD/MM/YYYY'), 'YYYYMMDD')  AND TO_CHAR(TO_DATE(#{carnRgsrDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                </if>
+            </if>
+            UNION ALL
+            SELECT 1 FROM ALPASSEXT.TB_CLRE_ATA_CARN_BNTP B WHERE A.CARN_MGMT_NO = B.CARN_MGMT_NO AND B.PRCS_STTS_CD NOT IN ('B00')
+            AND B.RQST_CSTM_CD = #{blngCstmCd}
+            <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(carnRgsrDtFrom)">
+                <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(carnRgsrDtTo)">
+                    AND RGSR_DT BETWEEN TO_CHAR(TO_DATE(#{carnRgsrDtFrom}, 'DD/MM/YYYY'), 'YYYYMMDD')  AND TO_CHAR(TO_DATE(#{carnRgsrDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                </if>
+            </if>
+            UNION ALL
+            SELECT 1 FROM ALPASSEXT.TB_CLRE_ATA_CARN_RIMEX B WHERE A.CARN_MGMT_NO = B.CARN_MGMT_NO AND B.PRCS_STTS_CD NOT IN ('C00','E00')
+            AND B.RQST_CSTM_CD = #{blngCstmCd}
+            <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(carnRgsrDtFrom)">
+                <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(carnRgsrDtTo)">
+                    AND RGSR_DT BETWEEN TO_CHAR(TO_DATE(#{carnRgsrDtFrom}, 'DD/MM/YYYY'), 'YYYYMMDD')  AND TO_CHAR(TO_DATE(#{carnRgsrDtTo}, 'DD/MM/YYYY'), 'YYYYMMDD')
+                </if>
+            </if>
+            UNION ALL
+            SELECT 1 FROM ALPASSEXT.TB_CLRE_ATA_CARN_PRID_XTNS B WHERE A.CARN_MGMT_NO = B.CARN_MGMT_NO AND B.PRCS_STTS_CD NOT IN ('F00')
+            AND A.RQST_CSTM_CD = #{blngCstmCd}
+        )
+        AND   PRCS_STTS_CD NOT IN ('000')
+        ORDER BY TO_DATE(CARN_RGSR_DT,'YYYYMMDD') DESC ,CARN_MGMT_NO DESC
+        <include refid="pagination.footer" />
+    </select>
+
+    <select id="selectClrAtaCarnComnDtl" parameterType ="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnComnVo" resultType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnComnVo">
+        /** selectClrAtaCarnComnDtl : [commun]Voir les détails de Carnet ATA != 까르네 신청 공통 상세조회*/
+        SELECT
+            A.CARN_NO,
+            A.CARN_MGMT_NO,
+            A.CARN_TP_CD,
+            A.RQST_CSTM_CD,
+            TO_CHAR(TO_DATE(A.CARN_RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') CARN_RGSR_DT,
+            A.PSSR_NM,
+            A.PSSR_POST_NO,
+            A.PSSR_ADDR,
+            A.RPPN_NM,
+            A.CMDT_USG_NM,
+            A.CARN_PBLS_ITT_NM,
+            TO_CHAR(TO_DATE(A.CARN_VALD_PRID, 'YYYYMMDD'), 'DD/MM/YYYY') CARN_VALD_PRID,
+            TO_CHAR(TO_DATE(A.PBLS_DT, 'YYYYMMDD'), 'DD/MM/YYYY') PBLS_DT,
+            A.INSC_TRGT_YN,
+            A.DPRP_CSTM_OPIN_CN,
+            A.REFF_NO,
+            A.DPRP_CSTM_NM,
+            TO_CHAR(TO_DATE(A.DPRP_CSTM_APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') DPRP_CSTM_APRE_DT,
+            A.DPRP_PLC_NM,
+            A.ISS_PLC_NM,
+            TO_CHAR(TO_DATE(A.ISS_DT, 'YYYYMMDD'), 'DD/MM/YYYY') ISS_DT,
+            A.ATCH_FILE_ID,
+            TO_CHAR(TO_DATE(B.PERM_DT, 'YYYYMMDD'), 'DD/MM/YYYY') PERM_DT,
+            B.AUDT_RSLT_CN,
+            TO_CHAR(TO_DATE(B.APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APRE_DT,
+            A.PRCS_STTS_CD,
+            A.DSTN_CNTY_CD,
+            A.DPRP_CNTY_CD,
+            B.WDRL_RSN_CN,
+            B.DPUT_RSN_CN,
+            B.DPUT_RELE_CN,
+            B.ATCH_FILE_ID AS AUDT_ATCH_FILE_ID
+        FROM ALPASSEXT.TB_CLRE_ATA_CARN_COMN A, ALPASSINT.TB_CLRI_ATA_CARN_COMN_AUDT B
+        WHERE A.DEL_YN ='N'
+        AND A.CARN_MGMT_NO = B.CARN_MGMT_NO(+)
+        AND A.CARN_TP_CD = B.CARN_TP_CD(+)
+        AND A.CARN_NO = B.CARN_NO(+)
+        AND A.CARN_MGMT_NO = #{carnMgmtNo}
+        AND A.CARN_TP_CD = #{carnTpCd}
+        AND A.CARN_NO = #{carnNo}
+    </select>
+
+    <select id="selectClrAtaCarnPdlsList" parameterType ="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnPdlsVo" resultType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnPdlsVo">
+        /** selectClrAtaCarnPdlsList : Consulter la Article != 까르네 신청 물품리스트조회*/
+        SELECT
+            A.CARN_NO,
+            A.CARN_MGMT_NO,
+            A.CARN_TP_CD,
+            A.BSOP_TP_CD AS CARN_PRCS_TP_CD,
+            A.BSOP_REFF_NO,
+            A.PDLS_NO,
+            A.PDLS_NM,
+            A.QTY,
+            A.WGHT,
+            A.QTY_UT_CD,
+            A.PRC,
+            A.CURR_CD,
+            A.ORCY_CNTY_CD,
+            B.CSTM_WRTE_CN
+        FROM ALPASSEXT.TB_CLRE_ATA_CARN_PDLS A, ALPASSINT.TB_CLRI_ATA_CARN_PDLS_AUDT B
+        WHERE A.DEL_YN ='N'
+          AND A.CARN_MGMT_NO = B.CARN_MGMT_NO(+)
+          AND A.CARN_TP_CD = B.CARN_TP_CD(+)
+          AND A.CARN_NO = B.CARN_NO(+)
+          AND A.BSOP_REFF_NO = B.BSOP_REFF_NO(+)
+          AND A.PDLS_NO = B.PDLS_NO(+)
+          AND A.CARN_MGMT_NO = #{carnMgmtNo}
+          AND A.CARN_TP_CD = #{carnTpCd}
+          AND A.CARN_NO = #{carnNo}
+          AND A.BSOP_REFF_NO =#{bsopReffNo}
+    </select>
+
+    <select id="selectClrAtaCarnPrcsHistList" parameterType ="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnPrcsBrkdVo" resultType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnPrcsBrkdVo">
+        /* selectClrAtaCarnPrcsHistList :  Consulter la Historique de CARNET != 까르네 신청 처리이력*/
+        <include refid="pagination.header" />
+        SELECT
+            A.CARN_MGMT_NO,
+            A.CARN_TP_CD,
+            A.CARN_NO,
+            A.PRCS_SRNO,
+            A.PRCS_STTS_CD,
+            A.CARN_PRCS_TP_CD ,
+            A.BSOP_REFF_NO,
+            TO_CHAR(A.PRCS_DTRM_DTTM, 'DD/MM/YYYY HH24:MI:SS') PRCS_DTRM_DTTM,
+            A.HIST_SRNO,
+            A.PRCS_STTS_CN AS CMDT_QTY,
+            CASE WHEN (SELECT MAX(PRCS_SRNO) FROM ALPASSINT.TB_CLRI_ATA_CARN_PRCS_BRKD C WHERE  A.CARN_MGMT_NO = C.CARN_MGMT_NO AND A.CARN_TP_CD = C.CARN_TP_CD AND A.CARN_NO = C.CARN_NO AND C.PRCS_STTS_CD NOT IN ('G01','H01','H02') ) = PRCS_SRNO
+            THEN 'Y' ELSE 'N' END LAST_YN
+        FROM ALPASSINT.TB_CLRI_ATA_CARN_PRCS_BRKD A
+        WHERE A.DEL_YN ='N'
+        AND A.CARN_MGMT_NO = #{carnMgmtNo}
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(carnTpCd)">
+        AND A.CARN_TP_CD = #{carnTpCd}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(carnNo)">
+        AND A.CARN_NO = #{carnNo}
+        </if>
+        AND A.PRCS_STTS_CD NOT IN ('000','A00','B00','C00','D00','E00','F00')
+        ORDER BY PRCS_SRNO DESC
+        <include refid="pagination.footer" />
+    </select>
+
+    <select id="selectClrAtaCarnImexDtl" parameterType ="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnImexVo" resultType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnImexVo">
+        /** selectClrAtaCarnImexDtl : [Import/Export] Voir les détails de Carnet ATA != 까르네 신청 임시수입/수출 상세조회*/
+        SELECT
+            A.CARN_NO,
+            A.CARN_MGMT_NO,
+            A.CARN_TP_CD,
+            A.BSOP_REFF_NO,
+            A.RQST_CSTM_CD,
+            TO_CHAR(TO_DATE(A.RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') RGSR_DT,
+            A.TRNP_METH_NM,
+            A.PCKG_CN,
+            A.OVRL_PDLS_CN,
+            A.USE_PLC_NM,
+            A.RIMEX_PLGE_YN,
+            A.USER_AGMT_YN,
+            A.SFKP_PLC_NM,
+            A.DCER_NM,
+            A.BL_NO,
+            TO_CHAR(TO_DATE(A.BL_DT, 'YYYYMMDD'), 'DD/MM/YYYY') BL_DT,
+            A.PRCS_STTS_CD,
+            A.ATCH_FILE_ID IMEX_ATCH_FILE_ID,
+            B.IMEX_PDLS_CN,
+            TO_CHAR(TO_DATE(B.RIMEX_TMLM_DT, 'YYYYMMDD'), 'DD/MM/YYYY') RIMEX_TMLM_DT,
+            B.OTHS_CN,
+            B.RTRN_RSN_CN,
+            TO_CHAR(TO_DATE(B.APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APRE_DT,
+            B.ATCH_FILE_ID AS AUDT_IMEX_ATCH_FILE_ID,
+            A.TRNP_METH_KND_CD,
+            A.TRNP_METH_IDFY_NO,
+            A.TRNP_METH_NAT_CD,
+            A.SHIP_NM,
+            A.CAG_MGMT_NO,
+            TO_CHAR(TO_DATE(A.ARVL_DT, 'YYYYMMDD'), 'DD/MM/YYYY') ARVL_DT,
+            A.DIVD_CSCL_TP_CD,
+            A.LDNP_CD,
+            A.CNTR_GCNT,
+            A.DISPR_CD,
+            TO_CHAR(TO_DATE(A.LDUN_DT, 'YYYYMMDD'), 'DD/MM/YYYY') LDUN_DT,
+            A.RLBR_CSTM_CD,
+            A.CMDT_STGE_LOCT_CD,
+            A.BNBN_CMDT_WRHS_CD,
+            A.BF_BNBN_CMDT_WRHS_CD,
+            A.PSMGT_FFMN_XPIR_PRID,
+            B.RTRN_RSN_CN,
+            A.PCKG_TGCNT,
+            A.CNTR_CAG_YN,
+            A.AL_TTWG,
+            A.AL_NTWG
+        FROM ALPASSEXT.TB_CLRE_ATA_CARN_IMEX A, ALPASSINT.TB_CLRI_ATA_CARN_IMEX_AUDT B
+        WHERE A.DEL_YN ='N'
+          AND A.CARN_MGMT_NO = B.CARN_MGMT_NO(+)
+          AND A.CARN_TP_CD = B.CARN_TP_CD(+)
+          AND A.CARN_NO = B.CARN_NO(+)
+          AND A.BSOP_REFF_NO = B.BSOP_REFF_NO(+)
+          AND A.CARN_MGMT_NO = #{carnMgmtNo}
+          AND A.CARN_TP_CD = #{carnTpCd}
+          AND A.CARN_NO = #{carnNo}
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(bsopReffNo)">
+            AND A.BSOP_REFF_NO = #{bsopReffNo}
+        </if>
+    </select>
+
+    <select id="selectClrAtaCarnImexInfoExistYn"  parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnComnVo" resultType="boolean">
+        /** selectClrAtaCarnImexInfoExistYn */
+        SELECT CASE WHEN NVL(COUNT(*),0) > 0 THEN TRUE ELSE FALSE END
+        FROM  ALPASSEXT.TB_CLRE_ATA_CARN_IMEX
+        WHERE   CARN_NO =#{carnNo}
+          AND   CARN_MGMT_NO =#{carnMgmtNo}
+          AND   CARN_TP_CD =#{carnTpCd}
+    </select>
+
+    <insert id="insertClrAtaCarnImexAudt" parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnImexVo">
+        /** [IMPORT/EXPORT] Enregistrer Contrôler la demande du Carnet ATA*/
+        INSERT INTO ALPASSINT.TB_CLRI_ATA_CARN_IMEX_AUDT
+        (
+            CARN_NO,
+            CARN_MGMT_NO,
+            CARN_TP_CD,
+            BSOP_REFF_NO,
+            IMEX_PDLS_CN,
+            RIMEX_TMLM_DT,
+            OTHS_CN,
+            RTRN_RSN_CN,
+            APRE_DT,
+            PRCS_STTS_CD,
+            ATCH_FILE_ID,
+            DEL_YN,
+            FRST_REGST_ID,
+            FRST_RGSR_DTTM,
+            LAST_CHPR_ID,
+            LAST_CHG_DTTM
+        )
+        VALUES
+        (
+            #{carnNo},
+            #{carnMgmtNo},
+            #{carnTpCd},
+            #{bsopReffNo},
+            #{imexPdlsCn},
+            TO_CHAR(TO_DATE(#{rimexTmlmDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            #{othsCn},
+            #{rtrnRsnCn},
+            TO_CHAR(SYSTIMESTAMP,'YYYYMMDD'),
+            #{prcsSttsCd},
+            #{audtImexAtchFileId},
+            'N',
+            #{frstRegstId},
+            SYSTIMESTAMP,
+            #{lastChprId},
+            SYSTIMESTAMP
+        )
+
+    </insert>
+
+    <update id="updateClrAtaCarnImexPrcsSttsCd"  parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnImexVo">
+        /** updateClrAtaCarnImexPrcsSttsCd : [IMPORT/EXPORT]Modifier code de statut*/
+        UPDATE ALPASSEXT.TB_CLRE_ATA_CARN_IMEX
+        SET PRCS_STTS_CD =#{prcsSttsCd},
+            LAST_CHPR_ID =#{lastChprId},
+            LAST_CHG_DTTM =SYSTIMESTAMP
+        WHERE CARN_MGMT_NO =#{carnMgmtNo}
+          AND CARN_TP_CD =#{carnTpCd}
+          AND CARN_NO =#{carnNo}
+          AND BSOP_REFF_NO =#{bsopReffNo}
+    </update>
+
+    <update id="updateClrAtaCarnBntpPrcsSttsCd"  parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnBntpVo">
+        /** updateClrAtaCarnBntpPrcsSttsCd : [TRANSIT]Modifier code de statut */
+        UPDATE ALPASSEXT.TB_CLRE_ATA_CARN_BNTP
+        SET PRCS_STTS_CD =#{prcsSttsCd},
+            LAST_CHPR_ID =#{lastChprId},
+            LAST_CHG_DTTM =SYSTIMESTAMP
+        WHERE CARN_MGMT_NO =#{carnMgmtNo}
+          AND CARN_TP_CD =#{carnTpCd}
+          AND CARN_NO =#{carnNo}
+          AND BSOP_REFF_NO =#{bsopReffNo}
+    </update>
+
+    <insert id="insertClrAtaCarnBntpAudt" parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnBntpVo">
+        /** [TRANSIT] Enregistrer Contrôler la demande du Carnet ATA*/
+        INSERT INTO ALPASSINT.TB_CLRI_ATA_CARN_BNTP_AUDT
+        (
+            CARN_NO,
+            CARN_MGMT_NO,
+            CARN_TP_CD,
+            BSOP_REFF_NO,
+            TRNS_PDLS_CN,
+            REEXP_TMLM_DT,
+            SEAL_CSTM_CD,
+            ARLC_CSTM_CD,
+            REEXP_PDLS_CN,
+            OTHS_CN,
+            RTRN_RSN_CN,
+            APRE_DT,
+            ARVL_DT,
+            ARVL_APRE_DT,
+            PRCS_STTS_CD,
+            ATCH_FILE_ID,
+            DEL_YN,
+            FRST_REGST_ID,
+            FRST_RGSR_DTTM,
+            LAST_CHPR_ID,
+            LAST_CHG_DTTM
+        )
+        VALUES
+        (
+            #{carnNo},
+            #{carnMgmtNo},
+            #{carnTpCd},
+            #{bsopReffNo},
+            #{trnsPdlsCn},
+            TO_CHAR(TO_DATE(#{reexpTmlmDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            #{sealCstmCd},
+            #{arlcCstmCd},
+            #{reexpPdlsCn},
+            #{othsCn},
+            #{rtrnRsnCn},
+            TO_CHAR(SYSTIMESTAMP,'YYYYMMDD'),
+            TO_CHAR(TO_DATE(#{arvlDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            TO_CHAR(TO_DATE(#{arvlApreDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            #{prcsSttsCd},
+            #{audtTrAtchFileId},
+            'N',
+            #{frstRegstId},
+            SYSTIMESTAMP,
+            #{lastChprId},
+            SYSTIMESTAMP
+        )
+    </insert>
+
+
+    <update id="updateClrAtaCarnComnPrcsSttsCd"  parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnComnVo">
+       /** updateClrAtaCarnComnPrcsSttsCd [commun table]Modifier code de statut*/
+        UPDATE ALPASSEXT.TB_CLRE_ATA_CARN_COMN
+        SET PRCS_STTS_CD =#{prcsSttsCd},
+            LAST_CHPR_ID =#{lastChprId},
+            LAST_CHG_DTTM =SYSTIMESTAMP
+        WHERE CARN_MGMT_NO =#{carnMgmtNo}
+        AND CARN_TP_CD =#{carnTpCd}
+        AND CARN_NO =#{carnNo}
+    </update>
+
+    <update id="updateClrAtaCarnComnAudtPrcsSttsCd"  parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnComnVo">
+        /** updateClrAtaCarnComnAudtPrcsSttsCd : [commun Résultat du contrôle]Modifier code de statut*/
+        WITH UPSERT AS (
+            UPDATE ALPASSINT.TB_CLRI_ATA_CARN_COMN_AUDT
+            SET PRCS_STTS_CD  =#{prcsSttsCd},
+            <if test='prcsSttsCd != null and prcsSttsCd.equals("F02")'>
+            PERM_DT = TO_CHAR(TO_DATE(#{permDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            </if>
+            LAST_CHPR_ID  =#{lastChprId},
+            LAST_CHG_DTTM =SYSTIMESTAMP
+            WHERE CARN_MGMT_NO = #{carnMgmtNo}
+            AND CARN_TP_CD = #{carnTpCd}
+            AND CARN_NO = #{carnNo}
+            RETURNING *
+        )
+        INSERT INTO ALPASSINT.TB_CLRI_ATA_CARN_COMN_AUDT
+        (
+            CARN_MGMT_NO,
+            CARN_TP_CD,
+            CARN_NO,
+            <if test='prcsSttsCd != null and prcsSttsCd.equals("F02")'>
+            PERM_DT,
+            </if>
+            AUDT_RSLT_CN,
+            APRE_DT,
+            PRCS_STTS_CD,
+            ATCH_FILE_ID,
+            DEL_YN,
+            FRST_REGST_ID,
+            FRST_RGSR_DTTM,
+            LAST_CHPR_ID,
+            LAST_CHG_DTTM
+        )
+        SELECT
+            #{carnMgmtNo},
+            #{carnTpCd},
+            #{carnNo},
+            <if test='prcsSttsCd != null and prcsSttsCd.equals("F02")'>
+            TO_CHAR(TO_DATE(#{permDt}, 'DD/MM/YYYY'), 'YYYYMMDD'),
+            </if>
+            #{audtRsltCn},
+            TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD'),
+            #{prcsSttsCd},
+            #{atchFileId},
+            'N',
+            #{frstRegstId},
+            SYSTIMESTAMP,
+            #{lastChprId},
+            SYSTIMESTAMP
+        WHERE NOT EXISTS(SELECT * FROM UPSERT)
+    </update>
+
+    <insert id="updateClrAtaCarnItemList"  parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnPdlsVo">
+        /** updateClrAtaCarnItemList : Résultat du contrôle d'Article*/
+        INSERT INTO ALPASSINT.TB_CLRI_ATA_CARN_PDLS_AUDT
+        (
+            CARN_NO,
+            CARN_MGMT_NO,
+            CARN_TP_CD,
+            BSOP_REFF_NO,
+            BSOP_TP_CD,
+            PDLS_NO,
+            CSTM_WRTE_CN,
+            DEL_YN,
+            FRST_REGST_ID,
+            FRST_RGSR_DTTM,
+            LAST_CHPR_ID,
+            LAST_CHG_DTTM
+        )
+        VALUES
+        (
+            #{carnNo},
+            #{carnMgmtNo},
+            #{carnTpCd},
+            #{bsopReffNo},
+            #{carnPrcsTpCd},
+            #{pdlsNo},
+            #{cstmWrteCn},
+            'N',
+            #{frstRegstId},
+            SYSTIMESTAMP,
+            #{lastChprId},
+            SYSTIMESTAMP
+        )
+    </insert>
+
+    <select id="selectClrAtaCarnBntpDtl" parameterType ="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnBntpVo" resultType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnBntpVo">
+        /** selectClrAtaCarnBntpDtl : [Transit] Voir les détails de Carnet ATA != 까르네 신청 Transit 상세조회*/
+        SELECT
+            A.CARN_NO,
+            A.CARN_MGMT_NO,
+            A.CARN_TP_CD,
+            A.BSOP_REFF_NO,
+            A.RQST_CSTM_CD,
+            TO_CHAR(TO_DATE(A.RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') RGSR_DT,
+            A.TRNP_METH_NM,
+            A.PCKG_CN,
+            A.TRNP_REGN_NM,
+            A.OVRL_PDLS_CN,
+            A.USE_PLC_NM,
+            A.ARVL_PLGE_YN,
+            A.USER_AGMT_YN,
+            A.SFKP_PLC_NM,
+            A.DCER_NM,
+            A.BL_NO,
+            A.PRCS_STTS_CD,
+            A.ATCH_FILE_ID AS TR_ATCH_FILE_ID,
+            B.TRNS_PDLS_CN,
+            B.REEXP_TMLM_DT,
+            B.SEAL_CSTM_CD,
+            B.ARLC_CSTM_CD,
+            B.REEXP_PDLS_CN,
+            B.OTHS_CN,
+            B.RTRN_RSN_CN,
+            TO_CHAR(TO_DATE(B.APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APRE_DT,
+            TO_CHAR(TO_DATE(B.ARVL_DT, 'YYYYMMDD'), 'DD/MM/YYYY') ARVL_DT,
+            TO_CHAR(TO_DATE(B.ARVL_APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') ARVL_APRE_DT,
+            B.ATCH_FILE_ID AS AUDT_TR_ATCH_FILE_ID
+        FROM ALPASSEXT.TB_CLRE_ATA_CARN_BNTP A, ALPASSINT.TB_CLRI_ATA_CARN_BNTP_AUDT B
+        WHERE A.DEL_YN ='N'
+          AND A.CARN_MGMT_NO = B.CARN_MGMT_NO(+)
+          AND A.CARN_TP_CD = B.CARN_TP_CD(+)
+          AND A.CARN_NO = B.CARN_NO(+)
+          AND A.BSOP_REFF_NO = B.BSOP_REFF_NO(+)
+          AND A.CARN_MGMT_NO = #{carnMgmtNo}
+          AND A.CARN_TP_CD = #{carnTpCd}
+          AND A.CARN_NO = #{carnNo}
+          AND A.BSOP_REFF_NO = #{bsopReffNo}
+    </select>
+
+    <update id="updateClrAtaCarnRimexPrcsSttsCd"  parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnRimexVo">
+        /** updateClrAtaCarnRimexPrcsSttsCd : [REEXPORT/REIMPORT]Modifier code de statut */
+        UPDATE ALPASSEXT.TB_CLRE_ATA_CARN_RIMEX
+        SET PRCS_STTS_CD =#{prcsSttsCd},
+            LAST_CHPR_ID =#{lastChprId},
+            LAST_CHG_DTTM =SYSTIMESTAMP
+        WHERE CARN_MGMT_NO =#{carnMgmtNo}
+          AND CARN_TP_CD =#{carnTpCd}
+          AND CARN_NO =#{carnNo}
+          AND BSOP_REFF_NO =#{bsopReffNo}
+    </update>
+
+    <insert id="insertClrAtaCarnRimexAudt" parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnRimexVo">
+        /** [REEXPORT/REIMPORT] Enregistrer Contrôler la demande du Carnet ATA*/
+        INSERT INTO ALPASSINT.TB_CLRI_ATA_CARN_RIMEX_AUDT
+        (
+            CARN_NO,
+            CARN_MGMT_NO,
+            CARN_TP_CD,
+            BSOP_REFF_NO,
+            RIMEX_PDLS_CN,
+            RIMEX_UNBL_PDLS_TKAC_CN1,
+            RIMEX_UNBL_PDLS_TKAC_CN2,
+            PUPS_CSTM_NM,
+            OTHS_CN,
+            RTRN_RSN_CN,
+            APRE_DT,
+            PRCS_STTS_CD,
+            ATCH_FILE_ID,
+            DEL_YN,
+            FRST_REGST_ID,
+            FRST_RGSR_DTTM,
+            LAST_CHPR_ID,
+            LAST_CHG_DTTM
+        )
+        VALUES
+        (
+            #{carnNo},
+            #{carnMgmtNo},
+            #{carnTpCd},
+            #{bsopReffNo},
+            #{rimexPdlsCn},
+            #{rimexUnblPdlsTkacCn1},
+            #{rimexUnblPdlsTkacCn2},
+            #{pupsCstmNm},
+            #{othsCn},
+            #{rtrnRsnCn},
+            TO_CHAR(SYSTIMESTAMP,'YYYYMMDD'),
+            #{prcsSttsCd},
+            #{audtRimexAtchFileId},
+            'N',
+            #{frstRegstId},
+            SYSTIMESTAMP,
+            #{lastChprId},
+            SYSTIMESTAMP
+        )
+        ON CONFLICT (CARN_MGMT_NO,BSOP_REFF_NO,CARN_NO,CARN_TP_CD)
+        DO UPDATE SET
+            RIMEX_PDLS_CN =           #{rimexPdlsCn},
+            RIMEX_UNBL_PDLS_TKAC_CN1 =#{rimexUnblPdlsTkacCn1},
+            RIMEX_UNBL_PDLS_TKAC_CN2 =#{rimexUnblPdlsTkacCn2},
+            PUPS_CSTM_NM =#{pupsCstmNm},
+            OTHS_CN = #{othsCn},
+            RTRN_RSN_CN = #{rtrnRsnCn},
+            APRE_DT = TO_CHAR(SYSTIMESTAMP,'YYYYMMDD'),
+            PRCS_STTS_CD = #{prcsSttsCd},
+            ATCH_FILE_ID = #{audtRimexAtchFileId},
+            LAST_CHPR_ID = #{lastChprId},
+            LAST_CHG_DTTM = SYSTIMESTAMP
+    </insert>
+
+    <select id="selectClrAtaCarnBtnNewEnableYn" parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnPrcsBrkdVo" resultType="int">
+        /**selectClrAtaCarnBtnNewEnableYn : Mis à jour O/N du code de l'état final de la table commune 공통테이블 최종상태코드 업데이트 여부 */
+        SELECT COUNT(*)
+        FROM ALPASSEXT.TB_CLRE_ATA_CARN_IMEX A, ALPASSEXT.TB_CLRE_ATA_CARN_PDLS B
+        WHERE A.CARN_NO = #{carnNo}
+          AND A.CARN_MGMT_NO = #{carnMgmtNo}
+          AND A.CARN_TP_CD = #{carnTpCd}
+          AND A.CARN_NO =B.CARN_NO
+          AND A.CARN_MGMT_NO = B.CARN_MGMT_NO
+          AND A.CARN_TP_CD = B.CARN_TP_CD
+          AND A.BSOP_REFF_NO = B.BSOP_REFF_NO
+          AND A.PRCS_STTS_CD IN ('A02','A04')
+          AND NOT EXISTS (
+                SELECT 1
+                FROM ALPASSEXT.TB_CLRE_ATA_CARN_RIMEX C, ALPASSEXT.TB_CLRE_ATA_CARN_PDLS D
+                WHERE C.CARN_NO = #{carnNo}
+                  AND C.CARN_MGMT_NO = #{carnMgmtNo}
+                  AND C.CARN_TP_CD = #{carnTpCd}
+                  AND C.CARN_NO =D.CARN_NO
+                  AND C.CARN_MGMT_NO = D.CARN_MGMT_NO
+                  AND C.CARN_TP_CD = D.CARN_TP_CD
+                  AND C.BSOP_REFF_NO = D.BSOP_REFF_NO
+                  AND A.CARN_NO =C.CARN_NO
+                  AND A.CARN_MGMT_NO = C.CARN_MGMT_NO
+                  AND A.CARN_TP_CD = C.CARN_TP_CD
+                  AND B.PDLS_NO = D.PDLS_NO
+                  AND C.PRCS_STTS_CD IN ('C02')
+            )
+    </select>
+
+    <select id="selectClrAtaCarnRimexDtl" parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnRimexVo" resultType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnRimexVo">
+        /** selectClrAtaCarnRimexDtl : [REEXP/REIMP] Voir les détails de Carnet ATA != 까르네 신청 Transit 상세조회*/
+        SELECT
+            A.CARN_NO,
+            A.CARN_MGMT_NO,
+            A.CARN_TP_CD,
+            A.BSOP_REFF_NO,
+            A.RQST_CSTM_CD,
+            TO_CHAR(TO_DATE(A.RGSR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') RGSR_DT,
+            A.TRNP_METH_NM,
+            A.PCKG_CN,
+            A.OVRL_PDLS_CN,
+            A.IMEX_PDLS_CN,
+            A.RIMEX_UNBL_PDLS_CN1,
+            A.RIMEX_UNBL_PDLS_CN2,
+            A.SBMT_ISTM_CN,
+            A.USER_AGMT_YN,
+            A.SFKP_PLC_NM,
+            A.DCER_NM,
+            A.BL_NO,
+            A.PRCS_STTS_CD,
+            A.ATCH_FILE_ID RIMEX_ATCH_FILE_ID,
+            B.RIMEX_PDLS_CN,
+            B.RIMEX_UNBL_PDLS_TKAC_CN1,
+            B.RIMEX_UNBL_PDLS_TKAC_CN2,
+            B.PUPS_CSTM_NM,
+            B.OTHS_CN,
+            B.RTRN_RSN_CN,
+            TO_CHAR(TO_DATE(B.APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APRE_DT,
+            B.ATCH_FILE_ID AUDT_RIMEX_ATCH_FILE_ID,
+            A.TRNP_METH_KND_CD,
+            A.TRNP_METH_IDFY_NO,
+            A.TRNP_METH_NAT_CD,
+            A.SHIP_NM,
+            A.CAG_MGMT_NO,
+            TO_CHAR(TO_DATE(A.ARVL_DT, 'YYYYMMDD'), 'DD/MM/YYYY') ARVL_DT,
+            A.DIVD_CSCL_TP_CD,
+            A.LDNP_CD,
+            A.CNTR_GCNT,
+            A.DISPR_CD,
+            TO_CHAR(TO_DATE(A.LDUN_DT, 'YYYYMMDD'), 'DD/MM/YYYY') LDUN_DT,
+            A.RLBR_CSTM_CD,
+            A.CMDT_STGE_LOCT_CD,
+            A.BNBN_CMDT_WRHS_CD,
+            A.BF_BNBN_CMDT_WRHS_CD,
+            TO_CHAR(TO_DATE(A.BL_DT, 'YYYYMMDD'), 'DD/MM/YYYY') BL_DT,
+            A.PCKG_TGCNT,
+            A.CNTR_CAG_YN,
+            A.AL_TTWG,
+            A.AL_NTWG
+        FROM ALPASSEXT.TB_CLRE_ATA_CARN_RIMEX A, ALPASSINT.TB_CLRI_ATA_CARN_RIMEX_AUDT B
+        WHERE A.DEL_YN ='N'
+          AND A.CARN_MGMT_NO = B.CARN_MGMT_NO(+)
+          AND A.CARN_TP_CD = B.CARN_TP_CD(+)
+          AND A.CARN_NO = B.CARN_NO(+)
+          AND A.BSOP_REFF_NO = B.BSOP_REFF_NO(+)
+          AND A.CARN_MGMT_NO = #{carnMgmtNo}
+          AND A.CARN_TP_CD = #{carnTpCd}
+          AND A.CARN_NO = #{carnNo}
+          AND A.BSOP_REFF_NO = #{bsopReffNo}
+    </select>
+
+    <select id="selectClrAtaCarnPridXtnsDtl" parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnPridXtnsVo" resultType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnPridXtnsVo">
+        /**selectClrAtaCarnPridXtnsDtl : [Prolongation du délai] Voir les détails de Carnet ATA*/
+        SELECT
+            A.CARN_NO,
+            A.CARN_MGMT_NO,
+            A.CARN_TP_CD,
+            A.SRNO,
+            A.RQST_CSTM_CD,
+            TO_CHAR(TO_DATE(A.PERM_DT, 'YYYYMMDD'), 'DD/MM/YYYY') PERM_DT,
+            TO_CHAR(TO_DATE(A.XTNS_DT, 'YYYYMMDD'), 'DD/MM/YYYY') XTNS_DT,
+            A.PRID_XTNS_RSN_CN,
+            A.PRCS_STTS_CD,
+            A.ATCH_FILE_ID XTNS_ATCH_FILE_ID,
+            B.AUDT_RSLT_CN,
+            B.RTRN_RSN_CN,
+            TO_CHAR(TO_DATE(B.APRE_DT, 'YYYYMMDD'), 'DD/MM/YYYY') APRE_DT,
+            B.ATCH_FILE_ID AUDT_XTNS_ATCH_FILE_ID
+        FROM ALPASSEXT.TB_CLRE_ATA_CARN_PRID_XTNS A, ALPASSINT.TB_CLRI_ATA_CARN_PRID_XTNS_AUDT B
+        WHERE A.DEL_YN ='N'
+          AND A.CARN_MGMT_NO = B.CARN_MGMT_NO(+)
+          AND A.CARN_TP_CD = B.CARN_TP_CD(+)
+          AND A.CARN_NO = B.CARN_NO(+)
+          AND A.SRNO = B.SRNO(+)
+          AND A.CARN_MGMT_NO = #{carnMgmtNo}
+          AND A.CARN_TP_CD = #{carnTpCd}
+          AND A.CARN_NO = #{carnNo}
+          AND A.SRNO = #{srno}
+    </select>
+
+    <update id="updateClrAtaCarnPridXtnsPrcsSttsCd"  parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnPridXtnsVo">
+        /** updateClrAtaCarnPridXtnsPrcsSttsCd : [Prolongation du délai]Modifier code de statut */
+        UPDATE ALPASSEXT.TB_CLRE_ATA_CARN_PRID_XTNS
+        SET PRCS_STTS_CD =#{prcsSttsCd},
+            LAST_CHPR_ID =#{lastChprId},
+            LAST_CHG_DTTM =SYSTIMESTAMP
+        WHERE CARN_MGMT_NO =#{carnMgmtNo}
+          AND CARN_TP_CD =#{carnTpCd}
+          AND CARN_NO =#{carnNo}
+          AND SRNO =#{srno}
+    </update>
+
+    <insert id="insertClrAtaCarnPridXtnsAudt" parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnPridXtnsVo">
+        INSERT INTO ALPASSINT.TB_CLRI_ATA_CARN_PRID_XTNS_AUDT
+        (
+            CARN_NO,
+            CARN_MGMT_NO,
+            CARN_TP_CD,
+            SRNO,
+            AUDT_RSLT_CN,
+            APRE_DT,
+            PRCS_STTS_CD,
+            RTRN_RSN_CN,
+            ATCH_FILE_ID,
+            DEL_YN,
+            FRST_REGST_ID,
+            FRST_RGSR_DTTM,
+            LAST_CHPR_ID,
+            LAST_CHG_DTTM
+        )
+        VALUES
+        (
+            #{carnNo},
+            #{carnMgmtNo},
+            #{carnTpCd},
+            #{srno},
+            #{audtRsltCn},
+            TO_CHAR(SYSTIMESTAMP,'YYYYMMDD'),
+            #{prcsSttsCd},
+            #{rtrnRsnCn},
+            #{audtXtnsAtchFileId},
+            'N',
+            #{frstRegstId},
+            SYSTIMESTAMP,
+            #{lastChprId},
+            SYSTIMESTAMP
+        )
+    </insert>
+
+    <insert id="modifyClrAtaCarnComnAudt" parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnComnVo">
+        WITH upset AS (
+            UPDATE ALPASSINT.TB_CLRI_ATA_CARN_COMN_AUDT M
+            SET     DEL_YN = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+                    <if test ="prcsSttsCd == 'G01'">
+                        , WDRL_RSN_CN = #{wdrlRsnCn}
+                    </if>
+                    <if test ="prcsSttsCd == 'H01'">
+                        , DPUT_RSN_CN = #{dputRsnCn}
+                    </if>
+                    <if test ="prcsSttsCd == 'H02'">
+                        , DPUT_RELE_CN = #{dputReleCn}
+                    </if>
+                    , PRCS_STTS_CD = #{prcsSttsCd}
+                    , LAST_CHPR_ID = #{lastChprId}                /** ID du modificateur final !== 최종변경자ID ==! */
+                    , LAST_CHG_DTTM = SYSTIMESTAMP                /** Date et heure de modification finale !== 최종변경일시 ==! */
+            WHERE CARN_MGMT_NO = #{carnMgmtNo}
+            AND CARN_TP_CD = #{carnTpCd}
+            AND CARN_NO = #{carnNo}
+            RETURNING M.*
+        )
+            INSERT INTO ALPASSINT.TB_CLRI_ATA_CARN_COMN_AUDT
+            (
+                CARN_MGMT_NO,
+                CARN_TP_CD,
+                CARN_NO,
+                <if test ="prcsSttsCd == 'G01'">
+                 WDRL_RSN_CN,
+                </if>
+                <if test ="prcsSttsCd == 'H01'">
+                DPUT_RSN_CN,
+                </if>
+                <if test ="prcsSttsCd == 'H02'">
+                DPUT_RELE_CN,
+                </if>
+                PRCS_STTS_CD,
+                DEL_YN,
+                FRST_REGST_ID,		/** !== 최초등록자ID ==! */
+                FRST_RGSR_DTTM,	/** !== 최초등록일시 ==! */
+                LAST_CHPR_ID,		/** !== 최종변경자ID ==! */
+                LAST_CHG_DTTM		/** !== 최종변경일시 ==! */
+            )
+            SELECT
+                #{carnMgmtNo} CARN_MGMT_NO,
+                #{carnTpCd} CARN_TP_CD,
+                #{carnNo} CARN_NO,
+                <if test ="prcsSttsCd == 'G01'">
+                #{wdrlRsnCn} WDRL_RSN_CN,
+                </if>
+                <if test ="prcsSttsCd == 'H01'">
+                #{dputRsnCn} DPUT_RSN_CN,
+                </if>
+                <if test ="prcsSttsCd == 'H02'">
+                #{dputReleCn} DPUT_RELE_CN,
+                </if>
+                #{prcsSttsCd} PRCS_STTS_CD,
+                'N',
+                #{frstRegstId} FRST_REGST_ID,		/** !== 최초등록자ID ==! */
+                SYSTIMESTAMP FRST_RGSR_DTTM,	/** !== 최초등록일시 ==! */
+                #{lastChprId} LAST_CHPR_ID,		/** !== 최종변경자ID ==! */
+                SYSTIMESTAMP LAST_CHG_DTTM		/** !== 최종변경일시 ==! */
+            WHERE NOT EXISTS (SELECT * FROM upset)
+    </insert>
+
+    <select id="selectClrAtaCarnBtnComnAudtEnableYn" parameterType="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnComnVo" resultType="boolean">
+        /**selectClrAtaCarnBtnComnAudtEnableYn */
+        SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
+        FROM ALPASSEXT.TB_CLRE_ATA_CARN_IMEX A,
+             ALPASSEXT.TB_CLRE_ATA_CARN_PDLS B
+        WHERE A.CARN_NO = #{carnNo}
+          AND A.CARN_MGMT_NO = #{carnMgmtNo}
+          AND A.CARN_TP_CD = #{carnTpCd}
+          AND A.CARN_NO = B.CARN_NO
+          AND A.CARN_MGMT_NO = B.CARN_MGMT_NO
+          AND A.CARN_TP_CD = B.CARN_TP_CD
+          AND A.BSOP_REFF_NO = B.BSOP_REFF_NO
+          AND A.PRCS_STTS_CD IN ('A02','A04','D02')
+          AND NOT EXISTS(
+                SELECT 1
+                FROM ALPASSEXT.TB_CLRE_ATA_CARN_RIMEX C,
+                     ALPASSEXT.TB_CLRE_ATA_CARN_PDLS D
+                WHERE C.CARN_NO = #{carnNo}
+                  AND C.CARN_MGMT_NO = #{carnMgmtNo}
+                  AND C.CARN_TP_CD = #{carnTpCd}
+                  AND C.CARN_NO = D.CARN_NO
+                  AND C.CARN_MGMT_NO = D.CARN_MGMT_NO
+                  AND C.CARN_TP_CD = D.CARN_TP_CD
+                  AND C.BSOP_REFF_NO = D.BSOP_REFF_NO
+                  AND A.CARN_NO = C.CARN_NO
+                  AND A.CARN_MGMT_NO = C.CARN_MGMT_NO
+                  AND A.CARN_TP_CD = C.CARN_TP_CD
+                  AND B.PDLS_NO = D.PDLS_NO
+                  AND C.PRCS_STTS_CD IN ('C02', 'C01', 'C00', 'E04', 'E02', 'E01', 'E00')
+            )
+    </select>
+
+    <insert id="insertClrAtaCarnPrcsBrkd"  parameterType ="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnPrcsBrkdVo">
+        <selectKey order="BEFORE" keyProperty="prcsSrno" resultType="java.lang.String">
+            select NVL(MAX(PRCS_SRNO), 0) + 1 from TB_CLRI_ATA_CARN_PRCS_BRKD where carn_mgmt_no = #{carnMgmtNo} AND carn_tp_cd =#{carnTpCd} AND carn_no =#{carnNo}
+        </selectKey>
+        /** insertClrAtaCarnPrcsBrkd :Enregistrer  historique */
+        INSERT INTO ALPASSINT.TB_CLRI_ATA_CARN_PRCS_BRKD
+        (CARN_MGMT_NO,
+         CARN_TP_CD,
+         CARN_NO,
+         PRCS_SRNO,
+         PRCS_STTS_CD,
+         CARN_PRCS_TP_CD,
+         BSOP_REFF_NO,
+         PRCS_DTRM_DTTM,
+         HIST_SRNO,
+         PRCS_STTS_CN,
+         DEL_YN,
+         FRST_REGST_ID,
+         FRST_RGSR_DTTM,
+         LAST_CHPR_ID,
+         LAST_CHG_DTTM
+        )
+        VALUES(
+            #{carnMgmtNo},
+            #{carnTpCd},
+            #{carnNo},
+            #{prcsSrno},
+            #{prcsSttsCd},
+            #{carnPrcsTpCd},
+            #{bsopReffNo},
+            SYSTIMESTAMP,
+            null,
+            #{cmdtQty},
+            'N',
+            #{frstRegstId},
+            SYSTIMESTAMP,
+            #{lastChprId},
+            SYSTIMESTAMP
+        )
+    </insert>
+
+    <insert  id="insertClrRimLclrCagIntf" parameterType ="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnRimexVo">
+        /** insertClrRimLclrCagIntf*/
+        insert into tb_clri_cscl_cag_intf (
+                                            dtl_dcsh_no			/** Numéro du DAU !== DED번호 ==! */
+                                          , acpt_dt					/** Date de l'autorisation d'enlèvement des marchandises !== 수리일자 ==! */
+                                          , dclr_pt_cd			/** Code de type de déclaration !== 신고유형코드 ==! */
+                                          , epc_cd					/** Code EPC !== EPC코드 ==! */
+                                          , dcer_cd					/** Code du déclarant !== 신고인코드 ==! */
+                                          , cag_mgmt_no			/** CRN !== 화물관리번호 ==! */
+                                          , cntr_cag_yn			/** Cargaison conteneurisée ON !== 컨테이너화물여부 ==! */
+                                          , apre_pckg_gcnt	/** Nombre de colisage autorisé !== 승인포장개수 ==! */
+                                          , apre_ttwg				/** Poids Brut Autorisé !== 승인총중량 ==! */
+                                          , apre_ntwg				/** Poids net autorise !== 승인순중량 ==! */
+                                          , prcs_yn					/** Traitement ON !== 처리여부 ==! */
+                                          , del_yn					/** Suppression ON !== 삭제여부 ==! */
+                                          , frst_regst_id		/** ID du premier enregistrant  !== 최초등록자ID ==! */
+                                          , frst_rgsr_dttm	/** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                                          , last_chpr_id		/** ID du modificateur final !== 최종변경자ID ==! */
+                                          , last_chg_dttm		/** Date et heure de modification finale !== 최종변경일시 ==! */
+                                          , CMDT_STGE_LOCT_CD
+                                          , ARLC_IBOBZ_CD
+        )
+        SELECT
+            A.CARN_MGMT_NO || '-' || A.BSOP_REFF_NO
+             , TO_CHAR(SYSDATE,'YYYYMMDD') AS acpt_dt /** Date de l'autorisation d'enlèvement des marchandises !== 수리일자 ==! */
+             ,'ATA' AS dclr_pt_cd /** Code de type de déclaration !== 신고유형코드 ==! */
+             , 'XXXX' AS epc_cd /** Code EPC !== EPC코드 ==! */
+             , (
+            SELECT MAX(b.co_dclr_cd) AS co_dclr_cd
+            FROM TB_COM_CO_DCLR_CD b
+               , TB_COM_CO_DCLR_CD_USER_REL d
+            WHERE B.NIF = D.NIF
+              AND B.DEL_YN = 'N'
+              AND D.del_yn = 'N'
+              AND B.co_dclr_tp_cd = 'H'
+              AND B.co_dclr_cd = D.CO_DCLR_CD
+              AND D.USER_ID = A.FRST_REGST_ID
+        ) AS DCER_CD /** Code du déclarant !== 신고인코드 ==! */
+             , A.CAG_MGMT_NO /** CRN !== 화물관리번호 ==! */
+             , CASE WHEN CNTR_GCNT > 0 THEN 'Y' ELSE 'N' END /** Cargaison conteneurisée ON !== 컨테이너화물여부 ==! */
+             , #{pckgTgcnt} AS apre_pckg_gcnt /** Nombre total de colis !== 개수 ==! */
+             , #{alTtwg} AS apre_ttwg /** Poids brut total !== 중량 ==! */
+             , #{alNtwg} AS apre_ntwg /** Poids brut total !== 중량 ==! */
+             , 'N' AS prcs_yn /** Traitement ON !== 처리여부 ==! */
+             , 'N' AS del_yn /** Suppression ON !== 삭제여부 ==! */
+             , #{frstRegstId} AS frst_regst_id /** ID du premier enregistrant  !== 최초등록자ID ==! */
+             , SYSTIMESTAMP AS frst_rgsr_dttm /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+             , #{lastChprId} AS last_chpr_id /** ID du modificateur final !== 최종변경자ID ==! */
+             , SYSTIMESTAMP AS last_chg_dttm /** Date et heure de modification finale !== 최종변경일시 ==! */
+             , A.CMDT_STGE_LOCT_CD
+             , A.CMDT_STGE_LOCT_CD
+        FROM TB_CLRE_ATA_CARN_RIMEX A
+        WHERE CARN_MGMT_NO =#{carnMgmtNo}
+          AND BSOP_REFF_NO  =#{bsopReffNo}
+    </insert>
+
+
+    <insert  id="insertClrAdtLclrCagIntf" parameterType ="alpass.ipt.clr.poa.caa.vo.ClrAtaCarnImexVo">
+        /** insertClrAdtLclrCagIntf*/
+        insert into tb_clri_cscl_cag_intf (
+                                            dtl_dcsh_no			/** Numéro du DAU !== DED번호 ==! */
+                                          , acpt_dt					/** Date de l'autorisation d'enlèvement des marchandises !== 수리일자 ==! */
+                                          , dclr_pt_cd			/** Code de type de déclaration !== 신고유형코드 ==! */
+                                          , epc_cd					/** Code EPC !== EPC코드 ==! */
+                                          , dcer_cd					/** Code du déclarant !== 신고인코드 ==! */
+                                          , cag_mgmt_no			/** CRN !== 화물관리번호 ==! */
+                                          , cntr_cag_yn			/** Cargaison conteneurisée ON !== 컨테이너화물여부 ==! */
+                                          , apre_pckg_gcnt	/** Nombre de colisage autorisé !== 승인포장개수 ==! */
+                                          , apre_ttwg				/** Poids Brut Autorisé !== 승인총중량 ==! */
+                                          , apre_ntwg				/** Poids net autorise !== 승인순중량 ==! */
+                                          , prcs_yn					/** Traitement ON !== 처리여부 ==! */
+                                          , del_yn					/** Suppression ON !== 삭제여부 ==! */
+                                          , frst_regst_id		/** ID du premier enregistrant  !== 최초등록자ID ==! */
+                                          , frst_rgsr_dttm	/** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+                                          , last_chpr_id		/** ID du modificateur final !== 최종변경자ID ==! */
+                                          , last_chg_dttm		/** Date et heure de modification finale !== 최종변경일시 ==! */
+                                          , CMDT_STGE_LOCT_CD
+                                          , ARLC_IBOBZ_CD
+        )
+        SELECT
+            A.CARN_MGMT_NO || '-' || A.BSOP_REFF_NO
+            , TO_CHAR(SYSDATE,'YYYYMMDD') AS acpt_dt /** Date de l'autorisation d'enlèvement des marchandises !== 수리일자 ==! */
+            ,'ATA' AS dclr_pt_cd /** Code de type de déclaration !== 신고유형코드 ==! */
+            , 'XXXX' AS epc_cd /** Code EPC !== EPC코드 ==! */
+            , (
+            SELECT MAX(b.co_dclr_cd) AS co_dclr_cd
+            FROM TB_COM_CO_DCLR_CD b
+               , TB_COM_CO_DCLR_CD_USER_REL d
+            WHERE B.NIF = D.NIF
+              AND B.DEL_YN = 'N'
+              AND D.del_yn = 'N'
+              AND B.co_dclr_tp_cd = 'H'
+              AND B.co_dclr_cd = D.CO_DCLR_CD
+              AND D.USER_ID = A.FRST_REGST_ID
+            ) AS DCER_CD /** Code du déclarant !== 신고인코드 ==! */
+            , A.CAG_MGMT_NO /** CRN !== 화물관리번호 ==! */
+            , CASE WHEN CNTR_GCNT > 0 THEN 'Y' ELSE 'N' END /** Cargaison conteneurisée ON !== 컨테이너화물여부 ==! */
+            , #{pckgTgcnt} AS apre_pckg_gcnt /** Nombre total de colis !== 개수 ==! */
+            , #{alTtwg} AS apre_ttwg /** Poids brut total !== 중량 ==! */
+            , #{alNtwg} AS apre_ntwg /** Poids brut total !== 중량 ==! */
+            , 'N' AS prcs_yn /** Traitement ON !== 처리여부 ==! */
+            , 'N' AS del_yn /** Suppression ON !== 삭제여부 ==! */
+            , #{frstRegstId} AS frst_regst_id /** ID du premier enregistrant  !== 최초등록자ID ==! */
+            , SYSTIMESTAMP AS frst_rgsr_dttm /** Date et heure de premier enregistrement !== 최초등록일시 ==! */
+            , #{lastChprId} AS last_chpr_id /** ID du modificateur final !== 최종변경자ID ==! */
+            , SYSTIMESTAMP AS last_chg_dttm /** Date et heure de modification finale !== 최종변경일시 ==! */
+            , A.CMDT_STGE_LOCT_CD
+            , A.CMDT_STGE_LOCT_CD
+           FROM TB_CLRE_ATA_CARN_IMEX A
+           WHERE CARN_MGMT_NO =#{carnMgmtNo}
+           AND BSOP_REFF_NO  =#{bsopReffNo}
+    </insert>
+
+
+</mapper>

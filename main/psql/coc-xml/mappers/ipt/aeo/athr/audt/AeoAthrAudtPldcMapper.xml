@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+Mapper : Enregistrer le programme d'audit !== 심사계획서 등록 Mapper ==!
+(wonjun.cha)
+-->
+<mapper namespace="alpass.ipt.aeo.athr.audt.mapper.AeoAthrAudtPldcMapper">
+
+    <!--
+    [Fenêtre contextuelle d'inscription au formulaire de plan d'audit] Consulter !==[심사계획서등록] 조회==!
+    -->
+	<select id="selectAeoAthrAudtPldc"
+	    parameterType="alpass.ipt.aeo.athr.audt.vo.AeoAthrAudtPldcVo"
+	    resultType="alpass.ipt.aeo.athr.audt.vo.AeoAthrAudtPldcVo">
+		/* selectAeoAthrApfmPldc */
+		SELECT
+				  AAR.AEO_ATHR_RQST_NO           /** Numéro de demande du statut OEA !== AEO공인신청번호 ==! */
+		        , AAR.CO_CD                      /** Code De La Compagnie !== 업체코드 ==! */
+		        , AAR.CO_NM                      /** Nom De L'Entreprise !== 업체명 ==! */
+				, AAR.NIF                        /** NIF !== 납세번호 ==! */
+			    , AAR.HOFC_ADDR                  /** Adresse du siège social !== 본사주소 ==! */
+				, (SELECT U.USER_NM FROM TB_COM_CO_USER U WHERE U.DEL_YN = 'N' AND U.USE_YN = 'Y' AND U.USER_TP_CD = 'R' AND U.NIF = AAR.NIF ORDER BY U.USER_ID ASC LIMIT 1) AS RPPN_NM	/** Représentant !== 대표자 ==! */
+                , A.AUDT_PLN_NO                  /** Numéro de série du programme d'audit !== 심사계획일련번호 ==! */
+                , A.AUDT_STRT_DT                 /** Début Du Contrôle !== 심사시작일자 ==! */
+                , A.AUDT_END_DT                  /** Date de fermeture d'audit !== 심사종료일자 ==! */
+                , A.AUDT_PLN_CN                  /** Contenu du programme d'audit !== 심사계획내용 ==! */
+                , A.PRID_XTNS_YN                 /** Prolongation du délai O/N !== 기간연장여부 ==! */
+                , A.ATCH_FILE_ID                 /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , A.APRV_ID                      /** Id De L'Approbation !== 결재ID ==! */
+				, (SELECT V.APRV_PRCS_STTS_CD FROM TB_POTI_APRV V WHERE V.DEL_YN = 'N' AND V.APRV_ID = A.APRV_ID) AS APRV_STTS_CD    /** Code De Statut Du Traitement D'Approbation !== 결재처리상태코드 ==! */
+		  FROM
+		  		  TB_AEOI_ATHR_RQST AAR
+		  		, (
+		  		  SELECT 
+						    P.AEO_ATHR_RQST_NO           /** Numéro de demande du statut OEA !== AEO공인신청번호 ==! */
+		                  , P.AUDT_PLN_NO              /** Numéro de série du programme d'audit !== 심사계획번호 ==! */
+		                  , P.AUDT_STRT_DT               /** Début Du Contrôle !== 심사시작일자 ==! */
+		                  , P.AUDT_END_DT                /** Date de fermeture d'audit !== 심사종료일자 ==! */
+		                  , P.AUDT_PLN_CN                /** Contenu du programme d'audit !== 심사계획내용 ==! */
+		                  , P.PRID_XTNS_YN               /** Prolongation du délai O/N !== 기간연장여부 ==! */
+		                  , P.ATCH_FILE_ID               /** Id Du Fichier Joint !== 첨부파일ID ==! */
+		                  , P.APRV_ID                  /** Id De L'Approbation !== 결재ID ==! */
+		  		    FROM	TB_AEOI_AUDT_PLN P
+		  		   WHERE    P.DEL_YN = 'N'               /** Suppression ON !== 삭제여부 ==! */                              /** Suppression ON !== 삭제여부 ==! */
+				    <if test="aeoAthrRqstNo != null and aeoAthrRqstNo != ''">
+					 AND	P.AEO_ATHR_RQST_NO = #{aeoAthrRqstNo}       /** Numéro de demande du statut OEA !== AEO공인신청번호 ==! */
+				    </if>
+				    <if test="audtPlnNo != null and audtPlnNo != ''">
+				     AND 	P.AUDT_PLN_NO = #{audtPlnNo}
+				    </if>
+		  		   ORDER BY P.LAST_CHG_DTTM DESC
+		  		   LIMIT 1
+		  		) A
+		 WHERE	  
+		 		  AAR.AEO_ATHR_RQST_NO = A.AEO_ATHR_RQST_NO(+)
+		   AND	  AAR.DEL_YN  = 'N'                                /** Suppression ON !== 삭제여부 ==! */
+	    <if test="aeoAthrRqstNo != null and aeoAthrRqstNo != ''">
+		   AND	  AAR.AEO_ATHR_RQST_NO = #{aeoAthrRqstNo}       /** Numéro de demande du statut OEA !== AEO공인신청번호 ==! */
+	    </if>
+	    <if test="audtPlnNo != null and audtPlnNo != ''">
+	       AND 	  A.AUDT_PLN_NO = #{audtPlnNo}
+	    </if>
+	</select>
+
+    <!--
+    [Fenêtre contextuelle d'inscription au formulaire de plan d'audit] Enregistrer !==[심사계획서등록] 등록==!
+    -->
+	<insert id="insertAeoAthrAudtPldc"
+		parameterType="alpass.ipt.aeo.athr.audt.vo.AeoAthrAudtPldcVo">
+		/* insertAeoAthrAudtPldc */
+        WITH UPSERT AS  (
+			UPDATE TB_AEOI_AUDT_PLN
+			   SET
+					  LAST_CHPR_ID = #{lastChprId}          	/** Id Du Modificateur Final !== 최종변경자ID ==! */            
+					, LAST_CHG_DTTM = CURRENT_TIMESTAMP			/** Date Et Heure De Modification Finale !== 최종변경일시 ==! */ 
+	                , AUDT_STRT_DT = TO_CHAR(TO_DATE(REPLACE(#{audtStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')                /** Début Du Contrôle !== 심사시작일자 ==! */
+	                , AUDT_END_DT = TO_CHAR(TO_DATE(REPLACE(#{audtEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')                  /** Date de fermeture d'audit !== 심사종료일자 ==! */
+	                , AUDT_PLN_CN = #{audtPlnCn}                  /** Contenu du programme d'audit !== 심사계획내용 ==! */
+			    <if test='pridXtnsYn != null and !"".equals(pridXtnsYn)'>
+	                , PRID_XTNS_YN = #{pridXtnsYn}                /** Prolongation du délai O/N !== 기간연장여부 ==! */
+			    </if>
+			    <if test='atchFileId != null and !"".equals(atchFileId)'>
+	                , ATCH_FILE_ID = #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+			    </if>
+			    <if test='aprvId != null and !"".equals(aprvId)'>
+	                , APRV_ID = #{aprvId}                     /** N° De Série De L'Approbation !== 결재일련번호 ==! */
+			    </if>
+			 WHERE
+					  AEO_ATHR_RQST_NO = #{aeoAthrRqstNo}         /** Numéro de demande du statut OEA !== AEO공인신청번호 ==! */
+			   AND	  AUDT_PLN_NO = #{audtPlnNo}              /** Numéro de série du programme d'audit !== 심사계획일련번호 ==! */
+		     RETURNING *
+        )
+		INSERT INTO TB_AEOI_AUDT_PLN (
+                  AEO_ATHR_RQST_NO             /** Numéro de demande du statut OEA !== AEO공인신청번호 ==! */
+                , AUDT_PLN_NO                  /** Numéro de série du programme d'audit !== 심사계획일련번호 ==! */
+                , AUDT_STRT_DT                 /** Début Du Contrôle !== 심사시작일자 ==! */
+                , AUDT_END_DT                  /** Date de fermeture d'audit !== 심사종료일자 ==! */
+                , AUDT_PLN_CN                  /** Contenu du programme d'audit !== 심사계획내용 ==! */
+                , PRID_XTNS_YN                 /** Prolongation du délai O/N !== 기간연장여부 ==! */
+                , ATCH_FILE_ID                 /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , APRV_ID                      /** N° De Série De L'Approbation !== 결재일련번호 ==! */
+                , DEL_YN                       /** Suppression On !== 삭제여부 ==! */
+                , FRST_REGST_ID                /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+                , FRST_RGSR_DTTM               /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+                , LAST_CHPR_ID                 /** Id Du Modificateur Final !== 최종변경자ID ==! */
+                , LAST_CHG_DTTM                /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		)
+		SELECT
+                  #{aeoAthrRqstNo}             /** Numéro de demande du statut OEA !== AEO공인신청번호 ==! */
+                , #{audtPlnNo}                 /** Numéro de série du programme d'audit !== 심사계획일련번호 ==! */
+                , TO_CHAR(TO_DATE(REPLACE(#{audtStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')                /** Début Du Contrôle !== 심사시작일자 ==! */
+                , TO_CHAR(TO_DATE(REPLACE(#{audtEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')                 /** Date de fermeture d'audit !== 심사종료일자 ==! */
+                , #{audtPlnCn}                 /** Contenu du programme d'audit !== 심사계획내용 ==! */
+                , #{pridXtnsYn}                /** Prolongation du délai O/N !== 기간연장여부 ==! */
+                , #{atchFileId}                /** Id Du Fichier Joint !== 첨부파일ID ==! */
+                , #{aprvId}                    /** N° De Série De L'Approbation !== 결재일련번호 ==! */
+				, 'N'                          /** Suppression On !== 삭제여부 ==! */
+				, #{frstRegstId}               /** Id Du Premier Enregistrant  !== 최초등록자ID ==! */
+				, CURRENT_TIMESTAMP            /** Date Et Heure De Premier Enregistrement !== 최초등록일시 ==! */
+				, #{lastChprId}                /** Id Du Modificateur Final !== 최종변경자ID ==! */
+				, CURRENT_TIMESTAMP            /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+		 WHERE	NOT EXISTS (SELECT * FROM UPSERT)
+	</insert>
+
+    <!--
+    [Fenêtre contextuelle d'inscription au formulaire de plan d'audit] Modifier !==[심사계획서등록] 수정==!
+    -->
+	<update id="updateAeoAthrAudtPldcAprv"
+		parameterType="alpass.ipt.aeo.athr.audt.vo.AeoAthrAudtPldcVo">
+		/* updateAeoAthrAudtPldcAprv */
+		UPDATE	  TB_AEOI_AUDT_PLN
+		   SET
+				  LAST_CHPR_ID = #{lastChprId}         /** Id Du Modificateur Final !== 최종변경자ID ==! */
+				, LAST_CHG_DTTM = CURRENT_TIMESTAMP    /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+				, APRV_ID = #{aprvId}                  /** N° De Série De L'Approbation !== 결재일련번호 ==! */
+		 WHERE
+				  DEL_YN = 'N'
+           AND	  AEO_ATHR_RQST_NO = #{aeoAthrRqstNo}  /** Numéro de demande du statut OEA !== AEO공인신청번호 ==! */
+           AND	  AUDT_PLN_NO = #{audtPlnNo}           /** Numéro de série du programme d'audit !== 심사계획일련번호 ==! */
+	</update>
+
+    <!--
+    [Fenêtre contextuelle d'inscription au formulaire de plan d'audit] Supprimer !==[심사계획서등록] 삭제==!
+    -->
+	<update id="deleteAeoAthrAudtPldc"
+		parameterType="alpass.ipt.aeo.athr.audt.vo.AeoAthrAudtPldcVo">
+		/* deleteAeoAthrAudtPldc */
+		UPDATE	  TB_AEOI_AUDT_PLN
+		   SET
+				  LAST_CHPR_ID = #{lastChprId}         /** Id Du Modificateur Final !== 최종변경자ID ==! */
+				, LAST_CHG_DTTM = CURRENT_TIMESTAMP    /** Date Et Heure De Modification Finale !== 최종변경일시 ==! */
+				, DEL_YN = 'Y'                         /** Suppression On !== 삭제여부 ==! */
+		 WHERE
+				  DEL_YN = 'N'
+           AND	  AEO_ATHR_RQST_NO = #{aeoAthrRqstNo}  /** Numéro de demande du statut OEA !== AEO공인신청번호 ==! */
+           AND	  AUDT_PLN_NO = #{audtPlnNo}           /** Numéro de série du programme d'audit !== 심사계획일련번호 ==! */
+	</update>
+
+    <!--
+    [Fenêtre contextuelle d'inscription au formulaire de plan d'audit.Statut Du Traitement D'Approbation] Consulter !==[심사계획서등록.결재처리상태] 조회==!
+    -->
+	<select id="selectAeoComAudtPldcPrcsStts"
+	    parameterType="alpass.ipt.aeo.athr.audt.vo.AeoAthrAudtPldcVo"
+	    resultType="alpass.ipt.aeo.athr.audt.vo.AeoAthrAudtPldcVo">
+		/* selectAeoComAudtPldcPrcsStts */
+		SELECT
+				  A.AEO_ATHR_RQST_NO 		/** Numéro de demande du statut OEA !== AEO공인신청번호 ==! */
+				, A.AUDT_PLN_NO 			/** Numéro de série du programme d'audit !== 심사계획번호 ==! */
+				, A.APRV_ID 				/** Id De L'Approbation !== 결재ID ==! */
+				, (SELECT V.APRV_PRCS_STTS_CD FROM TB_POTI_APRV V WHERE V.DEL_YN = 'N' AND V.APRV_ID = A.APRV_ID) AS APRV_PRCS_STTS_CD
+		  FROM
+		  		  TB_AEOI_AUDT_PLN A
+		 WHERE
+				  A.DEL_YN = 'N'
+	    <if test="aeoAthrRqstNo != null and aeoAthrRqstNo != ''">
+		   AND	  A.AEO_ATHR_RQST_NO = #{aeoAthrRqstNo}       /** Numéro de demande du statut OEA !== AEO공인신청번호 ==! */
+	    </if>
+	    <if test="audtPlnNo != null and audtPlnNo != ''">
+	       AND 	  A.AUDT_PLN_NO = #{audtPlnNo}
+	    </if>
+		 ORDER BY A.LAST_CHG_DTTM DESC
+		 LIMIT 1
+	</select>
+
+	<!--
+    [Fenêtre contextuelle d'inscription au formulaire de plan d'audit] Consulter-Nombre de demander l'audit en collaboration !==[심사계획서등록] 조회-협의심사요청건수==!
+    -->
+	<select id="selectAeoCnfcAudtReqstCnt"
+		parameterType="alpass.ipt.aeo.com.vo.AeoComAthrApfmVo"
+		resultType="int">
+		/* selectAeoCnfcAudtReqstCnt */
+		SELECT COUNT(1)
+		FROM   TB_AEOI_RQST_CO_POBS A
+		WHERE  A.AEO_ATHR_RQST_NO = #{aeoAthrRqstNo}
+		AND    A.MNDA_CN IS NOT NULL
+		AND    A.DEL_YN = 'N'
+	</select>
+
+</mapper>

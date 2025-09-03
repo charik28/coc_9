@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  Mapper : Information sur les risques !== 위험정보 Mapper ==!
+-->
+<mapper namespace="alpass.ipt.rsm.basc.mapper.RsmBascRskInfoMapper">
+
+    <!--
+    [Domiciliation] Consulter la liste
+    !== [은행지정] 목록 조회 ==!
+    -->
+    <select id="selectBnkApntList" 
+        parameterType="alpass.ipt.rsm.basc.vo.RsmBnkApntInqtVo"
+        resultType="alpass.ipt.rsm.com.vo.RsmBnkApntVo">
+        /* selectBnkApntList */
+        <include refid="pagination.header"/>
+            SELECT
+                  A.PYMN_AC_NO                  /** N° De Compte De Paiement !== 지불계좌번호 ==! */
+                , TO_CHAR(TO_DATE(A.APNT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS APNT_DT      /** Date De Désignation !== 지정일자 ==! */
+                , A.WLY_CD                     /** Code de wilaya !== 윌라야코드 ==! */
+                , A.PYMN_BNK_CD                /** Code de Banque !== 지불은행코드 ==! */
+                , (SELECT BNK_NM FROM TB_COM_BNK_CD WHERE BNK_CD = A.PYMN_BNK_CD AND DEL_YN = 'N') AS PYMN_BNK_NM
+                , A.PYMN_BNK_BRNH_CD           /** Code D'Agnce De Banque De Paiement !== 지불은행지점코드 ==! */
+                , (SELECT BNK_BRNH_NM FROM TB_COM_BNK_BRNH_CD WHERE BNK_BRNH_CD = A.PYMN_BNK_BRNH_CD AND DEL_YN = 'N' ) AS PYMN_BNK_BRNH_NM
+                , A.NIF                        /** NIF !== 납세자식별번호 ==! */
+                , A.CO_NM                      /** Nom De L'Entreprise !== 업체명 ==! */
+                , A.PYMN_MEAN_CD               /** Code De Mode De Paiement !== 지불방법코드 ==! */
+                , A.OVRS_BUCN_CO_NM            /** Nom De L'Entreprise De L'Opérateur Étranger !== 해외거래처업체명 ==! */
+                , A.OVRS_BUCN_ADDR             /** Adresse De L'Opérateur Étranger !== 해외거래처주소 ==! */
+                , A.OVRS_BUCN_CNTY_CD          /** Code De Pays De L'Opérateur Étranger !== 해외거래처국가코드 ==! */
+                , A.INCO_CD                    /** TRANSACTION CODE_INCOTERM !== 인코텀즈코드 ==! */
+                , A.INVC_AMT                   /** Montant De Facture !== 송장금액 ==! */
+                , A.INVC_CURR_CD               /** Code De Devise De La Facture !== 송장통화코드 ==! */
+                , A.CAG_AMT                    /** Valeur Des Marchandises !== 화물금액 ==! */
+                , A.CAG_AMT_CURR_CD            /** Code de devise du montant de la cargaison !== 화물금액통화코드 ==! */
+                , A.HS2_CD                     /** Code Sh2 !== HS2코드 ==! */
+                , ( SELECT HS_DESC
+                    FROM ( SELECT HS_DESC
+                           FROM TB_CLRI_HS_CD
+                           WHERE DEL_YN = 'N'
+                           AND HS_CD = A.HS2_CD
+                           AND TO_CHAR(SYSDATE,'YYYYMMDD') BETWEEN TO_CHAR(TO_DATE( HS_APLY_STRT_DT , 'YYYYMMDD'), 'YYYYMMDD') AND TO_CHAR(TO_DATE( HS_APLY_END_DT  , 'YYYYMMDD'), 'YYYYMMDD')
+                         )
+                    WHERE ROWNUM = 1
+                  ) as HS2_NM                  /** Nom Sh2 !== HS2코드명 ==! */
+            FROM   TB_RSMI_BNK_APNT A
+           WHERE  DEL_YN = 'N'                 /** Suppression ON !== 삭제여부 ==! */
+           and  1 = 1
+           <if test='wlyCd != null and !"".equals(wlyCd)'>
+               AND A.WLY_CD = #{wlyCd}         /** Code de wilaya !== 윌라야코드 ==! */
+           </if>
+           <if test='coNm != null and !"".equals(coNm)'>
+	           AND A.CO_NM LIKE '%' || #{coNm} || '%'     /* Nom De L'Entreprise !== 업체명 ==! */
+	       </if>
+           <if test='nif != null and !"".equals(nif)'>
+               AND A.NIF = #{nif}              /** NIF !== 납세자식별번호 ==! */
+           </if>
+           <if test='ovrsBucnCntyCd != null and !"".equals(ovrsBucnCntyCd)'>
+               AND  A.OVRS_BUCN_CNTY_CD = #{ovrsBucnCntyCd}         /** Code De Pays De L'Opérateur Étranger !== 해외거래처국가코드 ==! */
+           </if>
+           <if test='incoCd != null and !"".equals(incoCd)'>
+                AND A.INCO_CD = #{incoCd}      /** Code Incoterms !== 인코텀즈코드 ==! */
+           </if>
+           <if test='pymnBnkCd != null and !"".equals(pymnBnkCd)'>
+                AND A.PYMN_BNK_CD = #{pymnBnkCd}                    /** Code De Banque De Paiement !== 지불은행코드 ==! */
+           </if>
+           <if test='ovrsBucnCoNm != null and !"".equals(ovrsBucnCoNm)'>
+                AND A.OVRS_BUCN_CO_NM LIKE '%' || #{ovrsBucnCoNm} || '%'        /** Nom De L'Entreprise De L'Opérateur Étranger !== 해외거래처업체명 ==! */
+           </if>
+           <if test='hs2Cd != null and !"".equals(hs2Cd)'>
+               AND  A.HS2_CD = #{hs2Cd}                             /** Code Sh2 !== HS2코드 ==! */
+           </if>
+           <if test='(searchStrtDt != null and !"".equals(searchStrtDt)) and (searchEndDt != null and !"".equals(searchEndDt))'>
+	           AND   A.APNT_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{searchEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND A.APNT_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{searchStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')       /** Date De Désignation !== 지정일자 ==! */
+	       </if>
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+    [Pré-domiciliation] Consulter la liste
+    !== [사전은행지정] 목록 조회 ==!
+    -->
+    <select id="selectBfhnBnkApntList" parameterType="alpass.ipt.rsm.basc.vo.RsmBfhnBnkApntInqtVo" resultType="alpass.ipt.rsm.com.vo.RsmBfhnBnkApntVo">
+        /* selectBfhnBnkApntList */
+        <include refid="pagination.header"/>
+            SELECT
+                  A.PYMN_AC_NO                 /** N° De Compte De Paiement !== 지불계좌번호 ==! */
+                , A.BFHN_APNT_DOC_NO           /** N° Dossier de pré-domiciliation !== 사전지정문서번호 ==! */
+                , TO_CHAR(TO_DATE(A.BFHN_APNT_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS BFHN_APNT_DT      /** Date de pré-domiciliation !== 사전지정일자 ==! */
+                , A.WLY_CD                     /** Code de wilaya !== 윌라야코드 ==! */
+                , A.PYMN_BNK_CD                /** Code de Banque !== 지불은행코드 ==! */
+                , (SELECT BNK_NM FROM TB_COM_BNK_CD WHERE BNK_CD = A.PYMN_BNK_CD AND DEL_YN = 'N') AS PYMN_BNK_NM
+                , A.PYMN_BNK_BRNH_CD           /** Code D'Agnce De Banque De Paiement !== 지불은행지점코드 ==! */
+                , (SELECT BNK_BRNH_NM FROM TB_COM_BNK_BRNH_CD WHERE BNK_BRNH_CD = A.PYMN_BNK_BRNH_CD AND DEL_YN = 'N' ) AS PYMN_BNK_BRNH_NM
+                , A.NIF                        /** NIF !== 납세자식별번호 ==! */
+                , A.IMP_CO_NM                  /** Nom de l'importateur !== 수입업체명 ==! */
+                , A.PYMN_MEAN_CD               /** Code De Mode De Paiement !== 지불방법코드 ==! */
+                , A.OVRS_BUCN_CO_NM            /** Nom De L'Entreprise De L'Opérateur Étranger !== 해외거래처업체명 ==! */
+                , A.OVRS_BUCN_ADDR             /** Adresse De L'Opérateur Étranger !== 해외거래처주소 ==! */
+                , A.OVRS_BUCN_CNTY_CD          /** Code De Pays De L'Opérateur Étranger !== 해외거래처국가코드 ==! */
+                , A.INCO_CD                    /** TRANSACTION CODE_INCOTERM !== 인코텀즈코드 ==! */
+                , A.INVC_AMT                   /** Montant De Facture !== 송장금액 ==! */
+                , A.INVC_CURR_CD               /** Code De Devise De La Facture !== 송장통화코드 ==! */
+                , A.CAG_AMT                    /** Valeur Des Marchandises !== 화물금액 ==! */
+                , A.CAG_AMT_CURR_CD            /** Code de devise du montant de la cargaison !== 화물금액통화코드 ==! */
+                , A.HS2_CD                     /** Code Sh2 !== HS2코드 ==! */
+                , ( SELECT HS_DESC
+                    FROM ( SELECT HS_DESC
+                           FROM TB_CLRI_HS_CD
+                           WHERE DEL_YN = 'N'
+                           AND HS_CD = A.HS2_CD
+                           AND TO_CHAR(SYSDATE,'YYYYMMDD') BETWEEN TO_CHAR(TO_DATE( HS_APLY_STRT_DT , 'YYYYMMDD'), 'YYYYMMDD') AND TO_CHAR(TO_DATE( HS_APLY_END_DT  , 'YYYYMMDD'), 'YYYYMMDD')
+                         )
+                    WHERE ROWNUM = 1
+                  ) as HS2_NM                  /** Nom Sh2 !== HS2코드명 ==! */
+            FROM  TB_RSMI_BFHN_BNK_APNT A
+           WHERE  DEL_YN = 'N'                                 /** Suppression ON !== 삭제여부 ==! */
+           and  1 = 1
+           <if test='wlyCd != null and !"".equals(wlyCd)'>
+               AND A.WLY_CD = #{wlyCd}                          /** Code de wilaya !== 윌라야코드 ==! */
+           </if>
+           <if test='impCoNm != null and !"".equals(impCoNm)'>
+	           AND A.IMP_CO_NM LIKE '%' || #{impCoNm} || '%'    /** Nom de l'importateur !== 수입업체명 ==! */
+	       </if>
+           <if test='nif != null and !"".equals(nif)'>
+               AND A.NIF = #{nif}                               /** NIF !== 납세자식별번호 ==! */
+           </if>
+           <if test='ovrsBucnCntyCd != null and !"".equals(ovrsBucnCntyCd)'>
+               AND  A.OVRS_BUCN_CNTY_CD = #{ovrsBucnCntyCd}     /** Code De Pays De L'Opérateur Étranger !== 해외거래처국가코드 ==! */
+           </if>
+           <if test='incoCd != null and !"".equals(incoCd)'>
+                AND A.INCO_CD = #{incoCd}                       /** Code Incoterms !== 인코텀즈코드 ==! */
+           </if>
+           <if test='pymnBnkCd != null and !"".equals(pymnBnkCd)'>
+                AND A.PYMN_BNK_CD = #{pymnBnkCd}                /** Code De Banque De Paiement !== 지불은행코드 ==! */
+           </if>
+           <if test='ovrsBucnCoNm != null and !"".equals(ovrsBucnCoNm)'>
+                AND A.OVRS_BUCN_CO_NM LIKE '%' || #{ovrsBucnCoNm} || '%'            /** Nom De L'Entreprise De L'Opérateur Étranger !== 해외거래처업체명 ==! */
+           </if>
+           <if test='hs2Cd != null and !"".equals(hs2Cd)'>
+               AND  A.HS2_CD = #{hs2Cd}                         /** Code Sh2 !== HS2코드 ==! */
+           </if>
+           <if test='(searchStrtDt != null and !"".equals(searchStrtDt)) and (searchEndDt != null and !"".equals(searchEndDt))'>
+	           AND   A.BFHN_APNT_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{searchEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD') AND A.BFHN_APNT_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{searchStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')         /** Date de pré-domiciliation !== 사전지정일자 ==! */
+	       </if>
+        <include refid="pagination.footer"/>
+    </select>
+
+
+    <!--
+      [Consultation du FNAIF] Consulter la liste !== [국가범법자조회] 목록조회 ==!
+    -->
+    <select id="selectCntyCrmnList"
+        parameterType="alpass.ipt.rsm.basc.vo.RsmCntyCrmnInqtVo"
+        resultType="alpass.ipt.rsm.basc.vo.RsmCntyCrmnVo">
+        /* selectCntyCrmnList */
+
+        <include refid="pagination.header"/>
+            SELECT TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS trsnDttm   /** Date et heure de transmission !== 전송일시 ==! */
+                , A.NIF AS nif                  /** NIF !== 납세식별번호 ==! */
+                , A.CONM AS txprNm              /** Nom Du Responsable Financier !== 납세자명 ==! */
+                , A.CO_DTL_ADDR AS txprAddr     /** Adresse Du Contribuable !== 납세자주소 ==! */
+                <!-- , A.VIL AS wilayaNm -->
+                , (SELECT POST_ADDR FROM TB_COM_WLY_POST_CD WHERE POST_CD = A.POST_CD) AS addr      /** Nom de l’adresse !== 우편주소명 ==! */
+                , (SELECT WLY_CD FROM TB_COM_WLY_POST_CD WHERE POST_CD = A.POST_CD) AS wilayaCd     /** Code de wilaya !== 윌라야코드 ==! */
+                , (SELECT WLY_NM_FR FROM TB_COM_WLY_POST_CD WHERE POST_CD = A.POST_CD) AS wilayaNm  /** Nom de wilaya !== 윌라야명 ==! */
+
+            FROM   TB_POTE_NIF A
+            WHERE A.DEL_YN = 'N'
+            AND A.NIF_STTS_CD = '0'         /** Code De Statut NIF !== NIF 상태코드 ==! */
+            <if test='nif != null and !"".equals(nif)'>
+                AND A.NIF =  #{nif}         /** NIF !== 납세자식별번호 ==! */
+            </if>
+            <if test='txprNm != null and !"".equals(txprNm)'>
+                AND A.CO_NM like '%'|| UPPER(#{txprNm}) || '%'          /** Nom De L'Entreprise !== 업체명 ==! */
+            </if>
+        <include refid="pagination.footer"/>
+    </select>
+
+</mapper>

@@ -1,0 +1,596 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="alpass.ipt.clr.trm.aqm.mapper.ClrTrmPrvlCvqtMgmtMapper">
+
+	<!-- Consultation de la liste de gestion des contingents de l'accord préférentiel !== 특혜 협정쿼터 관리 목록조회 ==! -->
+	<select id="selectClrPrvlCvqtMgmtList" parameterType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtMgmtVo" resultType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtMgmtVo">
+		/** ClrTrmPrvlCvqtMgmtMapper_selectClrPrvlCvqtMgmtList **/
+		<include refid="pagination.header" />
+		SELECT a.prvl_cd
+			, TO_CHAR(TO_DATE(a.prvl_aply_strt_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS prvl_aply_strt_dt
+			, TO_CHAR(TO_DATE(a.prvl_aply_end_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS prvl_aply_end_dt
+			, NVL(fn_get_cd_vdval_nm('CLR_0019', a.prvl_cd, #{langCd}), a.prvl_cd_nm) AS prvl_cd_nm
+			, TO_CHAR(TO_DATE(a.sgnt_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS sgnt_dt
+			, TO_CHAR(TO_DATE(a.apre_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS apre_dt
+			, TO_CHAR(TO_DATE(a.rati_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS rati_dt
+			, TO_CHAR(TO_DATE(a.pbln_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS pbln_dt
+			, a.rmrk_cn
+			, a.use_yn
+		FROM tb_clri_prvl_comn a
+			, tb_clri_prvl_qta b
+		WHERE a.prvl_cd = b.prvl_cd
+		AND a.prvl_aply_strt_dt = b.prvl_aply_strt_dt
+		AND a.use_yn = 'Y' 
+		AND a.del_yn = 'N'
+		AND b.del_yn = 'N'
+		<if test="prvlCd != null and prvlCd != ''">
+		AND a.prvl_cd = #{prvlCd}
+		</if>
+		<if test="hsCd != null and hsCd != ''">
+		AND b.hs_cd = #{hsCd}
+		</if>
+		<if test="potxIdfyNo != null and potxIdfyNo != ''">
+		AND b.potx_idfy_no = #{potxIdfyNo}
+		</if>
+		<if test="prvlAplyDt != null and prvlAplyDt != ''">
+		AND TO_CHAR(TO_DATE(#{prvlAplyDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN a.prvl_aply_strt_dt AND a.prvl_aply_end_dt
+		</if>
+		GROUP BY a.prvl_cd
+			, NVL(fn_get_cd_vdval_nm('CLR_0019', a.prvl_cd, #{langCd}), a.prvl_cd_nm)
+			, a.prvl_aply_strt_dt
+			, a.prvl_aply_end_dt
+			, a.sgnt_dt
+			, a.apre_dt
+			, a.rati_dt
+			, a.pbln_dt
+			, a.rmrk_cn
+			, a.use_yn
+		ORDER BY prvl_cd, prvl_aply_strt_dt
+		<include refid="pagination.footer" />
+	</select>
+	
+	<!-- Consultation de la liste de téléchargement en Excel de la gestion des contingents de l'accord préférentiel !== 특혜 협정쿼터 관리 엑셀 다운로드 목록조회 ==! -->
+	<select id="selectClrPrvlCvqtMgmtExcelList" parameterType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtMgmtVo" resultType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtMgmtVo">
+		/** ClrTrmPrvlCvqtMgmtMapper_selectClrPrvlCvqtMgmtExcelList **/
+		SELECT a.prvl_cd
+			, TO_CHAR(TO_DATE(a.prvl_aply_strt_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS prvl_aply_strt_dt
+			, TO_CHAR(TO_DATE(a.prvl_aply_end_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS prvl_aply_end_dt
+			, NVL(fn_get_cd_vdval_nm('CLR_0019', a.prvl_cd, #{langCd}), a.prvl_cd_nm) AS prvl_cd_nm
+			, TO_CHAR(TO_DATE(a.sgnt_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS sgnt_dt
+			, TO_CHAR(TO_DATE(a.apre_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS apre_dt
+			, TO_CHAR(TO_DATE(a.rati_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS rati_dt
+			, TO_CHAR(TO_DATE(a.pbln_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS pbln_dt
+			, a.rmrk_cn
+			, a.use_yn
+		FROM tb_clri_prvl_comn a
+			, tb_clri_prvl_qta b
+		WHERE a.prvl_cd = b.prvl_cd
+		AND a.prvl_aply_strt_dt = b.prvl_aply_strt_dt
+		AND a.use_yn = 'Y' 
+		AND a.del_yn = 'N'
+		AND b.del_yn = 'N'
+		<if test="prvlCd != null and prvlCd != ''">
+		AND a.prvl_cd = #{prvlCd}
+		</if>
+		<if test="hsCd != null and hsCd != ''">
+		AND b.hs_cd = #{hsCd}
+		</if>
+		<if test="potxIdfyNo != null and potxIdfyNo != ''">
+		AND b.potx_idfy_no = #{potxIdfyNo}
+		</if>
+		<if test="prvlAplyDt != null and prvlAplyDt != ''">
+		AND TO_CHAR(TO_DATE(#{prvlAplyDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN a.prvl_aply_strt_dt AND a.prvl_aply_end_dt
+		</if>
+		GROUP BY a.prvl_cd
+			, NVL(fn_get_cd_vdval_nm('CLR_0019', a.prvl_cd, #{langCd}), a.prvl_cd_nm)
+			, a.prvl_aply_strt_dt
+			, a.prvl_aply_end_dt
+			, a.sgnt_dt
+			, a.apre_dt
+			, a.rati_dt
+			, a.pbln_dt
+			, a.rmrk_cn
+			, a.use_yn
+		ORDER BY prvl_cd, prvl_aply_strt_dt
+	</select>
+	
+	<!-- Consultation de la liste des sous positions tarifaires pour le contingent de l'accord préférentiel !== 특혜 협정쿼터 HS 관리 목록조회 ==! -->
+	<select id="selectClrPrvlCvqtHsMgmtList" parameterType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtMgmtVo" resultType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtHsMgmtVo">
+		/** ClrTrmPrvlCvqtMgmtMapper_selectClrPrvlCvqtHsMgmtList **/
+		SELECT a.prvl_cd
+			, TO_CHAR(TO_DATE(a.prvl_aply_strt_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS prvl_aply_strt_dt
+			, a.hs_cd
+			, TO_CHAR(TO_DATE(a.aply_strt_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS aply_strt_dt
+			, TO_CHAR(TO_DATE(a.aply_end_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS aply_end_dt
+			, a.potx_idfy_no
+			, a.qta_grp_cd
+			, a.qty
+		  , nvl(a.qty_ut_cd, '') AS qty_ut_cd
+-- 			, nvl(a.qty_ut_cd, (CASE WHEN (
+-- 				  	SELECT NVL(TRIM(qty_ut_cd), '')
+-- 				  	FROM tb_clri_hs_cd f
+-- 				  	WHERE f.hs_cd = a.hs_cd
+-- 				  	AND f.del_yn = 'N'
+-- --				  	AND TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD') BETWEEN f.hs_aply_strt_dt AND f.hs_aply_end_dt
+-- 						) = '' THEN (
+-- 				  	SELECT NVL(TRIM(qty_ut_cd), '')
+-- 				  	FROM tb_clri_hs_qty_ut_cd e
+-- 				  	WHERE e.hs_cd = a.hs_cd
+-- 				  	AND e.use_yn = 'Y'
+-- 				  	AND e.del_yn = 'N'
+-- --				  	AND e.hs_aply_strt_dt = (
+-- --				  		SELECT hs_aply_strt_dt
+-- --				  		FROM tb_clri_hs_cd
+-- --				  		WHERE hs_cd = e.hs_cd
+-- --					  	AND del_yn = 'N'
+-- --					  	AND TO_CHAR(SYSTIMESTAMP, 'YYYYMMDD') BETWEEN hs_aply_strt_dt AND hs_aply_end_dt
+-- --				  	)
+-- 				  	AND e.clus_srno = (
+-- 				  		SELECT MAX(clus_srno)
+-- 				  		FROM tb_clri_hs_qty_ut_cd
+-- 				  		WHERE hs_cd = e.hs_cd
+-- 				  		AND hs_aply_strt_dt = e.hs_aply_strt_dt
+-- 					  	AND use_yn = 'Y'
+-- 					  	AND del_yn = 'N'
+-- 				  		)
+-- 				  	)
+-- 			  	ELSE (
+-- 				  	SELECT NVL(TRIM(qty_ut_cd), '')
+-- 				  	FROM tb_clri_hs_cd f
+-- 				  	WHERE f.hs_cd = a.hs_cd
+-- 				  	AND f.del_yn = 'N'
+-- 						) END
+-- 					)
+-- 				) AS qty_ut_cd
+			, a.ntwg
+			, a.del_yn
+			, a.frst_regst_id
+			, a.frst_rgsr_dttm
+			, a.last_chpr_id
+			, a.last_chg_dttm
+			, a.qty - nvl(c.rsqty_qty,0) AS usedd_qty
+			, c.rsqty_qty
+		FROM tb_clri_prvl_qta a
+			, tb_clri_prvl_comn b
+			, tb_clri_prvl_qta_invn_h c
+		WHERE a.prvl_cd = b.prvl_cd
+		AND a.prvl_aply_strt_dt = b.prvl_aply_strt_dt 
+		AND a.del_yn = 'N'
+		AND b.use_yn = 'Y'
+		AND b.del_yn = 'N'
+		AND a.prvl_cd = #{prvlCd}
+		AND a.prvl_aply_strt_dt = TO_CHAR(TO_DATE(#{prvlAplyStrtDt},'DD/MM/YYYY'), 'YYYYMMDD')
+		AND a.prvl_cd = c.prvl_cd
+		AND a.prvl_aply_strt_dt = c.prvl_aply_strt_dt
+		AND a.hs_cd = c.hs_cd
+		AND a.aply_strt_dt = c.aply_strt_dt
+		AND c.last_yn = 'Y'
+		AND c.del_yn = 'N'
+		AND c.invn_hist_srno = (
+			SELECT MAX(invn_hist_srno)
+			FROM tb_clri_prvl_qta_invn_h d
+			WHERE d.prvl_cd = c.prvl_cd
+				AND d.prvl_aply_strt_dt = c.prvl_aply_strt_dt
+				AND d.hs_cd = c.hs_cd
+				AND d.aply_strt_dt = c.aply_strt_dt
+				AND d.last_yn = c.last_yn
+				AND d.del_yn = c.del_yn
+			)
+		ORDER BY prvl_cd, prvl_aply_strt_dt, LENGTH(qta_grp_cd), qta_grp_cd, hs_cd
+	</select>
+	
+	<!-- Consultation des contenus de gestion du contingent de l'accord préférentiel!== 특혜 협정쿼터 관리 내용조회 ==! -->
+	<select id="selectClrPrvlCvqtMgmt" parameterType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtMgmtVo" resultType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtMgmtVo">
+		/** ClrTrmPrvlCvqtMgmtMapper_selectClrPrvlCvqtMgmt : 특혜 협정쿼터 관리 내용조회 **/
+		SELECT prvl_cd
+			, TO_CHAR(TO_DATE(prvl_aply_strt_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS prvl_aply_strt_dt
+			, TO_CHAR(TO_DATE(prvl_aply_end_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS prvl_aply_end_dt
+			, NVL(fn_get_cd_vdval_nm('CLR_0019', prvl_cd, #{langCd}), prvl_cd_nm) AS prvl_cd_nm
+			, TO_CHAR(TO_DATE(sgnt_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS sgnt_dt
+			, TO_CHAR(TO_DATE(apre_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS apre_dt
+			, TO_CHAR(TO_DATE(rati_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS rati_dt
+			, TO_CHAR(TO_DATE(pbln_dt, 'YYYYMMDD'), 'DD/MM/YYYY') AS pbln_dt
+			, rmrk_cn
+			, use_yn
+		FROM tb_clri_prvl_comn
+		WHERE del_yn = 'N'
+		AND prvl_cd = #{prvlCd}
+		AND TO_CHAR(sysdate, 'YYYYMMDD') between prvl_aply_strt_dt and prvl_aply_end_dt
+	</select>
+	
+	<!-- Vérification de la redondance de la sous position tarifaire du contingent de l'accord préférentiel !== 특혜 협정쿼터 HS 중복체크 ==! -->
+	<select id="checkClrPrvlCvqtHsCd" parameterType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtHsMgmtVo" resultType="int">
+		/** ClrTrmPrvlCvqtMgmtMapper_checkClrPrvlCvqtHsCd : 특혜 협정쿼터 HS 중복체크 **/
+		SELECT COUNT(*) AS cnt
+		FROM tb_clri_prvl_qta
+		WHERE prvl_cd = #{prvlCd}
+		AND prvl_aply_strt_dt = TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		AND hs_cd = #{hsCd}
+		AND aply_strt_dt = TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+	</select>
+	
+	<!-- Enregistrement des contenus de gestion des sous positions tarifaires du contingent de l'accord préférentiel !== 특혜 협정쿼터 HS 관리 내용 등록 ==! -->
+	<insert id="insertClrPrvlCvqtHs" parameterType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtHsMgmtVo">
+		/** ClrTrmPrvlCvqtMgmtMapper_insertClrPrvlCvqtHs : 특혜 협정쿼터 HS 관리 내용 등록 **/
+		INSERT INTO tb_clri_prvl_qta (
+			prvl_cd
+			, prvl_aply_strt_dt
+			, hs_cd
+			, aply_strt_dt
+			, aply_end_dt
+			, potx_idfy_no
+			, qta_grp_cd
+			, qty
+			, qty_ut_cd
+			, ntwg
+			, del_yn
+			, frst_regst_id
+			, frst_rgsr_dttm
+			, last_chpr_id
+			, last_chg_dttm
+		) VALUES (
+			#{prvlCd}
+			, TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+			, #{hsCd}
+			, TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+			, TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+			, #{potxIdfyNo}
+			, TRIM(#{qtaGrpCd})
+			, #{qty}
+			, #{qtyUtCd}
+			, #{ntwg}
+			, 'N'
+			, #{frstRegstId}
+			, SYSTIMESTAMP
+			, #{lastChprId}
+			, SYSTIMESTAMP
+		) 
+	</insert>
+	
+	<!-- Enregistrement de l'historique du stock des sous positions tarifaires du contingent de l'accord préférentiel !== 특혜 협정쿼터 HS 재고이력 등록 ==! -->
+	<insert id="insertClrPrvlCvqtHsInvnH" parameterType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtHsMgmtVo">
+		/** ClrTrmPrvlCvqtMgmtMapper_insertClrPrvlCvqtHsInvnH **/
+		INSERT INTO tb_clri_prvl_qta_invn_h (
+			prvl_cd
+			, prvl_aply_strt_dt
+			, hs_cd
+			, aply_strt_dt
+			, invn_hist_srno
+			, invn_mvmn_tp_cd
+			, bfcy_no
+			, apre_qty
+			, imp_qty
+			, rsqty_qty
+			, last_yn
+			, del_yn
+			, frst_regst_id
+			, frst_rgsr_dttm
+			, last_chpr_id
+			, last_chg_dttm
+		) VALUES (
+			#{prvlCd}
+			, TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+			, #{hsCd}
+			, TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+			, 1
+			, 'IN'
+			, NVL(#{potxIdfyNo}, '')
+			, NVL(#{qty}, 0)
+			, NVL(#{qty}, 0)
+			, NVL(#{qty}, 0)
+			, 'Y'
+			, 'N'
+			, #{frstRegstId}
+			, SYSTIMESTAMP
+			, #{lastChprId}
+			, SYSTIMESTAMP
+		) 
+	</insert>
+	
+	<!-- Modification des contenus de gestion des sous positions tarifaires du contingent de l'accord préférentiel !== 특혜 협정쿼터 HS 관리 내용 수정 ==! -->
+	<update id="updateClrPrvlCvqtHs" parameterType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtHsMgmtVo">
+		/** ClrTrmPrvlCvqtMgmtMapper_updateClrPrvlCvqtHs **/
+		UPDATE tb_clri_prvl_qta
+		SET aply_end_dt = TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+			, potx_idfy_no = #{potxIdfyNo}
+			, qta_grp_cd = TRIM(#{qtaGrpCd})
+			, qty = #{qty}
+			, qty_ut_cd = #{qtyUtCd}
+			, ntwg = #{ntwg}
+		  , del_yn = 'N'
+			, last_chpr_id = #{lastChprId}
+			, last_chg_dttm = SYSTIMESTAMP
+		WHERE prvl_cd = #{prvlCd}
+		AND prvl_aply_strt_dt = TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		AND hs_cd = #{hsCd}
+		AND aply_strt_dt = TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+	</update>
+	
+	<!-- Enregistrement de l'historique du stock des sous positions tarifaires du contingent de l'accord préférentiel !== 특혜 협정쿼터 HS 재고이력 등록 ==! -->
+	<update id="updateClrPrvlCvqtHsInvnH" parameterType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtHsMgmtVo">
+		/** ClrTrmPrvlCvqtMgmtMapper_updateClrPrvlCvqtHsInvnH **/
+		UPDATE tb_clri_prvl_qta_invn_h 
+		SET bfcy_no = NVL(#{potxIdfyNo}, '')
+			, apre_qty = NVL(#{qty}, 0)
+			, imp_qty = NVL(#{qty}, 0)
+			, rsqty_qty = NVL(#{qty}, 0)
+			, del_yn = 'N'
+			, last_chpr_id = #{lastChprId}
+			, last_chg_dttm = SYSTIMESTAMP
+		WHERE prvl_cd = #{prvlCd}
+		AND prvl_aply_strt_dt = TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		AND hs_cd = #{hsCd}
+		AND aply_strt_dt = TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		AND invn_mvmn_tp_cd = 'IN'
+		AND invn_hist_srno = 1
+		AND last_yn = 'Y'
+	</update>
+
+	<!-- // Traitement de Del Y de la gestion de code SH des accords préférentiels !== 특혜 협정쿼터 HS 관리 Del Y 처리 ==! -->
+	<update id="updateClrPrvlQtaDelYn" parameterType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtMgmtVo">
+		/** ClrTrmPrvlCvqtMgmtMapper_updateClrPrvlQtaDelYn **/
+		UPDATE tb_clri_prvl_qta
+		SET del_yn = 'Y'
+			, last_chpr_id = #{lastChprId}
+			, last_chg_dttm = SYSTIMESTAMP
+		WHERE prvl_cd = #{prvlCd}
+		AND prvl_aply_strt_dt = TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		AND del_yn = 'N'
+	</update>
+
+	<!-- // Traitement Del de l'historique des restes des contingents des accords préférentiels !== 특혜 협정쿼터 재고이력 Del 처리 ==! -->
+	<update id="updateClrPrvlQtaInvnHDelYn" parameterType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtMgmtVo">
+		/** ClrTrmPrvlCvqtMgmtMapper_updateClrPrvlQtaInvnHDelYn **/
+		UPDATE tb_clri_prvl_qta_invn_h
+		SET del_yn = 'Y'
+			, last_chpr_id = #{lastChprId}
+			, last_chg_dttm = SYSTIMESTAMP
+		WHERE prvl_cd = #{prvlCd}
+		AND prvl_aply_strt_dt = TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		AND invn_mvmn_tp_cd = 'IN'
+		AND invn_hist_srno = 1
+		AND last_yn = 'Y'
+		AND del_yn = 'N'
+	</update>
+
+	<!-- // Vérification de l'utilisation O/N des restes des contingents des accords préférentiels !== 특혜 협정쿼터 재고이력 사용여부 체크 ==! -->
+	<select id="checkClrPrvlQtaInvnH" parameterType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtHsMgmtVo" resultType="int">
+		/** ClrTrmPrvlCvqtMgmtMapper_checkClrPrvlQtaInvnH **/
+		SELECT COUNT(*) AS cnt
+		FROM tb_clri_prvl_qta_invn_h
+		WHERE prvl_cd = #{prvlCd}
+		AND prvl_aply_strt_dt = TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		AND hs_cd = #{hsCd}
+		AND aply_strt_dt = TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+	</select>
+
+	<!-- Modification des contenus de gestion des sous positions tarifaires du contingent de l'accord préférentiel !== 특혜 협정쿼터 HS 관리 내용 수정 ==! -->
+	<update id="updateClrPrvlCvqtHsEndDt" parameterType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtHsMgmtVo">
+		/** ClrTrmPrvlCvqtMgmtMapper_updateClrPrvlCvqtHsEndDt **/
+		UPDATE tb_clri_prvl_qta
+		SET aply_end_dt = TO_CHAR(TO_DATE(#{aplyEndDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+			, del_yn = 'N'
+			, last_chpr_id = #{lastChprId}
+			, last_chg_dttm = SYSTIMESTAMP
+		WHERE prvl_cd = #{prvlCd}
+			AND prvl_aply_strt_dt = TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+			AND hs_cd = #{hsCd}
+			AND aply_strt_dt = TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+	</update>
+
+	<!-- Traitement de Del N de la gestion de code SH des accords préférentiels !== 특혜 협정쿼터 HS 관리 Del N 처리 ==! -->
+	<update id="updateClrPrvlQtaDelYnN" parameterType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtHsMgmtVo">
+		/** ClrTrmPrvlCvqtMgmtMapper_updateClrPrvlQtaDelYnN **/
+		UPDATE tb_clri_prvl_qta
+		SET del_yn = 'N'
+			, last_chpr_id = #{lastChprId}
+			, last_chg_dttm = SYSTIMESTAMP
+		WHERE prvl_cd = #{prvlCd}
+		AND prvl_aply_strt_dt = TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		AND hs_cd = #{hsCd}
+		AND aply_strt_dt = TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+	</update>
+
+	<!-- // Consultation de l'hitorique des restes des contingents par code SH des accords préférentiels !== 특혜 협정쿼터 HS별 재고이력 조회 ==! -->
+	<select id="selectClrPrvlQtaInvnHList" parameterType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlCvqtHsMgmtVo" resultType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlQtaInvnHVo">
+		/** ClrTrmPrvlCvqtMgmtMapper_selectClrPrvlQtaInvnHList **/
+		SELECT prvl_cd
+			, prvl_aply_strt_dt
+			, hs_cd
+			, aply_strt_dt
+			, invn_hist_srno
+			, invn_mvmn_tp_cd
+			, bfcy_no
+			, apre_qty
+			, imp_qty
+			, rsqty_qty
+			, dtl_dcsh_no
+			, dtl_dcsh_pdls_no
+			, last_yn
+			, del_yn
+			, frst_regst_id
+			, frst_rgsr_dttm
+			, last_chpr_id
+			, last_chg_dttm
+		FROM tb_clri_prvl_qta_invn_h
+		WHERE prvl_cd = #{prvlCd}
+		AND prvl_aply_strt_dt = TO_CHAR(TO_DATE(#{prvlAplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		AND hs_cd = #{hsCd}
+		AND aply_strt_dt = TO_CHAR(TO_DATE(#{aplyStrtDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+		AND imp_qty > 0
+		AND invn_hist_srno > 1
+		AND del_yn = 'N'
+		ORDER BY invn_hist_srno DESC
+	</select>
+
+	<!-- // Consultation de la liste des restes dese contingents des accords préférentiels !== 특혜 협정쿼터 재고이력 목록조회 ==! -->
+	<select id="selectClrPrvlCvqtInvnHistList" parameterType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlQtaInvnHVo" resultType="alpass.ipt.clr.trm.aqm.vo.ClrTrmPrvlQtaInvnHVo">
+		/** ClrTrmPrvlCvqtMgmtMapper_selectClrPrvlCvqtInvnHistList **/
+		<include refid="pagination.header" />
+		SELECT prvl_cd
+			, prvl_cd_nm
+			, prvl_aply_strt_dt
+			, prvl_aply_end_dt
+			, qta_grp_cd
+			, hs_cd
+			, aply_strt_dt
+			, aply_end_dt
+			, invn_hist_srno
+			, invn_mvmn_tp_cd
+			, (CASE WHEN sort_no = 2 THEN fn_get_lbl_nm('L_SUM', #{langCd}) ELSE NVL(dtl_dcsh_no, '') END) AS dtl_dcsh_no
+			, NVL(dtl_dcsh_pdls_no, '') AS dtl_dcsh_pdls_no
+			, (CASE WHEN sort_no = 2 THEN 'Total' ELSE NVL(bfcy_no, '') END) AS bfcy_no
+			, apre_qty
+			, imp_qty
+			, rsqty_qty
+		FROM (
+			SELECT h.prvl_cd
+				, NVL(fn_get_cd_vdval_nm('CLR_0019', h.prvl_cd, #{langCd}), co.prvl_cd_nm) AS prvl_cd_nm
+				, h.prvl_aply_strt_dt
+				, co.prvl_aply_end_dt
+				, q.qta_grp_cd
+				, h.hs_cd
+				, h.aply_strt_dt
+				, q.aply_end_dt
+				, h.invn_hist_srno
+				, h.invn_mvmn_tp_cd
+				, h.dtl_dcsh_no
+				, h.dtl_dcsh_pdls_no
+				, h.bfcy_no
+				, h.apre_qty
+				, h.imp_qty
+				, h.rsqty_qty
+				, 1 AS sort_no
+			FROM tb_clri_prvl_qta_invn_h h
+				, tb_clri_prvl_qta q
+				, tb_clri_prvl_comn co
+			WHERE h.prvl_cd = q.prvl_cd
+			AND h.prvl_aply_strt_dt = q.prvl_aply_strt_dt
+			AND h.hs_cd = q.hs_cd
+			AND h.aply_strt_dt = q.aply_strt_dt
+			AND co.prvl_cd = h.prvl_cd
+			AND co.prvl_aply_strt_dt = h.prvl_aply_strt_dt
+			AND h.del_yn = 'N'
+			AND h.imp_qty > 0
+		<if test="prvlCd != null and prvlCd != ''">
+			AND h.prvl_cd = #{prvlCd}
+		</if>
+		<if test="prvlAplyDt != null and prvlAplyDt != ''">
+			AND TO_CHAR(TO_DATE(#{prvlAplyDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN co.prvl_aply_strt_dt AND co.prvl_aply_end_dt
+		</if>
+		<if test="hsCd != null and hsCd != ''">
+			AND h.hs_cd = #{hsCd}
+		</if>
+		<if test="qtaGrpCd != null and qtaGrpCd != ''">
+			AND q.qta_grp_cd = #{qtaGrpCd}
+		</if>
+		<if test="dtlDcshNo != null and dtlDcshNo != ''">
+			AND h.dtl_dcsh_no LIKE '%' || #{dtlDcshNo} || '%'
+		</if>
+		<if test="bfcyNo != null and bfcyNo != ''">
+			AND h.bfcy_no = #{bfcyNo}
+		</if>
+		UNION ALL
+			SELECT h.prvl_cd
+				, NVL(fn_get_cd_vdval_nm('CLR_0019', h.prvl_cd, #{langCd}), co.prvl_cd_nm) AS prvl_cd_nm
+				, h.prvl_aply_strt_dt
+				, co.prvl_aply_end_dt
+				, q.qta_grp_cd
+				, '' AS hs_cd
+				, '' AS aply_strt_dt
+				, '' AS aply_end_dt
+				, MAX(h.invn_hist_srno) AS invn_hist_srno
+				, h.invn_mvmn_tp_cd
+				, '' AS dtl_dcsh_no
+				, '' AS dtl_dcsh_pdls_no
+				, '' AS bfcy_no
+				, MAX(h.apre_qty) AS apre_qty
+				, (CASE WHEN h.invn_mvmn_tp_cd = 'IN' THEN MAX(h.imp_qty) ELSE SUM(h.imp_qty) END) AS imp_qty
+				, MAX(h.rsqty_qty) AS rsqty_qty
+				, 2 AS sort_no
+			FROM tb_clri_prvl_qta_invn_h h
+				, tb_clri_prvl_qta q
+				, tb_clri_prvl_comn co
+			WHERE h.prvl_cd = q.prvl_cd
+			AND h.prvl_aply_strt_dt = q.prvl_aply_strt_dt
+			AND h.hs_cd = q.hs_cd
+			AND h.aply_strt_dt = q.aply_strt_dt
+			AND co.prvl_cd = h.prvl_cd
+			AND co.prvl_aply_strt_dt = h.prvl_aply_strt_dt
+			AND h.del_yn = 'N'
+			AND h.imp_qty > 0
+		<if test="prvlCd != null and prvlCd != ''">
+			AND h.prvl_cd = #{prvlCd}
+		</if>
+		<if test="prvlAplyDt != null and prvlAplyDt != ''">
+			AND TO_CHAR(TO_DATE(#{prvlAplyDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN co.prvl_aply_strt_dt AND co.prvl_aply_end_dt
+		</if>
+		<if test="hsCd != null and hsCd != ''">
+			AND h.hs_cd = #{hsCd}
+		</if>
+		<if test="qtaGrpCd != null and qtaGrpCd != ''">
+			AND q.qta_grp_cd = #{qtaGrpCd}
+		</if>
+		<if test="dtlDcshNo != null and dtlDcshNo != ''">
+			AND h.dtl_dcsh_no LIKE '%' || #{dtlDcshNo} || '%'
+		</if>
+		<if test="bfcyNo != null and bfcyNo != ''">
+			AND h.bfcy_no = #{bfcyNo}
+		</if>
+			AND NVL(TRIM(q.qta_grp_cd), '') <![CDATA[<>]]> ''
+			GROUP BY h.prvl_cd, co.prvl_cd_nm, h.prvl_aply_strt_dt, co.prvl_aply_end_dt, q.qta_grp_cd, h.invn_mvmn_tp_cd
+		UNION ALL
+			SELECT h.prvl_cd
+				, NVL(fn_get_cd_vdval_nm('CLR_0019', h.prvl_cd, #{langCd}), co.prvl_cd_nm) AS prvl_cd_nm
+				, h.prvl_aply_strt_dt
+				, co.prvl_aply_end_dt
+				, '' AS qta_grp_cd
+				, h.hs_cd
+				, h.aply_strt_dt
+				, q.aply_end_dt
+				, MAX(h.invn_hist_srno) AS invn_hist_srno
+				, h.invn_mvmn_tp_cd
+				, '' AS dtl_dcsh_no
+				, '' AS dtl_dcsh_pdls_no
+				, '' AS bfcy_no
+				, MAX(h.apre_qty) AS apre_qty
+				, (CASE WHEN h.invn_mvmn_tp_cd = 'IN' THEN MAX(h.imp_qty) ELSE SUM(h.imp_qty) END) AS imp_qty
+				, MAX(h.rsqty_qty) AS rsqty_qty
+				, 2 AS sort_no
+			FROM tb_clri_prvl_qta_invn_h h
+				, tb_clri_prvl_qta q
+				, tb_clri_prvl_comn co
+			WHERE h.prvl_cd = q.prvl_cd
+			AND h.prvl_aply_strt_dt = q.prvl_aply_strt_dt
+			AND h.hs_cd = q.hs_cd
+			AND h.aply_strt_dt = q.aply_strt_dt
+			AND co.prvl_cd = h.prvl_cd
+			AND co.prvl_aply_strt_dt = h.prvl_aply_strt_dt
+			AND h.del_yn = 'N'
+			AND h.imp_qty > 0
+		<if test="prvlCd != null and prvlCd != ''">
+			AND h.prvl_cd = #{prvlCd}
+		</if>
+		<if test="prvlAplyDt != null and prvlAplyDt != ''">
+			AND TO_CHAR(TO_DATE(#{prvlAplyDt}, 'DD/MM/YYYY'), 'YYYYMMDD') BETWEEN co.prvl_aply_strt_dt AND co.prvl_aply_end_dt
+		</if>
+		<if test="hsCd != null and hsCd != ''">
+			AND h.hs_cd = #{hsCd}
+		</if>
+		<if test="qtaGrpCd != null and qtaGrpCd != ''">
+			AND q.qta_grp_cd = #{qtaGrpCd}
+		</if>
+		<if test="dtlDcshNo != null and dtlDcshNo != ''">
+			AND h.dtl_dcsh_no LIKE '%' || #{dtlDcshNo} || '%'
+		</if>
+		<if test="bfcyNo != null and bfcyNo != ''">
+			AND h.bfcy_no = #{bfcyNo}
+		</if>
+			AND NVL(TRIM(q.qta_grp_cd), '') = ''
+			GROUP BY h.prvl_cd, co.prvl_cd_nm, h.prvl_aply_strt_dt, co.prvl_aply_end_dt, h.hs_cd, h.aply_strt_dt, q.aply_end_dt, h.invn_mvmn_tp_cd
+		)
+		ORDER BY prvl_cd, prvl_aply_strt_dt, (CASE WHEN qta_grp_cd <![CDATA[<>]]> '' THEN LENGTH(qta_grp_cd)||qta_grp_cd ELSE hs_cd END), (CASE WHEN qta_grp_cd <![CDATA[<>]]> '' THEN '99999999' ELSE aply_strt_dt END), sort_no, invn_hist_srno
+		<include refid="pagination.footer" />
+	</select>
+</mapper>

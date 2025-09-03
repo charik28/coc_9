@@ -1,0 +1,2821 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.col.acnt.mapper.ColAcntInfoMapper">
+    <!--
+    Journal auxiliaire des encaissements !==수납보조기입장 ==!
+    -->
+    <sql id="selectJaeTaxList">
+                ,NVL(SUM(CASE WHEN B.ACCT_CD = '201001' THEN B.RCVE_AMT END),0) AS CAST_01
+                ,NVL(SUM(CASE WHEN B.ACCT_CD = '201002' THEN B.RCVE_AMT END),0) AS CAST_02
+                ,NVL(SUM(CASE WHEN B.ACCT_CD = '201003' THEN B.RCVE_AMT END),0) AS CAST_03
+                ,NVL(SUM(CASE WHEN B.ACCT_CD = '201005' THEN B.RCVE_AMT END),0) AS CAST_04
+                ,NVL(SUM(CASE WHEN B.ACCT_CD = '201007' THEN B.RCVE_AMT END),0) AS CAST_05
+                ,NVL(SUM(CASE WHEN B.ACCT_CD = '431001' THEN B.RCVE_AMT END),0) AS CAST_06
+                ,NVL(SUM(CASE WHEN B.ACCT_CD = '431003' THEN B.RCVE_AMT END),0) AS CAST_07
+                ,NVL(SUM(CASE WHEN B.ACCT_CD = '431006' THEN B.RCVE_AMT END),0) AS CAST_08
+                ,NVL(SUM(CASE WHEN B.ACCT_CD = '431007' THEN B.RCVE_AMT END),0) AS CAST_09
+                ,NVL(SUM(CASE WHEN B.ACCT_CD = '500001' THEN B.RCVE_AMT END),0) AS CAST_10
+                ,NVL(SUM(CASE WHEN B.ACCT_CD = '500002' THEN B.RCVE_AMT END),0) AS CAST_11
+                ,NVL(SUM(CASE WHEN B.ACCT_CD = '500004' THEN B.RCVE_AMT END),0) AS CAST_12
+                ,NVL(SUM(CASE WHEN B.ACCT_CD = '500008' THEN B.RCVE_AMT END),0) AS CAST_13
+                ,NVL(SUM(CASE WHEN B.ACCT_CD = '500020' THEN B.RCVE_AMT END),0) AS CAST_14
+                ,NVL(SUM(CASE WHEN B.ACCT_CD = '510006' THEN B.RCVE_AMT END),0) AS CAST_15
+                ,NVL(SUM(CASE WHEN B.ACCT_CD = '520006' THEN B.RCVE_AMT END),0) AS CAST_16
+    </sql>
+    <select id="selectColRcveAsstLst" parameterType="alpass.ipt.col.acnt.vo.ColAcntInfoVo" resultType="alpass.ipt.col.acnt.vo.ColAcntInfoVo">
+        /* ColAcntInfo_selectColRcveAsstLst */
+        <include refid="pagination.header"/>
+
+        SELECT
+            TT.*
+            ,(TT.DBTOR_01 + DBTOR_02 + DBTOR_03 + DBTOR_04 ) AS  DBTOR_SUM
+            ,(CAST_01 + CAST_02 + CAST_03 + CAST_04 + CAST_05 + CAST_06 + CAST_07 + CAST_08 + CAST_09 + CAST_10 + CAST_11 + CAST_12 + CAST_13 + CAST_14 + CAST_15 + CAST_16 ) AS CAST_SUM
+        FROM
+        (
+
+            SELECT A.SORT_ORDR, A.RCVE_NO, A.RCVE_DT, A.DEPT_CD, A.TXPR_NM, A.CAHR_NM, A.DBTOR_01, A.DBTOR_02, A.DBTOR_03, A.DBTOR_04, B.CAST_01, B.CAST_02, B.CAST_03, B.CAST_04, B.CAST_05, B.CAST_06, B.CAST_07, B.CAST_08, B.CAST_09, B.CAST_10, B.CAST_11, B.CAST_12, B.CAST_13, B.CAST_14, B.CAST_15, B.CAST_16
+            FROM
+            (SELECT
+                '1' AS SORT_ORDR
+                ,A.RCVE_NO
+                ,DECODE((SELECT COUNT(*) FROM TB_COLI_PYMN WHERE RCVE_NO = A.RCVE_NO AND PYMN_PT_CD = '007'), 1, (SELECT FN_GET_LBL_NM('L_DGTZ_PYMN', #{langCd}) FROM DUAL), D.EMP_NM) AS CAHR_NM
+                ,TO_CHAR(TO_DATE(A.RCVE_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS RCVE_DT
+                ,'' AS DEPT_CD
+                ,C.TXPR_NM
+                -- 차변
+                ,NVL(SUM(CASE WHEN B.PYMN_PT_CD = '001' THEN B.PYMN_AMT END),0) AS DBTOR_01                                                                          --현금 (100 002)
+                ,NVL(SUM(CASE WHEN B.PYMN_PT_CD IN ('004','006','007','008') OR (B.PYMN_PT_CD ='002' AND CHCK_PT_CD != '03') THEN B.PYMN_AMT END),0) AS DBTOR_02     --은행 수표 (110 005)
+                ,NVL(SUM(CASE WHEN B.PYMN_PT_CD = '003' THEN B.PYMN_AMT + B.CRDT_INST_AMT + B.PCFE_AMT END),0) AS DBTOR_03                                           --보증채권 (120 005) + 신용이자 + 회계수수료
+                ,NVL(SUM(CASE WHEN B.PYMN_PT_CD = '005' OR (B.PYMN_PT_CD ='002' AND CHCK_PT_CD = '03') THEN B.PYMN_AMT END),0) AS DBTOR_04                           --우편대체계좌 (520 002)
+            FROM
+                TB_COLI_RCVE A
+                ,TB_COLI_PYMN B
+                ,TB_COLI_NTFC C
+                ,TB_POTI_EMP D
+            WHERE A.RCVE_NO = B.RCVE_NO
+            AND   A.NTFC_NO = C.NTFC_NO
+            AND   C.CNCL_YN = 'N'
+            AND   A.DEL_YN = 'N'
+            AND   B.DEL_YN = 'N'
+            AND   C.DEL_YN = 'N'
+            AND   D.PBSR_NO(+) = A.REGST_ID
+            <if test="sctrCd != null and sctrCd != ''">
+                AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+            </if>
+            <if test="uprOrgnCd != null and uprOrgnCd != ''">
+                AND  A.CSTM_CD = #{uprOrgnCd}
+            </if>
+            <if test="orgnCd != null and orgnCd != ''">
+                AND  (A.DEPT_CD = #{orgnCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd})))
+                )
+            </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='deptCd != null and deptCd !=""'>
+                AND  (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                            OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                                                                              OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                AND CASE WHEN (SELECT COUNT(1) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd})) AND ORGN_AUTH ='C') <![CDATA[ >= ]]> 1 THEN
+                CASE WHEN (SELECT ORGN_AUTH FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) = 'C'
+                     THEN C.NTFC_PT_CD = 'A'
+                     ELSE C.NTFC_PT_CD <![CDATA[ <> ]]> 'A'
+                END
+                ELSE TRUE END
+            </if>
+            <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND A.RCVE_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+            </if>
+            GROUP BY A.RCVE_NO,D.EMP_NM,A.RCVE_DT,C.TXPR_NM
+            ) A,
+            (SELECT
+                '1' AS SORT_ORDR
+                ,A.RCVE_NO
+                ,TO_CHAR(TO_DATE(A.RCVE_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS RCVE_DT
+                ,'' AS DEPT_CD
+                ,C.TXPR_NM
+                -- ,NVL(SUM(CASE WHEN D.TAX_CD = '' THEN D.BSCS_TAX_AMT END),0) AS CAST_01					    -- M 17
+                <include refid="selectJaeTaxList"></include>
+            FROM
+                 TB_COLI_RCVE A
+                ,TB_COLI_TAX_CD_PR_RCVE_BRKD B
+                ,TB_COLI_NTFC C
+            WHERE A.RCVE_NO = B.RCVE_NO
+            AND   A.NTFC_NO = B.NTFC_NO
+            AND   A.NTFC_NO = C.NTFC_NO
+            AND   C.CNCL_YN = 'N'
+            AND   A.DEL_YN = 'N'
+            AND   B.DEL_YN = 'N'
+            AND   C.DEL_YN = 'N'
+            <if test="sctrCd != null and sctrCd != ''">
+                AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+            </if>
+            <if test="uprOrgnCd != null and uprOrgnCd != ''">
+                AND  A.CSTM_CD = #{uprOrgnCd}
+            </if>
+            <if test="orgnCd != null and orgnCd != ''">
+                AND  (A.DEPT_CD = #{orgnCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}))
+                OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+            </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='deptCd != null and deptCd !=""'>
+                AND  (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                AND CASE WHEN (SELECT COUNT(1) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd})) AND ORGN_AUTH ='C') <![CDATA[ >= ]]> 1 THEN
+                CASE WHEN (SELECT ORGN_AUTH FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) = 'C'
+                     THEN C.NTFC_PT_CD = 'A'
+                     ELSE C.NTFC_PT_CD <![CDATA[ <> ]]> 'A'
+                END
+                ELSE TRUE END
+            </if>
+            <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND A.RCVE_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+            </if>
+            GROUP BY A.RCVE_NO,A.RCVE_DT,C.TXPR_NM
+            ) B
+            WHERE A.RCVE_NO = B.RCVE_NO
+
+            UNION
+
+            SELECT A.SORT_ORDR, (SELECT FN_GET_LBL_NM('L_RCVE_SUM', #{langCd}) FROM DUAL) AS RCVE_NO, A.RCVE_DT, A.DEPT_CD, A.TXPR_NM, '' AS CAHR_NM, A.DBTOR_01, A.DBTOR_02, A.DBTOR_03, A.DBTOR_04, B.CAST_01, B.CAST_02, B.CAST_03, B.CAST_04, B.CAST_05, B.CAST_06, B.CAST_07, B.CAST_08, B.CAST_09, B.CAST_10, B.CAST_11, B.CAST_12, B.CAST_13, B.CAST_14, B.CAST_15, B.CAST_16
+            FROM
+            (SELECT
+                '2' AS SORT_ORDR
+                ,'' AS RCVE_NO
+                ,TO_CHAR(TO_DATE(A.RCVE_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS RCVE_DT
+                ,A.DEPT_CD
+                ,FN_GET_ORGN_NM(A.DEPT_CD) AS TXPR_NM
+
+                -- 차변
+                ,NVL(SUM(CASE WHEN B.PYMN_PT_CD = '001' THEN B.PYMN_AMT END),0) AS DBTOR_01                                                                          --현금 (100 002)
+                ,NVL(SUM(CASE WHEN B.PYMN_PT_CD IN ('004','006','007','008') OR (B.PYMN_PT_CD ='002' AND CHCK_PT_CD != '03') THEN B.PYMN_AMT END),0) AS DBTOR_02     --은행 수표 (110 005)
+                ,NVL(SUM(CASE WHEN B.PYMN_PT_CD = '003' THEN B.PYMN_AMT + B.CRDT_INST_AMT + B.PCFE_AMT END),0) AS DBTOR_03                                           --보증채권 (120 005) + 신용이자 + 회계수수료
+                ,NVL(SUM(CASE WHEN B.PYMN_PT_CD = '005' OR (B.PYMN_PT_CD ='002' AND CHCK_PT_CD = '03') THEN B.PYMN_AMT END),0) AS DBTOR_04                           --우편대체계좌 (520 002)
+            FROM
+                TB_COLI_RCVE A
+                ,TB_COLI_PYMN B
+                ,TB_COLI_NTFC C
+            WHERE A.RCVE_NO = B.RCVE_NO
+            AND   A.NTFC_NO = C.NTFC_NO
+            AND   C.CNCL_YN = 'N'
+            AND   A.DEL_YN = 'N'
+            AND   B.DEL_YN = 'N'
+            AND   C.DEL_YN = 'N'
+            <if test="sctrCd != null and sctrCd != ''">
+                AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+            </if>
+            <if test="uprOrgnCd != null and uprOrgnCd != ''">
+                AND  A.CSTM_CD = #{uprOrgnCd}
+            </if>
+            <if test="orgnCd != null and orgnCd != ''">
+                AND  (A.DEPT_CD = #{orgnCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd})))
+                )
+            </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='deptCd != null and deptCd !=""'>
+                AND  (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                AND CASE WHEN (SELECT COUNT(1) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd})) AND ORGN_AUTH ='C') <![CDATA[ >= ]]> 1 THEN
+                CASE WHEN (SELECT ORGN_AUTH FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) = 'C'
+                     THEN C.NTFC_PT_CD = 'A'
+                     ELSE C.NTFC_PT_CD <![CDATA[ <> ]]> 'A'
+                END
+                ELSE TRUE END
+            </if>
+            <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND A.RCVE_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+            </if>
+            GROUP BY A.RCVE_DT,A.DEPT_CD
+            ) A,
+            (SELECT
+                '2' AS SORT_ORDR
+                ,'' AS RCVE_NO
+                ,TO_CHAR(TO_DATE(A.RCVE_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS RCVE_DT
+                ,A.DEPT_CD
+                ,FN_GET_ORGN_NM(A.DEPT_CD) AS TXPR_NM
+                -- 대변
+                -- ,NVL(SUM(CASE WHEN D.TAX_CD = '' THEN D.BSCS_TAX_AMT END),0) AS CAST_01					    -- M 17
+                <include refid="selectJaeTaxList"></include>
+            FROM
+                TB_COLI_RCVE A
+                ,TB_COLI_TAX_CD_PR_RCVE_BRKD B
+                ,TB_COLI_NTFC C
+            WHERE A.RCVE_NO = B.RCVE_NO
+            AND   A.NTFC_NO = B.NTFC_NO
+            AND   A.NTFC_NO = C.NTFC_NO
+            AND   C.CNCL_YN = 'N'
+            AND   A.DEL_YN = 'N'
+            AND   B.DEL_YN = 'N'
+            AND   C.DEL_YN = 'N'
+            <if test="sctrCd != null and sctrCd != ''">
+                AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+            </if>
+            <if test="uprOrgnCd != null and uprOrgnCd != ''">
+                AND  A.CSTM_CD = #{uprOrgnCd}
+            </if>
+            <if test="orgnCd != null and orgnCd != ''">
+                AND  (A.DEPT_CD = #{orgnCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd})))
+                )
+            </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='deptCd != null and deptCd !=""'>
+                AND  (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                AND CASE WHEN (SELECT COUNT(1) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd})) AND ORGN_AUTH ='C') <![CDATA[ >= ]]> 1 THEN
+                CASE WHEN (SELECT ORGN_AUTH FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) = 'C'
+                     THEN C.NTFC_PT_CD = 'A'
+                     ELSE C.NTFC_PT_CD <![CDATA[ <> ]]> 'A'
+                END
+                ELSE TRUE END
+            </if>
+            <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND A.RCVE_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+            </if>
+            GROUP BY A.RCVE_DT,A.DEPT_CD
+            ) B
+            WHERE A.RCVE_DT = B.RCVE_DT
+              AND A.DEPT_CD = B.DEPT_CD
+
+            UNION
+
+            SELECT A.SORT_ORDR, (SELECT FN_GET_LBL_NM('L_DD_SUM', #{langCd}) FROM DUAL) AS RCVE_NO, A.RCVE_DT, A.DEPT_CD, A.TXPR_NM, '' AS CAHR_NM, A.DBTOR_01, A.DBTOR_02, A.DBTOR_03, A.DBTOR_04, B.CAST_01, B.CAST_02, B.CAST_03, B.CAST_04, B.CAST_05, B.CAST_06, B.CAST_07, B.CAST_08, B.CAST_09, B.CAST_10, B.CAST_11, B.CAST_12, B.CAST_13, B.CAST_14, B.CAST_15, B.CAST_16
+            FROM
+            (SELECT
+                '3' AS SORT_ORDR
+                ,'' AS RCVE_NO
+                ,TO_CHAR(TO_DATE(A.RCVE_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS RCVE_DT
+                ,'' AS DEPT_CD
+                ,'' AS TXPR_NM
+                -- 차변
+                ,NVL(SUM(CASE WHEN B.PYMN_PT_CD = '001' THEN B.PYMN_AMT END),0) AS DBTOR_01                                                                          --현금 (100 002)
+                ,NVL(SUM(CASE WHEN B.PYMN_PT_CD IN ('004','006','007','008') OR (B.PYMN_PT_CD ='002' AND CHCK_PT_CD != '03') THEN B.PYMN_AMT END),0) AS DBTOR_02     --은행 수표 (110 005)
+                ,NVL(SUM(CASE WHEN B.PYMN_PT_CD = '003' THEN B.PYMN_AMT + B.CRDT_INST_AMT + B.PCFE_AMT END),0) AS DBTOR_03                                           --보증채권 (120 005) + 신용이자 + 회계수수료
+                ,NVL(SUM(CASE WHEN B.PYMN_PT_CD = '005' OR (B.PYMN_PT_CD ='002' AND CHCK_PT_CD = '03') THEN B.PYMN_AMT END),0) AS DBTOR_04                           --우편대체계좌 (520 002)
+            FROM
+                TB_COLI_RCVE A
+                ,TB_COLI_PYMN B
+                ,TB_COLI_NTFC C
+            WHERE A.RCVE_NO = B.RCVE_NO
+            AND   A.NTFC_NO = C.NTFC_NO
+            AND   C.CNCL_YN = 'N'
+            AND   A.DEL_YN = 'N'
+            AND   B.DEL_YN = 'N'
+            AND   C.DEL_YN = 'N'
+            <if test="sctrCd != null and sctrCd != ''">
+                AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+            </if>
+            <if test="uprOrgnCd != null and uprOrgnCd != ''">
+                AND  A.CSTM_CD = #{uprOrgnCd}
+            </if>
+            <if test="orgnCd != null and orgnCd != ''">
+                AND  (A.DEPT_CD = #{orgnCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd})))
+                )
+            </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='deptCd != null and deptCd !=""'>
+                AND  (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                AND CASE WHEN (SELECT COUNT(1) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd})) AND ORGN_AUTH ='C') <![CDATA[ >= ]]> 1 THEN
+                CASE WHEN (SELECT ORGN_AUTH FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) = 'C'
+                     THEN C.NTFC_PT_CD = 'A'
+                     ELSE C.NTFC_PT_CD <![CDATA[ <> ]]> 'A'
+                END
+                ELSE TRUE END
+            </if>
+            <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND A.RCVE_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+            </if>
+            GROUP BY A.RCVE_DT
+            ) A,
+            (SELECT
+                '3' AS SORT_ORDR
+                ,'' AS RCVE_NO
+                ,TO_CHAR(TO_DATE(A.RCVE_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS RCVE_DT
+                ,'' AS DEPT_CD
+                ,'' AS TXPR_NM
+                -- 대변
+                -- ,NVL(SUM(CASE WHEN D.TAX_CD = '' THEN D.BSCS_TAX_AMT END),0) AS CAST_01					    -- M 17
+                <include refid="selectJaeTaxList"></include>
+            FROM
+                TB_COLI_RCVE A
+                ,TB_COLI_TAX_CD_PR_RCVE_BRKD B
+                ,TB_COLI_NTFC C
+            WHERE A.RCVE_NO = B.RCVE_NO
+            AND   A.NTFC_NO = B.NTFC_NO
+            AND   A.NTFC_NO = C.NTFC_NO
+            AND   C.CNCL_YN = 'N'
+            AND   A.DEL_YN = 'N'
+            AND   B.DEL_YN = 'N'
+            AND   C.DEL_YN = 'N'
+            <if test="sctrCd != null and sctrCd != ''">
+                AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+            </if>
+            <if test="uprOrgnCd != null and uprOrgnCd != ''">
+                AND  A.CSTM_CD = #{uprOrgnCd}
+            </if>
+            <if test="orgnCd != null and orgnCd != ''">
+                AND  (A.DEPT_CD = #{orgnCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd})))
+                )
+            </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='deptCd != null and deptCd !=""'>
+                AND  (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                AND CASE WHEN (SELECT COUNT(1) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd})) AND ORGN_AUTH ='C') <![CDATA[ >= ]]> 1 THEN
+                CASE WHEN (SELECT ORGN_AUTH FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) = 'C'
+                     THEN C.NTFC_PT_CD = 'A'
+                     ELSE C.NTFC_PT_CD <![CDATA[ <> ]]> 'A'
+                END
+                ELSE TRUE END
+            </if>
+            <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND A.RCVE_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+            </if>
+            GROUP BY A.RCVE_DT
+            ) B
+             WHERE A.RCVE_DT = B.RCVE_DT
+
+        )TT
+        ORDER BY TT.SORT_ORDR,TO_CHAR(TO_DATE(TT.RCVE_DT,'DD/MM/YYYY'),'YYYYMMDD') DESC,TT.RCVE_NO DESC ,TT.TXPR_NM
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+    Journal auxiliaire des recettes !==세입보조기입장 ==!
+    -->
+    <sql id="selectJarTaxList">
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'D.D' THEN A.RCVE_AMT END),0) AS CAST_01
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'R.P.S' THEN A.RCVE_AMT END),0) AS CAST_02
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'R.U.S' THEN A.RCVE_AMT END),0) AS CAST_03
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'R.U.R' THEN A.RCVE_AMT END),0) AS CAST_04                      --RUIR
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'R.C.R' THEN A.RCVE_AMT END),0) AS CAST_05
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'R.S.D' THEN A.RCVE_AMT END),0) AS CAST_06
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'R.C.S' THEN A.RCVE_AMT END),0) AS CAST_07                      --RSM
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'D.A.P.S' THEN A.RCVE_AMT END),0) AS CAST_08
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'R.S.O.D' THEN A.RCVE_AMT END),0) AS CAST_09
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'L.C' THEN A.RCVE_AMT END),0) AS CAST_10                        --IC
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'T.F' THEN A.RCVE_AMT END),0) AS CAST_11
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'P.R.C.T' THEN A.RCVE_AMT END),0) AS CAST_12	                -- PRCP
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'D.TIMBRE' THEN A.RCVE_AMT END),0) AS CAST_13
+                     , NVL(SUM(CASE WHEN A.TAX_CD IN ('T.I.C-PF','T.I.C-TP') THEN A.RCVE_AMT END),0) AS CAST_14     -- T.I.C
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'T.CARB' THEN A.RCVE_AMT END),0) AS CAST_15
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'D.C.A' THEN A.RCVE_AMT END),0) AS   CAST_16
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'T.E.E' THEN A.RCVE_AMT END),0) AS   CAST_17
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'T.C.L.S' THEN A.RCVE_AMT END),0) AS CAST_18
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'T.C.E' THEN A.RCVE_AMT END),0) AS   CAST_19
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'D.P.E' THEN A.RCVE_AMT END),0) AS   CAST_20
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'D.RTA' THEN A.RCVE_AMT END),0) AS   CAST_21
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'T.S.P' THEN A.RCVE_AMT END),0) AS   CAST_22
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'T.A.P.T' THEN A.RCVE_AMT END),0) AS CAST_23
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'C.S' THEN A.RCVE_AMT END),0) AS     CAST_24
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'T.PNEU' THEN A.RCVE_AMT END),0) AS  CAST_25
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'T.HUILE' THEN A.RCVE_AMT END),0) AS CAST_26                    --T.Huils
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'T.P.P' THEN A.RCVE_AMT END),0) AS   CAST_27
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'T.S.V' THEN A.RCVE_AMT END),0) AS   CAST_28
+                     , NVL(SUM(CASE WHEN A.TAX_CD = 'T.V.A' THEN A.RCVE_AMT END),0) AS   CAST_29	                    -- TVA
+    </sql>
+
+    <select id="selectColTxreAsstLst" parameterType="alpass.ipt.col.acnt.vo.ColAcntInfoVo" resultType="alpass.ipt.col.acnt.vo.ColAcntInfoVo">
+        /* ColAcntInfo_selectColTxreAsstLst */
+        <include refid="pagination.header"/>
+        SELECT TT.*
+             , (TT.CAST_01 + CAST_02 + CAST_03 + CAST_04 + CAST_05 + CAST_06 + CAST_07 + CAST_08 + CAST_09 + CAST_10 + CAST_11 + CAST_12 + CAST_13 + CAST_14 + CAST_15 + CAST_16 + CAST_17 + CAST_18 + CAST_19 + CAST_20 + CAST_21 + CAST_22 + CAST_23 + CAST_24 + CAST_25 + CAST_26 + CAST_27 + CAST_28 + CAST_29 ) AS CAST_SUM
+        FROM   (
+                SELECT '1' AS SORT_ORDR
+                     , A.RCVE_NO
+                     , TO_CHAR(TO_DATE(A.RCVE_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS RCVE_DT
+                     , A.REFF_NO AS DTL_DCSH_NO
+                     , '' AS DEPT_CD
+                     , '' AS DEPT_CD_NM
+                    <include refid="selectJarTaxList"></include>
+                FROM   TB_COLI_TAX_CD_PR_RCVE_BRKD A
+                     , TB_COLI_NTFC B
+                WHERE  A.NTFC_NO = B.NTFC_NO
+                AND    A.DEL_YN = 'N'
+                AND    B.DEL_YN = 'N'
+                AND    A.SNB_TP_CD = 'JAR'
+                <if test="sctrCd != null and sctrCd != ''">
+                    AND  B.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                </if>
+                <if test="uprOrgnCd != null and uprOrgnCd != ''">
+                AND    B.CSTM_CD = #{uprOrgnCd}
+                </if>
+                <if test="orgnCd != null and orgnCd != ''">
+                AND    (B.DEPT_CD = #{orgnCd} OR B.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                        OR B.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd})))
+                        )
+                </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND    B.CSTM_CD = #{cstmCd}
+            </if>
+                <if test='deptCd != null and deptCd !=""'>
+                    AND  (B.DEPT_CD = #{deptCd} OR B.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                                OR B.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                                                                                  OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                    AND CASE WHEN (SELECT COUNT(1) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd})) AND ORGN_AUTH ='C') <![CDATA[ >= ]]> 1 THEN
+                    CASE WHEN (SELECT ORGN_AUTH FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) = 'C'
+                         THEN B.NTFC_PT_CD = 'A'
+                         ELSE B.NTFC_PT_CD <![CDATA[ <> ]]> 'A'
+                    END
+                    ELSE TRUE END
+                  </if>
+            <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND    A.RCVE_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+            </if>
+            <!--<if test='inqtDt != null and inqtDt !=""'>
+                AND C.RCVE_DT  = TO_CHAR(TO_DATE(#{inqtDt},'DD/MM/YYYY'),'YYYYMMDD')
+            </if>-->
+                GROUP BY A.RCVE_NO,A.RCVE_DT,A.REFF_NO
+                UNION
+                SELECT '2' AS SORT_ORDR
+                     , '' AS RCVE_NO
+                     , TO_CHAR(TO_DATE(A.RCVE_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS RCVE_DT
+                     , '' AS DTL_DCSH_NO
+                     , B.DEPT_CD
+                     , (SELECT ORGN_NM FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = B.DEPT_CD) AS DEPT_CD_NM
+                     <include refid="selectJarTaxList"></include>
+                FROM   TB_COLI_TAX_CD_PR_RCVE_BRKD A
+                     , TB_COLI_NTFC B
+                WHERE  A.NTFC_NO = B.NTFC_NO
+                AND    A.DEL_YN = 'N'
+                AND    B.DEL_YN = 'N'
+                AND    A.SNB_TP_CD = 'JAR'
+                <if test="sctrCd != null and sctrCd != ''">
+                    AND  B.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                </if>
+                <if test="uprOrgnCd != null and uprOrgnCd != ''">
+                AND  B.CSTM_CD = #{uprOrgnCd}
+                </if>
+                <if test="orgnCd != null and orgnCd != ''">
+                AND  (B.DEPT_CD = #{orgnCd} OR B.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR B.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd})))
+                    )
+                </if>
+                <if test='cstmCd != null and cstmCd !="" '>
+                AND B.CSTM_CD = #{cstmCd}
+                </if>
+                <if test='deptCd != null and deptCd !=""'>
+                    AND  (B.DEPT_CD = #{deptCd} OR B.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                    OR B.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                    OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                    AND CASE WHEN (SELECT COUNT(1) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd})) AND ORGN_AUTH ='C') <![CDATA[ >= ]]> 1 THEN
+                    CASE WHEN (SELECT ORGN_AUTH FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) = 'C'
+                         THEN B.NTFC_PT_CD = 'A'
+                         ELSE B.NTFC_PT_CD <![CDATA[ <> ]]> 'A'
+                    END
+                    ELSE TRUE END
+                  </if>
+                <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND A.RCVE_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+                </if>
+                <!--<if test='inqtDt != null and inqtDt !=""'>
+                    AND C.RCVE_DT  = TO_CHAR(TO_DATE(#{inqtDt},'DD/MM/YYYY'),'YYYYMMDD')
+                </if>-->
+                GROUP BY A.RCVE_DT,B.DEPT_CD
+                UNION
+                SELECT '3' AS SORT_ORDR
+                     , '' AS RCVE_NO
+                     , TO_CHAR(TO_DATE(A.RCVE_DT ,'YYYYMMDD'),'DD/MM/YYYY') AS RCVE_DT
+                     , '' AS DTL_DCSH_NO
+                     , '' AS DEPT_CD
+                     , '' AS DEPT_CD_NM
+                    <include refid="selectJarTaxList"></include>
+                FROM   TB_COLI_TAX_CD_PR_RCVE_BRKD A
+                     , TB_COLI_NTFC B
+                WHERE  A.NTFC_NO = B.NTFC_NO
+                AND    A.DEL_YN = 'N'
+                AND    B.DEL_YN = 'N'
+                AND    A.SNB_TP_CD = 'JAR'
+                <if test="sctrCd != null and sctrCd != ''">
+                    AND  B.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                </if>
+                <if test="uprOrgnCd != null and uprOrgnCd != ''">
+                AND  B.CSTM_CD = #{uprOrgnCd}
+                </if>
+                <if test="orgnCd != null and orgnCd != ''">
+                AND  (B.DEPT_CD = #{orgnCd} OR B.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR B.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd})))
+                )
+                </if>
+                <if test='cstmCd != null and cstmCd !="" '>
+                AND B.CSTM_CD = #{cstmCd}
+                </if>
+                <if test='deptCd != null and deptCd !=""'>
+                    AND  (B.DEPT_CD = #{deptCd} OR B.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                    OR B.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                    OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                    AND CASE WHEN (SELECT COUNT(1) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd})) AND ORGN_AUTH ='C') <![CDATA[ >= ]]> 1 THEN
+                    CASE WHEN (SELECT ORGN_AUTH FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) = 'C'
+                         THEN B.NTFC_PT_CD = 'A'
+                         ELSE B.NTFC_PT_CD <![CDATA[ <> ]]> 'A'
+                    END
+                    ELSE TRUE END
+                  </if>
+                <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND A.RCVE_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+                </if>
+                <!--<if test='inqtDt != null and inqtDt !=""'>
+                    AND C.RCVE_DT  = TO_CHAR(TO_DATE(#{inqtDt},'DD/MM/YYYY'),'YYYYMMDD')
+                </if>-->
+                GROUP BY A.RCVE_DT
+        ) TT
+        ORDER BY TT.SORT_ORDR,TO_CHAR(TO_DATE(TT.RCVE_DT,'DD/MM/YYYY'),'YYYYMMDD') DESC,TT.RCVE_NO DESC,TT.DTL_DCSH_NO,TT.DEPT_CD
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+    Journal auxiliaires des opérations de dépenses !==지출보조기입장 ==!
+    -->
+    <select id="selectColExpnAsstLst" parameterType="alpass.ipt.col.acnt.vo.ColAcntInfoVo" resultType="alpass.ipt.col.acnt.vo.ColAcntInfoVo">
+        /* ColAcntInfo_selectColExpnAsstLst */
+        <include refid="pagination.header"/>
+
+        SELECT TT.* FROM
+        (
+            SELECT
+                '1' AS SORT_ORDR
+                ,TO_CHAR(TO_DATE(A.EXPN_CRPP_RGSR_DT,'YYYYMMDD'),'DD/MM/YYYY') AS EXPN_CRPP_RGSR_DT
+                ,A.EXPN_CRPP_NO
+                ,A.EXPN_ORIG_CD
+                ,A.TXPR_NM
+                --차변
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431001' AND B.DLNG_PT_CD = '001' THEN B.EXPN_AMT END),0) AS DBTOR_01
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431003' AND B.DLNG_PT_CD = '001' THEN B.EXPN_AMT END),0) AS DBTOR_02
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431007' AND B.DLNG_PT_CD = '001' THEN B.EXPN_AMT END),0) AS DBTOR_03
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500002' AND B.DLNG_PT_CD = '001' THEN B.EXPN_AMT END),0) AS DBTOR_04
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '510007' AND B.DLNG_PT_CD = '001' THEN B.EXPN_AMT END),0) AS DBTOR_05
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '510006' AND B.DLNG_PT_CD = '001' THEN B.EXPN_AMT END),0) AS DBTOR_06
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '520006' AND B.DLNG_PT_CD = '001' THEN B.EXPN_AMT END),0) AS DBTOR_07
+                --대변
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '100002' AND B.DLNG_PT_CD = '001' THEN B.EXPN_CAST_AMT END),0) AS CAST_01
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '110005' AND B.DLNG_PT_CD = '001' THEN B.EXPN_CAST_AMT END),0) AS CAST_02
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '120005' AND B.DLNG_PT_CD = '001' THEN B.EXPN_CAST_AMT END),0) AS CAST_03
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '510026' AND B.DLNG_PT_CD = '001' THEN B.EXPN_CAST_AMT END),0) AS CAST_06
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '520002' AND B.DLNG_PT_CD = '001' THEN B.EXPN_CAST_AMT END),0) AS CAST_04
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD NOT IN ('100002','110005','120005','510026','520002') AND B.DLNG_PT_CD = '002' THEN B.EXPN_CAST_AMT END),0) AS CAST_05
+            FROM
+            TB_COLI_EXPN_CRPP A
+            ,TB_COLI_EXPN_CRPP_DTL B
+            WHERE 	A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+              AND A.DLNG_PT_CD = B.DLNG_PT_CD
+            AND	  A.DEL_YN = 'N'
+            AND   B.DEL_YN = 'N'
+            <if test="sctrCd != null and sctrCd != ''">
+                AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+            </if>
+            <if test="uprOrgnCd != null and uprOrgnCd != ''">
+                AND  A.CSTM_CD = #{uprOrgnCd}
+            </if>
+            <if test="orgnCd != null and orgnCd != ''">
+                AND  (A.DEPT_CD = #{orgnCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd})))
+                )
+            </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='deptCd != null and deptCd !=""'>
+                AND  (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                            OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                                                                              OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+            </if>
+            <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND A.EXPN_CRPP_RGSR_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+            </if>
+            GROUP BY A.EXPN_CRPP_RGSR_DT,A.EXPN_CRPP_NO,A.EXPN_ORIG_CD,A.TXPR_NM
+
+            UNION
+
+            SELECT
+                '2' AS SORT_ORDR
+                ,'' AS EXPN_CRPP_RGSR_DT
+                ,'' AS EXPN_CRPP_NO
+                ,'' AS EXPN_ORIG_CD
+                ,'' AS TXPR_NM
+                --차변
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431001' AND B.DLNG_PT_CD = '001' THEN B.EXPN_AMT END),0) AS DBTOR_01
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431003' AND B.DLNG_PT_CD = '001' THEN B.EXPN_AMT END),0) AS DBTOR_02
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431007' AND B.DLNG_PT_CD = '001' THEN B.EXPN_AMT END),0) AS DBTOR_03
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500002' AND B.DLNG_PT_CD = '001' THEN B.EXPN_AMT END),0) AS DBTOR_04
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '510007' AND B.DLNG_PT_CD = '001' THEN B.EXPN_AMT END),0) AS DBTOR_05
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '510006' AND B.DLNG_PT_CD = '001' THEN B.EXPN_AMT END),0) AS DBTOR_06
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '520006' AND B.DLNG_PT_CD = '001' THEN B.EXPN_AMT END),0) AS DBTOR_07
+                --대변
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '100002' AND B.DLNG_PT_CD = '001' THEN B.EXPN_CAST_AMT END),0) AS CAST_01
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '110005' AND B.DLNG_PT_CD = '001' THEN B.EXPN_CAST_AMT END),0) AS CAST_02
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '120005' AND B.DLNG_PT_CD = '001' THEN B.EXPN_CAST_AMT END),0) AS CAST_03
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '510026' AND B.DLNG_PT_CD = '001' THEN B.EXPN_CAST_AMT END),0) AS CAST_06
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '520002' AND B.DLNG_PT_CD = '001' THEN B.EXPN_CAST_AMT END),0) AS CAST_04
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD NOT IN ('100002','110005','120005','510026','520002') AND B.DLNG_PT_CD = '002' THEN B.EXPN_CAST_AMT END),0) AS CAST_05
+            FROM
+            TB_COLI_EXPN_CRPP A
+            ,TB_COLI_EXPN_CRPP_DTL B
+            WHERE 	A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+            AND A.DLNG_PT_CD = B.DLNG_PT_CD
+            AND   A.DEL_YN = 'N'
+            AND   B.DEL_YN = 'N'
+            <if test="sctrCd != null and sctrCd != ''">
+                AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+            </if>
+            <if test="uprOrgnCd != null and uprOrgnCd != ''">
+                AND  A.CSTM_CD = #{uprOrgnCd}
+            </if>
+            <if test="orgnCd != null and orgnCd != ''">
+                AND  (A.DEPT_CD = #{orgnCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd})))
+                )
+            </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='deptCd != null and deptCd !=""'>
+                AND  (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                            OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+            </if>
+            <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND A.EXPN_CRPP_RGSR_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+            </if>
+
+            <!--UNION
+
+            SELECT
+                '3' AS SORT_ORDR
+                ,TO_CHAR(TO_DATE(A.EXPN_CRPP_RGSR_DT,'YYYYMMDD'),'DD/MM/YYYY') AS EXPN_CRPP_RGSR_DT
+                ,'' AS EXPN_CRPP_NO
+                ,'' AS EXPN_ORIG_CD
+                ,'' AS TXPR_NM
+                ,'' AS DEPT_CD
+                &#45;&#45;차변
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431001' THEN B.EXPN_AMT END),0) AS DBTOR_01
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431003' THEN B.EXPN_AMT END),0) AS DBTOR_02
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431007' THEN B.EXPN_AMT END),0) AS DBTOR_03
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500002' THEN B.EXPN_AMT END),0) AS DBTOR_04
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '510007' THEN B.EXPN_AMT END),0) AS DBTOR_05
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '510006' THEN B.EXPN_AMT END),0) AS DBTOR_06
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '520006' THEN B.EXPN_AMT END),0) AS DBTOR_07
+                &#45;&#45;대변
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '100002' THEN B.EXPN_AMT END),0) AS CAST_01
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '110005' THEN B.EXPN_AMT END),0) AS CAST_02
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '120005' THEN B.EXPN_AMT END),0) AS CAST_03
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '520002' THEN B.EXPN_AMT END),0) AS CAST_04
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '' THEN B.EXPN_AMT END),0) AS CAST_05
+            FROM
+                TB_COLI_EXPN_CRPP A
+                ,TB_COLI_EXPN_CRPP_DTL B
+            WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+            AND	  A.DEL_YN = 'N'
+            AND   B.DEL_YN = 'N'
+            AND   A.DLNG_PT_CD = '001'
+            AND   (B.DBTOR_ACCT_CD IN ('431001','431003','431007','500002','510007','510006','520006') OR B.CAST_ACCT_CD IN ('100002','110005','120005','520002',''))
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND A.EXPN_CRPP_RGSR_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+            </if>
+            GROUP BY A.EXPN_CRPP_RGSR_DT-->
+        ) TT
+        ORDER BY TT.SORT_ORDR, TO_CHAR(TO_DATE(TT.EXPN_CRPP_RGSR_DT,'DD/MM/YYYY'),'YYYYMMDD') DESC
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+    Journal auxiliaires des  opérations diverses !==기타거래보조기입장 ==!
+    -->
+    <select id="selectColOthsDlngAsstLst" parameterType="alpass.ipt.col.acnt.vo.ColAcntInfoVo" resultType="alpass.ipt.col.acnt.vo.ColAcntInfoVo">
+        /* ColAcntInfo_selectColOthsDlngAsstLst */
+    <include refid="pagination.header"/>
+        SELECT TT.* FROM
+        (
+            SELECT
+                '1' AS SORT_ORDR
+                ,TO_CHAR(TO_DATE(A.EXPN_CRPP_RGSR_DT,'YYYYMMDD'),'DD/MM/YYYY') AS EXPN_CRPP_RGSR_DT
+                ,A.EXPN_CRPP_NO
+                ,A.EXPN_PT_CD
+                ,FN_GET_ORGN_NM(A.DEPT_CD) AS DEPT_NM
+                --차변
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '201001' THEN B.EXPN_AMT END),0) AS DBTOR_01
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '201002' THEN B.EXPN_AMT END),0) AS DBTOR_02
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '201003' THEN B.EXPN_AMT END),0) AS DBTOR_03
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '201005' THEN B.EXPN_AMT END),0) AS DBTOR_04
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '201007' THEN B.EXPN_AMT END),0) AS DBTOR_05
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '311001' THEN B.EXPN_AMT END),0) AS DBTOR_06
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431001' THEN B.EXPN_AMT END),0) AS DBTOR_07
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431003' THEN B.EXPN_AMT END),0) AS DBTOR_08
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431006' THEN B.EXPN_AMT END),0) AS DBTOR_09
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431007' THEN B.EXPN_AMT END),0) AS DBTOR_10
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500001' THEN B.EXPN_AMT END),0) AS DBTOR_11
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500002' THEN B.EXPN_AMT END),0) AS DBTOR_12
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500004' THEN B.EXPN_AMT END),0) AS DBTOR_13
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500008' THEN B.EXPN_AMT END),0) AS DBTOR_14
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500019' THEN B.EXPN_AMT END),0) AS DBTOR_15
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500020' THEN B.EXPN_AMT END),0) AS DBTOR_16
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '510006' THEN B.EXPN_AMT END),0) AS DBTOR_17
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '510007' THEN B.EXPN_AMT END),0) AS DBTOR_18
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '510026' THEN B.EXPN_AMT END),0) AS DBTOR_21
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '520006' THEN B.EXPN_AMT END),0) AS DBTOR_19
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD IN ('201001','201002','201003','201005','201007','311001','431001','431003'
+                ,'431006','431007','500001','500002','500004','500008','500019','500020','510006','510007','510026','520006') THEN B.EXPN_AMT END),0) AS DBTOR_20
+                --대변
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '110005' THEN B.EXPN_AMT END),0) AS CAST_19
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '201003' THEN B.EXPN_AMT END),0) AS CAST_01
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '201005' THEN B.EXPN_AMT END),0) AS CAST_02
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '201007' THEN B.EXPN_AMT END),0) AS CAST_03
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '311001' THEN B.EXPN_AMT END),0) AS CAST_04
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '431001' THEN B.EXPN_AMT END),0) AS CAST_05
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '431003' THEN B.EXPN_AMT END),0) AS CAST_06
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '431006' THEN B.EXPN_AMT END),0) AS CAST_07
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '431007' THEN B.EXPN_AMT END),0) AS CAST_08
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500001' THEN B.EXPN_AMT END),0) AS CAST_09
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500002' THEN B.EXPN_AMT END),0) AS CAST_10
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500004' THEN B.EXPN_AMT END),0) AS CAST_11
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500008' THEN B.EXPN_AMT END),0) AS CAST_12
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500019' THEN B.EXPN_AMT END),0) AS CAST_13
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500020' THEN B.EXPN_AMT END),0) AS CAST_14
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '510007' THEN B.EXPN_AMT END),0) AS CAST_15
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '510006' THEN B.EXPN_AMT END),0) AS CAST_16
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '520006' THEN B.EXPN_AMT END),0) AS CAST_17
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD IN ('110005','201003','201005','201007','311001','431001','431001','431003','431006','431007','500001','500002','500004'
+                ,'500008','500019','500020','510007','510006', '520006') THEN B.EXPN_AMT END),0) AS CAST_18
+            FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+            WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+              AND A.DLNG_PT_CD = B.DLNG_PT_CD
+              AND A.DEL_YN = 'N'
+              AND B.DEL_YN = 'N'
+              AND B.DLNG_PT_CD = '002'
+            <if test="sctrCd != null and sctrCd != ''">
+                AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+            </if>
+            <if test="uprOrgnCd != null and uprOrgnCd != ''">
+                AND  A.CSTM_CD = #{uprOrgnCd}
+            </if>
+            <if test="orgnCd != null and orgnCd != ''">
+                AND  (A.DEPT_CD = #{orgnCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd})))
+                )
+            </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='deptCd != null and deptCd !=""'>
+                AND  (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                            OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                                                                              OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+            </if>
+            <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND A.EXPN_CRPP_RGSR_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+            </if>
+            GROUP BY A.EXPN_CRPP_RGSR_DT,A.EXPN_CRPP_NO,A.EXPN_PT_CD, DEPT_NM
+
+
+        UNION
+
+            SELECT
+                '2' AS SORT_ORDR
+                ,'' AS EXPN_CRPP_RGSR_DT
+                ,'' AS EXPN_CRPP_NO
+                ,'' AS EXPN_PT_CD
+                ,'' AS DEPT_NM
+                --차변
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '201001' THEN B.EXPN_AMT END),0) AS DBTOR_01
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '201002' THEN B.EXPN_AMT END),0) AS DBTOR_02
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '201003' THEN B.EXPN_AMT END),0) AS DBTOR_03
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '201005' THEN B.EXPN_AMT END),0) AS DBTOR_04
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '201007' THEN B.EXPN_AMT END),0) AS DBTOR_05
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '311001' THEN B.EXPN_AMT END),0) AS DBTOR_06
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431001' THEN B.EXPN_AMT END),0) AS DBTOR_07
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431003' THEN B.EXPN_AMT END),0) AS DBTOR_08
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431006' THEN B.EXPN_AMT END),0) AS DBTOR_09
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431007' THEN B.EXPN_AMT END),0) AS DBTOR_10
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500001' THEN B.EXPN_AMT END),0) AS DBTOR_11
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500002' THEN B.EXPN_AMT END),0) AS DBTOR_12
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500004' THEN B.EXPN_AMT END),0) AS DBTOR_13
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500008' THEN B.EXPN_AMT END),0) AS DBTOR_14
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500019' THEN B.EXPN_AMT END),0) AS DBTOR_15
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500020' THEN B.EXPN_AMT END),0) AS DBTOR_16
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '510006' THEN B.EXPN_AMT END),0) AS DBTOR_17
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '510007' THEN B.EXPN_AMT END),0) AS DBTOR_18
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '510026' THEN B.EXPN_AMT END),0) AS DBTOR_21
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '520006' THEN B.EXPN_AMT END),0) AS DBTOR_19
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD IN ('201001','201002','201003','201005','201007','311001','431001','431003'
+                ,'431006','431007','500001','500002','500004','500008','500019','500020','510006','510007','510026','520006') THEN B.EXPN_AMT END),0) AS DBTOR_20
+                --대변
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '110005' THEN B.EXPN_AMT END),0) AS CAST_19
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '201003' THEN B.EXPN_AMT END),0) AS CAST_01
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '201005' THEN B.EXPN_AMT END),0) AS CAST_02
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '201007' THEN B.EXPN_AMT END),0) AS CAST_03
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '311001' THEN B.EXPN_AMT END),0) AS CAST_04
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '431001' THEN B.EXPN_AMT END),0) AS CAST_05
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '431003' THEN B.EXPN_AMT END),0) AS CAST_06
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '431006' THEN B.EXPN_AMT END),0) AS CAST_07
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '431007' THEN B.EXPN_AMT END),0) AS CAST_08
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500001' THEN B.EXPN_AMT END),0) AS CAST_09
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500002' THEN B.EXPN_AMT END),0) AS CAST_10
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500004' THEN B.EXPN_AMT END),0) AS CAST_11
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500008' THEN B.EXPN_AMT END),0) AS CAST_12
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500019' THEN B.EXPN_AMT END),0) AS CAST_13
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500020' THEN B.EXPN_AMT END),0) AS CAST_14
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '510007' THEN B.EXPN_AMT END),0) AS CAST_15
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '510006' THEN B.EXPN_AMT END),0) AS CAST_16
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '520006' THEN B.EXPN_AMT END),0) AS CAST_17
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD IN ('110005','201003','201005','201007','311001','431001','431001','431003','431006','431007','500001','500002','500004'
+                ,'500008','500019','500020','510007','510006', '520006') THEN B.EXPN_AMT END),0) AS CAST_18
+            FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+            WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+              AND A.DLNG_PT_CD = B.DLNG_PT_CD
+              AND A.DEL_YN = 'N'
+              AND B.DEL_YN = 'N'
+              AND B.DLNG_PT_CD = '002'
+            <if test="sctrCd != null and sctrCd != ''">
+                AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+            </if>
+            <if test="uprOrgnCd != null and uprOrgnCd != ''">
+                AND  A.CSTM_CD = #{uprOrgnCd}
+            </if>
+            <if test="orgnCd != null and orgnCd != ''">
+                AND  (A.DEPT_CD = #{orgnCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{orgnCd})))
+                )
+            </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='deptCd != null and deptCd !=""'>
+                AND  (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                            OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+            </if>
+            <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND A.EXPN_CRPP_RGSR_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+            </if>
+           /* GROUP BY A.EXPN_CRPP_RGSR_DT,A.DEPT_CD*/
+
+           <!-- UNION
+
+            SELECT
+                '3' AS SORT_ORDR
+                ,TO_CHAR(TO_DATE(A.EXPN_CRPP_RGSR_DT,'YYYYMMDD'),'DD/MM/YYYY') AS EXPN_CRPP_RGSR_DT
+                ,'' AS EXPN_CRPP_NO
+                ,'' AS EXPN_ORIG_CD
+                ,'' AS TXPR_NM
+                ,'' AS DEPT_CD
+                ,'' AS DEPT_NM
+                &#45;&#45;차변
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431001' THEN B.EXPN_AMT END),0) AS DBTOR_01
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431003' THEN B.EXPN_AMT END),0) AS DBTOR_02
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431006' THEN B.EXPN_AMT END),0) AS DBTOR_03
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '431007' THEN B.EXPN_AMT END),0) AS DBTOR_04
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500001' THEN B.EXPN_AMT END),0) AS DBTOR_05
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500004' THEN B.EXPN_AMT END),0) AS DBTOR_06
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500008' THEN B.EXPN_AMT END),0) AS DBTOR_07
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500020' THEN B.EXPN_AMT END),0) AS DBTOR_08
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '510006' THEN B.EXPN_AMT END),0) AS DBTOR_09
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '500002' THEN B.EXPN_AMT END),0) AS DBTOR_10
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '520006' THEN B.EXPN_AMT END),0) AS DBTOR_11
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD = '510007' THEN B.EXPN_AMT END),0) AS DBTOR_12
+                ,NVL(SUM(CASE WHEN B.DBTOR_ACCT_CD IS NOT NULL THEN B.EXPN_AMT END),0) AS DBTOR_13
+                &#45;&#45;대변
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '201001' THEN B.EXPN_AMT END),0) AS CAST_01
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '201002' THEN B.EXPN_AMT END),0) AS CAST_02
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '201003' THEN B.EXPN_AMT END),0) AS CAST_03
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '201005' THEN B.EXPN_AMT END),0) AS CAST_04
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '201007' THEN B.EXPN_AMT END),0) AS CAST_05
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '431001' THEN B.EXPN_AMT END),0) AS CAST_06
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '431003' THEN B.EXPN_AMT END),0) AS CAST_07
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '431006' THEN B.EXPN_AMT END),0) AS CAST_08
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '431007' THEN B.EXPN_AMT END),0) AS CAST_09
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500001' THEN B.EXPN_AMT END),0) AS CAST_10
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500004' THEN B.EXPN_AMT END),0) AS CAST_11
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500008' THEN B.EXPN_AMT END),0) AS CAST_12
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500020' THEN B.EXPN_AMT END),0) AS CAST_13
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '510006' THEN B.EXPN_AMT END),0) AS CAST_14
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '510007' THEN B.EXPN_AMT END),0) AS CAST_15
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500002' THEN B.EXPN_AMT END),0) AS CAST_16
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '520006' THEN B.EXPN_AMT END),0) AS CAST_17
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '500019' THEN B.EXPN_AMT END),0) AS CAST_18
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD = '311001' THEN B.EXPN_AMT END),0) AS CAST_19
+                ,NVL(SUM(CASE WHEN B.CAST_ACCT_CD IS NOT NULL THEN B.EXPN_AMT END),0) AS CAST_20
+            FROM
+                TB_COLI_EXPN_CRPP A
+                ,TB_COLI_EXPN_CRPP_DTL B
+            WHERE 	A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+            AND	  A.DEL_YN = 'N'
+            AND   B.DEL_YN = 'N'
+            AND   A.DLNG_PT_CD = '002'
+            AND   (B.DBTOR_ACCT_CD IN ('431001','431003','431006','431007','500001','500004','500008','500020','510006','500002','520006','510007')
+            OR B.CAST_ACCT_CD IN ('201001','201002','201003','201005','201007','431001','431003','431006','431007','500001',
+                                '500004','500008','500020','510006','510007','500002','520006','500019','311001'))
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND A.EXPN_CRPP_RGSR_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+            </if>
+            GROUP BY A.EXPN_CRPP_RGSR_DT-->
+        ) TT
+        ORDER BY TT.SORT_ORDR, TO_CHAR(TO_DATE(TT.EXPN_CRPP_RGSR_DT,'DD/MM/YYYY'),'YYYYMMDD') DESC
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+    État de l'arrêté du TR6(Recettes) !==TR6 결산 현황(세입) ==!
+    -->
+    <select id="selectTr6TxreSeoaPcdn" parameterType="alpass.ipt.col.acnt.vo.ColAcntInfoVo" resultType="alpass.ipt.col.acnt.vo.ColAcntInfoVo">
+        /* ColAcntInfo_selectTr6TxreSeoaPcdn */
+        <include refid="pagination.header"/>
+
+        SELECT TT.* FROM
+        (
+            SELECT
+                '1' AS SORT_ORDR
+                ,(SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = (SELECT HSRK_ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE ORGN_CD = A.CSTM_CD AND DEL_YN = 'N')) AS SCTR_CD
+                ,A.CSTM_CD
+                ,FN_GET_ORGN_NM((SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = (SELECT HSRK_ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE ORGN_CD = A.CSTM_CD AND DEL_YN = 'N'))) AS SCTR_CD_NM
+                ,FN_GET_ORGN_NM(A.CSTM_CD) AS CSTM_CD_NM
+                ,C.CAST_ACCT_CD
+
+                -- 차변
+                ,NVL(SUM(CASE WHEN C.DBTOR_ACCT_CD = '100002' THEN C.EXPN_AMT END),0) AS DBTOR_01
+                ,NVL(SUM(CASE WHEN C.DBTOR_ACCT_CD = '110005' THEN C.EXPN_AMT END),0) AS DBTOR_02
+                ,NVL(SUM(CASE WHEN C.DBTOR_ACCT_CD = '120005' THEN C.EXPN_AMT END),0) AS DBTOR_03
+                ,NVL(SUM(CASE WHEN C.DBTOR_ACCT_CD = '520002' THEN C.EXPN_AMT END),0) AS DBTOR_04
+                ,NVL(SUM(CASE WHEN C.DBTOR_ACCT_CD = '' THEN C.EXPN_AMT END),0) AS DBTOR_05        -- 전자지불
+                ,NVL(SUM(CASE WHEN C.DBTOR_ACCT_CD = '' THEN C.EXPN_AMT END),0) AS DBTOR_06				-- 회계관리(차변)
+                ,NVL(SUM(CASE WHEN C.DBTOR_ACCT_CD IN ('100002','110005','120005','520002','','') THEN C.EXPN_AMT END),0) AS DBTOR_07
+            FROM
+                TB_COLI_RCVE A
+                ,TB_COLI_EXPN_CRPP B
+                ,TB_COLI_EXPN_CRPP_DTL C
+                ,TB_COLI_PYMN_ORDER D
+            WHERE A.RCVE_NO = D.RCVE_NO
+            AND   B.REFF_NO  = D.PYMN_ORDER_NO
+            AND	  B.EXPN_CRPP_NO = C.EXPN_CRPP_NO
+            AND	  A.DEL_YN = 'N'
+            AND	  B.DEL_YN = 'N'
+            AND   C.DEL_YN = 'N'
+            AND   C.CAST_ACCT_CD IS NOT NULL
+            AND   TRIM(C.CAST_ACCT_CD) != ''
+            <if test="sctrCd != null and sctrCd != ''">
+                AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+            </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='deptCd != null and deptCd !=""'>
+                AND  (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                            OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                                                                              OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+            </if>
+            <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND A.RCVE_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+            </if>
+            GROUP BY (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = (SELECT HSRK_ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE ORGN_CD = A.CSTM_CD AND DEL_YN = 'N')),A.CSTM_CD,C.CAST_ACCT_CD
+
+            UNION
+
+            SELECT
+                '2' AS SORT_ORDR
+                ,'' AS SCTR_CD
+                ,'' AS CSTM_CD
+                ,'' AS SCTR_CD_NM
+                ,'' AS CSTM_CD_NM
+                ,'' AS CAST_ACCT_CD
+                -- 차변
+                ,NVL(SUM(CASE WHEN C.DBTOR_ACCT_CD = '100002' THEN C.EXPN_AMT END),0) AS DBTOR_01
+                ,NVL(SUM(CASE WHEN C.DBTOR_ACCT_CD = '110005' THEN C.EXPN_AMT END),0) AS DBTOR_02
+                ,NVL(SUM(CASE WHEN C.DBTOR_ACCT_CD = '120005' THEN C.EXPN_AMT END),0) AS DBTOR_03
+                ,NVL(SUM(CASE WHEN C.DBTOR_ACCT_CD = '520002' THEN C.EXPN_AMT END),0) AS DBTOR_04
+                ,NVL(SUM(CASE WHEN C.DBTOR_ACCT_CD = '' THEN C.EXPN_AMT END),0) AS DBTOR_05        -- 전자지불
+                ,NVL(SUM(CASE WHEN C.DBTOR_ACCT_CD = '' THEN C.EXPN_AMT END),0) AS DBTOR_06				-- 회계관리(차변)
+                ,NVL(SUM(CASE WHEN C.DBTOR_ACCT_CD IN ('100002','110005','120005','520002','','') THEN C.EXPN_AMT END),0) AS DBTOR_07
+            FROM
+                TB_COLI_RCVE A
+                ,TB_COLI_EXPN_CRPP B
+                ,TB_COLI_EXPN_CRPP_DTL C
+                ,TB_COLI_PYMN_ORDER D
+            WHERE A.RCVE_NO = D.RCVE_NO
+            AND   B.REFF_NO  = D.PYMN_ORDER_NO
+            AND	  B.EXPN_CRPP_NO = C.EXPN_CRPP_NO
+            AND	  A.DEL_YN = 'N'
+            AND	  B.DEL_YN = 'N'
+            AND   C.DEL_YN = 'N'
+            AND   C.CAST_ACCT_CD IS NOT NULL
+            AND   TRIM(C.CAST_ACCT_CD) != ''
+            <if test="sctrCd != null and sctrCd != ''">
+                AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+            </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='deptCd != null and deptCd !=""'>
+                AND  (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                                                  OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+            </if>
+            <if test='inqtDtFrom != null and inqtDtFrom !="" and inqtDtTo != null and inqtDtTo !="" '>
+                AND A.RCVE_DT BETWEEN TO_CHAR(TO_DATE(#{inqtDtFrom},'DD/MM/YYYY'),'YYYYMMDD') AND TO_CHAR(TO_DATE(#{inqtDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+            </if>
+        ) TT
+        ORDER BY TT.SORT_ORDR,TT.CSTM_CD
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+    État de l'arrêté du TR6(Dépenses) !==TR6 결산 현황(지출)==!
+    -->
+    <select id="selectTr6ExpnSeoaPcdn" parameterType="alpass.ipt.col.acnt.vo.ColAcntInfoVo" resultType="alpass.ipt.col.acnt.vo.ColAcntInfoVo">
+        /* ColAcntInfo_selectTr6ExpnSeoaPcdn */
+        <include refid="pagination.header"/>
+        SELECT TT.* FROM
+        (
+            SELECT
+                '1' AS SORT_ORDR
+                ,(SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = (SELECT HSRK_ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE ORGN_CD = A.CSTM_CD AND DEL_YN = 'N')) AS SCTR_CD
+                ,A.CSTM_CD
+                ,FN_GET_ORGN_NM((SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = (SELECT HSRK_ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE ORGN_CD = A.CSTM_CD AND DEL_YN = 'N'))) AS SCTR_CD_NM
+                ,FN_GET_ORGN_NM(A.CSTM_CD) AS CSTM_CD_NM
+                ,C.DBTOR_ACCT_CD
+                -- 대변
+                ,NVL(SUM(CASE WHEN C.CAST_ACCT_CD = '100002' THEN C.EXPN_AMT END),0) AS CAST_01
+                ,NVL(SUM(CASE WHEN C.CAST_ACCT_CD = '110005' THEN C.EXPN_AMT END),0) AS CAST_02
+                ,NVL(SUM(CASE WHEN C.CAST_ACCT_CD = '120005' THEN C.EXPN_AMT END),0) AS CAST_03
+                ,NVL(SUM(CASE WHEN C.CAST_ACCT_CD = '520002' THEN C.EXPN_AMT END),0) AS CAST_04
+                ,NVL(SUM(CASE WHEN C.CAST_ACCT_CD = '' THEN C.EXPN_AMT END),0) AS CAST_05        -- 전자지불
+                ,NVL(SUM(CASE WHEN C.CAST_ACCT_CD = '' THEN C.EXPN_AMT END),0) AS CAST_06				-- 회계관리(차변)
+                ,NVL(SUM(CASE WHEN C.CAST_ACCT_CD IN ('100002','110005','120005','520002','','') THEN C.EXPN_AMT END),0) AS CAST_07
+            FROM
+                TB_COLI_RCVE A
+                ,TB_COLI_EXPN_CRPP B
+                ,TB_COLI_EXPN_CRPP_DTL C
+                ,TB_COLI_PYMN_ORDER D
+            WHERE A.RCVE_NO = D.RCVE_NO
+            AND   B.REFF_NO  = D.PYMN_ORDER_NO
+            AND	  B.EXPN_CRPP_NO = C.EXPN_CRPP_NO
+            AND	  A.DEL_YN = 'N'
+            AND	  B.DEL_YN = 'N'
+            AND   C.DEL_YN = 'N'
+            AND   C.DBTOR_ACCT_CD IS NOT NULL
+            AND   TRIM(C.DBTOR_ACCT_CD) != ''
+            <if test="sctrCd != null and sctrCd != ''">
+                AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+            </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='deptCd != null and deptCd !=""'>
+                AND  (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                            OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                                                                              OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+            </if>
+            GROUP BY (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD = (SELECT HSRK_ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE ORGN_CD = A.CSTM_CD AND DEL_YN = 'N')),A.CSTM_CD,C.DBTOR_ACCT_CD
+
+            UNION
+
+            SELECT
+                '2' AS SORT_ORDR
+                ,'' AS SCTR_CD
+                ,'' AS CSTM_CD
+                ,'' AS SCTR_CD_NM
+                ,'' AS CSTM_CD_NM
+                ,'' AS DBTOR_ACCT_CD
+
+                -- 대변
+                ,NVL(SUM(CASE WHEN C.CAST_ACCT_CD = '100002' THEN C.EXPN_AMT END),0) AS CAST_01
+                ,NVL(SUM(CASE WHEN C.CAST_ACCT_CD = '110005' THEN C.EXPN_AMT END),0) AS CAST_02
+                ,NVL(SUM(CASE WHEN C.CAST_ACCT_CD = '120005' THEN C.EXPN_AMT END),0) AS CAST_03
+                ,NVL(SUM(CASE WHEN C.CAST_ACCT_CD = '520002' THEN C.EXPN_AMT END),0) AS CAST_04
+                ,NVL(SUM(CASE WHEN C.CAST_ACCT_CD = '' THEN C.EXPN_AMT END),0) AS CAST_05        -- 전자지불
+                ,NVL(SUM(CASE WHEN C.CAST_ACCT_CD = '' THEN C.EXPN_AMT END),0) AS CAST_06				-- 회계관리(차변)
+                ,NVL(SUM(CASE WHEN C.CAST_ACCT_CD IN ('100002','110005','120005','520002','','') THEN C.EXPN_AMT END),0) AS CAST_07
+            FROM
+                TB_COLI_RCVE A
+                ,TB_COLI_EXPN_CRPP B
+                ,TB_COLI_EXPN_CRPP_DTL C
+                ,TB_COLI_PYMN_ORDER D
+            WHERE A.RCVE_NO = D.RCVE_NO
+            AND   B.REFF_NO  = D.PYMN_ORDER_NO
+            AND	  B.EXPN_CRPP_NO = C.EXPN_CRPP_NO
+            AND	  A.DEL_YN = 'N'
+            AND		B.DEL_YN = 'N'
+            AND   C.DEL_YN = 'N'
+            AND   C.DBTOR_ACCT_CD IS NOT NULL
+            AND   TRIM(C.DBTOR_ACCT_CD) != ''
+            <if test="sctrCd != null and sctrCd != ''">
+                AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+            </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+                AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='deptCd != null and deptCd !=""'>
+                AND  (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                                                  OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+            </if>
+        ) TT
+        ORDER BY TT.SORT_ORDR,TT.CSTM_CD,TT.DBTOR_ACCT_CD
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+    État de l'arrêté du TR8(Débit) !==TR8 결산 현황(차변) ==!
+    -->
+    <select id="selectTr8DbtorList" parameterType="alpass.ipt.col.acnt.vo.ColAcntInfoVo" resultType="alpass.ipt.col.acnt.vo.ColAcntInfoVo">
+        /* ColAcntInfo_selectTr8DbtorList */
+        SELECT	  NVL(AA.ACCT_CD, 'TOTAL') AS DBTOR_ACCT_CD
+            <if test='searchTp != "01"'>
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{prevmm}||'26'), 0) AS PREV_DBTOR26
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{prevmm}||'27'), 0) AS PREV_DBTOR27
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{prevmm}||'28'), 0) AS PREV_DBTOR28
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{prevmm}||'29'), 0) AS PREV_DBTOR29
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{prevmm}||'30'), 0) AS PREV_DBTOR30
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{prevmm}||'31'), 0) AS PREV_DBTOR31
+            </if>
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'01'), 0) AS DBTOR01
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'02'), 0) AS DBTOR02
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'03'), 0) AS DBTOR03
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'04'), 0) AS DBTOR04
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'05'), 0) AS DBTOR05
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'06'), 0) AS DBTOR06
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'07'), 0) AS DBTOR07
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'08'), 0) AS DBTOR08
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'09'), 0) AS DBTOR09
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'10'), 0) AS DBTOR10
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'11'), 0) AS DBTOR11
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'12'), 0) AS DBTOR12
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'13'), 0) AS DBTOR13
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'14'), 0) AS DBTOR14
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'15'), 0) AS DBTOR15
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'16'), 0) AS DBTOR16
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'17'), 0) AS DBTOR17
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'18'), 0) AS DBTOR18
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'19'), 0) AS DBTOR19
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'20'), 0) AS DBTOR20
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'21'), 0) AS DBTOR21
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'22'), 0) AS DBTOR22
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'23'), 0) AS DBTOR23
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'24'), 0) AS DBTOR24
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'25'), 0) AS DBTOR25
+            <if test='searchTp == "02"'>
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'26'), 0) AS DBTOR26
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'27'), 0) AS DBTOR27
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'28'), 0) AS DBTOR28
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'29'), 0) AS DBTOR29
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'30'), 0) AS DBTOR30
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{mm}||'31'), 0) AS DBTOR31
+            </if>
+        FROM (
+            SELECT 	MST.ACCT_CD,
+                    TO_CHAR(TO_DATE(A.RCVE_DT, 'YYYYMMDD'), 'MMDD') DT,
+                    SUM(A.RCVE_AMT) AMT
+            FROM  (	SELECT ACCT_CD
+                    FROM TB_COLI_CLTD_ACCT_CD
+                    WHERE DEL_YN = 'N'
+                      AND NVL(ACCT_CD, '') != ''
+                    GROUP BY ACCT_CD) MST,
+                  ( SELECT *
+                    FROM TB_COLI_TAX_CD_PR_RCVE_BRKD RCVE, TB_COLI_NTFC NTFC
+                    WHERE TO_CHAR(TO_DATE(RCVE.RCVE_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFrom} AND #{inqtDtTo}
+                      AND RCVE.NTFC_NO = NTFC.NTFC_NO
+                      AND RCVE.DEL_YN = 'N'
+                      AND NTFC.DEL_YN = 'N'
+                    <if test="sctrCd != null and sctrCd != ''">
+                        AND NTFC.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                    </if>
+                    <if test='cstmCd != null and cstmCd !="" '>
+                        AND NTFC.CSTM_CD = #{cstmCd}
+                    </if>
+                    <if test='deptCd != null and deptCd !="" '>
+                        AND  (NTFC.DEPT_CD = #{deptCd} OR NTFC.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                        OR NTFC.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                        OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                    </if>
+                  ) A
+            WHERE   MST.ACCT_CD = A.ACCT_CD(+)
+            GROUP BY MST.ACCT_CD, A.RCVE_DT
+            ORDER BY A.RCVE_DT
+        ) AA
+        GROUP BY ROLLUP (AA.ACCT_CD)
+    </select>
+
+    <!--
+    État de l'arrêté du TR8(Crédit) !==TR8 결산 현황(대변)==!
+    -->
+    <select id="selectTr8CastList" parameterType="alpass.ipt.col.acnt.vo.ColAcntInfoVo" resultType="alpass.ipt.col.acnt.vo.ColAcntInfoVo">
+        /* ColAcntInfo_selectTr8CastList */
+        SELECT	NVL(AA.CAST_ACCT_CD, 'TOTAL') AS CAST_ACCT_CD
+            <if test='searchTp != "01"'>
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{prevmm}||'26'), 0) AS PREV_CAST26
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{prevmm}||'27'), 0) AS PREV_CAST27
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{prevmm}||'28'), 0) AS PREV_CAST28
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{prevmm}||'29'), 0) AS PREV_CAST29
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{prevmm}||'30'), 0) AS PREV_CAST30
+                , COALESCE(SUM(AMT) FILTER(WHERE DT = #{prevmm}||'31'), 0) AS PREV_CAST31
+            </if>
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'01'), 0) AS CAST01
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'02'), 0) AS CAST02
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'03'), 0) AS CAST03
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'04'), 0) AS CAST04
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'05'), 0) AS CAST05
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'06'), 0) AS CAST06
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'07'), 0) AS CAST07
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'08'), 0) AS CAST08
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'09'), 0) AS CAST09
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'10'), 0) AS CAST10
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'11'), 0) AS CAST11
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'12'), 0) AS CAST12
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'13'), 0) AS CAST13
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'14'), 0) AS CAST14
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'15'), 0) AS CAST15
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'16'), 0) AS CAST16
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'17'), 0) AS CAST17
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'18'), 0) AS CAST18
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'19'), 0) AS CAST19
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'20'), 0) AS CAST20
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'21'), 0) AS CAST21
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'22'), 0) AS CAST22
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'23'), 0) AS CAST23
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'24'), 0) AS CAST24
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'25'), 0) AS CAST25
+            <if test='searchTp == "02"'>
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'26'), 0) AS CAST26
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'27'), 0) AS CAST27
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'28'), 0) AS CAST28
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'29'), 0) AS CAST29
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'30'), 0) AS CAST30
+                , COALESCE(SUM(AMT) FILTER(WHERE DT =  #{mm}||'31'), 0) AS CAST31
+            </if>
+        FROM (
+            SELECT 	MST.CAST_ACCT_CD,
+                    TO_CHAR(TO_DATE(A.EXPN_CRPP_RGSR_DT, 'YYYYMMDD'), 'MMDD') DT,
+                    SUM(A.EXPN_CAST_AMT) AMT
+            FROM  (	SELECT ACCT_CD AS CAST_ACCT_CD
+                    FROM TB_COLI_CLTD_ACCT_CD
+                    WHERE NVL(ACCT_CD, '') != ''
+                      AND DEL_YN = 'N'
+                    GROUP BY CAST_ACCT_CD) MST,
+                  ( SELECT *
+                    FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                    WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                    AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                    AND A.DEL_YN = 'N'
+                    AND B.DEL_YN = 'N'
+                    AND TO_CHAR(TO_DATE(A.EXPN_CRPP_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFrom} AND #{inqtDtTo}
+                    <if test="sctrCd != null and sctrCd != ''">
+                        AND  A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                    </if>
+                    <if test='cstmCd != null and cstmCd !="" '>
+                        AND A.CSTM_CD = #{cstmCd}
+                    </if>
+                    <if test='deptCd != null and deptCd !="" '>
+                        AND  (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                        OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                        OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                    </if>
+                  ) A
+            WHERE   MST.CAST_ACCT_CD = A.CAST_ACCT_CD(+)
+            GROUP BY MST.CAST_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+            ORDER BY A.EXPN_CRPP_RGSR_DT
+        ) AA
+        GROUP BY ROLLUP (AA.CAST_ACCT_CD)
+    </select>
+
+    <!--
+    Consultation de la balance mensuelle !==월 결산 조회==!
+    -->
+    <select id="selectAcntMontSeoaStats" parameterType="alpass.ipt.col.acnt.vo.ColAcntMontSeoaStats" resultType="alpass.ipt.col.acnt.vo.ColAcntMontSeoaStats">
+        /* ColAcntInfo_selectAcntMontSeoaStats */
+        WITH TMP AS (
+            SELECT    ACCT_CD
+                    , SUM_LYY_EXPN_AMT
+                    , SUM_UNTL_LMM_EXPN_AMT
+                    , SUM_THMM_EXPN_AMT
+                    , TOTAL_DEBIT
+                    , SUM_LYY_DRWB_AMT
+                    , SUM_UNTL_LMM_DRWB_AMT
+                    , SUM_THMM_DRWB_AMT
+                    , TOTAL_CREDIT
+                    , SOLDE_DEBIT
+                    , SOLDE_CREDIT
+            FROM (
+                SELECT  RES.ACCT_CD
+                      , RES.SUM_LYY_EXPN_AMT
+                      , RES.SUM_UNTL_LMM_EXPN_AMT
+                      , RES.SUM_THMM_EXPN_AMT
+                      , RES.TOTAL_DEBIT
+                      , RES.SUM_LYY_DRWB_AMT
+                      , RES.SUM_UNTL_LMM_DRWB_AMT
+                      , RES.SUM_THMM_DRWB_AMT
+                      , RES.TOTAL_CREDIT
+                      , (CASE WHEN TOTAL_DEBIT <![CDATA[ > ]]> TOTAL_CREDIT THEN TOTAL_DIFF ELSE 0 END) AS SOLDE_DEBIT
+                      , (CASE WHEN TOTAL_DEBIT <![CDATA[ < ]]> TOTAL_CREDIT THEN TOTAL_DIFF ELSE 0 END) AS SOLDE_CREDIT
+                FROM (
+                    SELECT 	MST.ACCT_CD
+                    , COALESCE(SUM_LYY_EXPN_AMT, 0) AS SUM_LYY_EXPN_AMT
+                    , COALESCE(SUM_UNTL_LMM_EXPN_AMT, 0) AS SUM_UNTL_LMM_EXPN_AMT
+                    , COALESCE(SUM_THMM_EXPN_AMT, 0) AS SUM_THMM_EXPN_AMT
+                    , (COALESCE(SUM_LYY_EXPN_AMT, 0) + COALESCE(SUM_UNTL_LMM_EXPN_AMT, 0) + COALESCE(SUM_THMM_EXPN_AMT, 0)) AS TOTAL_DEBIT
+                    , COALESCE(SUM_LYY_DRWB_AMT, 0) AS SUM_LYY_DRWB_AMT
+                    , COALESCE(SUM_UNTL_LMM_DRWB_AMT, 0) AS SUM_UNTL_LMM_DRWB_AMT
+                    , COALESCE(SUM_THMM_DRWB_AMT, 0) AS SUM_THMM_DRWB_AMT
+                    , (COALESCE(SUM_LYY_DRWB_AMT, 0) + COALESCE(SUM_UNTL_LMM_DRWB_AMT, 0) + COALESCE(SUM_THMM_DRWB_AMT, 0)) AS TOTAL_CREDIT
+                    , ABS((COALESCE(SUM_LYY_EXPN_AMT, 0) + COALESCE(SUM_UNTL_LMM_EXPN_AMT, 0) + COALESCE(SUM_THMM_EXPN_AMT, 0)) - (COALESCE(SUM_LYY_DRWB_AMT, 0) + COALESCE(SUM_UNTL_LMM_DRWB_AMT, 0) + COALESCE(SUM_THMM_DRWB_AMT, 0))) AS TOTAL_DIFF
+                    FROM (
+                        SELECT ACCT_CD
+                        FROM TB_COLI_CLTD_ACCT_CD
+                        GROUP BY ACCT_CD
+                    ) MST, (
+                        WITH JAE_DB AS (	-- JAE의 계정별 차대변 수납내역 합계
+                            SELECT 	COALESCE(A.ACCT_CD, B.ACCT_CD) AS ACCT_CD
+                                  , A.PYMN_AMT_SUM AS DBTOR_PYMN_AMT
+                                  , A.RCVE_DT AS DBTOR_PYMN_DT
+                                  , B.RCVE_AMT_SUM AS CAST_RCVE_AMT
+                                  , B.RCVE_DT AS CAST_RCVE_DT
+                            FROM (
+                                SELECT 	ACCT_CD
+                                      , RCVE_DT
+                                      , SUM(PYMN_AMT) AS PYMN_AMT_SUM
+                                FROM (
+                                    SELECT 	CASE
+                                                WHEN PYMN_PT_CD = '001' THEN '100002'
+                                                WHEN PYMN_PT_CD IN ('002','004','006','007','008') THEN '110005'
+                                                WHEN PYMN_PT_CD = '003' THEN '120005'
+                                                WHEN PYMN_PT_CD = '005' THEN '520002'
+                                            END AS ACCT_CD
+                                          , A.RCVE_DT
+                                          , SUM(PYMN_AMT) AS PYMN_AMT
+                                    FROM TB_COLI_RCVE A, TB_COLI_PYMN B, TB_COLI_NTFC C
+                                    WHERE A.RCVE_NO = B.RCVE_NO
+                                      AND A.NTFC_NO = C.NTFC_NO
+                                      AND C.CNCL_YN = 'N'
+                                      AND A.DEL_YN = 'N'
+                                      AND B.DEL_YN = 'N'
+                                      AND C.DEL_YN = 'N'
+                                    <if test="sctrCd != null and sctrCd != ''">
+                                        AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                                    </if>
+                                    <if test='cstmCd != null and cstmCd !="" '>
+                                        AND A.CSTM_CD = #{cstmCd}
+                                    </if>
+                                    <if test='deptCd != null and deptCd !="" '>
+                                        AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                        OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                        OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                                    </if>
+                                    GROUP BY B.PYMN_PT_CD, A.RCVE_DT
+                                ) GROUP BY ACCT_CD, RCVE_DT
+                            ) A FULL OUTER JOIN (
+                                SELECT 	B.ACCT_CD
+                                      , A.RCVE_DT
+                                      , SUM(B.RCVE_AMT) AS RCVE_AMT_SUM
+                                FROM TB_COLI_RCVE A, TB_COLI_TAX_CD_PR_RCVE_BRKD B, TB_COLI_NTFC C
+                                WHERE A.RCVE_NO = B.RCVE_NO
+                                  AND A.NTFC_NO = B.NTFC_NO
+                                  AND A.NTFC_NO = C.NTFC_NO
+                                  AND C.CNCL_YN = 'N'
+                                  AND A.DEL_YN = 'N'
+                                  AND B.DEL_YN = 'N'
+                                  AND C.DEL_YN = 'N'
+                                <if test="sctrCd != null and sctrCd != ''">
+                                    AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                                </if>
+                                <if test='cstmCd != null and cstmCd !="" '>
+                                    AND A.CSTM_CD = #{cstmCd}
+                                </if>
+                                <if test='deptCd != null and deptCd !="" '>
+                                    AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                    OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                    OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                                </if>
+                                GROUP BY B.ACCT_CD, A.RCVE_DT
+                            ) B
+                            ON A.ACCT_CD = B.ACCT_CD
+                        ), JAD_DB AS (	-- JAD의 계정별 차대변 수납내역 합계
+                            SELECT 	COALESCE(A.DBTOR_ACCT_CD, B.CAST_ACCT_CD) AS ACCT_CD
+                                  , A.EXPN_AMT_SUM AS DBTOR_EXPN_AMT
+                                  , A.EXPN_CRPP_RGSR_DT AS DBTOR_RGSR_DT
+                                  , B.EXPN_AMT_SUM AS CAST_EXPN_AMT
+                                  , B.EXPN_CRPP_RGSR_DT AS CAST_RGSR_DT
+                            FROM (
+                                SELECT 	A.DBTOR_ACCT_CD
+                                      , A.EXPN_CRPP_RGSR_DT
+                                      , SUM(A.EXPN_AMT) AS EXPN_AMT_SUM
+                                FROM (
+                                    SELECT *
+                                    FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                                    WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                                      AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                                      AND B.DLNG_PT_CD = '001'
+                                      AND A.DEL_YN = 'N'
+                                      AND B.DEL_YN = 'N'
+                                    <if test="sctrCd != null and sctrCd != ''">
+                                        AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                                    </if>
+                                    <if test='cstmCd != null and cstmCd !="" '>
+                                        AND A.CSTM_CD = #{cstmCd}
+                                    </if>
+                                    <if test='deptCd != null and deptCd !="" '>
+                                        AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                        OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                        OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                                    </if>
+                                ) A
+                                GROUP BY A.DBTOR_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+                            ) A FULL OUTER JOIN (
+                                SELECT 	A.CAST_ACCT_CD
+                                      , A.EXPN_CRPP_RGSR_DT
+                                      , SUM(A.EXPN_CAST_AMT) AS EXPN_AMT_SUM
+                                FROM (
+                                    SELECT *
+                                    FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                                    WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                                      AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                                      AND B.DLNG_PT_CD = '001'
+                                      AND A.DEL_YN = 'N'
+                                      AND B.DEL_YN = 'N'
+                                    <if test="sctrCd != null and sctrCd != ''">
+                                        AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                                    </if>
+                                    <if test='cstmCd != null and cstmCd !="" '>
+                                        AND A.CSTM_CD = #{cstmCd}
+                                    </if>
+                                    <if test='deptCd != null and deptCd !="" '>
+                                        AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                        OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                        OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                                    </if>
+                                 ) A
+                            GROUP BY A.CAST_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+                            ) B
+                            ON A.DBTOR_ACCT_CD = B.CAST_ACCT_CD AND A.EXPN_CRPP_RGSR_DT = B.EXPN_CRPP_RGSR_DT
+                        ), JOD_DB AS (	-- JOD의 계정별 차대변 수납내역 합계
+                            SELECT 	COALESCE(A.DBTOR_ACCT_CD, B.CAST_ACCT_CD) AS ACCT_CD
+                                  , A.EXPN_AMT_SUM AS DBTOR_EXPN_AMT
+                                  , A.EXPN_CRPP_RGSR_DT AS DBTOR_RGSR_DT
+                                  , B.EXPN_AMT_SUM AS CAST_EXPN_AMT
+                                  , B.EXPN_CRPP_RGSR_DT AS CAST_RGSR_DT
+                            FROM (
+                                SELECT 	A.DBTOR_ACCT_CD
+                                      , A.EXPN_CRPP_RGSR_DT
+                                      , SUM(A.EXPN_AMT) AS EXPN_AMT_SUM
+                                FROM (
+                                    SELECT *
+                                    FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                                    WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                                      AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                                      AND B.DLNG_PT_CD = '002'
+                                      AND A.DEL_YN = 'N'
+                                      AND B.DEL_YN = 'N'
+                                    <if test="sctrCd != null and sctrCd != ''">
+                                        AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                                    </if>
+                                    <if test='cstmCd != null and cstmCd !="" '>
+                                        AND A.CSTM_CD = #{cstmCd}
+                                    </if>
+                                    <if test='deptCd != null and deptCd !="" '>
+                                        AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                        OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                        OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                                    </if>
+                                ) A
+                                GROUP BY A.DBTOR_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+                            ) A FULL OUTER JOIN (
+                                SELECT 	A.CAST_ACCT_CD
+                                      , A.EXPN_CRPP_RGSR_DT
+                                      , SUM(A.EXPN_CAST_AMT) AS EXPN_AMT_SUM
+                                FROM (
+                                    SELECT *
+                                    FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                                    WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                                      AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                                      AND B.DLNG_PT_CD = '002'
+                                      AND A.DEL_YN = 'N'
+                                      AND B.DEL_YN = 'N'
+                                    <if test="sctrCd != null and sctrCd != ''">
+                                        AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                                    </if>
+                                    <if test='cstmCd != null and cstmCd !="" '>
+                                        AND A.CSTM_CD = #{cstmCd}
+                                    </if>
+                                    <if test='deptCd != null and deptCd !="" '>
+                                        AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                        OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                        OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                                    </if>
+                                ) A
+                                GROUP BY A.CAST_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+                            ) B
+                            ON A.DBTOR_ACCT_CD = B.CAST_ACCT_CD AND A.EXPN_CRPP_RGSR_DT = B.EXPN_CRPP_RGSR_DT
+                        )
+                        SELECT 	COALESCE(DBTOR_ACCT_CD, CAST_ACCT_CD) AS ACCT_CD
+                              , COALESCE(SUM(SUM_LYY_DBTOR_AMT), 0) AS SUM_LYY_EXPN_AMT
+                              , COALESCE(SUM(SUM_UNTL_LMM_DBTOR_AMT), 0) AS SUM_UNTL_LMM_EXPN_AMT
+                              , COALESCE(SUM(SUM_THMM_DBTOR_AMT), 0) AS SUM_THMM_EXPN_AMT
+                              , COALESCE(SUM(SUM_LYY_CAST_AMT), 0) AS SUM_LYY_DRWB_AMT
+                              , COALESCE(SUM(SUM_UNTL_LMM_CAST_AMT), 0) AS SUM_UNTL_LMM_DRWB_AMT
+                              , COALESCE(SUM(SUM_THMM_CAST_AMT), 0) AS SUM_THMM_DRWB_AMT
+                        FROM (
+                            SELECT 	DBTOR_ACCT_CD
+                                  , SUM_LYY_DBTOR_AMT
+                                  , SUM_UNTL_LMM_DBTOR_AMT
+                                  , SUM_THMM_DBTOR_AMT
+                                  , CAST_ACCT_CD
+                                  , SUM_LYY_CAST_AMT
+                                  , SUM_UNTL_LMM_CAST_AMT
+                                  , SUM_THMM_CAST_AMT
+                            FROM (
+                                SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS DBTOR_ACCT_CD
+                                      , SUM(LAST_YEAR.PYMN_AMT_SUM) AS SUM_LYY_DBTOR_AMT
+                                      , SUM(PRE_MONTH.PYMN_AMT_SUM) AS SUM_UNTL_LMM_DBTOR_AMT
+                                      , SUM(THIS_MONTH.PYMN_AMT_SUM) AS SUM_THMM_DBTOR_AMT
+                                FROM (
+                                    SELECT 	ACCT_CD
+                                          , SUM(DBTOR_PYMN_AMT) AS PYMN_AMT_SUM
+                                    FROM JAE_DB
+                                    WHERE TO_CHAR(TO_DATE(DBTOR_PYMN_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), -12), 'YYYY')
+                                    GROUP BY ACCT_CD
+                                ) LAST_YEAR FULL OUTER JOIN (
+                                    SELECT 	ACCT_CD
+                                          , SUM(DBTOR_PYMN_AMT) AS PYMN_AMT_SUM
+                                    FROM JAE_DB
+                                    WHERE TO_CHAR(TO_DATE(DBTOR_PYMN_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), 'YYYY')
+                                      AND TO_CHAR(TO_DATE(DBTOR_PYMN_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFrom}
+                                    GROUP BY ACCT_CD
+                                ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD
+                                FULL OUTER JOIN (
+                                    SELECT 	ACCT_CD
+                                          , SUM(DBTOR_PYMN_AMT) AS PYMN_AMT_SUM
+                                    FROM JAE_DB
+                                    WHERE TO_CHAR(TO_DATE(DBTOR_PYMN_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFrom} AND #{inqtDtTo}
+                                    GROUP BY ACCT_CD
+                                ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                                GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+                            ) DBTOR_BASE FULL OUTER JOIN (
+                                SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS CAST_ACCT_CD
+                                      , SUM(LAST_YEAR.PYMN_AMT_SUM) AS SUM_LYY_CAST_AMT
+                                      , SUM(PRE_MONTH.PYMN_AMT_SUM) AS SUM_UNTL_LMM_CAST_AMT
+                                      , SUM(THIS_MONTH.PYMN_AMT_SUM) AS SUM_THMM_CAST_AMT
+                                FROM (
+                                    SELECT 	ACCT_CD
+                                          , SUM(CAST_RCVE_AMT) AS PYMN_AMT_SUM
+                                    FROM JAE_DB
+                                    WHERE TO_CHAR(TO_DATE(CAST_RCVE_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), -12), 'YYYY')
+                                    GROUP BY ACCT_CD
+                                ) LAST_YEAR FULL OUTER JOIN (
+                                    SELECT 	ACCT_CD
+                                          , SUM(CAST_RCVE_AMT) AS PYMN_AMT_SUM
+                                    FROM JAE_DB
+                                    WHERE TO_CHAR(TO_DATE(CAST_RCVE_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), 'YYYY')
+                                      AND TO_CHAR(TO_DATE(CAST_RCVE_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFrom}
+                                    GROUP BY ACCT_CD
+                                ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD
+                                FULL OUTER JOIN (
+                                    SELECT 	ACCT_CD
+                                          , SUM(CAST_RCVE_AMT) AS PYMN_AMT_SUM
+                                    FROM JAE_DB
+                                    WHERE TO_CHAR(TO_DATE(CAST_RCVE_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFrom} AND #{inqtDtTo}
+                                    GROUP BY ACCT_CD
+                                ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                                GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+                            ) CAST_BASE
+                            ON DBTOR_BASE.DBTOR_ACCT_CD = CAST_BASE.CAST_ACCT_CD
+                            UNION ALL
+                            -- JAD
+                            SELECT 	DBTOR_ACCT_CD
+                                  , SUM_LYY_DBTOR_AMT
+                                  , SUM_UNTL_LMM_DBTOR_AMT
+                                  , SUM_THMM_DBTOR_AMT
+                                  , CAST_ACCT_CD
+                                  , SUM_LYY_CAST_AMT
+                                  , SUM_UNTL_LMM_CAST_AMT
+                                  , SUM_THMM_CAST_AMT
+                            FROM (
+                                SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS DBTOR_ACCT_CD
+                                      , SUM(LAST_YEAR.EXPN_AMT_SUM) AS SUM_LYY_DBTOR_AMT
+                                      , SUM(PRE_MONTH.EXPN_AMT_SUM) AS SUM_UNTL_LMM_DBTOR_AMT
+                                      , SUM(THIS_MONTH.EXPN_AMT_SUM) AS SUM_THMM_DBTOR_AMT
+                                FROM (
+                                    SELECT 	ACCT_CD
+                                          , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                                    FROM JAD_DB
+                                    WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), -12), 'YYYY')
+                                    GROUP BY ACCT_CD
+                                ) LAST_YEAR FULL OUTER JOIN (
+                                    SELECT 	ACCT_CD
+                                          , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                                    FROM JAD_DB
+                                    WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), 'YYYY')
+                                      AND TO_CHAR(TO_DATE(DBTOR_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFrom}
+                                    GROUP BY ACCT_CD
+                                ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD FULL OUTER JOIN(
+                                    SELECT 	ACCT_CD
+                                          , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                                    FROM JAD_DB
+                                    WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFrom} AND #{inqtDtTo}
+                                    GROUP BY ACCT_CD
+                                ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                                GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+                            ) DBTOR_BASE FULL OUTER JOIN (
+                                SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS CAST_ACCT_CD
+                                      , SUM(LAST_YEAR.EXPN_AMT_SUM) AS SUM_LYY_CAST_AMT
+                                      , SUM(PRE_MONTH.EXPN_AMT_SUM) AS SUM_UNTL_LMM_CAST_AMT
+                                      , SUM(THIS_MONTH.EXPN_AMT_SUM) AS SUM_THMM_CAST_AMT
+                                FROM (
+                                    SELECT 	ACCT_CD
+                                          , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                                    FROM JAD_DB
+                                    WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), -12), 'YYYY')
+                                    GROUP BY ACCT_CD
+                                ) LAST_YEAR FULL OUTER JOIN (
+                                    SELECT 	ACCT_CD
+                                          , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                                    FROM JAD_DB
+                                    WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), 'YYYY')
+                                      AND TO_CHAR(TO_DATE(CAST_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFrom}
+                                    GROUP BY ACCT_CD
+                                ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD FULL OUTER JOIN(
+                                    SELECT 	ACCT_CD
+                                          , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                                    FROM JAD_DB
+                                    WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFrom} AND #{inqtDtTo}
+                                    GROUP BY ACCT_CD
+                                ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                                GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+                            ) CAST_BASE
+                            ON DBTOR_BASE.DBTOR_ACCT_CD = CAST_BASE.CAST_ACCT_CD
+                            UNION ALL
+                            -- JOD의 세금코드별 합계
+                            SELECT 	DBTOR_ACCT_CD
+                                  , SUM_LYY_DBTOR_AMT
+                                  , SUM_UNTL_LMM_DBTOR_AMT
+                                  , SUM_THMM_DBTOR_AMT
+                                  , CAST_ACCT_CD
+                                  , SUM_LYY_CAST_AMT
+                                  , SUM_UNTL_LMM_CAST_AMT
+                                  , SUM_THMM_CAST_AMT
+                            FROM (
+                                SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS DBTOR_ACCT_CD
+                                      , SUM(LAST_YEAR.EXPN_AMT_SUM) AS SUM_LYY_DBTOR_AMT
+                                      , SUM(PRE_MONTH.EXPN_AMT_SUM) AS SUM_UNTL_LMM_DBTOR_AMT
+                                      , SUM(THIS_MONTH.EXPN_AMT_SUM) AS SUM_THMM_DBTOR_AMT
+                                FROM (
+                                    SELECT 	ACCT_CD
+                                          , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                                    FROM JOD_DB
+                                    WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), -12), 'YYYY')
+                                    GROUP BY ACCT_CD
+                                ) LAST_YEAR FULL OUTER JOIN (
+                                    SELECT 	ACCT_CD
+                                          , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                                    FROM JOD_DB
+                                    WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), 'YYYY')
+                                      AND TO_CHAR(TO_DATE(DBTOR_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFrom}
+                                    GROUP BY ACCT_CD
+                                ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD FULL OUTER JOIN(
+                                    SELECT 	ACCT_CD
+                                          , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                                    FROM JOD_DB
+                                    WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFrom} AND #{inqtDtTo}
+                                    GROUP BY ACCT_CD
+                                ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                                GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+                            ) DBTOR_BASE FULL OUTER JOIN (
+                                SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS CAST_ACCT_CD
+                                      , SUM(LAST_YEAR.EXPN_AMT_SUM) AS SUM_LYY_CAST_AMT
+                                      , SUM(PRE_MONTH.EXPN_AMT_SUM) AS SUM_UNTL_LMM_CAST_AMT
+                                      , SUM(THIS_MONTH.EXPN_AMT_SUM) AS SUM_THMM_CAST_AMT
+                                FROM (
+                                    SELECT 	ACCT_CD
+                                          , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                                    FROM JOD_DB
+                                    WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), -12), 'YYYY')
+                                    GROUP BY ACCT_CD
+                                ) LAST_YEAR FULL OUTER JOIN (
+                                    SELECT 	ACCT_CD
+                                          , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                                    FROM JOD_DB
+                                    WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), 'YYYY')
+                                      AND TO_CHAR(TO_DATE(CAST_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFrom}
+                                    GROUP BY ACCT_CD
+                                ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD FULL OUTER JOIN(
+                                    SELECT 	ACCT_CD
+                                          , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                                    FROM JOD_DB
+                                    WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFrom} AND #{inqtDtTo}
+                                    GROUP BY ACCT_CD
+                                ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                                GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+                            ) CAST_BASE
+                            ON DBTOR_BASE.DBTOR_ACCT_CD = CAST_BASE.CAST_ACCT_CD
+                        )
+                        GROUP BY COALESCE(DBTOR_ACCT_CD, CAST_ACCT_CD)
+                    ) TOTAL_DB
+                    WHERE MST.ACCT_CD = TOTAL_DB.ACCT_CD(+)
+                    ORDER BY MST.ACCT_CD
+                ) RES
+            )
+        )
+        SELECT    ACCT_CD
+                , SUM_LYY_EXPN_AMT
+                , SUM_UNTL_LMM_EXPN_AMT
+                , SUM_THMM_EXPN_AMT
+                , TOTAL_DEBIT
+                , SUM_LYY_DRWB_AMT
+                , SUM_UNTL_LMM_DRWB_AMT
+                , SUM_THMM_DRWB_AMT
+                , TOTAL_CREDIT
+                , SOLDE_DEBIT
+                , SOLDE_CREDIT
+        FROM TMP
+        UNION ALL
+        SELECT    'Total' AS ACCT_CD
+                , SUM(TMP.SUM_LYY_EXPN_AMT)
+                , SUM(TMP.SUM_UNTL_LMM_EXPN_AMT)
+                , SUM(TMP.SUM_THMM_EXPN_AMT)
+                , SUM(TMP.TOTAL_DEBIT)
+                , SUM(TMP.SUM_LYY_DRWB_AMT)
+                , SUM(TMP.SUM_UNTL_LMM_DRWB_AMT)
+                , SUM(TMP.SUM_THMM_DRWB_AMT)
+                , SUM(TMP.TOTAL_CREDIT)
+                , SUM(TMP.SOLDE_DEBIT)
+                , SUM(TMP.SOLDE_CREDIT)
+        FROM TMP
+    </select>
+
+
+    <!--
+    Consultation du Grand Livre !==총계정원장 조회==!
+    -->
+    <select id="selectTotlAcctLdgr" parameterType="alpass.ipt.col.acnt.vo.ColAcntMontSeoaStats" resultType="alpass.ipt.col.acnt.vo.ColAcntMontSeoaStats">
+    /* ColAcntInfo_selectTotlAcctLdgr */
+        WITH TMP AS (
+        SELECT    ACCT_CD
+                , SUM_UNTL_LMM_EXPN_AMT
+                , SUM_THMM_EXPN_AMT
+                , TOTAL_DEBIT
+                , SUM_UNTL_LMM_DRWB_AMT
+                , SUM_THMM_DRWB_AMT
+                , TOTAL_CREDIT
+                , SOLDE_DEBIT
+                , SOLDE_CREDIT
+        FROM (
+                SELECT  RES.ACCT_CD
+                      , RES.SUM_UNTL_LMM_EXPN_AMT
+                      , RES.SUM_THMM_EXPN_AMT
+                      , RES.TOTAL_DEBIT
+                      , RES.SUM_UNTL_LMM_DRWB_AMT
+                      , RES.SUM_THMM_DRWB_AMT
+                      , RES.TOTAL_CREDIT
+                      , (CASE WHEN TOTAL_DEBIT <![CDATA[ > ]]> TOTAL_CREDIT THEN TOTAL_DIFF ELSE 0 END) AS SOLDE_DEBIT
+                      , (CASE WHEN TOTAL_DEBIT <![CDATA[ < ]]> TOTAL_CREDIT THEN TOTAL_DIFF ELSE 0 END) AS SOLDE_CREDIT
+                FROM (
+                    SELECT 	MST.ACCT_CD
+                    , COALESCE(SUM_LYY_EXPN_AMT, 0) AS SUM_LYY_EXPN_AMT
+                    , COALESCE(SUM_UNTL_LMM_EXPN_AMT, 0) AS SUM_UNTL_LMM_EXPN_AMT
+                    , COALESCE(SUM_THMM_EXPN_AMT, 0) AS SUM_THMM_EXPN_AMT
+                    , (COALESCE(SUM_UNTL_LMM_EXPN_AMT, 0) + COALESCE(SUM_THMM_EXPN_AMT, 0)) AS TOTAL_DEBIT
+                    , COALESCE(SUM_LYY_DRWB_AMT, 0) AS SUM_LYY_DRWB_AMT
+                    , COALESCE(SUM_UNTL_LMM_DRWB_AMT, 0) AS SUM_UNTL_LMM_DRWB_AMT
+                    , COALESCE(SUM_THMM_DRWB_AMT, 0) AS SUM_THMM_DRWB_AMT
+                    , (COALESCE(SUM_UNTL_LMM_DRWB_AMT, 0) + COALESCE(SUM_THMM_DRWB_AMT, 0)) AS TOTAL_CREDIT
+                    , ABS((COALESCE(SUM_UNTL_LMM_EXPN_AMT, 0) + COALESCE(SUM_THMM_EXPN_AMT, 0)) - (COALESCE(SUM_UNTL_LMM_DRWB_AMT, 0) + COALESCE(SUM_THMM_DRWB_AMT, 0))) AS TOTAL_DIFF
+                    FROM (
+                        SELECT ACCT_CD
+                        FROM TB_COLI_CLTD_ACCT_CD
+                        GROUP BY ACCT_CD
+                    ) MST, (
+                        <include refid="snbBase"/>
+                    ) TOTAL_DB
+                    WHERE MST.ACCT_CD = TOTAL_DB.ACCT_CD(+)
+                    ORDER BY MST.ACCT_CD
+                ) RES
+            )
+        )
+        SELECT    ACCT_CD
+                , SUM_UNTL_LMM_EXPN_AMT
+                , SUM_THMM_EXPN_AMT
+                , TOTAL_DEBIT
+                , SUM_UNTL_LMM_DRWB_AMT
+                , SUM_THMM_DRWB_AMT
+                , TOTAL_CREDIT
+                , SOLDE_DEBIT
+                , SOLDE_CREDIT
+        FROM TMP
+        UNION ALL
+        SELECT    'Total' AS ACCT_CD
+                , SUM(TMP.SUM_UNTL_LMM_EXPN_AMT)
+                , SUM(TMP.SUM_THMM_EXPN_AMT)
+                , SUM(TMP.TOTAL_DEBIT)
+                , SUM(TMP.SUM_UNTL_LMM_DRWB_AMT)
+                , SUM(TMP.SUM_THMM_DRWB_AMT)
+                , SUM(TMP.TOTAL_CREDIT)
+                , SUM(TMP.SOLDE_DEBIT)
+                , SUM(TMP.SOLDE_CREDIT)
+        FROM TMP
+    </select>
+
+    <!--
+    Etat de la balance de clôture pour l’année n !==N 년도 마감 결산 조회==!
+    -->
+    <select id="selectAcntYearSeoaStats" parameterType="alpass.ipt.col.acnt.vo.ColAcntYearSeoaStatsVo" resultType="alpass.ipt.col.acnt.vo.ColAcntYearSeoaStatsVo">
+        /* ColAcntInfo_selectAcntYearSeoaStats */
+        SELECT 	RES.ACCT_CD
+              , RES.SUM_LYY_EXPN_AMT	-- 차변입금결산
+              , RES.DBTOR_EXPN_AMT		-- 차변회계거래
+              , RES.DBTOR_MGRN_DLNG		-- 차변관리거래
+              , RES.TOTAL_DEBIT		    -- 차변누적합계
+              , RES.SUM_LYY_DRWB_AMT	-- 대변입금결산
+              , RES.CAST_EXPN_AMT		-- 대변회계거래
+              , RES.CAST_MGRN_DLNG		-- 대변관리거래
+              , RES.TOTAL_CREDIT		-- 대변누적합계
+              , (CASE WHEN TOTAL_DEBIT <![CDATA[ > ]]> TOTAL_CREDIT THEN TOTAL_DIFF ELSE 0 END) AS SOLDE_DEBIT
+              , (CASE WHEN TOTAL_DEBIT <![CDATA[ < ]]> TOTAL_CREDIT THEN TOTAL_DIFF ELSE 0 END) AS SOLDE_CREDIT
+        FROM (
+            SELECT  DEC_BALANCE.ACCT_CD AS ACCT_CD
+                  , DEC_BALANCE.SUM_LYY_EXPN_AMT AS SUM_LYY_EXPN_AMT
+                  , COALESCE(DEC_JOD.DBTOR_EXPN_AMT, 0) AS DBTOR_EXPN_AMT
+                  , DEC_BALANCE.SUM_UNTL_LMM_EXPN_AMT + DEC_BALANCE.SUM_THMM_EXPN_AMT AS DBTOR_MGRN_DLNG
+                  , DEC_BALANCE.SUM_LYY_EXPN_AMT + COALESCE(DEC_JOD.DBTOR_EXPN_AMT, 0) + DEC_BALANCE.SUM_UNTL_LMM_EXPN_AMT + DEC_BALANCE.SUM_THMM_EXPN_AMT AS TOTAL_DEBIT
+                  , DEC_BALANCE.SUM_LYY_DRWB_AMT AS SUM_LYY_DRWB_AMT
+                  , COALESCE(DEC_JOD.CAST_EXPN_AMT, 0) AS CAST_EXPN_AMT
+                  , DEC_BALANCE.SUM_UNTL_LMM_DRWB_AMT + DEC_BALANCE.SUM_THMM_DRWB_AMT AS CAST_MGRN_DLNG
+                  , DEC_BALANCE.SUM_LYY_DRWB_AMT + COALESCE(DEC_JOD.CAST_EXPN_AMT, 0) + DEC_BALANCE.SUM_UNTL_LMM_DRWB_AMT + DEC_BALANCE.SUM_THMM_DRWB_AMT AS TOTAL_CREDIT
+                  , ABS((DEC_BALANCE.SUM_LYY_EXPN_AMT + COALESCE(DEC_JOD.DBTOR_EXPN_AMT, 0) + DEC_BALANCE.SUM_UNTL_LMM_EXPN_AMT + DEC_BALANCE.SUM_THMM_EXPN_AMT) - (DEC_BALANCE.SUM_LYY_DRWB_AMT + COALESCE(DEC_JOD.CAST_EXPN_AMT, 0) + DEC_BALANCE.SUM_UNTL_LMM_DRWB_AMT + DEC_BALANCE.SUM_THMM_DRWB_AMT)) AS TOTAL_DIFF
+            FROM (
+                SELECT 	MST.ACCT_CD
+                      , COALESCE(SUM_LYY_EXPN_AMT, 0) AS SUM_LYY_EXPN_AMT
+                      , COALESCE(SUM_UNTL_LMM_EXPN_AMT, 0) AS SUM_UNTL_LMM_EXPN_AMT
+                      , COALESCE(SUM_THMM_EXPN_AMT, 0) AS SUM_THMM_EXPN_AMT
+                      , COALESCE(SUM_LYY_DRWB_AMT, 0) AS SUM_LYY_DRWB_AMT
+                      , COALESCE(SUM_UNTL_LMM_DRWB_AMT, 0) AS SUM_UNTL_LMM_DRWB_AMT
+                      , COALESCE(SUM_THMM_DRWB_AMT, 0) AS SUM_THMM_DRWB_AMT
+                FROM (
+                    SELECT ACCT_CD
+                    FROM TB_COLI_CLTD_ACCT_CD
+                    GROUP BY ACCT_CD
+                ) MST, (
+                    <include refid="snbBase"/>
+                ) TOTAL_DB
+                WHERE MST.ACCT_CD = TOTAL_DB.ACCT_CD(+)
+                ORDER BY MST.ACCT_CD
+            ) DEC_BALANCE LEFT OUTER JOIN (
+            SELECT	ACCT_CD
+                  , COALESCE(SUM(DBTOR_EXPN_AMT), 0) AS DBTOR_EXPN_AMT
+                  , COALESCE(SUM(CAST_EXPN_AMT), 0) AS CAST_EXPN_AMT
+            FROM (
+            SELECT 	COALESCE(A.DBTOR_ACCT_CD, B.CAST_ACCT_CD) AS ACCT_CD
+                  , A.EXPN_AMT_SUM AS DBTOR_EXPN_AMT
+                  , A.EXPN_CRPP_RGSR_DT AS DBTOR_RGSR_DT
+                  , B.EXPN_AMT_SUM AS CAST_EXPN_AMT
+                  , B.EXPN_CRPP_RGSR_DT AS CAST_RGSR_DT
+            FROM (
+                SELECT 	A.DBTOR_ACCT_CD
+                      , A.EXPN_CRPP_RGSR_DT
+                      , SUM(A.EXPN_AMT) AS EXPN_AMT_SUM
+                FROM (
+                    SELECT *
+                    FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                    WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                      AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                      AND B.DLNG_PT_CD = '002'
+                      AND A.DEL_YN = 'N'
+                      AND B.DEL_YN = 'N'
+                ) A
+                GROUP BY A.DBTOR_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+            ) A FULL OUTER JOIN (
+                SELECT 	A.CAST_ACCT_CD
+                      , A.EXPN_CRPP_RGSR_DT
+                      , SUM(A.EXPN_CAST_AMT) AS EXPN_AMT_SUM
+                FROM (
+                    SELECT *
+                    FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                    WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                      AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                      AND B.DLNG_PT_CD = '002'
+                      AND A.DEL_YN = 'N'
+                      AND B.DEL_YN = 'N'
+                ) A
+            GROUP BY A.CAST_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+            ) B
+            ON A.DBTOR_ACCT_CD = B.CAST_ACCT_CD AND A.EXPN_CRPP_RGSR_DT = B.EXPN_CRPP_RGSR_DT
+            WHERE A.EXPN_CRPP_RGSR_DT LIKE #{aggtYy} || '%' OR B.EXPN_CRPP_RGSR_DT LIKE #{aggtYy} || '%'
+            )
+            GROUP BY ACCT_CD
+            ) DEC_JOD ON DEC_BALANCE.ACCT_CD = DEC_JOD.ACCT_CD
+        ) RES
+    </select>
+    <!--
+    Etat de la balance d’entrée pour l’année n+1 !==N+1 년도 마감 결산 조회==!
+    -->
+    <select id="selectAcntYearPlusOneSeoaStats" parameterType="alpass.ipt.col.acnt.vo.ColAcntYearSeoaStatsVo" resultType="alpass.ipt.col.acnt.vo.ColAcntYearSeoaStatsVo">
+        /* ColAcntInfo_selectAcntYearPlusOneSeoaStats */
+        SELECT 	RES.ACCT_CD
+              , RES.SOLDE_DEBIT AS SUM_LYY_EXPN_AMT
+              , RES.SUM_UNTL_LMM_EXPN_AMT
+              , RES.SUM_THMM_EXPN_AMT
+              , RES.TOTAL_DEBIT
+              , RES.SOLDE_CREDIT AS SUM_LYY_DRWB_AMT
+              , RES.SUM_UNTL_LMM_DRWB_AMT
+              , RES.SUM_THMM_DRWB_AMT
+              , RES.TOTAL_CREDIT
+              , (CASE WHEN RES.TOTAL_DEBIT <![CDATA[ > ]]> RES.TOTAL_CREDIT THEN RES.TOTAL_DIFF ELSE 0 END) AS SOLDE_DEBIT
+              , (CASE WHEN RES.TOTAL_DEBIT <![CDATA[ < ]]> RES.TOTAL_CREDIT THEN RES.TOTAL_DIFF ELSE 0 END) AS SOLDE_CREDIT
+        FROM (
+            SELECT 	A.ACCT_CD
+                  , A.SOLDE_DEBIT
+                  , B.SUM_UNTL_LMM_EXPN_AMT
+                  , B.SUM_THMM_EXPN_AMT
+                  , (A.SOLDE_DEBIT + B.SUM_UNTL_LMM_EXPN_AMT + B.SUM_THMM_EXPN_AMT) AS TOTAL_DEBIT
+                  , A.SOLDE_CREDIT
+                  , B.SUM_UNTL_LMM_DRWB_AMT
+                  , B.SUM_THMM_DRWB_AMT
+                  , (A.SOLDE_CREDIT + B.SUM_UNTL_LMM_DRWB_AMT + B.SUM_THMM_DRWB_AMT) AS TOTAL_CREDIT
+                  , ABS((A.SOLDE_DEBIT + B.SUM_UNTL_LMM_EXPN_AMT + B.SUM_THMM_EXPN_AMT) - (A.SOLDE_CREDIT + B.SUM_UNTL_LMM_DRWB_AMT + B.SUM_THMM_DRWB_AMT)) AS TOTAL_DIFF
+            FROM (
+                SELECT 	RES.ACCT_CD
+                      , RES.SUM_LYY_EXPN_AMT	-- 차변입금결산
+                      , RES.DBTOR_EXPN_AMT		-- 차변회계거래
+                      , RES.DBTOR_MGRN_DLNG		-- 차변관리거래
+                      , RES.TOTAL_DEBIT		    -- 차변누적합계
+                      , RES.SUM_LYY_DRWB_AMT	-- 대변입금결산
+                      , RES.CAST_EXPN_AMT		-- 대변회계거래
+                      , RES.CAST_MGRN_DLNG		-- 대변관리거래
+                      , RES.TOTAL_CREDIT		-- 대변누적합계
+                      , (CASE WHEN TOTAL_DEBIT <![CDATA[ > ]]> TOTAL_CREDIT THEN TOTAL_DIFF ELSE 0 END) AS SOLDE_DEBIT
+                      , (CASE WHEN TOTAL_DEBIT <![CDATA[ < ]]> TOTAL_CREDIT THEN TOTAL_DIFF ELSE 0 END) AS SOLDE_CREDIT
+                FROM (
+                    SELECT  DEC_BALANCE.ACCT_CD AS ACCT_CD
+                          , DEC_BALANCE.SUM_LYY_EXPN_AMT AS SUM_LYY_EXPN_AMT
+                          , COALESCE(DEC_JOD.DBTOR_EXPN_AMT, 0) AS DBTOR_EXPN_AMT
+                          , DEC_BALANCE.SUM_UNTL_LMM_EXPN_AMT + DEC_BALANCE.SUM_THMM_EXPN_AMT AS DBTOR_MGRN_DLNG
+                          , DEC_BALANCE.SUM_LYY_EXPN_AMT + COALESCE(DEC_JOD.DBTOR_EXPN_AMT, 0) + DEC_BALANCE.SUM_UNTL_LMM_EXPN_AMT + DEC_BALANCE.SUM_THMM_EXPN_AMT AS TOTAL_DEBIT
+                          , DEC_BALANCE.SUM_LYY_DRWB_AMT AS SUM_LYY_DRWB_AMT
+                          , COALESCE(DEC_JOD.CAST_EXPN_AMT, 0) AS CAST_EXPN_AMT
+                          , DEC_BALANCE.SUM_UNTL_LMM_DRWB_AMT + DEC_BALANCE.SUM_THMM_DRWB_AMT AS CAST_MGRN_DLNG
+                          , DEC_BALANCE.SUM_LYY_DRWB_AMT + COALESCE(DEC_JOD.CAST_EXPN_AMT, 0) + DEC_BALANCE.SUM_UNTL_LMM_DRWB_AMT + DEC_BALANCE.SUM_THMM_DRWB_AMT AS TOTAL_CREDIT
+                          , ABS((DEC_BALANCE.SUM_LYY_EXPN_AMT + COALESCE(DEC_JOD.DBTOR_EXPN_AMT, 0) + DEC_BALANCE.SUM_UNTL_LMM_EXPN_AMT + DEC_BALANCE.SUM_THMM_EXPN_AMT) - (DEC_BALANCE.SUM_LYY_DRWB_AMT + COALESCE(DEC_JOD.CAST_EXPN_AMT, 0) + DEC_BALANCE.SUM_UNTL_LMM_DRWB_AMT + DEC_BALANCE.SUM_THMM_DRWB_AMT)) AS TOTAL_DIFF
+                    FROM (
+                        SELECT 	MST.ACCT_CD
+                              , COALESCE(SUM_LYY_EXPN_AMT, 0) AS SUM_LYY_EXPN_AMT
+                              , COALESCE(SUM_UNTL_LMM_EXPN_AMT, 0) AS SUM_UNTL_LMM_EXPN_AMT
+                              , COALESCE(SUM_THMM_EXPN_AMT, 0) AS SUM_THMM_EXPN_AMT
+                              , COALESCE(SUM_LYY_DRWB_AMT, 0) AS SUM_LYY_DRWB_AMT
+                              , COALESCE(SUM_UNTL_LMM_DRWB_AMT, 0) AS SUM_UNTL_LMM_DRWB_AMT
+                              , COALESCE(SUM_THMM_DRWB_AMT, 0) AS SUM_THMM_DRWB_AMT
+                        FROM (
+                            SELECT ACCT_CD
+                            FROM TB_COLI_CLTD_ACCT_CD
+                            GROUP BY ACCT_CD
+                        ) MST, (
+                            <include refid="snbBase"/>
+                        ) TOTAL_DB
+                        WHERE MST.ACCT_CD = TOTAL_DB.ACCT_CD(+)
+                        ORDER BY MST.ACCT_CD
+                    ) DEC_BALANCE LEFT OUTER JOIN (
+                    SELECT	ACCT_CD
+                          , COALESCE(SUM(DBTOR_EXPN_AMT), 0) AS DBTOR_EXPN_AMT
+                          , COALESCE(SUM(CAST_EXPN_AMT), 0) AS CAST_EXPN_AMT
+                    FROM (
+                    SELECT 	COALESCE(A.DBTOR_ACCT_CD, B.CAST_ACCT_CD) AS ACCT_CD
+                          , A.EXPN_AMT_SUM AS DBTOR_EXPN_AMT
+                          , A.EXPN_CRPP_RGSR_DT AS DBTOR_RGSR_DT
+                          , B.EXPN_AMT_SUM AS CAST_EXPN_AMT
+                          , B.EXPN_CRPP_RGSR_DT AS CAST_RGSR_DT
+                    FROM (
+                        SELECT 	A.DBTOR_ACCT_CD
+                              , A.EXPN_CRPP_RGSR_DT
+                              , SUM(A.EXPN_AMT) AS EXPN_AMT_SUM
+                        FROM (
+                            SELECT *
+                            FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                            WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                              AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                              AND B.DLNG_PT_CD = '002'
+                              AND A.DEL_YN = 'N'
+                              AND B.DEL_YN = 'N'
+                        ) A
+                        GROUP BY A.DBTOR_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+                    ) A FULL OUTER JOIN (
+                        SELECT 	A.CAST_ACCT_CD
+                              , A.EXPN_CRPP_RGSR_DT
+                              , SUM(A.EXPN_CAST_AMT) AS EXPN_AMT_SUM
+                        FROM (
+                            SELECT *
+                            FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                            WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                              AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                              AND B.DLNG_PT_CD = '002'
+                              AND A.DEL_YN = 'N'
+                              AND B.DEL_YN = 'N'
+                        ) A
+                    GROUP BY A.CAST_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+                    ) B
+                    ON A.DBTOR_ACCT_CD = B.CAST_ACCT_CD AND A.EXPN_CRPP_RGSR_DT = B.EXPN_CRPP_RGSR_DT
+                    WHERE A.EXPN_CRPP_RGSR_DT LIKE #{aggtYy} || '%' OR B.EXPN_CRPP_RGSR_DT LIKE #{aggtYy} || '%'
+                    )
+                    GROUP BY ACCT_CD
+                    ) DEC_JOD ON DEC_BALANCE.ACCT_CD = DEC_JOD.ACCT_CD
+                ) RES
+            ) A, (
+            WITH JAE_DB AS (	-- JAE의 계정별 차대변 수납내역 합계
+                SELECT 	COALESCE(A.ACCT_CD, B.ACCT_CD) AS ACCT_CD
+                    , A.PYMN_AMT_SUM AS DBTOR_PYMN_AMT
+                    , A.RCVE_DT AS DBTOR_PYMN_DT
+                    , B.RCVE_AMT_SUM AS CAST_RCVE_AMT
+                    , B.RCVE_DT AS CAST_RCVE_DT
+                FROM (
+                    SELECT 	ACCT_CD
+                          , RCVE_DT
+                          , SUM(PYMN_AMT) AS PYMN_AMT_SUM
+                    FROM (
+                        SELECT 	CASE
+                                    WHEN PYMN_PT_CD = '001' THEN '100002'
+                                    WHEN PYMN_PT_CD IN ('002','004','006','007','008') THEN '110005'
+                                    WHEN PYMN_PT_CD = '003' THEN '120005'
+                                    WHEN PYMN_PT_CD = '005' THEN '520002'
+                                END AS ACCT_CD
+                              , A.RCVE_DT
+                              , SUM(PYMN_AMT) AS PYMN_AMT
+                        FROM TB_COLI_RCVE A, TB_COLI_PYMN B, TB_COLI_NTFC C
+                        WHERE A.RCVE_NO = B.RCVE_NO
+                          AND A.NTFC_NO = C.NTFC_NO
+                          AND C.CNCL_YN = 'N'
+                          AND A.DEL_YN = 'N'
+                          AND B.DEL_YN = 'N'
+                          AND C.DEL_YN = 'N'
+                        <if test="sctrCd != null and sctrCd != ''">
+                          AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                        </if>
+                        <if test='cstmCd != null and cstmCd !="" '>
+                          AND A.CSTM_CD = #{cstmCd}
+                        </if>
+                        <if test='deptCd != null and deptCd !="" '>
+                          AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                            OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd})))
+                          )
+                        </if>
+                        GROUP BY B.PYMN_PT_CD, A.RCVE_DT
+                    ) GROUP BY ACCT_CD, RCVE_DT
+                ) A FULL OUTER JOIN (
+                    SELECT 	B.ACCT_CD
+                          , A.RCVE_DT
+                          , SUM(B.RCVE_AMT) AS RCVE_AMT_SUM
+                    FROM TB_COLI_RCVE A, TB_COLI_TAX_CD_PR_RCVE_BRKD B, TB_COLI_NTFC C
+                    WHERE A.RCVE_NO = B.RCVE_NO
+                      AND A.NTFC_NO = B.NTFC_NO
+                      AND A.NTFC_NO = C.NTFC_NO
+                      AND C.CNCL_YN = 'N'
+                      AND A.DEL_YN = 'N'
+                      AND B.DEL_YN = 'N'
+                      AND C.DEL_YN = 'N'
+                    <if test="sctrCd != null and sctrCd != ''">
+                      AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                    </if>
+                    <if test='cstmCd != null and cstmCd !="" '>
+                      AND A.CSTM_CD = #{cstmCd}
+                    </if>
+                    <if test='deptCd != null and deptCd !="" '>
+                      AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                        OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                        OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                    </if>
+                    GROUP BY B.ACCT_CD, A.RCVE_DT
+                ) B
+                ON A.ACCT_CD = B.ACCT_CD
+                ), JAD_DB AS (	-- JAD의 계정별 차대변 수납내역 합계
+                    SELECT 	COALESCE(A.DBTOR_ACCT_CD, B.CAST_ACCT_CD) AS ACCT_CD
+                          , A.EXPN_AMT_SUM AS DBTOR_EXPN_AMT
+                          , A.EXPN_CRPP_RGSR_DT AS DBTOR_RGSR_DT
+                          , B.EXPN_AMT_SUM AS CAST_EXPN_AMT
+                          , B.EXPN_CRPP_RGSR_DT AS CAST_RGSR_DT
+                    FROM (
+                        SELECT 	A.DBTOR_ACCT_CD
+                              , A.EXPN_CRPP_RGSR_DT
+                              , SUM(A.EXPN_AMT) AS EXPN_AMT_SUM
+                        FROM (
+                            SELECT *
+                            FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                            WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                              AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                              AND B.DLNG_PT_CD = '001'
+                              AND A.DEL_YN = 'N'
+                              AND B.DEL_YN = 'N'
+                            <if test="sctrCd != null and sctrCd != ''">
+                              AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                            </if>
+                            <if test='cstmCd != null and cstmCd !="" '>
+                              AND A.CSTM_CD = #{cstmCd}
+                            </if>
+                            <if test='deptCd != null and deptCd !="" '>
+                              AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                            </if>
+                        ) A
+                        GROUP BY A.DBTOR_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+                    ) A FULL OUTER JOIN (
+                        SELECT 	A.CAST_ACCT_CD
+                              , A.EXPN_CRPP_RGSR_DT
+                              , SUM(A.EXPN_CAST_AMT) AS EXPN_AMT_SUM
+                        FROM (
+                        SELECT *
+                        FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                        WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                          AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                          AND B.DLNG_PT_CD = '001'
+                          AND A.DEL_YN = 'N'
+                          AND B.DEL_YN = 'N'
+                        <if test="sctrCd != null and sctrCd != ''">
+                          AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                        </if>
+                        <if test='cstmCd != null and cstmCd !="" '>
+                          AND A.CSTM_CD = #{cstmCd}
+                        </if>
+                        <if test='deptCd != null and deptCd !="" '>
+                          AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                            OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                            OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                        </if>
+                        ) A
+                        GROUP BY A.CAST_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+                    ) B
+                    ON A.DBTOR_ACCT_CD = B.CAST_ACCT_CD AND A.EXPN_CRPP_RGSR_DT = B.EXPN_CRPP_RGSR_DT
+                ), JOD_DB AS (	-- JOD의 계정별 차대변 수납내역 합계
+                    SELECT 	COALESCE(A.DBTOR_ACCT_CD, B.CAST_ACCT_CD) AS ACCT_CD
+                          , A.EXPN_AMT_SUM AS DBTOR_EXPN_AMT
+                          , A.EXPN_CRPP_RGSR_DT AS DBTOR_RGSR_DT
+                          , B.EXPN_AMT_SUM AS CAST_EXPN_AMT
+                          , B.EXPN_CRPP_RGSR_DT AS CAST_RGSR_DT
+                    FROM (
+                        SELECT 	A.DBTOR_ACCT_CD
+                              , A.EXPN_CRPP_RGSR_DT
+                              , SUM(A.EXPN_AMT) AS EXPN_AMT_SUM
+                        FROM (
+                            SELECT *
+                            FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                            WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                              AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                              AND B.DLNG_PT_CD = '002'
+                              AND A.DEL_YN = 'N'
+                              AND B.DEL_YN = 'N'
+                            <if test="sctrCd != null and sctrCd != ''">
+                              AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                            </if>
+                            <if test='cstmCd != null and cstmCd !="" '>
+                              AND A.CSTM_CD = #{cstmCd}
+                            </if>
+                            <if test='deptCd != null and deptCd !="" '>
+                              AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                            </if>
+                        ) A
+                        GROUP BY A.DBTOR_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+                    ) A FULL OUTER JOIN (
+                        SELECT 	A.CAST_ACCT_CD
+                              , A.EXPN_CRPP_RGSR_DT
+                              , SUM(A.EXPN_CAST_AMT) AS EXPN_AMT_SUM
+                        FROM (
+                            SELECT *
+                            FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                            WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                              AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                              AND B.DLNG_PT_CD = '002'
+                              AND A.DEL_YN = 'N'
+                              AND B.DEL_YN = 'N'
+                            <if test="sctrCd != null and sctrCd != ''">
+                              AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                            </if>
+                            <if test='cstmCd != null and cstmCd !="" '>
+                              AND A.CSTM_CD = #{cstmCd}
+                            </if>
+                            <if test='deptCd != null and deptCd !="" '>
+                              AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                                OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                            </if>
+                        ) A
+                        GROUP BY A.CAST_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+                    ) B
+                    ON A.DBTOR_ACCT_CD = B.CAST_ACCT_CD AND A.EXPN_CRPP_RGSR_DT = B.EXPN_CRPP_RGSR_DT
+                )
+                SELECT 	COALESCE(DBTOR_ACCT_CD, CAST_ACCT_CD) AS ACCT_CD
+                      , COALESCE(SUM(SUM_UNTL_LMM_DBTOR_AMT), 0) AS SUM_UNTL_LMM_EXPN_AMT
+                      , COALESCE(SUM(SUM_THMM_DBTOR_AMT), 0) AS SUM_THMM_EXPN_AMT
+                      , COALESCE(SUM(SUM_UNTL_LMM_CAST_AMT), 0) AS SUM_UNTL_LMM_DRWB_AMT
+                      , COALESCE(SUM(SUM_THMM_CAST_AMT), 0) AS SUM_THMM_DRWB_AMT
+                FROM (
+                SELECT 	DBTOR_ACCT_CD
+                , SUM_LYY_DBTOR_AMT
+                , SUM_UNTL_LMM_DBTOR_AMT
+                , SUM_THMM_DBTOR_AMT
+                , CAST_ACCT_CD
+                , SUM_LYY_CAST_AMT
+                , SUM_UNTL_LMM_CAST_AMT
+                , SUM_THMM_CAST_AMT
+                FROM (
+                    SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS DBTOR_ACCT_CD
+                          , SUM(LAST_YEAR.PYMN_AMT_SUM) AS SUM_LYY_DBTOR_AMT
+                          , SUM(PRE_MONTH.PYMN_AMT_SUM) AS SUM_UNTL_LMM_DBTOR_AMT
+                          , SUM(THIS_MONTH.PYMN_AMT_SUM) AS SUM_THMM_DBTOR_AMT
+                    FROM (
+                        SELECT 	ACCT_CD
+                              , SUM(DBTOR_PYMN_AMT) AS PYMN_AMT_SUM
+                        FROM JAE_DB
+                        WHERE TO_CHAR(TO_DATE(DBTOR_PYMN_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMmCurr}, 'MM/YYYY'), -12), 'YYYY')
+                        GROUP BY ACCT_CD
+                    ) LAST_YEAR FULL OUTER JOIN (
+                        SELECT 	ACCT_CD
+                              , SUM(DBTOR_PYMN_AMT) AS PYMN_AMT_SUM
+                        FROM JAE_DB
+                        WHERE TO_CHAR(TO_DATE(DBTOR_PYMN_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMmCurr}, 'MM/YYYY'), 'YYYY')
+                        AND TO_CHAR(TO_DATE(DBTOR_PYMN_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFromCurr}
+                        GROUP BY ACCT_CD
+                    ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD
+                    FULL OUTER JOIN (
+                        SELECT 	ACCT_CD
+                              , SUM(DBTOR_PYMN_AMT) AS PYMN_AMT_SUM
+                        FROM JAE_DB
+                        WHERE TO_CHAR(TO_DATE(DBTOR_PYMN_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFromCurr} AND #{inqtDtToCurr}
+                        GROUP BY ACCT_CD
+                    ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                    GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+                    ) DBTOR_BASE FULL OUTER JOIN (
+                        SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS CAST_ACCT_CD
+                              , SUM(LAST_YEAR.PYMN_AMT_SUM) AS SUM_LYY_CAST_AMT
+                              , SUM(PRE_MONTH.PYMN_AMT_SUM) AS SUM_UNTL_LMM_CAST_AMT
+                              , SUM(THIS_MONTH.PYMN_AMT_SUM) AS SUM_THMM_CAST_AMT
+                        FROM (
+                            SELECT 	ACCT_CD
+                                  , SUM(CAST_RCVE_AMT) AS PYMN_AMT_SUM
+                            FROM JAE_DB
+                            WHERE TO_CHAR(TO_DATE(CAST_RCVE_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMmCurr}, 'MM/YYYY'), -12), 'YYYY')
+                            GROUP BY ACCT_CD
+                        ) LAST_YEAR FULL OUTER JOIN (
+                            SELECT 	ACCT_CD
+                                  , SUM(CAST_RCVE_AMT) AS PYMN_AMT_SUM
+                            FROM JAE_DB
+                            WHERE TO_CHAR(TO_DATE(CAST_RCVE_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMmCurr}, 'MM/YYYY'), 'YYYY')
+                            AND TO_CHAR(TO_DATE(CAST_RCVE_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFromCurr}
+                            GROUP BY ACCT_CD
+                        ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD
+                        FULL OUTER JOIN (
+                            SELECT 	ACCT_CD
+                                  , SUM(CAST_RCVE_AMT) AS PYMN_AMT_SUM
+                            FROM JAE_DB
+                            WHERE TO_CHAR(TO_DATE(CAST_RCVE_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFromCurr} AND #{inqtDtToCurr}
+                            GROUP BY ACCT_CD
+                        ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                        GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+                    ) CAST_BASE
+                    ON DBTOR_BASE.DBTOR_ACCT_CD = CAST_BASE.CAST_ACCT_CD
+                    UNION ALL
+                    -- JAD
+                    SELECT 	DBTOR_ACCT_CD
+                          , SUM_LYY_DBTOR_AMT
+                          , SUM_UNTL_LMM_DBTOR_AMT
+                          , SUM_THMM_DBTOR_AMT
+                          , CAST_ACCT_CD
+                          , SUM_LYY_CAST_AMT
+                          , SUM_UNTL_LMM_CAST_AMT
+                          , SUM_THMM_CAST_AMT
+                    FROM (
+                        SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS DBTOR_ACCT_CD
+                              , SUM(LAST_YEAR.EXPN_AMT_SUM) AS SUM_LYY_DBTOR_AMT
+                              , SUM(PRE_MONTH.EXPN_AMT_SUM) AS SUM_UNTL_LMM_DBTOR_AMT
+                              , SUM(THIS_MONTH.EXPN_AMT_SUM) AS SUM_THMM_DBTOR_AMT
+                        FROM (
+                            SELECT 	ACCT_CD
+                                  , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                            FROM JAD_DB
+                            WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMmCurr}, 'MM/YYYY'), -12), 'YYYY')
+                            GROUP BY ACCT_CD
+                        ) LAST_YEAR FULL OUTER JOIN (
+                            SELECT 	ACCT_CD
+                                  , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                            FROM JAD_DB
+                            WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMmCurr}, 'MM/YYYY'), 'YYYY')
+                            AND TO_CHAR(TO_DATE(DBTOR_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFromCurr}
+                            GROUP BY ACCT_CD
+                        ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD FULL OUTER JOIN(
+                            SELECT 	ACCT_CD
+                                  , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                            FROM JAD_DB
+                            WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFromCurr} AND #{inqtDtToCurr}
+                            GROUP BY ACCT_CD
+                        ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                        GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+                    ) DBTOR_BASE FULL OUTER JOIN (
+                    SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS CAST_ACCT_CD
+                          , SUM(LAST_YEAR.EXPN_AMT_SUM) AS SUM_LYY_CAST_AMT
+                          , SUM(PRE_MONTH.EXPN_AMT_SUM) AS SUM_UNTL_LMM_CAST_AMT
+                          , SUM(THIS_MONTH.EXPN_AMT_SUM) AS SUM_THMM_CAST_AMT
+                    FROM (
+                        SELECT 	ACCT_CD
+                              , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                        FROM JAD_DB
+                        WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMmCurr}, 'MM/YYYY'), -12), 'YYYY')
+                        GROUP BY ACCT_CD
+                    ) LAST_YEAR FULL OUTER JOIN (
+                        SELECT 	ACCT_CD
+                              , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                        FROM JAD_DB
+                        WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMmCurr}, 'MM/YYYY'), 'YYYY')
+                        AND TO_CHAR(TO_DATE(CAST_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFromCurr}
+                        GROUP BY ACCT_CD
+                    ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD FULL OUTER JOIN(
+                        SELECT 	ACCT_CD
+                              , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                        FROM JAD_DB
+                        WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFromCurr} AND #{inqtDtToCurr}
+                        GROUP BY ACCT_CD
+                    ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                    GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+                    ) CAST_BASE
+                    ON DBTOR_BASE.DBTOR_ACCT_CD = CAST_BASE.CAST_ACCT_CD
+                    UNION ALL
+                    -- JOD의 세금코드별 합계
+                    SELECT 	DBTOR_ACCT_CD
+                          , SUM_LYY_DBTOR_AMT
+                          , SUM_UNTL_LMM_DBTOR_AMT
+                          , SUM_THMM_DBTOR_AMT
+                          , CAST_ACCT_CD
+                          , SUM_LYY_CAST_AMT
+                          , SUM_UNTL_LMM_CAST_AMT
+                          , SUM_THMM_CAST_AMT
+                    FROM (
+                        SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS DBTOR_ACCT_CD
+                              , SUM(LAST_YEAR.EXPN_AMT_SUM) AS SUM_LYY_DBTOR_AMT
+                              , SUM(PRE_MONTH.EXPN_AMT_SUM) AS SUM_UNTL_LMM_DBTOR_AMT
+                              , SUM(THIS_MONTH.EXPN_AMT_SUM) AS SUM_THMM_DBTOR_AMT
+                        FROM (
+                            SELECT 	ACCT_CD
+                                  , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                            FROM JOD_DB
+                            WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMmCurr}, 'MM/YYYY'), -12), 'YYYY')
+                            GROUP BY ACCT_CD
+                        ) LAST_YEAR FULL OUTER JOIN (
+                            SELECT 	ACCT_CD
+                                  , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                            FROM JOD_DB
+                            WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMmCurr}, 'MM/YYYY'), 'YYYY')
+                            AND TO_CHAR(TO_DATE(DBTOR_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFromCurr}
+                            GROUP BY ACCT_CD
+                        ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD FULL OUTER JOIN(
+                            SELECT 	ACCT_CD
+                                  , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                            FROM JOD_DB
+                            WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFromCurr} AND #{inqtDtToCurr}
+                            GROUP BY ACCT_CD
+                        ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                        GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+                    ) DBTOR_BASE FULL OUTER JOIN (
+                        SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS CAST_ACCT_CD
+                              , SUM(LAST_YEAR.EXPN_AMT_SUM) AS SUM_LYY_CAST_AMT
+                              , SUM(PRE_MONTH.EXPN_AMT_SUM) AS SUM_UNTL_LMM_CAST_AMT
+                              , SUM(THIS_MONTH.EXPN_AMT_SUM) AS SUM_THMM_CAST_AMT
+                        FROM (
+                            SELECT 	ACCT_CD
+                                  , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                            FROM JOD_DB
+                            WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMmCurr}, 'MM/YYYY'), -12), 'YYYY')
+                            GROUP BY ACCT_CD
+                        ) LAST_YEAR FULL OUTER JOIN (
+                            SELECT 	ACCT_CD
+                                  , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                            FROM JOD_DB
+                            WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMmCurr}, 'MM/YYYY'), 'YYYY')
+                            AND TO_CHAR(TO_DATE(CAST_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFromCurr}
+                            GROUP BY ACCT_CD
+                        ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD FULL OUTER JOIN(
+                            SELECT 	ACCT_CD
+                                  , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                            FROM JOD_DB
+                            WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFromCurr} AND #{inqtDtToCurr}
+                            GROUP BY ACCT_CD
+                        ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                        GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+                    ) CAST_BASE
+                    ON DBTOR_BASE.DBTOR_ACCT_CD = CAST_BASE.CAST_ACCT_CD
+                )
+                GROUP BY COALESCE(DBTOR_ACCT_CD, CAST_ACCT_CD)
+            ) B
+            WHERE A.ACCT_CD = B.ACCT_CD
+        ) RES
+        ORDER BY RES.ACCT_CD
+    </select>
+
+
+
+
+    <sql id="snbBase">
+        WITH JAE_DB AS (	-- JAE의 계정별 차대변 수납내역 합계
+        SELECT 	COALESCE(A.ACCT_CD, B.ACCT_CD) AS ACCT_CD
+              , A.PYMN_AMT_SUM AS DBTOR_PYMN_AMT
+              , A.RCVE_DT AS DBTOR_PYMN_DT
+              , B.RCVE_AMT_SUM AS CAST_RCVE_AMT
+              , B.RCVE_DT AS CAST_RCVE_DT
+        FROM (
+            SELECT 	ACCT_CD
+                  , RCVE_DT
+                  , SUM(PYMN_AMT) AS PYMN_AMT_SUM
+            FROM (
+                SELECT 	CASE
+                            WHEN PYMN_PT_CD = '001' THEN '100002'
+                            WHEN PYMN_PT_CD IN ('002','004','006','007','008') THEN '110005'
+                            WHEN PYMN_PT_CD = '003' THEN '120005'
+                            WHEN PYMN_PT_CD = '005' THEN '520002'
+                        END AS ACCT_CD
+                      , A.RCVE_DT
+                      , SUM(PYMN_AMT) AS PYMN_AMT
+                FROM TB_COLI_RCVE A, TB_COLI_PYMN B, TB_COLI_NTFC C
+                WHERE A.RCVE_NO = B.RCVE_NO
+                  AND A.NTFC_NO = C.NTFC_NO
+                  AND C.CNCL_YN = 'N'
+                  AND A.DEL_YN = 'N'
+                  AND B.DEL_YN = 'N'
+                  AND C.DEL_YN = 'N'
+                <if test="sctrCd != null and sctrCd != ''">
+                  AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                </if>
+                <if test='cstmCd != null and cstmCd !="" '>
+                  AND A.CSTM_CD = #{cstmCd}
+                </if>
+                <if test='deptCd != null and deptCd !="" '>
+                  AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                    OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                    OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                </if>
+                GROUP BY B.PYMN_PT_CD, A.RCVE_DT
+            ) GROUP BY ACCT_CD, RCVE_DT
+        ) A FULL OUTER JOIN (
+            SELECT 	B.ACCT_CD
+                  , A.RCVE_DT
+                  , SUM(B.RCVE_AMT) AS RCVE_AMT_SUM
+            FROM TB_COLI_RCVE A, TB_COLI_TAX_CD_PR_RCVE_BRKD B, TB_COLI_NTFC C
+            WHERE A.RCVE_NO = B.RCVE_NO
+              AND A.NTFC_NO = B.NTFC_NO
+              AND A.NTFC_NO = C.NTFC_NO
+              AND C.CNCL_YN = 'N'
+              AND A.DEL_YN = 'N'
+              AND B.DEL_YN = 'N'
+              AND C.DEL_YN = 'N'
+            <if test="sctrCd != null and sctrCd != ''">
+              AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+            </if>
+            <if test='cstmCd != null and cstmCd !="" '>
+              AND A.CSTM_CD = #{cstmCd}
+            </if>
+            <if test='deptCd != null and deptCd !="" '>
+              AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+            </if>
+            GROUP BY B.ACCT_CD, A.RCVE_DT
+        ) B
+        ON A.ACCT_CD = B.ACCT_CD
+        ), JAD_DB AS (	-- JAD의 계정별 차대변 수납내역 합계
+            SELECT 	COALESCE(A.DBTOR_ACCT_CD, B.CAST_ACCT_CD) AS ACCT_CD
+                  , A.EXPN_AMT_SUM AS DBTOR_EXPN_AMT
+                  , A.EXPN_CRPP_RGSR_DT AS DBTOR_RGSR_DT
+                  , B.EXPN_AMT_SUM AS CAST_EXPN_AMT
+                  , B.EXPN_CRPP_RGSR_DT AS CAST_RGSR_DT
+            FROM (
+            SELECT 	A.DBTOR_ACCT_CD
+                  , A.EXPN_CRPP_RGSR_DT
+                  , SUM(A.EXPN_AMT) AS EXPN_AMT_SUM
+            FROM (
+                SELECT *
+                FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                  AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                  AND B.DLNG_PT_CD = '001'
+                  AND A.DEL_YN = 'N'
+                  AND B.DEL_YN = 'N'
+                <if test="sctrCd != null and sctrCd != ''">
+                  AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                </if>
+                <if test='cstmCd != null and cstmCd !="" '>
+                  AND A.CSTM_CD = #{cstmCd}
+                </if>
+                <if test='deptCd != null and deptCd !="" '>
+                  AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                    OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                    OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                </if>
+            ) A
+            GROUP BY A.DBTOR_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+            ) A FULL OUTER JOIN (
+                SELECT 	A.CAST_ACCT_CD
+                      , A.EXPN_CRPP_RGSR_DT
+                      , SUM(A.EXPN_CAST_AMT) AS EXPN_AMT_SUM
+                FROM (
+                    SELECT *
+                    FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                    WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                      AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                      AND B.DLNG_PT_CD = '001'
+                      AND A.DEL_YN = 'N'
+                      AND B.DEL_YN = 'N'
+                    <if test="sctrCd != null and sctrCd != ''">
+                      AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                    </if>
+                    <if test='cstmCd != null and cstmCd !="" '>
+                      AND A.CSTM_CD = #{cstmCd}
+                    </if>
+                    <if test='deptCd != null and deptCd !="" '>
+                      AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                        OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                        OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                    </if>
+                ) A
+                GROUP BY A.CAST_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+            ) B
+            ON A.DBTOR_ACCT_CD = B.CAST_ACCT_CD AND A.EXPN_CRPP_RGSR_DT = B.EXPN_CRPP_RGSR_DT
+        ), JOD_DB AS (	-- JOD의 계정별 차대변 수납내역 합계
+            SELECT 	COALESCE(A.DBTOR_ACCT_CD, B.CAST_ACCT_CD) AS ACCT_CD
+                  , A.EXPN_AMT_SUM AS DBTOR_EXPN_AMT
+                  , A.EXPN_CRPP_RGSR_DT AS DBTOR_RGSR_DT
+                  , B.EXPN_AMT_SUM AS CAST_EXPN_AMT
+                  , B.EXPN_CRPP_RGSR_DT AS CAST_RGSR_DT
+            FROM (
+                SELECT 	A.DBTOR_ACCT_CD
+                      , A.EXPN_CRPP_RGSR_DT
+                      , SUM(A.EXPN_AMT) AS EXPN_AMT_SUM
+                FROM (
+                    SELECT *
+                    FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                    WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                      AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                      AND B.DLNG_PT_CD = '002'
+                      AND A.DEL_YN = 'N'
+                      AND B.DEL_YN = 'N'
+                    <if test="sctrCd != null and sctrCd != ''">
+                      AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                    </if>
+                    <if test='cstmCd != null and cstmCd !="" '>
+                      AND A.CSTM_CD = #{cstmCd}
+                    </if>
+                    <if test='deptCd != null and deptCd !="" '>
+                      AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                        OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                        OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                    </if>
+                ) A
+                GROUP BY A.DBTOR_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+            ) A FULL OUTER JOIN (
+                SELECT 	A.CAST_ACCT_CD
+                      , A.EXPN_CRPP_RGSR_DT
+                      , SUM(A.EXPN_CAST_AMT) AS EXPN_AMT_SUM
+                FROM (
+                SELECT *
+                FROM TB_COLI_EXPN_CRPP A, TB_COLI_EXPN_CRPP_DTL B
+                WHERE A.EXPN_CRPP_NO = B.EXPN_CRPP_NO
+                  AND A.DLNG_PT_CD = B.DLNG_PT_CD
+                  AND B.DLNG_PT_CD = '002'
+                  AND A.DEL_YN = 'N'
+                  AND B.DEL_YN = 'N'
+                <if test="sctrCd != null and sctrCd != ''">
+                  AND A.CSTM_CD LIKE SUBSTRING(#{sctrCd},1,3) || '%'
+                </if>
+                <if test='cstmCd != null and cstmCd !="" '>
+                  AND A.CSTM_CD = #{cstmCd}
+                </if>
+                <if test='deptCd != null and deptCd !="" '>
+                  AND (A.DEPT_CD = #{deptCd} OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE (SELECT ACTV_CSTM_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}) LIKE '%'||ORGN_MGMT_CD||'%')
+                    OR A.DEPT_CD IN (SELECT ORGN_CD FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))
+                    OR UPR_ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_MGMT_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ACTV_CSTM_CD,'|')) FROM TB_POTI_ORGN WHERE ORGN_CD = #{deptCd}))))
+                </if>
+                ) A
+                GROUP BY A.CAST_ACCT_CD, A.EXPN_CRPP_RGSR_DT
+            ) B
+            ON A.DBTOR_ACCT_CD = B.CAST_ACCT_CD AND A.EXPN_CRPP_RGSR_DT = B.EXPN_CRPP_RGSR_DT
+        )
+        SELECT 	COALESCE(DBTOR_ACCT_CD, CAST_ACCT_CD) AS ACCT_CD
+              , COALESCE(SUM(SUM_LYY_DBTOR_AMT), 0) AS SUM_LYY_EXPN_AMT
+              , COALESCE(SUM(SUM_UNTL_LMM_DBTOR_AMT), 0) AS SUM_UNTL_LMM_EXPN_AMT
+              , COALESCE(SUM(SUM_THMM_DBTOR_AMT), 0) AS SUM_THMM_EXPN_AMT
+              , COALESCE(SUM(SUM_LYY_CAST_AMT), 0) AS SUM_LYY_DRWB_AMT
+              , COALESCE(SUM(SUM_UNTL_LMM_CAST_AMT), 0) AS SUM_UNTL_LMM_DRWB_AMT
+              , COALESCE(SUM(SUM_THMM_CAST_AMT), 0) AS SUM_THMM_DRWB_AMT
+        FROM (
+            SELECT 	DBTOR_ACCT_CD
+                  , SUM_LYY_DBTOR_AMT
+                  , SUM_UNTL_LMM_DBTOR_AMT
+                  , SUM_THMM_DBTOR_AMT
+                  , CAST_ACCT_CD
+                  , SUM_LYY_CAST_AMT
+                  , SUM_UNTL_LMM_CAST_AMT
+                  , SUM_THMM_CAST_AMT
+            FROM (
+                SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS DBTOR_ACCT_CD
+                      , SUM(LAST_YEAR.PYMN_AMT_SUM) AS SUM_LYY_DBTOR_AMT
+                      , SUM(PRE_MONTH.PYMN_AMT_SUM) AS SUM_UNTL_LMM_DBTOR_AMT
+                      , SUM(THIS_MONTH.PYMN_AMT_SUM) AS SUM_THMM_DBTOR_AMT
+                FROM (
+                    SELECT 	ACCT_CD
+                          , SUM(DBTOR_PYMN_AMT) AS PYMN_AMT_SUM
+                    FROM JAE_DB
+                    WHERE TO_CHAR(TO_DATE(DBTOR_PYMN_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), -12), 'YYYY')
+                    GROUP BY ACCT_CD
+                ) LAST_YEAR FULL OUTER JOIN (
+                    SELECT 	ACCT_CD
+                          , SUM(DBTOR_PYMN_AMT) AS PYMN_AMT_SUM
+                    FROM JAE_DB
+                    WHERE TO_CHAR(TO_DATE(DBTOR_PYMN_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), 'YYYY')
+                    AND TO_CHAR(TO_DATE(DBTOR_PYMN_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFrom}
+                    GROUP BY ACCT_CD
+                ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD
+                FULL OUTER JOIN (
+                    SELECT 	ACCT_CD
+                          , SUM(DBTOR_PYMN_AMT) AS PYMN_AMT_SUM
+                    FROM JAE_DB
+                    WHERE TO_CHAR(TO_DATE(DBTOR_PYMN_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFrom} AND #{inqtDtTo}
+                    GROUP BY ACCT_CD
+                ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+            ) DBTOR_BASE FULL OUTER JOIN (
+                SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS CAST_ACCT_CD
+                      , SUM(LAST_YEAR.PYMN_AMT_SUM) AS SUM_LYY_CAST_AMT
+                      , SUM(PRE_MONTH.PYMN_AMT_SUM) AS SUM_UNTL_LMM_CAST_AMT
+                      , SUM(THIS_MONTH.PYMN_AMT_SUM) AS SUM_THMM_CAST_AMT
+                FROM (
+                    SELECT 	ACCT_CD
+                          , SUM(CAST_RCVE_AMT) AS PYMN_AMT_SUM
+                    FROM JAE_DB
+                    WHERE TO_CHAR(TO_DATE(CAST_RCVE_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), -12), 'YYYY')
+                    GROUP BY ACCT_CD
+                ) LAST_YEAR FULL OUTER JOIN (
+                    SELECT 	ACCT_CD
+                          , SUM(CAST_RCVE_AMT) AS PYMN_AMT_SUM
+                    FROM JAE_DB
+                    WHERE TO_CHAR(TO_DATE(CAST_RCVE_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), 'YYYY')
+                      AND TO_CHAR(TO_DATE(CAST_RCVE_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFrom}
+                    GROUP BY ACCT_CD
+                ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD
+                FULL OUTER JOIN (
+                    SELECT 	ACCT_CD
+                          , SUM(CAST_RCVE_AMT) AS PYMN_AMT_SUM
+                    FROM JAE_DB
+                    WHERE TO_CHAR(TO_DATE(CAST_RCVE_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFrom} AND #{inqtDtTo}
+                    GROUP BY ACCT_CD
+                ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+            ) CAST_BASE
+            ON DBTOR_BASE.DBTOR_ACCT_CD = CAST_BASE.CAST_ACCT_CD
+            UNION ALL
+            -- JAD
+            SELECT 	DBTOR_ACCT_CD
+                  , SUM_LYY_DBTOR_AMT
+                  , SUM_UNTL_LMM_DBTOR_AMT
+                  , SUM_THMM_DBTOR_AMT
+                  , CAST_ACCT_CD
+                  , SUM_LYY_CAST_AMT
+                  , SUM_UNTL_LMM_CAST_AMT
+                  , SUM_THMM_CAST_AMT
+            FROM (
+                SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS DBTOR_ACCT_CD
+                      , SUM(LAST_YEAR.EXPN_AMT_SUM) AS SUM_LYY_DBTOR_AMT
+                      , SUM(PRE_MONTH.EXPN_AMT_SUM) AS SUM_UNTL_LMM_DBTOR_AMT
+                      , SUM(THIS_MONTH.EXPN_AMT_SUM) AS SUM_THMM_DBTOR_AMT
+                FROM (
+                    SELECT 	ACCT_CD
+                          , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                    FROM JAD_DB
+                    WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), -12), 'YYYY')
+                    GROUP BY ACCT_CD
+                ) LAST_YEAR FULL OUTER JOIN (
+                    SELECT 	ACCT_CD
+                          , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                    FROM JAD_DB
+                    WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), 'YYYY')
+                    AND TO_CHAR(TO_DATE(DBTOR_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFrom}
+                    GROUP BY ACCT_CD
+                ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD FULL OUTER JOIN(
+                    SELECT 	ACCT_CD
+                          , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                    FROM JAD_DB
+                    WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFrom} AND #{inqtDtTo}
+                    GROUP BY ACCT_CD
+                ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+            ) DBTOR_BASE FULL OUTER JOIN (
+                SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS CAST_ACCT_CD
+                      , SUM(LAST_YEAR.EXPN_AMT_SUM) AS SUM_LYY_CAST_AMT
+                      , SUM(PRE_MONTH.EXPN_AMT_SUM) AS SUM_UNTL_LMM_CAST_AMT
+                      , SUM(THIS_MONTH.EXPN_AMT_SUM) AS SUM_THMM_CAST_AMT
+                FROM (
+                    SELECT 	ACCT_CD
+                          , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                    FROM JAD_DB
+                    WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), -12), 'YYYY')
+                    GROUP BY ACCT_CD
+                ) LAST_YEAR FULL OUTER JOIN (
+                    SELECT 	ACCT_CD
+                          , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                    FROM JAD_DB
+                    WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), 'YYYY')
+                    AND TO_CHAR(TO_DATE(CAST_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFrom}
+                    GROUP BY ACCT_CD
+                ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD FULL OUTER JOIN(
+                    SELECT 	ACCT_CD
+                          , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                    FROM JAD_DB
+                    WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFrom} AND #{inqtDtTo}
+                    GROUP BY ACCT_CD
+                ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+            ) CAST_BASE
+            ON DBTOR_BASE.DBTOR_ACCT_CD = CAST_BASE.CAST_ACCT_CD
+            UNION ALL
+            -- JOD의 세금코드별 합계
+            SELECT 	DBTOR_ACCT_CD
+                  , SUM_LYY_DBTOR_AMT
+                  , SUM_UNTL_LMM_DBTOR_AMT
+                  , SUM_THMM_DBTOR_AMT
+                  , CAST_ACCT_CD
+                  , SUM_LYY_CAST_AMT
+                  , SUM_UNTL_LMM_CAST_AMT
+                  , SUM_THMM_CAST_AMT
+            FROM (
+                SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS DBTOR_ACCT_CD
+                      , SUM(LAST_YEAR.EXPN_AMT_SUM) AS SUM_LYY_DBTOR_AMT
+                      , SUM(PRE_MONTH.EXPN_AMT_SUM) AS SUM_UNTL_LMM_DBTOR_AMT
+                      , SUM(THIS_MONTH.EXPN_AMT_SUM) AS SUM_THMM_DBTOR_AMT
+                FROM (
+                    SELECT 	ACCT_CD
+                          , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                    FROM JOD_DB
+                    WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), -12), 'YYYY')
+                    GROUP BY ACCT_CD
+                ) LAST_YEAR FULL OUTER JOIN (
+                    SELECT 	ACCT_CD
+                          , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                    FROM JOD_DB
+                    WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), 'YYYY')
+                    AND TO_CHAR(TO_DATE(DBTOR_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFrom}
+                    GROUP BY ACCT_CD
+                ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD FULL OUTER JOIN(
+                    SELECT 	ACCT_CD
+                          , SUM(DBTOR_EXPN_AMT) AS EXPN_AMT_SUM
+                    FROM JOD_DB
+                    WHERE TO_CHAR(TO_DATE(DBTOR_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFrom} AND #{inqtDtTo}
+                    GROUP BY ACCT_CD
+                ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+            ) DBTOR_BASE FULL OUTER JOIN (
+                SELECT 	NVL(NVL(LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD), THIS_MONTH.ACCT_CD) AS CAST_ACCT_CD
+                      , SUM(LAST_YEAR.EXPN_AMT_SUM) AS SUM_LYY_CAST_AMT
+                      , SUM(PRE_MONTH.EXPN_AMT_SUM) AS SUM_UNTL_LMM_CAST_AMT
+                      , SUM(THIS_MONTH.EXPN_AMT_SUM) AS SUM_THMM_CAST_AMT
+                FROM (
+                    SELECT 	ACCT_CD
+                          , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                    FROM JOD_DB
+                    WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT), 'YYYY') = TO_CHAR(ADD_MONTHS(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), -12), 'YYYY')
+                    GROUP BY ACCT_CD
+                ) LAST_YEAR FULL OUTER JOIN (
+                    SELECT 	ACCT_CD
+                          , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                    FROM JOD_DB
+                    WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT), 'YYYY') = TO_CHAR(TO_DATE(#{aggtYyMm}, 'MM/YYYY'), 'YYYY')
+                    AND TO_CHAR(TO_DATE(CAST_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') <![CDATA[ < ]]> #{inqtDtFrom}
+                    GROUP BY ACCT_CD
+                ) PRE_MONTH ON LAST_YEAR.ACCT_CD = PRE_MONTH.ACCT_CD FULL OUTER JOIN(
+                    SELECT 	ACCT_CD
+                          , SUM(CAST_EXPN_AMT) AS EXPN_AMT_SUM
+                    FROM JOD_DB
+                    WHERE TO_CHAR(TO_DATE(CAST_RGSR_DT, 'YYYYMMDD'), 'YYYYMMDD') BETWEEN #{inqtDtFrom} AND #{inqtDtTo}
+                    GROUP BY ACCT_CD
+                ) THIS_MONTH ON PRE_MONTH.ACCT_CD = THIS_MONTH.ACCT_CD
+                GROUP BY LAST_YEAR.ACCT_CD, PRE_MONTH.ACCT_CD, THIS_MONTH.ACCT_CD
+            ) CAST_BASE
+            ON DBTOR_BASE.DBTOR_ACCT_CD = CAST_BASE.CAST_ACCT_CD
+        )
+        GROUP BY COALESCE(DBTOR_ACCT_CD, CAST_ACCT_CD)
+    </sql>
+
+
+</mapper>

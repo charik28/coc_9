@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<!--
+Mapper : COC MGMT AMO
+(BELKASSAM MED NAZIH)
+-->
+
+<mapper namespace="alpass.ipt.coc.mgmt.amo.mapper.CocMgmtAmoMapper">
+
+    <!-- Récupérer la liste des enregistrements -->
+    <select id="selectAmoList" parameterType="alpass.ipt.coc.mgmt.amo.vo.CocMgmtAmoVo" resultType="alpass.ipt.coc.mgmt.amo.vo.CocMgmtAmoVo">
+        /** selectAmoList */
+        <include refid="pagination.header" />
+        SELECT 'false' AS chkSel,
+        B.AMO_REF_NO,
+        B.AMO_QTY,
+        B.AMO_CALB,
+        B.AMO_MNFC_YY,
+        B.ORGN_CD,
+        0 as oprn_qty,
+        WHITE_YN,
+        B.USE_YN,
+        B.DEL_YN,
+        B.FRST_REGST_ID,
+        TO_CHAR(B.FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM,
+        B.LAST_CHPR_ID,
+        TO_CHAR(B.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+        FROM TB_COC_AMO B
+        JOIN TB_POTI_ORGN A ON A.ORGN_CD = B.ORGN_CD
+        WHERE B.DEL_YN = 'N'
+        AND (
+        #{orgnCd} IN ('000000000', '308000000')
+        OR A.ORGN_CD = #{orgnCd}
+        OR A.ORGN_MGMT_CD IN (
+        SELECT ORGN_MGMT_CD
+        FROM TB_POTI_ORGN
+        WHERE DEL_YN = 'N'
+        START WITH ORGN_CD = #{orgnCd}
+        CONNECT BY PRIOR ORGN_MGMT_CD = UPR_ORGN_MGMT_CD
+        )
+        )
+        <if test='srchAmoRefNo != null'>
+            AND LOWER(AMO_REF_NO) LIKE '%' || LOWER(#{srchAmoRefNo}) || '%'
+        </if>
+        <if test='srchAmoCalb != null'>
+            AND LOWER(AMO_CALB) LIKE '%' || LOWER(#{srchAmoCalb}) || '%'
+        </if>
+        <if test='srchOrgnCd != null'>
+            AND A.ORGN_MGMT_CD IN (
+            SELECT ORGN_MGMT_CD
+            FROM TB_POTI_ORGN
+            WHERE DEL_YN = 'N'
+            START WITH ORGN_CD = #{srchOrgnCd}
+            CONNECT BY PRIOR ORGN_MGMT_CD = UPR_ORGN_MGMT_CD
+            )
+        </if>
+        <include refid="pagination.footer" />
+    </select>
+
+    <!-- Récupérer un enregistrement -->
+    <select id="selectAmo" parameterType="alpass.ipt.coc.mgmt.amo.vo.CocMgmtAmoVo" resultType="alpass.ipt.coc.mgmt.amo.vo.CocMgmtAmoVo">
+        /** selectAmo */
+        SELECT
+            AMO_REF_NO,
+            AMO_QTY,
+            AMO_CALB,
+            AMO_MNFC_YY,
+            ORGN_CD,
+            WHITE_YN,
+            USE_YN,
+            DEL_YN,
+            FRST_REGST_ID,
+            TO_CHAR(FRST_RGSR_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS FRST_RGSR_DTTM,
+            LAST_CHPR_ID,
+            TO_CHAR(LAST_CHG_DTTM, 'DD/MM/YYYY HH24:MI:SS') AS LAST_CHG_DTTM
+        FROM TB_COC_AMO
+        WHERE AMO_REF_NO = #{amoRefNo}
+          AND DEL_YN = 'N'
+    </select>
+
+    <!-- Insérer un enregistrement -->
+    <insert id="insertAmo" parameterType="alpass.ipt.coc.mgmt.amo.vo.CocMgmtAmoVo">
+        /** insertAmo */
+        WITH UPSERT AS (
+        UPDATE TB_COC_AMO
+        SET
+            AMO_REF_NO      =   #{amoRefNo},
+            AMO_QTY         =   #{amoQty},
+            AMO_CALB        =   #{amoCalb},
+            AMO_MNFC_YY     =   #{amoMnfcYy},
+            ORGN_CD         =   #{orgnCd},
+            WHITE_YN        =   #{whiteYn},
+            USE_YN          =   #{useYn},
+            DEL_YN          =   #{delYn},
+            FRST_REGST_ID   =   #{frstRegstId},
+            FRST_RGSR_DTTM  =   SYSTIMESTAMP,
+            LAST_CHPR_ID    =   #{lastChprId},
+            LAST_CHG_DTTM   =   SYSTIMESTAMP
+        WHERE AMO_REF_NO = #{amoRefNo}
+            RETURNING *
+        )
+        INSERT INTO TB_COC_AMO
+        (
+            AMO_REF_NO,
+            AMO_QTY,
+            AMO_CALB,
+            AMO_MNFC_YY,
+            ORGN_CD,
+            WHITE_YN,
+            USE_YN,
+            DEL_YN,
+            FRST_REGST_ID,
+            FRST_RGSR_DTTM,
+            LAST_CHPR_ID,
+            LAST_CHG_DTTM
+        )
+        SELECT
+            #{amoRefNo},
+            #{amoQty},
+            #{amoCalb},
+            #{amoMnfcYy},
+            #{orgnCd},
+            #{whiteYn},
+            #{useYn},
+            #{delYn},
+            #{frstRegstId},
+            SYSTIMESTAMP,
+            #{lastChprId},
+            SYSTIMESTAMP
+            WHERE NOT EXISTS(SELECT * FROM UPSERT)
+    </insert>
+
+    <!-- Modifier un enregistrement -->
+    <update id="updateAmo" parameterType="alpass.ipt.coc.mgmt.amo.vo.CocMgmtAmoVo">
+        /** updateAmo */
+        UPDATE TB_COC_AMO
+        SET
+            AMO_REF_NO      =   #{amoRefNo},
+            AMO_QTY         =   #{amoQty},
+            AMO_CALB        =   #{amoCalb},
+            AMO_MNFC_YY     =   #{amoMnfcYy},
+            WHITE_YN        =   #{whiteYn},
+            LAST_CHPR_ID    =   #{lastChprId},
+            LAST_CHG_DTTM   =   SYSTIMESTAMP
+        WHERE AMO_REF_NO = #{amoRefNo}
+          AND DEL_YN = #{delYn}
+    </update>
+
+    <!-- Supprimer un enregistrement -->
+    <update id="deleteAmo" parameterType="alpass.ipt.coc.mgmt.amo.vo.CocMgmtAmoVo" >
+        /** deleteAmo */
+        UPDATE TB_COC_AMO
+        SET
+            DEL_YN          =   'Y',
+            LAST_CHPR_ID    =   #{lastChprId},
+            LAST_CHG_DTTM   =   SYSTIMESTAMP
+        WHERE AMO_REF_NO = #{amoRefNo}
+    </update>
+
+</mapper>

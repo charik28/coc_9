@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.clr.pdr.esf.mapper.ClrPdrEsfXtnsMapper">
+    <!--
+      Consultation de la liste des prorogations du delai de chargement
+      !==적재기간연장 목록 조회한다.==!
+      (Beak SangYeol)
+      -->
+    <select id="selectXtnsList" parameterType="alpass.ipt.clr.pdr.esf.vo.ClrEsfXtnsSrchVo" resultType="alpass.ipt.clr.pdr.esf.vo.ClrEsfXtnsVo">
+        /* selectXtnsList */
+        <include refid="pagination.header" ></include>
+        SELECT
+        A.LOAD_TMLM_XTNS_RQST_NO
+        , A.DTL_DCSH_NO AS DCLR_NO
+        , TO_CHAR(TO_DATE(B.DCLR_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS DCLR_DT
+        , (SELECT EXPPN_CO_NM FROM TB_CLRI_DED_CO WHERE DEL_YN ='N' AND DTL_DCSH_NO = A.DTL_DCSH_NO) AS EXPPN_CO_NM
+        , TO_CHAR(TO_DATE(B.ACPT_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS ACPT_DT
+        , TO_CHAR(TO_DATE(A.EXP_FFMN_PRNG_DT,'YYYYMMDD'),'DD/MM/YYYY') AS EXP_FFMN_PRNG_DT
+        , TO_CHAR(TO_DATE(A.XTNS_EXP_FFMN_PRNG_DT,'YYYYMMDD'),'DD/MM/YYYY') AS XTNS_EXP_FFMN_PRNG_DT
+        , (SELECT TO_CHAR(APRV_RQST_DTTM, 'DD/MM/YYYY') FROM TB_POTI_APRV WHERE DEL_YN = 'N' AND APRV_ID = A.APRV_ID) AS APRV_RQST_DTTM
+        , TO_CHAR(A.RQST_DTTM,'DD/MM/YYYY') AS RQST_DTTM
+        , A.REPN_ID
+        , A.PRCS_STTS_CD AS PRCS_STTS_CD
+        , (SELECT APRV_PRCS_STTS_CD FROM TB_POTI_APRV WHERE DEL_YN = 'N' AND APRV_ID = A.APRV_ID) AS APRV_PRCS_STTS_CD
+        FROM
+        TB_CLRI_DED_EXFM_PRID_XTNS A
+        , TB_CLRI_DED_COMN B
+        WHERE
+        A.DEL_YN = 'N'
+        AND    B.DEL_YN = 'N'
+        AND    A.DTL_DCSH_NO = B.DTL_DCSH_NO
+        AND    A.PRCS_STTS_CD IN ('D01', 'D08', 'D09','I01')
+        <if test="dclrNo != null and dclrNo != ''">
+            AND    A.DTL_DCSH_NO = #{dclrNo}
+        </if>
+        <if test="rgsrDtFrom != null and rgsrDtFrom != ''">
+            AND    A.RQST_DTTM <![CDATA[ >= ]]> TO_DATE(#{rgsrDtFrom} || '000000','DD/MM/YYYY HH24MISS')
+            AND    A.RQST_DTTM <![CDATA[ <= ]]> TO_DATE(#{rgsrDtTo} || ' 235959','DD/MM/YYYY HH24MISS')
+        </if>
+        <if test="exppnIdfyNo != null and exppnIdfyNo != ''">
+            AND    B.EXPPN_IDFY_NO = #{exppnIdfyNo}
+        </if>
+        <if test="cstmCd != null and cstmCd != ''">
+            AND    B.DCLR_CSTM_CD = #{cstmCd}
+        </if>
+        <if test="prcsSttsCd != null and prcsSttsCd != ''">
+            AND    A.PRCS_STTS_CD = #{prcsSttsCd}
+        </if>
+        ORDER BY A.RQST_DTTM DESC
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <!--
+        consultation de la déclaration
+        !== 신고 일반정보 조회==!
+        (Beak SangYeol)
+    -->
+    <select id="selectXtnsDedInfo" parameterType="alpass.ipt.clr.pdr.esf.vo.ClrEsfXtnsVo" resultType="alpass.ipt.clr.pdr.esf.vo.ClrEsfXtnsInfoVo">
+        /* alpass.ipt.clr.pdr.esf.mapper.ClrPdrEsfXtnsMapper.selectXtnsDedInfo */
+        SELECT
+        A.DTL_DCSH_NO AS DCLR_NO
+        , TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS DCLR_DT
+        , A.DCLR_PT_CD
+        , A.DCLR_CSTM_CD
+        , A.PDLS_GCNT
+        , A.EPC_CD
+        , A.PCKG_TGCNT
+        , A.AL_NTWG
+        , A.DSTN_CNTY_CD
+        , A.TRNP_METH_KND_CD
+        , A.DCER_CD
+        , A.AUDT_EMP_ID
+        <choose>
+          <when test="loadTmlmXtnsRqstNo != null and loadTmlmXtnsRqstNo != ''">
+            , (SELECT TO_CHAR(TO_DATE(EXP_FFMN_PRNG_DT, 'YYYYMMDD'),'DD/MM/YYYY')
+            FROM   TB_CLRI_DED_EXFM_PRID_XTNS
+            WHERE  LOAD_TMLM_XTNS_RQST_NO = #{loadTmlmXtnsRqstNo}
+            AND    DTL_DCSH_NO = A.DTL_DCSH_NO) AS EXP_FFMN_XPIR_DT                                     /** Date d'échéance de l'apurement d'exportation !== 수출이행만료일자 ==! */
+          </when>
+          <otherwise>
+            , TO_CHAR(TO_DATE(A.EXP_FFMN_XPIR_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS EXP_FFMN_XPIR_DT  /** Date d'échéance de l'apurement d'exportation !== 수출이행만료일자 ==! */
+          </otherwise>
+        </choose>
+        , (SELECT ORGN_NM FROM ALPASSINT.TB_POTI_ORGN WHERE ORGN_CD = A.DCLR_CSTM_CD) AS DCLR_CSTM_NM
+        FROM   TB_CLRI_DED_COMN A
+        WHERE  A.DEL_YN = 'N'
+       <!-- <if test="cstmCd != null and cstmCd != ''">
+            AND    A.DCLR_CSTM_CD = #{cstmCd}
+        </if>-->
+        <choose>
+            <when test="loadTmlmXtnsRqstNo != null and loadTmlmXtnsRqstNo != ''">
+                AND    EXISTS(SELECT DTL_DCSH_NO FROM TB_CLRI_DED_EXFM_PRID_XTNS WHERE LOAD_TMLM_XTNS_RQST_NO = #{loadTmlmXtnsRqstNo} AND DTL_DCSH_NO = A.DTL_DCSH_NO)
+            </when>
+            <otherwise>
+                AND    A.DTL_DCSH_NO = #{dclrNo}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!--
+    Consulter l'historique général de la déclaration de prolongation du délai de chargement
+    !== 적재기간연장 조회 ==!
+    (Beak SangYeol)
+    -->
+    <select id="selectXtns" parameterType="alpass.ipt.clr.pdr.esf.vo.ClrEsfXtnsVo" resultType="alpass.ipt.clr.pdr.esf.vo.ClrEsfXtnsDetlVo">
+        /* alpass.ipt.clr.pdr.esf.mapper.ClrPdrEsfXtnsMapper.selectXtns */
+        SELECT  A.LOAD_TMLM_XTNS_RQST_NO
+        , A.DTL_DCSH_NO AS DCLR_NO
+        , TO_CHAR(A.RQST_DTTM,'DD/MM/YYYY') AS RQST_DTTM
+        , A.PRCS_STTS_CD
+        , A.REPN_ID
+        , TO_CHAR(TO_DATE(A.XTNS_EXP_FFMN_PRNG_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS XTNS_EXP_FFMN_PRNG_DT
+        , A.PRID_XTNS_RSN_CN
+        , A.REFS_RSN_CN
+        , A.ATCH_FILE_ID
+        , A.CSTM_EMP_ID
+        , A.APRV_ID
+        , (SELECT APRV_PRCS_STTS_CD FROM TB_POTI_APRV WHERE DEL_YN = 'N' AND APRV_ID = A.APRV_ID) AS APRV_PRCS_STTS_CD
+                , CASE SUBSTR(A.LOAD_TMLM_XTNS_RQST_NO, -1)
+                WHEN 'E' THEN (SELECT
+                NVL2(S1.CO_NM, S1.CO_NM, A.REPN_ID)
+           FROM TB_COM_CO S1, TB_COM_CO_DCLR_CD S2
+            WHERE
+            S1.NIF = S2.NIF
+            AND    S2.CO_DCLR_TP_CD = 'H'
+            AND    S2.CO_DCLR_CD = A.REPN_ID)
+            WHEN 'I' THEN (SELECT EMP_NM
+                            FROM TB_POTI_EMP
+                            WHERE
+                            PBSR_NO = A.REPN_ID)
+            END AS REPN_NM
+        FROM (
+              SELECT Y.LOAD_TMLM_XTNS_RQST_NO
+              , Y.DTL_DCSH_NO
+              , Y.RQST_DTTM
+              , Y.PRCS_STTS_CD
+              , Y.REPN_ID
+              , Y.XTNS_EXP_FFMN_PRNG_DT
+              , Y.PRID_XTNS_RSN_CN
+              , Y.REFS_RSN_CN
+              , Y.ATCH_FILE_ID
+              , Y.APRV_ID
+              , Y.CSTM_EMP_ID
+              FROM   TB_CLRI_DED_EXFM_PRID_XTNS Y
+              WHERE  Y.DEL_YN = 'N'
+              <choose>
+                  <when test="loadTmlmXtnsRqstNo != null and loadTmlmXtnsRqstNo != ''">
+                      AND    Y.LOAD_TMLM_XTNS_RQST_NO = #{loadTmlmXtnsRqstNo}
+                  </when>
+                  <otherwise>
+                      AND    Y.DTL_DCSH_NO = #{dclrNo}
+                      AND    SUBSTR(Y.LOAD_TMLM_XTNS_RQST_NO, -1) = 'I'
+                  </otherwise>
+              </choose>
+              ORDER BY Y.RQST_DTTM DESC
+              ) A
+        WHERE  1 = 1
+        <choose>
+            <when test="loadTmlmXtnsRqstNo != null and loadTmlmXtnsRqstNo != ''">
+                AND    A.LOAD_TMLM_XTNS_RQST_NO = #{loadTmlmXtnsRqstNo}
+            </when>
+            <otherwise>
+                AND    ROWNUM = 1
+            </otherwise>
+        </choose>
+    </select>
+
+  <!--
+    Suppression de la prorogation du délai de chargement
+    !== 적재기간연장 삭제 ==!
+    (Beak SangYeol)
+    -->
+  <update id="deleteXtns" parameterType="alpass.ipt.clr.pdr.esf.vo.ClrEsfXtnsDetlVo">
+    /* alpass.ipt.clr.pdr.esf.mapper.ClrPdrEsfXtnsMapper.deleteXtns */
+    UPDATE  TB_CLRI_DED_EXFM_PRID_XTNS SET
+      DEL_YN = 'Y'                                  /** Suppression ON !== 삭제여부 ==! */
+                                         ,  LAST_CHPR_ID = #{lastChprId}                  /** ID du modificateur final !== 최종변경자ID ==! */
+                                         ,  LAST_CHG_DTTM = SYSTIMESTAMP                  /** Date et heure de modification finale !== 최종변경일시 ==! */
+    WHERE   DEL_YN = 'N'                                  /** Suppression ON !== 삭제여부 ==! */
+      AND     LOAD_TMLM_XTNS_RQST_NO = #{loadTmlmXtnsRqstNo}       /** N° dde de chrgmt !== 적재신청번호 ==! */
+  </update>
+
+  <!--
+    Enregistrement de la prorogations du delai de chargement
+    !== 적재기간연장 등록 ==!
+    (Beak SangYeol)
+    -->
+  <insert id="insertXtns" parameterType="alpass.ipt.clr.pdr.esf.vo.ClrEsfXtnsDetlVo">
+    /* alpass.ipt.clr.pdr.esf.mapper.ClrPdrEsfXtnsMapper.insertXtns */
+    INSERT INTO TB_CLRI_DED_EXFM_PRID_XTNS(
+      LOAD_TMLM_XTNS_RQST_NO
+      , DTL_DCSH_NO
+      , REPN_ID
+      , RQST_DTTM
+      , EXP_FFMN_PRNG_DT
+      , XTNS_EXP_FFMN_PRNG_DT
+      , PRID_XTNS_RSN_CN
+      , ATCH_FILE_ID
+      , PRCS_STTS_CD
+      , CSTM_EMP_ID
+      , REFS_RSN_CN
+      , APRV_ID
+      , DEL_YN
+      , FRST_REGST_ID
+      , FRST_RGSR_DTTM
+      , LAST_CHPR_ID
+      , LAST_CHG_DTTM
+      )
+    VALUES
+      (
+        #{loadTmlmXtnsRqstNo}
+      , #{dclrNo}
+      , #{repnId}
+      , SYSTIMESTAMP
+      , TO_CHAR(TO_DATE(#{expFfmnPrngDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+      , TO_CHAR(TO_DATE(#{xtnsExpFfmnPrngDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+      , #{pridXtnsRsnCn}
+      , #{atchFileId}
+      , #{prcsSttsCd}
+      , #{cstmEmpId}
+      , #{refsRsnCn}
+      , #{aprvId}
+      , 'N'
+      , #{frstRegstId}
+      , SYSTIMESTAMP
+      , #{lastChprId}
+      , SYSTIMESTAMP
+      )
+  </insert>
+
+  <!--
+    Modification de la prorogations du delai de chargement
+    !==적재기간연장 수정==!
+    (Beak SangYeol)
+    -->
+  <update id="updateXtns" parameterType="alpass.ipt.clr.pdr.esf.vo.ClrEsfXtnsDetlVo">
+    /* alpass.ipt.clr.pdr.esf.mapper.ClrPdrEsfXtnsMapper.updateXtns */
+    UPDATE  TB_CLRI_DED_EXFM_PRID_XTNS SET
+    <trim prefixOverrides="," >
+      LAST_CHPR_ID = #{lastChprId}
+      , LAST_CHG_DTTM = SYSTIMESTAMP
+      <if test="xtnsExpFfmnPrngDt != null and xtnsExpFfmnPrngDt != ''">
+        , XTNS_EXP_FFMN_PRNG_DT = TO_CHAR(TO_DATE(#{xtnsExpFfmnPrngDt}, 'DD/MM/YYYY'), 'YYYYMMDD')
+      </if>
+      <if test="pridXtnsRsnCn != null and pridXtnsRsnCn != ''">
+        , PRID_XTNS_RSN_CN = #{pridXtnsRsnCn}
+      </if>
+      <if test="atchFileId != null and atchFileId != ''">
+        , ATCH_FILE_ID = #{atchFileId}
+      </if>
+      <if test="prcsSttsCd != null and prcsSttsCd != ''">
+        , PRCS_STTS_CD = #{prcsSttsCd}
+      </if>
+      <if test="cstmEmpId != null and cstmEmpId != ''">
+        , CSTM_EMP_ID = #{cstmEmpId}
+      </if>
+      <if test="refsRsnCn != null and refsRsnCn != ''">
+        , REFS_RSN_CN = #{refsRsnCn}
+      </if>
+      <if test="aprvId != null and aprvId != ''">
+        , APRV_ID = #{aprvId}
+      </if>
+    </trim>
+    WHERE  DEL_YN = 'N'
+    AND  LOAD_TMLM_XTNS_RQST_NO = #{loadTmlmXtnsRqstNo}
+  </update>
+
+  <!--
+    Modifier la date d'achèvement de l'apurement de l'exportation (Traitement après l'approbation de la prolongation du délai de chargement)
+    !==수출이행만료일자 수정(적재기간연장 결재 후 처리)==!
+    (Beak SangYeol)
+    -->
+  <update id="updateExpFfmnXpirDt" parameterType="alpass.ipt.clr.pdr.esf.vo.ClrEsfXtnsDetlVo">
+    /* alpass.ipt.clr.pdr.esf.mapper.ClrPdrEsfXtnsMapper.updateExpFfmnXpirDt */
+    UPDATE TB_CLRI_DED_COMN
+    SET EXP_FFMN_XPIR_DT = ( SELECT XTNS_EXP_FFMN_PRNG_DT FROM TB_CLRI_DED_EXFM_PRID_XTNS
+                             WHERE APRV_ID = #{aprvId}
+                               AND DEL_YN = 'N'
+    )
+
+      , LAST_CHPR_ID = #{lastChprId}
+      , LAST_CHG_DTTM =  SYSTIMESTAMP
+    WHERE DTL_DCSH_NO =  #{dclrNo}
+      AND DEL_YN = 'N'
+  </update>
+
+
+  <!--
+     !== 적재기간연장 처리상태조회 ==!
+    -->
+  <select id="selectPridXtnsPrcsSttsCd" parameterType="alpass.ipt.clr.pdr.esf.vo.ClrEsfXtnsDetlVo" resultType="alpass.ipt.clr.pdr.esf.vo.ClrEsfXtnsDetlVo">
+    /*selectPridXtnsPrcsSttsCd*/
+    SELECT Y.PRCS_STTS_CD
+    FROM   ALPASSINT.TB_CLRI_DED_EXFM_PRID_XTNS Y
+    WHERE  Y.DEL_YN = 'N'
+      AND    Y.DTL_DCSH_NO  = #{dclrNo}
+      AND    Y.PRCS_STTS_CD IN ('D01')
+      AND    ROWNUM = 1
+  </select>
+</mapper>

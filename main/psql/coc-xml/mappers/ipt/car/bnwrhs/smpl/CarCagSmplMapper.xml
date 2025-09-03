@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.car.bnwrhs.smpl.mapper.CarCagSmplMapper">
+  <!-- 보세구역 : 견품 반출 업무  (By Haechul.shin on 14/10/2022) -->
+
+  <!-- ###################### 0123, 0124 ####################### -->
+
+  <!--
+    [Rechercher] Consulter la liste des "Demande d'accord préalable de l'exploitation de la zone sous douane"
+    !==  견품 반출 (신청) 신고 목록 조회 ==!
+    -->
+	<select id="selectCarBnwrhsCagSmplRlbrList" resultType="alpass.ipt.car.bnwrhs.smpl.vo.CarCagSmplRlbrPermVo">
+		/* alpass.ipt.car.bnwrhs.smpl.mapper.CarCagSmplMapper.selectCarBnwrhsCagSmplRlseList */
+    	<include refid="pagination.header" ></include>
+		SELECT
+			  A.GDS_RLBR_RQST_NO				/**  N° demande d'introduction/sortie de l'échantillon  !== 견품반출입신청번호 ==!  */
+			, A.RLBR_TP_CD						/**  Code de catégorie d'introduction/sortie  !== 반출입구분코드 ==!  */
+			, A.CO_RQST_NO						/**  N° de demande d'entreprise  !== 업체신청번호 ==!  */
+			, A.APLC_NM							/**  Nom Du Demandeur  !== 신청인명 ==!  */
+			, A.APLC_ADDR_NM					/**  Adresse du demandeur  !== 신청인주소명 ==!  */
+			, A.APLC_TLPH_NO					/**  N° De Tél. Du Demandeur  !== 신청인전화번호 ==!  */
+			, A.APLC_EML						/**  E-mail du demandeur  !== 신청인이메일 ==!  */
+			, A.OWRG_TXPR_IDFY_NO				/**  NIF du propriétaire  !== 화주납세자식별번호 ==!  */
+			, A.OWRG_NM							/**  Nom Du Propriétaire  !== 화주명 ==!  */
+			, A.OWRG_ADDR_NM					/**  Adresse Du Propriétaire  !== 화주주소명 ==!  */
+			, A.OWRG_TLPH_NO					/**  N° De Tél. Du Propriétaire  !== 화주전화번호 ==!  */
+			, A.OWRG_EML						/**  Email Du Propriétaire  !== 화주이메일 ==!  */
+			, A.CAG_MGMT_NO						/**  Crn  !== 화물관리번호 ==!  */
+			, A.BL_NO							/**  N° De Bl  !== BL번호 ==!  */
+			, A.PDLS_NM							/**  Nom De L'Article  !== 품목명 ==!  */
+			, A.PCKG_GCNT						/**  Nombre De Colis  !== 포장개수 ==!  */
+			, A.PCKG_UT_CD						/**  Code De L'Unité De Colis  !== 포장단위코드 ==!  */
+			, A.WGHT							/**  Poids  !== 중량 ==!  */
+			, TO_CHAR(TO_DATE(A.GDS_RLBR_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS GDS_RLBR_DT	/**  Date d'introduction/sortie de l'échantillon  !== 견품반출입일자 ==!  */
+			, A.IBOBZ_CD						/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+		    , C.IBOBZ_NM  						/** Nom de la zone sous douane !== 보세구역명 ==! */
+
+			, A.JRSD_ORGN_CD					/**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+			, C.JRSD_ORGN_CD || '|' ||(SELECT ORGN_NM    				/** Service compétent !== 관할조직 ==! */
+										 FROM TB_POTI_ORGN
+										WHERE ORGN_CD = C.JRSD_ORGN_CD) AS JRSD_ORGN_NM
+			, A.GDS_RLSE_PUPS_CN				/**  Contenu de l'objet de la sortie de la marchandise  !== 견품반출목적내용 ==!  */
+			, A.REEN_YN							/**  Réintroduction ON  !== 재반입여부 ==!  */
+			, TO_CHAR(TO_DATE(A.REEN_PRNG_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS REEN_PRNG_DT		/**  Date de réintroduction prévue  !== 재반입예정일자 ==!  */
+			, A.REEN_RSN_CN						/**  Motif De Réintroduction  !== 재반입사유내용 ==!  */
+			, A.TRSN_CO_CD						/**  Code d'entreprise transmettrice  !== 전송업체코드 ==!  */
+			, TO_CHAR(A.TRSN_DTTM, 'DD/MM/YYYY') AS TRSN_DTTM						/**  Date et heure de transmission  			!== 전송일시 ==!  */
+			, A.DEL_YN							/**  Suppression On  !== 삭제여부 ==!  */
+			, TO_CHAR(A.AUDT_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS AUDT_DTTM	/**  Date De L'Étude  !== 심사일시 ==!  */
+			, A.AUDT_PT_CD						/**  Code De Type De Contrôle  !== 심사유형코드 ==!  */
+			, A.AUDT_RSLT_CN					/**  Contenu Du Résultat De La Vérification  !== 심사결과내용 ==!  */
+			, A.FRST_REGST_ID					/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, A.LAST_CHPR_ID					/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+
+			, B.AUDT_EMP_ID 					/**  ID de l'insepcteur  					     !== 심사직원ID ==!  */
+			, (	SELECT DECODE(L.EMP_FMNM,NULL,L.EMP_NM,L.EMP_FMNM || ' ' ||L.EMP_NM )
+				FROM TB_POTI_EMP L
+	          	WHERE L.DEL_YN = 'N'
+	                   AND L.PBSR_NO = B.AUDT_EMP_ID) AS AUDT_EMP_NM
+			, B.PRCS_STTS_CD
+			, TO_CHAR(B.PRCS_DTTM,'DD/MM/YYYY') as PRCS_DTTM
+		FROM ALPASSINT.TB_CARI_GDS_RLBR_PERM A
+		   , ALPASSINT.TB_CARI_CAG_PRCS_BRKD B
+		   , ALPASSINT.TB_CARI_IBOBZ C
+		WHERE A.GDS_RLBR_RQST_NO = B.CAG_RQST_NO
+		AND   A.IBOBZ_CD = C.IBOBZ_CD
+		AND   C.DEL_YN = 'N'
+		AND   B.CAG_RQST_TP_CD = #{cagRqstTpCd}
+		AND   A.DEL_YN = 'N'
+		AND   A.RLBR_TP_CD = #{rlbrTpCd}
+
+		<if test="roleId != null and ( roleId.equals('CAR077'.toString()) or roleId.equals('CAR128'.toString()) )">
+		/** 관리자인경우 */
+		AND A.JRSD_ORGN_CD LIKE SUBSTR(#{jrsdOrgnCd}, 1, 5) || '%'
+		</if>
+
+		<if test="roleId != null and ( roleId.equals('CAR078'.toString()) or roleId.equals('CAR129'.toString()) )">
+		/** 심사자인경우 */
+		AND B.AUDT_EMP_ID = #{pbsrNo}
+		</if>
+
+
+		/**  Date et heure de transmission  !== 신청일자 ==!  */
+        <if test="(searchKeywordFrom != null and searchKeywordFrom != '') and (searchKeywordTo != null and searchKeywordTo != '')">
+          AND (
+            (
+              A.FRST_RGSR_DTTM <![CDATA[ >= ]]> TO_DATE(#{searchKeywordFrom}, 'DD/MM/YYYY')
+              AND A.FRST_RGSR_DTTM <![CDATA[ <= ]]> TO_DATE(#{searchKeywordTo}, 'DD/MM/YYYY')+0.9999
+            ) OR (
+                A.FRST_RGSR_DTTM <![CDATA[ >= ]]> TO_TIMESTAMP(#{searchKeywordFrom}, 'DD/MM/YYYY')
+                AND A.FRST_RGSR_DTTM <![CDATA[ <= ]]> TO_TIMESTAMP(#{searchKeywordTo}, 'DD/MM/YYYY')+0.9999
+            )
+          )
+        </if>
+
+         /**  Date et heure de transmission  !== 반출일자 ==!  */
+        <if test="(searchKeywordFrom2 != null and searchKeywordFrom2 != '') and (searchKeywordTo2 != null and searchKeywordTo2 != '')">
+          AND (
+            (
+              TO_DATE(TO_CHAR(TO_DATE(A.GDS_RLBR_DT,'YYYY/MM/DD'),'DD/MM/YYYY'),'DD/MM/YYYY') <![CDATA[ >= ]]> TO_DATE(#{searchKeywordFrom2}, 'DD/MM/YYYY')
+              AND TO_DATE(TO_CHAR(TO_DATE(A.GDS_RLBR_DT,'YYYY/MM/DD'),'DD/MM/YYYY'),'DD/MM/YYYY') <![CDATA[ <= ]]> TO_DATE(#{searchKeywordTo2}, 'DD/MM/YYYY')+0.9999
+            ) OR (
+                TO_DATE(TO_CHAR(TO_DATE(A.GDS_RLBR_DT,'YYYY/MM/DD'),'DD/MM/YYYY'),'DD/MM/YYYY') <![CDATA[ >= ]]> TO_TIMESTAMP(#{searchKeywordFrom2}, 'DD/MM/YYYY')
+                AND TO_DATE(TO_CHAR(TO_DATE(A.GDS_RLBR_DT,'YYYY/MM/DD'),'DD/MM/YYYY'),'DD/MM/YYYY') <![CDATA[ <= ]]> TO_TIMESTAMP(#{searchKeywordTo2}, 'DD/MM/YYYY')+0.9999
+            )
+          )
+        </if>
+
+        /**  Code De Statut De Traitement  					!== 상태 ==!  */
+        <if test="prcsSttsCd != null and prcsSttsCd != ''">
+          AND  B.PRCS_STTS_CD = #{prcsSttsCd}
+        </if>
+
+        /**  N° demande d'introduction/sortie de l'échantillon  !== 견품반출입신청번호 ==!  */
+        <if test="gdsRlbrRqstNo != null and gdsRlbrRqstNo != ''">
+          AND  A.GDS_RLBR_RQST_NO = #{gdsRlbrRqstNo}
+        </if>
+
+        /** N° De Bl  			!== bl no ==!  */
+        <if test="blNo != null and blNo != ''">
+          AND  A.BL_NO = #{blNo}
+        </if>
+
+         /**  Code De Statut De Traitement  				!== 화물관리번호 ==!  */
+        <if test="cagMgmtNo != null and cagMgmtNo != ''">
+          AND  A.CAG_MGMT_NO = #{cagMgmtNo}
+        </if>
+        ORDER BY A.FRST_RGSR_DTTM DESC
+		<include refid="pagination.footer" ></include>
+	</select>
+
+	<!--
+    [Rechercher] Consulter la liste des "Demande d'accord préalable de l'exploitation de la zone sous douane"
+    !== 견품 반출 (신청) 신고 상세 조회 ==!
+    -->
+ 	 <select id="selectCagSmplRlbrDetailInfo" resultType="alpass.ipt.car.bnwrhs.smpl.vo.CarCagSmplRlbrPermVo">
+    	/* alpass.ipt.car.bnwrhs.smpl.mapper.CarCagSmplMapper.selectCagSmplRlbrDetailInfo */
+		SELECT
+			  A.GDS_RLBR_RQST_NO				/**  N° demande d'introduction/sortie de l'échantillon  !== 견품반출입신청번호 ==!  */
+			, A.RLBR_TP_CD						/**  Code de catégorie d'introduction/sortie  !== 반출입구분코드 ==!  */
+			, A.CO_RQST_NO						/**  N° de demande d'entreprise  !== 업체신청번호 ==!  */
+			, A.APLC_NM							/**  Nom Du Demandeur  !== 신청인명 ==!  */
+			, A.APLC_ADDR_NM					/**  Adresse du demandeur  !== 신청인주소명 ==!  */
+			, A.APLC_TLPH_NO					/**  N° De Tél. Du Demandeur  !== 신청인전화번호 ==!  */
+			, A.APLC_EML						/**  E-mail du demandeur  !== 신청인이메일 ==!  */
+			, A.OWRG_TXPR_IDFY_NO				/**  NIF du propriétaire  !== 화주납세자식별번호 ==!  */
+			, A.OWRG_NM							/**  Nom Du Propriétaire  !== 화주명 ==!  */
+			, A.OWRG_ADDR_NM					/**  Adresse Du Propriétaire  !== 화주주소명 ==!  */
+			, A.OWRG_TLPH_NO					/**  N° De Tél. Du Propriétaire  !== 화주전화번호 ==!  */
+			, A.OWRG_EML						/**  Email Du Propriétaire  !== 화주이메일 ==!  */
+			, A.CAG_MGMT_NO						/**  Crn  !== 화물관리번호 ==!  */
+			, A.BL_NO							/**  N° De Bl  !== BL번호 ==!  */
+			, A.PDLS_NM							/**  Nom De L'Article  !== 품목명 ==!  */
+			, A.PCKG_GCNT						/**  Nombre De Colis  !== 포장개수 ==!  */
+			, A.PCKG_UT_CD						/**  Code De L'Unité De Colis  !== 포장단위코드 ==!  */
+			, A.WGHT							/**  Poids  !== 중량 ==!  */
+			, TO_CHAR(TO_DATE(A.GDS_RLBR_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS GDS_RLBR_DT	/**  Date d'introduction/sortie de l'échantillon  !== 견품반출입일자 ==!  */
+			, A.IBOBZ_CD						/**  Code de zone sous douane  !== 보세구역코드 ==!  */
+		    , (SELECT IBOBZ_NM  /* Nom de la zone sous douane !== 보세구역명 ==! */
+			       FROM TB_CARI_IBOBZ
+			      WHERE DEL_YN = 'N'
+			        AND IBOBZ_CD = A.IBOBZ_CD) AS IBOBZ_NM
+			, A.JRSD_ORGN_CD					/**  Code D'Unité Compétente  !== 관할조직코드 ==!  */
+			, (SELECT ORGN_NM    /** Service compétent !== 관할조직 ==! */
+				 FROM TB_POTI_ORGN
+				WHERE ORGN_CD = A.JRSD_ORGN_CD) AS JRSD_ORGN_NM
+			, A.GDS_RLSE_PUPS_CN				/**  Contenu de l'objet de la sortie de la marchandise  !== 견품반출목적내용 ==!  */
+			, A.REEN_YN							/**  Réintroduction ON  !== 재반입여부 ==!  */
+			, TO_CHAR(TO_DATE(A.REEN_PRNG_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS REEN_PRNG_DT		/**  Date de réintroduction prévue  !== 재반입예정일자 ==!  */
+			, A.REEN_RSN_CN						/**  Motif De Réintroduction  !== 재반입사유내용 ==!  */
+			, A.TRSN_CO_CD						/**  Code d'entreprise transmettrice  !== 전송업체코드 ==!  */
+			, TO_CHAR(A.TRSN_DTTM, 'DD/MM/YYYY') AS TRSN_DTTM						/**  Date et heure de transmission  			!== 전송일시 ==!  */
+			, A.DEL_YN							/**  Suppression On  !== 삭제여부 ==!  */
+			, TO_CHAR(A.AUDT_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS AUDT_DTTM	/**  Date De L'Étude  !== 심사일시 ==!  */
+			, A.AUDT_PT_CD				/**  Code De Type De Contrôle  !== 심사유형코드 ==!  */
+			, A.AUDT_RSLT_CN				/**  Contenu Du Résultat De La Vérification  !== 심사결과내용 ==!  */
+			, A.FRST_REGST_ID					/**  Id Du Premier Enregistrant   !== 최초등록자ID ==!  */
+			, TO_CHAR(A.FRST_RGSR_DTTM, 'DD/MM/YYYY') AS FRST_RGSR_DTTM	/**  Date Et Heure De Premier Enregistrement  !== 최초등록일시 ==!  */
+			, A.LAST_CHPR_ID					/**  Id Du Modificateur Final  !== 최종변경자ID ==!  */
+			, TO_CHAR(A.LAST_CHG_DTTM, 'DD/MM/YYYY HH24:mi:ss') AS LAST_CHG_DTTM	/**  Date Et Heure De Modification Finale  !== 최종변경일시 ==!  */
+			, B.AUDT_EMP_ID 					/**  ID de l'insepcteur  					     !== 심사직원ID ==!  */
+			,(	SELECT DECODE(L.EMP_FMNM,NULL,L.EMP_NM,L.EMP_FMNM || ' ' ||L.EMP_NM )
+				FROM TB_POTI_EMP L
+	          	WHERE L.DEL_YN = 'N'
+	                   AND L.PBSR_NO = B.AUDT_EMP_ID) AS AUDT_EMP_NM
+			, B.PRCS_STTS_CD
+			, TO_CHAR(B.PRCS_DTTM,'DD/MM/YYYY') as PRCS_DTTM
+			, A.BF_GDS_RLBR_RQST_NO				/**  N° demande d'introduction/sortie de l'échantillon précédent  !== 이전견품반출입신청번호 ==!  */
+			, C.PCKG_GCNT AS RLBR_PCKG_GCNT		/**  Nombre De Colis  !== 포장개수 ==!  */
+			, C.PCKG_UT_CD AS RLBR_PCKG_UT_CD	/**  Code De L'Unité De Colis  !== 포장단위코드 ==!  */
+			, C.WGHT AS RLBR_WGHT				/**  Poids  !== 중량 ==!  */
+		FROM ALPASSINT.TB_CARI_GDS_RLBR_PERM A
+		   , ALPASSINT.TB_CARI_CAG_PRCS_BRKD B
+		   , ALPASSINT.TB_CARI_GDS_RLBR_PERM C
+		WHERE A.GDS_RLBR_RQST_NO = B.CAG_RQST_NO
+		AND  A.BF_GDS_RLBR_RQST_NO = C.GDS_RLBR_RQST_NO(+)
+		AND  A.DEL_YN = 'N'
+        /**  N° demande de la sortie de l'échantillon  !== 견품반출신청번호 ==!  */
+        <if test="gdsRlbrRqstNo != null and gdsRlbrRqstNo != ''">
+          AND  A.GDS_RLBR_RQST_NO = #{gdsRlbrRqstNo}
+        </if>
+	</select>
+
+    <!--
+	 [Supprimer] Demande d’introduction
+	 !== 견품 반출입 신청 [심사완료] 저장한다. TO IPT==!
+	 -->
+	<update id="cagSmplRlbrIptConfirm" parameterType="alpass.ipt.car.bnwrhs.smpl.vo.CarCagSmplRlbrPermVo">
+    	/* alpass.ipt.car.bnwrhs.smpl.mapper.CarCagSmplMapper.cagSmplRlbrIptConfirm */
+	    UPDATE ALPASSINT.TB_CARI_GDS_RLBR_PERM
+	       SET
+			  AUDT_DTTM     = SYSTIMESTAMP 			/**  Date De L'Étude  						 !== 심사일시 ==!  */
+			, AUDT_PT_CD    = #{audtPtCd} 			/**  Code De Type De Contrôle  				 !== 심사유형코드 ==!  */
+			, AUDT_RSLT_CN  = #{audtRsltCn} 		/**  Contenu Du Résultat De La Vérification  !== 심사결과내용 ==!  */
+			, LAST_CHPR_ID = #{lastChprId}		/**  Id Du Modificateur Final  				 !== 최종변경자ID ==!  */
+			, LAST_CHG_DTTM = SYSTIMESTAMP			/**  Date Et Heure De Modification Finale    !== 최종변경일시 ==!  */
+		WHERE GDS_RLBR_RQST_NO = #{gdsRlbrRqstNo}  	/**  N° demande d'introduction/sortie de l'échantillon  !== 견품반출입신청번호 ==!  */
+    </update>
+
+	<!--
+	 [Supprimer] Demande d’introduction
+	 !== 견품 반출입 신청 [심사완료] 저장한다. TO EPT==!
+	 -->
+	<update id="cagSmplRlbrEptConfirm" parameterType="alpass.ipt.car.bnwrhs.smpl.vo.CarCagSmplRlbrPermVo">
+    	/* alpass.ipt.car.bnwrhs.smpl.mapper.CarCagSmplMapper.cagSmplRlbrEptConfirm */
+	    UPDATE  ALPASSEXT.TB_CARE_GDS_RLBR_PERM
+	       SET
+	          PRCS_STTS_CD   = #{prcsSttsCd}	    /**  Code De Statut De Traitement  !== 처리상태코드/ 심사유형코드 저장 ==!  */
+			, LAST_CHPR_ID = #{lastChprId}			/**  Id Du Modificateur Final  				 !== 최종변경자ID ==!  */
+			, LAST_CHG_DTTM = SYSTIMESTAMP			/**  Date Et Heure De Modification Finale    !== 최종변경일시 ==!  */
+		WHERE GDS_RLBR_RQST_NO = #{gdsRlbrRqstNo}  	/**  N° demande d'introduction/sortie de l'échantillon  !== 견품반출입신청번호 ==!  */
+    </update>
+
+
+</mapper>

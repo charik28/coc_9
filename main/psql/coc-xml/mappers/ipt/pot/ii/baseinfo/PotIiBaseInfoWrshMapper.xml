@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.ii.baseinfo.mapper.PotIiBaseInfoWrshMapper">
+
+  <!--
+		 Consulter la liste de MAD(E) !==창고 목록을 조회한다==!
+	-->
+  <select id="selectWrshList"
+    parameterType="alpass.ipt.pot.ii.baseinfo.vo.PotIiBaseInfoWrshVo"
+    resultType="alpass.ipt.pot.ii.baseinfo.vo.PotIiBaseInfoWrshVo">
+    /** selectWrshList */
+    <include refid="pagination.header" />
+    SELECT
+          K.IBOBZ_CD
+         , K.IBOBZ_NM     AS WRHS_NM
+         , K.IBOBZ_CO_CD  AS CO_DCLR_CD
+         , FN_GET_ORGN_NM(K.JRSD_ORGN_CD) AS JRSD_ORGN_NM
+         , K.IBOBZ_ATPM_RQST_NO
+         , K.IBOBZ_NIF
+         , K.IBOBZ_TLPH_NO
+         , K.IBOBZ_FAX_NO
+         , K.IBOBZ_EML
+         , K.IBOBZ_ADDR
+         , K.IBOBZ_TP_CD
+         , K.IBOBZ_AREA
+         , K.CAG_KND_SSTVS_YN
+         , K.CAG_KND_RSK_YN
+         , K.CAG_KND_CRPT_WRY_YN
+         , K.CAG_KND_ANML_YN
+         , K.CAG_KND_CMCS_YN
+         , K.CAG_KND_HMGNS_CAG_YN
+         , K.CAG_KND_OVSZ_OVSZ_CAG_YN
+         , K.PTCL_MTR_CN
+         , K2.ORGN_NM
+      FROM TB_CARI_IBOBZ K, TB_POTI_ORGN  K2
+      WHERE K.DEL_YN       = 'N'
+      AND K.OPRN_CESE_YN = 'N'
+      AND K.ATPM_WDRL_YN = 'N'
+      AND K2.DEL_YN      = 'N'
+      AND K.JRSD_ORGN_CD = K2.ORGN_CD
+    <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(ibobzNif)">
+      AND K.IBOBZ_NIF    LIKE '%' || #{ibobzNif} || '%'
+    </if>
+    <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(ibobzTpCd)">
+      AND K.IBOBZ_TP_CD  = #{ibobzTpCd}
+    </if>
+    <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(wrhsNm)">
+      AND K.IBOBZ_NM     LIKE '%' || #{wrhsNm} || '%'
+    </if>
+    <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(ibobzCd)">
+      AND K.IBOBZ_CD     LIKE #{ibobzCd} || '%'
+    </if>
+    <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(ibobzNm)">
+      AND K.IBOBZ_NM     LIKE '%' || #{ibobzNm} || '%'
+    </if>
+    <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(coDclrCd)">
+      AND K.IBOBZ_CO_CD  LIKE '%' || #{coDclrCd} || '%'
+    </if>
+    <if test="@alpass.ipt.car.com.util.CarMyBatisUtil@isNotEmpty(jrsdOrgnCd)">
+      AND K.JRSD_ORGN_CD LIKE #{jrsdOrgnCd} || '%'
+    </if>
+    <include refid="pagination.footer" />
+  </select>
+
+</mapper>

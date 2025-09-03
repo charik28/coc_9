@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.pot.pm.cd.mapper.PotPmCdFoncCdMapper">
+
+    <!--
+        Vérifier si le code de fonction est déjà enregistré !==이미 등록된 직무코드인지 조회한다==!
+    -->
+    <select id="selectFoncCdCnt" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdVo" resultType="java.lang.Integer">
+      /** selectFoncCdCnt */
+        SELECT
+            COUNT(*) AS CNT
+        FROM TB_POTI_FONC_CD
+        WHERE FONC_CD = #{foncCd}
+        AND DEL_YN = 'N'
+    </select>
+
+    <!--
+        Enregistre un code de fonction !==직무코드를 등록한다==!
+    -->
+    <insert id="insertFoncCd" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdVo">
+      /** insertFoncCd */
+        WITH UPSERT AS (
+        UPDATE TB_POTI_FONC_CD
+        SET UPR_CD = DECODE(#{uprFoncCd},'','',#{uprFoncCd})
+          , DEL_YN = 'N'
+          , FRST_REGST_ID = #{frstRegstId}
+          , FRST_RGSR_DTTM = SYSTIMESTAMP
+          , LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          WHERE FONC_CD = #{foncCd}
+          RETURNING *
+            )
+        INSERT INTO TB_POTI_FONC_CD
+        (
+         FONC_CD
+         ,UPR_CD
+         ,DEL_YN
+         ,FRST_REGST_ID
+         ,FRST_RGSR_DTTM
+         ,LAST_CHPR_ID
+         ,LAST_CHG_DTTM)
+        SELECT
+                #{foncCd}
+                ,DECODE(#{uprFoncCd},'','',#{uprFoncCd})
+                ,'N'
+                ,#{frstRegstId}
+                ,SYSTIMESTAMP
+                ,#{lastChprId}
+                ,SYSTIMESTAMP
+        WHERE NOT EXISTS(SELECT * FROM UPSERT)
+    </insert>
+
+    <!--
+     Enregistre un code de fonction (multilingue) !==직무코드(다국어)를 등록한다==!
+    -->
+    <insert id="insertFoncCdLang" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdLangVo">
+      /** insertFoncCdLang */
+        WITH UPSERT AS (
+        UPDATE TB_POTI_FONC_CD_LANG
+        SET
+            FONC_CD_NM = #{langCn}
+        ,   DEL_YN = 'N'
+        ,   FRST_REGST_ID = #{frstRegstId}
+        ,   FRST_RGSR_DTTM = SYSTIMESTAMP
+        ,   LAST_CHPR_ID = #{lastChprId}
+        ,   LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE FONC_CD = #{key1}
+        AND LANG_CD = #{langCd}
+        RETURNING *)
+        INSERT INTO TB_POTI_FONC_CD_LANG
+        (
+            FONC_CD
+        , LANG_CD
+        , FONC_CD_NM
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM
+        )
+        SELECT
+                #{key1}
+            , #{langCd}
+            , #{langCn}
+            , 'N'
+            , #{frstRegstId}
+            , SYSTIMESTAMP
+            , #{lastChprId}
+            , SYSTIMESTAMP
+            WHERE NOT EXISTS(SELECT * FROM UPSERT)
+    </insert>
+
+    <!--
+      Modifier un code de fonction !==직무코드를 수정한다==!
+    -->
+    <update id="updateFoncCd" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdVo">
+        /** updateFoncCd */
+        UPDATE TB_POTI_FONC_CD
+        SET
+          UPR_CD = #{uprFoncCd}
+          ,DEL_YN = #{delYn}
+          ,LAST_CHPR_ID = #{lastChprId}
+          ,LAST_CHG_DTTM = SYSTIMESTAMP
+
+        WHERE FONC_CD = #{foncCd}
+          AND   DEL_YN = 'N'
+    </update>
+
+    <!--
+       Modifier un code de fonction (multilingue) !==직무코드(다국어)를 수정한다==!
+    -->
+    <update id="updateFoncCdLang" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdLangVo">
+        /** updateFoncCdLang */
+        with upsert as
+                     (
+        UPDATE TB_POTI_FONC_CD_LANG SET
+            LAST_CHPR_ID = #{lastChprId}
+                                      , LAST_CHG_DTTM = SYSTIMESTAMP
+                                      , FONC_CD_NM = #{langCn}
+                                      , DEL_YN = 'N'
+        WHERE FONC_CD = #{key1}
+          AND LANG_CD = #{langCd}
+            returning *
+        )
+        INSERT INTO TB_POTI_FONC_CD_LANG
+        (
+            FONC_CD
+        , LANG_CD
+        , FONC_CD_NM
+        , DEL_YN
+        , FRST_REGST_ID
+        , FRST_RGSR_DTTM
+        , LAST_CHPR_ID
+        , LAST_CHG_DTTM
+        )
+        SELECT
+            #{key1}
+             , #{langCd}
+             , #{langCn}
+             , 'N'
+             , #{frstRegstId}
+             , SYSTIMESTAMP
+             , #{lastChprId}
+             , SYSTIMESTAMP
+            WHERE NOT EXISTS(SELECT * FROM upsert)
+    </update>
+
+    <!--
+        Supprimer un code de fonction !==직무코드를 삭제한다==!
+    -->
+    <update id="deleteFoncCd" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdVo">
+        /** deleteFoncCd */
+        UPDATE TB_POTI_FONC_CD
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+        WHERE FONC_CD = #{foncCd}
+    </update>
+
+    <!--
+        Initialiser le code de fonction des douaniers à 998 !==세관직원의 직무코드를 '998'로 초기화한다==!
+    -->
+    <update id="deleteEmpFonc" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdVo">
+      /** deleteEmpFonc */
+        UPDATE TB_POTI_EMP
+        SET FONC_CD = '998'
+          , LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+        WHERE FONC_CD = #{foncCd}
+    </update>
+
+    <!--
+        Supprimer les informations de correspondance des fonctions par institution !==기관별 직무 매핑 정보를 삭제한다==!
+    -->
+    <update id="deleteCstmFoncRel" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdVo">
+      /** deleteCstmFoncRel */
+        UPDATE TB_POTI_ORGN_FONC_REL
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+        WHERE FONC_CD = #{foncCd}
+    </update>
+
+    <!--
+       Supprimer un code de fonction (multilingue) !==직무코드(다국어)를 삭제한다==!
+    -->
+    <update id="deleteFoncCdLang" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdVo">
+        /** deleteFoncCdLang */
+        UPDATE TB_POTI_FONC_CD_LANG
+        SET
+            LAST_CHPR_ID = #{lastChprId}
+          , LAST_CHG_DTTM = SYSTIMESTAMP
+          , DEL_YN = 'Y'
+        WHERE FONC_CD = #{foncCd}
+    </update>
+
+    <!--
+       Consulter les codes de fonction de manière hiérarchique !==직무코드를 계층형으로 조회한다==!
+    -->
+    <select id="selectFoncCdOrdrTreeList" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdVo" resultType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdVo">
+      /** selectFoncCdOrdrTreeList */
+      WITH T1 AS
+      (
+        SELECT FONC_CD,
+        SYS_CONNECT_BY_PATH(FONC_CD, '/') AS ORGN_PATH,
+        LEVEL AS LEV,
+        UPR_CD AS UPR_FONC_CD,
+        (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE LANG_CD = #{langCd} AND FONC_CD = A.UPR_CD) AS UPR_FONC_CD_NM,
+        <if test="orgnMgmtCd == null or orgnMgmtCd == ''">
+          (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE LANG_CD = #{langCd} AND FONC_CD = A.FONC_CD)|| ' ('||(SELECT COUNT(1) FROM TB_POTI_EMP WHERE DEL_YN = 'N' AND FONC_CD = A.FONC_CD)||')' AS FONC_CD_NM,
+        </if>
+        <if test="orgnMgmtCd != null and orgnMgmtCd != ''">
+          (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE LANG_CD = #{langCd} AND FONC_CD = A.FONC_CD)|| ' ('||(SELECT COUNT(1) FROM TB_POTI_EMP WHERE DEL_YN = 'N' AND FONC_CD = A.FONC_CD AND ORGN_MGMT_CD = #{orgnMgmtCd})||')' AS FONC_CD_NM,
+        </if>
+        TO_CHAR(A.FONC_CD) AS C_NODE,
+        DECODE(A.UPR_CD, NULL, 'EMPTY', A.UPR_CD) AS P_NODE,
+        <if test="orgnMgmtCd != null and orgnMgmtCd != ''">
+          (SELECT COUNT(1) FROM TB_POTI_ORGN_FONC_REL WHERE DEL_YN =
+          'N' AND FONC_CD = A.FONC_CD AND ORGN_MGMT_CD = #{orgnMgmtCd}
+          ) AS REG_CNT,
+        </if>
+      DEL_YN
+      FROM TB_POTI_FONC_CD A
+      WHERE A.DEL_YN = 'N'
+      START WITH UPR_CD = ''
+      CONNECT BY PRIOR A.FONC_CD = A.UPR_CD
+      ORDER SIBLINGS BY FONC_CD
+      )
+      SELECT * FROM T1
+      WHERE DEL_YN = 'N'
+      <if test='tempFoncIndcYn == "N"'>
+        AND FONC_CD != '999'
+        AND UPR_FONC_CD != '999'
+      </if>
+      <if test="foncCd != null and foncCd != ''">
+        AND FONC_CD LIKE '%' || #{foncCd} || '%'
+      </if>
+      <if test="foncCdNm != null and foncCdNm != ''">
+        AND UPPER(FONC_CD_NM) LIKE '%' || UPPER(#{foncCdNm}) || '%'
+      </if>
+    </select>
+
+    <!--
+       Consulter les codes de fonction associé à une institution spécifique de manière hiérarchique  !==특정 기관에 매핑된 직무코드를 계층형으로 조회한다==!
+    -->
+    <select id="selectTargetFoncCdOrdrTreeList" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdVo" resultType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdVo">
+      /** selectTargetFoncCdOrdrTreeList */
+      WITH RECURSIVE T1 AS (
+        SELECT FONC_CD, UPR_CD FROM TB_POTI_FONC_CD
+        WHERE FONC_CD IN (SELECT FONC_CD FROM TB_POTI_ORGN_FONC_REL WHERE ORGN_MGMT_CD = #{orgnMgmtCd})
+        UNION
+        SELECT EH.FONC_CD, EH.UPR_CD FROM T1
+        INNER JOIN TB_POTI_FONC_CD EH ON T1.UPR_CD = EH.FONC_CD
+      ) SELECT * FROM (
+        SELECT FONC_CD,
+               SYS_CONNECT_BY_PATH(FONC_CD, '/') AS ORGN_PATH,
+               LEVEL AS LEV,
+               UPR_CD AS UPR_FONC_CD,
+               (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE LANG_CD = #{langCd} AND FONC_CD = A.UPR_CD) AS UPR_FONC_CD_NM,
+               (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE LANG_CD = #{langCd} AND FONC_CD = A.FONC_CD) AS FONC_CD_NM,
+               TO_CHAR(A.FONC_CD) AS C_NODE,
+               DECODE(A.UPR_CD, NULL, 'EMPTY', A.UPR_CD) AS P_NODE
+        FROM TB_POTI_FONC_CD A
+        WHERE A.DEL_YN = 'N'
+          START WITH UPR_CD = ''
+        CONNECT BY PRIOR A.FONC_CD = A.UPR_CD
+      ) A, T1 WHERE A.FONC_CD = T1.FONC_CD
+    </select>
+
+    <!--
+       Consulter la liste détaillée des codes de fonction par langue !==직무코드 언어별 상세 목록을 조회한다==!
+    -->
+    <select id="selectFoncCdList"
+            parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdVo"
+            resultType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdLangVo">
+        /** selectFoncCdList */
+        SELECT
+            B.FONC_CD AS KEY1
+             , A.CD_VDVAL AS LANG_CD
+             , B.FONC_CD_NM AS LANG_CN
+        FROM TB_COM_COMN_CD_D A,
+             TB_POTI_FONC_CD_LANG B
+        WHERE A.COMN_CD = 'COM_0057'
+          AND B.DEL_YN(+) = 'N'
+          AND B.FONC_CD(+) = #{foncCd}
+          AND A.CD_VDVAL  = B.LANG_CD(+)
+        ORDER BY TO_NUMBER(A.SORT_ORDR) ASC
+    </select>
+
+    <!--
+       Consulter la liste des douaniers ayant un code de fonction spécifique !==특정직무코드를 가지고 있는 세관직원 목록을 조회한다==!
+    -->
+    <select id="selectEmpInfoList"
+            parameterType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpVo"
+            resultType="alpass.ipt.pot.pm.cstm.vo.PotPmCstmEmpVo">
+        /** selectEmpInfoList*/
+        <include refid="pagination.header"/>
+        SELECT
+        PBSR_NO
+        ,(SELECT M.ORGN_NM FROM TB_POTI_ORGN M WHERE M.DEL_YN = 'N' AND M.ORGN_MGMT_CD = DECODE(CSTM_MGMT_CD, NULL, SCTR_MGMT_CD, CSTM_MGMT_CD)) AS ORGN_MGMT_NM
+        ,EMP_NM
+        ,EMP_FMNM
+        FROM TB_POTI_EMP
+        <if test="srchFoncCd != null or srchFoncCd != ''">
+            WHERE FONC_CD = #{srchFoncCd}
+        </if>
+        ORDER BY ORGN_MGMT_CD
+        <include refid="pagination.footer"/>
+    </select>
+
+    <!--
+        Vérifier s'il y a un sous directeur O/N !==부서장이 있는지 없는지 확인한다==!
+    -->
+    <select id="selectEmpFoncCdCnt" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdVo" resultType="java.lang.Integer">
+      /** selectEmpFoncCdCnt*/
+      SELECT
+        COUNT(*) AS CNT
+      FROM TB_POTI_EMP
+      WHERE #{foncCd} = fn_get_emp_dphd_fonc(#{orgnMgmtCd})
+        AND DEL_YN = 'N'
+        AND ORGN_MGMT_CD = #{orgnMgmtCd}
+        AND FONC_CD = #{foncCd}
+        AND PBSR_NO != #{pbsrNo}
+    </select>
+
+    <!--
+        Consulter le nombre de fonctions liés à une organisation spécifique !==특정조직에 연결된 직무의 갯수를 조회한다==!
+    -->
+    <select id="selectOrgnFoncRelCnt" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdVo" resultType="java.lang.Integer">
+      /** selectOrgnFoncRelCnt*/
+      WITH RECURSIVE T1 AS (SELECT FONC_CD, UPR_CD
+                            FROM TB_POTI_FONC_CD
+                            WHERE FONC_CD IN (SELECT FONC_CD
+                                              FROM TB_POTI_ORGN_FONC_REL
+                                              WHERE ORGN_MGMT_CD = #{orgnMgmtCd}
+                                              UNION ALL
+                                              SELECT FONC_CD
+                                              from TB_POTI_FONC_CD
+                                              WHERE UPR_CD = '999')
+                            UNION
+                            SELECT EH.FONC_CD, EH.UPR_CD
+                            FROM T1
+                                   INNER JOIN TB_POTI_FONC_CD EH ON T1.UPR_CD = EH.FONC_CD)
+      SELECT COUNT(*)
+      FROM T1
+      WHERE T1.FONC_CD = #{foncCd}
+    </select>
+
+    <!--
+        Consulter la liste des fonctions incluant des cases à cocher !==체크박스를 포함한 직무목록 조회==!
+    -->
+    <select id="selectFoncList" parameterType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdVo" resultType="alpass.ipt.pot.pm.cd.vo.PotPmCdFoncCdVo">
+      /** selectFoncList*/
+      SELECT 'FALSE' CHK_SEL
+           , FONC_CD
+           , (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE LANG_CD = #{langCd} AND FONC_CD = A.FONC_CD) FONC_CD_NM
+      FROM TB_POTI_FONC_CD A
+      WHERE DEL_YN = 'N'
+        AND FONC_CD != '999'
+        AND UPR_CD != '999'
+        AND (UPR_CD = '' OR UPR_CD IS NULL)
+      UNION
+      SELECT 'FALSE' CHK_SEL
+           , FONC_CD
+           , (SELECT FONC_CD_NM FROM TB_POTI_FONC_CD_LANG WHERE LANG_CD = #{langCd} AND FONC_CD = A.FONC_CD) FONC_CD_NM
+      FROM TB_POTI_FONC_CD A
+      WHERE DEL_YN = 'N'
+        AND FONC_CD IN ('510', '505')
+      ORDER BY FONC_CD
+    </select>
+
+</mapper>

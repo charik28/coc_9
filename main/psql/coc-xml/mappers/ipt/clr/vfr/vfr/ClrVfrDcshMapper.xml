@@ -1,0 +1,499 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.clr.vfr.vfr.mapper.ClrVfrDcshMapper">
+    <!--
+      Consultation de la liste des DAU dédouanés
+      !== 통관신고서 목록 조회 ==!
+      (Beak SangYeol)
+      -->
+    <select id="selectAfdDcshList" parameterType="alpass.ipt.clr.vfr.vfr.vo.ClrVfrDcshSrchVo" resultType="alpass.ipt.clr.vfr.vfr.vo.ClrVfrDcshVo">
+        /* selectAfdDcshList */
+        <include refid="pagination.header" ></include>
+        SELECT
+        C.DTL_DCSH_NO
+        , C.DCLR_DT
+        , C.DCLR_CSTM_CD
+        , C.DCLR_PT_CD
+        , C.CSCL_PLN_CD
+        , C.EXP_CNTY_CD
+        , C.EPC_CD
+        , C.SELC_RSLT_CD
+        , C.PRCS_STTS_CD
+        , C.EXPPN_IDFY_NO
+        , (SELECT EXPPN_CO_NM FROM TB_CLRI_DED_CO WHERE DTL_DCSH_NO = C.DTL_DCSH_NO AND DEL_YN = 'N') AS EXPPN_CO_NM
+        , C.IMPPN_IDFY_NO
+        , (SELECT IMPPN_CO_NM FROM TB_CLRI_DED_CO WHERE DTL_DCSH_NO = C.DTL_DCSH_NO AND DEL_YN = 'N') AS IMPPN_CO_NM
+        , C.CMDT_STGE_LOCT_CD  /* 물품장치위치코드 */
+        , C.BNBN_CMDT_WRHS_CD  /* 보세물품창고코드 */
+        , (SELECT TTXBS_NCY_AMT FROM TB_CLRI_DED_VLUT_COMN WHERE DTL_DCSH_NO = C.DTL_DCSH_NO AND DEL_YN = 'N') AS TTXBS_NCY_AMT
+        , SUM(D.PAY_TAX_AMT) AS PAY_TAX_AMT
+        /*, C.DCLR_SCTR_CD */
+        , C.DEPT_CD
+        , C.DCER_CD
+        , C.CAG_MGMT_NO
+        , C.BL_NO
+        FROM (
+            SELECT T.*
+            FROM
+            (
+            SELECT A.DTL_DCSH_NO
+            , TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS DCLR_DT
+            , A.DCLR_CSTM_CD
+            , A.DCLR_PT_CD
+            , A.CSCL_PLN_CD
+            , A.EXP_CNTY_CD
+            , A.EPC_CD
+            , A.SELC_RSLT_CD
+            , A.PRCS_STTS_CD
+            , A.EXPPN_IDFY_NO
+            , A.IMPPN_IDFY_NO
+            , A.CMDT_STGE_LOCT_CD  /* 물품장치위치코드 */
+            , A.BNBN_CMDT_WRHS_CD  /* 보세물품창고코드 */
+            /*, A.DCLR_SCTR_CD*/
+            , A.DEPT_CD
+            , A.DCER_CD
+            , A.CAG_MGMT_NO
+            , A.BL_NO
+            FROM      TB_CLRI_DED_COMN A
+            WHERE A.DEL_YN = 'N'
+            <!--AND B.PDLS_NO = '1'-->
+            <if test="dclrSctrCd != null and dclrSctrCd != ''">/** 신고섹터 */
+                AND A.DCLR_CSTM_CD IN (SELECT ORGN_CD FROM  TB_POTI_ORGN WHERE DEL_YN ='N' AND UPR_ORGN_MGMT_CD = (SELECT ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{dclrSctrCd} AND DEL_YN ='N'))
+            </if>
+            <if test="dclrCstmCd != null and dclrCstmCd != ''"> /** 신고세관 */
+                AND A.DCLR_CSTM_CD = #{dclrCstmCd}
+            </if>
+            <if test="deptCd != null and deptCd != ''"> /** 부서 */
+                AND A.DEPT_CD = #{deptCd}
+            </if>
+            <choose>
+                <when test="dtlDcshNo != null and dtlDcshNo != ''">
+                    AND  A.DTL_DCSH_NO LIKE #{dtlDcshNo}||'%'
+                </when>
+                <when test="reffNo != null and reffNo != ''">
+                    AND A.REFF_NO LIKE #{reffNo}||'%'
+                </when>
+                <otherwise>
+                    <if test="prcsSttsCd != null and prcsSttsCd != ''"> /** 상태 */
+                        AND A.PRCS_STTS_CD = #{prcsSttsCd}
+                    </if>
+                    <if test="dclrPtCd != null and dclrPtCd != ''"> /** 신고유형 */
+                        AND A.DCLR_PT_CD = #{dclrPtCd}
+                    </if>
+                    <if test="csclPlnCd != null and csclPlnCd != ''"> /** 통관계획 */
+                        AND A.CSCL_PLN_CD = #{csclPlnCd}
+                    </if>
+                    <if test="dcerCd != null and dcerCd != ''"> /** 신고인부호 */
+                        AND A.DCER_CD = #{dcerCd}
+                    </if>
+                    <if test="selcRsltCd != null and selcRsltCd != ''"> /** 선별결과 */
+                        AND A.SELC_RSLT_CD = #{selcRsltCd}
+                    </if>
+                    <if test="imppnIdfyNo != null and imppnIdfyNo != ''"> /** 수입자 */
+                        AND A.IMPPN_IDFY_NO = #{imppnIdfyNo}
+                    </if>
+                    <if test="exppnIdfyNo != null and exppnIdfyNo != ''"> /** 수출자 */
+                        AND A.EXPPN_IDFY_NO = #{exppnIdfyNo}
+                    </if>
+                    <if test="cagMgmtNo != null and cagMgmtNo != ''"> /** 화물관리번호 */
+                        AND A.CAG_MGMT_NO = #{cagMgmtNo}
+                    </if>
+                    <if test="cagMgmtNoYn != null and cagMgmtNoYn == 'N'.toString()"> /** 화물관리번호 여부 */
+                        AND A.CAG_MGMT_NO is null
+                    </if>
+                    <if test="cagMgmtNoYn != null and cagMgmtNoYn == 'Y'.toString()"> /** 화물관리번호 여부 */
+                        AND A.CAG_MGMT_NO is not null
+                    </if>
+                    <if test="blNo != null and blNo != ''"> /** B/L번호 */
+                        AND A.BL_NO = #{blNo}
+                    </if>
+                    <if test="cmdtStgeLoctCd != null and cmdtStgeLoctCd != ''"> /** 물품장치장소 */
+                        AND A.CMDT_STGE_LOCT_CD = #{cmdtStgeLoctCd}
+                    </if>
+                    <if test="iprtPrcsSttsCd != null and iprtPrcsSttsCd != ''">
+                        AND EXISTS (
+                        SELECT 1 FROM TB_CLRI_DED_INSC_RSLT L WHERE DEL_YN ='N' AND VIST_INSC_RQST_DGCNT = (SELECT MAX(VIST_INSC_RQST_DGCNT) FROM TB_CLRI_DED_INSC_RSLT K WHERE L.DTL_DCSH_NO = K.DTL_DCSH_NO )
+                        AND L.DTL_DCSH_NO = A.DTL_DCSH_NO
+                        AND L.DEL_YN = 'N'
+                        AND L.IPRT_PRCS_STTS_CD = #{iprtPrcsSttsCd}
+                        )
+                    </if>
+                    <if test="dclrDtTo != null and dclrDtFrom != ''"> /** 신고일자 */
+                        AND	A.DCLR_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{dclrDtFrom},'DD/MM/YYYY'),'YYYYMMDD')
+                        AND	A.DCLR_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{dclrDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+                    </if>
+                    <if test="trnpMethKndCd != null and trnpMethKndCd != ''">
+                        AND A.TRNP_METH_KND_CD = #{trnpMethKndCd} /** 운송방법 */
+                    </if>
+                    <if test="audtDeptCd != null and audtDeptCd != ''">
+                        AND A.AUDT_DEPT_CD = #{audtDeptCd} /** 심사부서 */
+                    </if>
+                    <if test="audtEmpId != null and audtEmpId != ''">
+                        AND A.AUDT_EMP_ID = #{audtEmpId} /** 심사자ID */
+                    </if>
+                    <if test="hsCd != null and hsCd != ''">
+                        AND EXISTS (
+                        SELECT  1 FROM TB_CLRI_DED_PDLS
+                        WHERE A.DTL_DCSH_NO = DTL_DCSH_NO
+                        AND HS_CD = #{hsCd}
+                        AND DEL_YN ='N'
+                        )
+                    </if>
+                </otherwise>
+            </choose>
+
+
+                AND  A.PRCS_STTS_CD IN ('D04','D07') /* D04:수리, D07:반출 */
+                GROUP BY A.DTL_DCSH_NO
+                    , DCLR_DT
+                    , A.DCLR_CSTM_CD
+                    , A.DCLR_PT_CD
+                    , A.CSCL_PLN_CD
+                    , A.EXP_CNTY_CD
+                    , A.EPC_CD
+                    , A.SELC_RSLT_CD
+                    , A.PRCS_STTS_CD
+                    , A.EXPPN_IDFY_NO
+                    , A.IMPPN_IDFY_NO
+                    , A.CMDT_STGE_LOCT_CD
+                    , A.BNBN_CMDT_WRHS_CD
+                    , A.DEPT_CD
+                    , A.DCER_CD
+                    , A.CAG_MGMT_NO
+                    , A.BL_NO
+            ) T
+            WHERE 1 = 1
+            ORDER BY DCLR_DT DESC, DTL_DCSH_NO DESC
+        ) C
+        , TB_CLRI_DED_TAX D
+        WHERE C.DTL_DCSH_NO = D.DTL_DCSH_NO
+        AND D.DEL_YN = 'N'
+        AND D.PAY_KND_CD IN ('1', '2')
+        GROUP BY C.DTL_DCSH_NO
+        , C.DCLR_DT
+        , C.DCLR_CSTM_CD
+        , C.DCLR_PT_CD
+        , C.CSCL_PLN_CD
+        , C.EXP_CNTY_CD
+        , C.EPC_CD
+        , C.SELC_RSLT_CD
+        , C.PRCS_STTS_CD
+        , C.EXPPN_IDFY_NO
+        , C.IMPPN_IDFY_NO
+        , C.CMDT_STGE_LOCT_CD
+        , C.BNBN_CMDT_WRHS_CD
+        /*, C.DCLR_SCTR_CD*/
+        , C.DEPT_CD
+        , C.DCER_CD
+        , C.CAG_MGMT_NO
+        , C.BL_NO
+        ORDER BY C.DCLR_DT DESC
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <!--
+      Consulter la liste de toutes les déclarations
+      !==전체신고서 목록을 조회==!
+      (Beak SangYeol)
+      -->
+    <select id="selectAfdAlDcshList" parameterType="alpass.ipt.clr.vfr.vfr.vo.ClrVfrDcshSrchVo" resultType="alpass.ipt.clr.vfr.vfr.vo.ClrVfrDcshVo">
+        /* selectAfdAlDcshList */
+        <include refid="pagination.header" ></include>
+        SELECT
+        C.DTL_DCSH_NO
+        , C.DCLR_DT
+        , C.DCLR_CSTM_CD
+        , C.DCLR_PT_CD
+        , C.CSCL_PLN_CD
+        , C.EXP_CNTY_CD
+        , C.EPC_CD
+        , C.SELC_RSLT_CD
+        , C.PRCS_STTS_CD
+        , C.EXPPN_IDFY_NO
+        , (SELECT EXPPN_CO_NM FROM TB_CLRI_DED_CO WHERE DTL_DCSH_NO = C.DTL_DCSH_NO AND DEL_YN = 'N') AS EXPPN_CO_NM
+        , C.IMPPN_IDFY_NO
+        , (SELECT IMPPN_CO_NM FROM TB_CLRI_DED_CO WHERE DTL_DCSH_NO = C.DTL_DCSH_NO AND DEL_YN = 'N') AS IMPPN_CO_NM
+        , C.CMDT_STGE_LOCT_CD  /* 물품장치위치코드 */
+        , C.BNBN_CMDT_WRHS_CD  /* 보세물품창고코드 */
+        , (SELECT TTXBS_NCY_AMT FROM TB_CLRI_DED_VLUT_COMN WHERE DTL_DCSH_NO = C.DTL_DCSH_NO AND DEL_YN = 'N') AS TTXBS_NCY_AMT
+        , SUM(D.PAY_TAX_AMT) AS PAY_TAX_AMT
+        /*, C.DCLR_SCTR_CD */
+        , C.DEPT_CD
+        , C.DCER_CD
+        , C.CAG_MGMT_NO
+        , C.BL_NO
+        FROM (
+        SELECT T.*
+        FROM
+        (
+        SELECT A.DTL_DCSH_NO
+        , TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS DCLR_DT
+        , A.DCLR_CSTM_CD
+        , A.DCLR_PT_CD
+        , A.CSCL_PLN_CD
+        , A.EXP_CNTY_CD
+        , A.EPC_CD
+        , A.SELC_RSLT_CD
+        , A.PRCS_STTS_CD
+        , A.EXPPN_IDFY_NO
+        , A.IMPPN_IDFY_NO
+        , A.CMDT_STGE_LOCT_CD  /* 물품장치위치코드 */
+        , A.BNBN_CMDT_WRHS_CD  /* 보세물품창고코드 */
+        /*, A.DCLR_SCTR_CD*/
+        , A.DEPT_CD
+        , A.DCER_CD
+        , A.CAG_MGMT_NO
+        , A.BL_NO
+        FROM      TB_CLRI_DED_COMN A
+        WHERE A.DEL_YN = 'N'
+        AND A.new_sys_yn = NVL(#{newSysYn},'Y')
+        <if test="dclrSctrCd != null and dclrSctrCd != ''">/** 신고섹터 */
+            AND A.DCLR_CSTM_CD IN (SELECT ORGN_CD FROM  TB_POTI_ORGN WHERE DEL_YN ='N' AND UPR_ORGN_MGMT_CD = (SELECT ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{dclrSctrCd} AND DEL_YN ='N'))
+        </if>
+        <if test="dclrCstmCd != null and dclrCstmCd != ''"> /** 신고세관 */
+            AND A.DCLR_CSTM_CD = #{dclrCstmCd}
+        </if>
+        <if test="deptCd != null and deptCd != ''"> /** 부서 */
+            AND A.DEPT_CD = #{deptCd}
+        </if>
+        <choose>
+            <when test="dtlDcshNo != null and dtlDcshNo != ''">
+                AND  A.DTL_DCSH_NO LIKE #{dtlDcshNo}||'%'
+            </when>
+            <when test="reffNo != null and reffNo != ''">
+                AND A.REFF_NO LIKE #{reffNo}||'%'
+            </when>
+            <otherwise>
+                <if test="prcsSttsCd != null and prcsSttsCd != ''"> /** 상태 */
+                    AND A.PRCS_STTS_CD = #{prcsSttsCd}
+                </if>
+                <if test="dclrPtCd != null and dclrPtCd != ''"> /** 신고유형 */
+                    AND A.DCLR_PT_CD = #{dclrPtCd}
+                </if>
+                <if test="csclPlnCd != null and csclPlnCd != ''"> /** 통관계획 */
+                    AND A.CSCL_PLN_CD = #{csclPlnCd}
+                </if>
+                <if test="dcerCd != null and dcerCd != ''"> /** 신고인부호 */
+                    AND A.DCER_CD = #{dcerCd}
+                </if>
+                <if test="selcRsltCd != null and selcRsltCd != ''"> /** 선별결과 */
+                    AND A.SELC_RSLT_CD = #{selcRsltCd}
+                </if>
+                <if test="imppnIdfyNo != null and imppnIdfyNo != ''"> /** 수입자 */
+                    AND A.IMPPN_IDFY_NO = #{imppnIdfyNo}
+                </if>
+                <if test="exppnIdfyNo != null and exppnIdfyNo != ''"> /** 수출자 */
+                    AND A.EXPPN_IDFY_NO = #{exppnIdfyNo}
+                </if>
+                <if test="cagMgmtNo != null and cagMgmtNo != ''"> /** 화물관리번호 */
+                    AND A.CAG_MGMT_NO = #{cagMgmtNo}
+                </if>
+                <if test="cagMgmtNoYn != null and cagMgmtNoYn == 'N'.toString()"> /** 화물관리번호 여부 */
+                    AND A.CAG_MGMT_NO is null
+                </if>
+                <if test="cagMgmtNoYn != null and cagMgmtNoYn == 'Y'.toString()"> /** 화물관리번호 여부 */
+                    AND A.CAG_MGMT_NO is not null
+                </if>
+                <if test="blNo != null and blNo != ''"> /** B/L번호 */
+                    AND A.BL_NO = #{blNo}
+                </if>
+                <if test="cmdtStgeLoctCd != null and cmdtStgeLoctCd != ''"> /** 물품장치장소 */
+                    AND A.CMDT_STGE_LOCT_CD = #{cmdtStgeLoctCd}
+                </if>
+                <if test="iprtPrcsSttsCd != null and iprtPrcsSttsCd != ''">
+                    AND EXISTS (
+                    SELECT 1 FROM TB_CLRI_DED_INSC_RSLT L WHERE DEL_YN ='N' AND VIST_INSC_RQST_DGCNT = (SELECT MAX(VIST_INSC_RQST_DGCNT) FROM TB_CLRI_DED_INSC_RSLT K WHERE L.DTL_DCSH_NO = K.DTL_DCSH_NO )
+                    AND L.DTL_DCSH_NO = A.DTL_DCSH_NO
+                    AND L.DEL_YN = 'N'
+                    AND L.IPRT_PRCS_STTS_CD = #{iprtPrcsSttsCd}
+                    )
+                </if>
+                <if test="dclrDtTo != null and dclrDtFrom != ''"> /** 신고일자 */
+                    AND	A.DCLR_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{dclrDtFrom},'DD/MM/YYYY'),'YYYYMMDD')
+                    AND	A.DCLR_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{dclrDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+                </if>
+                <if test="trnpMethKndCd != null and trnpMethKndCd != ''">
+                    AND A.TRNP_METH_KND_CD = #{trnpMethKndCd} /** 운송방법 */
+                </if>
+                <if test="audtDeptCd != null and audtDeptCd != ''">
+                    AND A.AUDT_DEPT_CD = #{audtDeptCd} /** 심사부서 */
+                </if>
+                <if test="audtEmpId != null and audtEmpId != ''">
+                    AND A.AUDT_EMP_ID = #{audtEmpId} /** 심사자ID */
+                </if>
+                <if test="hsCd != null and hsCd != ''">
+                    AND EXISTS (
+                    SELECT  1 FROM TB_CLRI_DED_PDLS
+                    WHERE A.DTL_DCSH_NO = DTL_DCSH_NO
+                    AND HS_CD = #{hsCd}
+                    AND DEL_YN ='N'
+                    )
+                </if>
+            </otherwise>
+        </choose>
+
+            AND  A.PRCS_STTS_CD NOT IN ('A01') /* A01 : 임시저장 */
+            GROUP BY A.DTL_DCSH_NO
+            , DCLR_DT
+            , A.DCLR_CSTM_CD
+            , A.DCLR_PT_CD
+            , A.CSCL_PLN_CD
+            , A.EXP_CNTY_CD
+            , A.SELC_RSLT_CD
+            , A.PRCS_STTS_CD
+            , A.EXPPN_IDFY_NO
+            , A.IMPPN_IDFY_NO
+            , A.CMDT_STGE_LOCT_CD
+            , A.BNBN_CMDT_WRHS_CD
+            , A.DEPT_CD
+            , A.DCER_CD
+            , A.CAG_MGMT_NO
+            , A.BL_NO
+        ) T
+        WHERE 1 = 1
+        ORDER BY DCLR_DT DESC, DTL_DCSH_NO DESC
+        ) C
+        , TB_CLRI_DED_TAX D
+        WHERE C.DTL_DCSH_NO = D.DTL_DCSH_NO
+        AND D.DEL_YN = 'N'
+        AND D.PAY_KND_CD IN ('1', '2')
+        GROUP BY C.DTL_DCSH_NO
+        , C.DCLR_DT
+        , C.DCLR_CSTM_CD
+        , C.DCLR_PT_CD
+        , C.CSCL_PLN_CD
+        , C.EXP_CNTY_CD
+        , C.EPC_CD
+        , C.SELC_RSLT_CD
+        , C.PRCS_STTS_CD
+        , C.EXPPN_IDFY_NO
+        , C.IMPPN_IDFY_NO
+        , C.CMDT_STGE_LOCT_CD
+        , C.BNBN_CMDT_WRHS_CD
+        /*, C.DCLR_SCTR_CD*/
+        , C.DEPT_CD
+        , C.DCER_CD
+        , C.CAG_MGMT_NO
+        , C.BL_NO
+        ORDER BY C.DCLR_DT DESC
+        <include refid="pagination.footer" ></include>
+    </select>
+
+    <!--
+  Consulter la liste des domiciliations bancaires
+  !==은행 도미실레이션 목록을 조회==!
+  (Lee KyeongSeok)
+  -->
+    <select id="selectAfdBnkPrmsntList" parameterType="alpass.ipt.clr.vfr.vfr.vo.ClrVfrDcshSrchVo" resultType="alpass.ipt.clr.vfr.vfr.vo.ClrVfrDcshVo">
+        /* selectAfdBnkPrmsntList */
+        <include refid="pagination.header" ></include>
+        SELECT
+        C.DTL_DCSH_NO
+        , C.DCLR_DT
+        , C.DCLR_CSTM_CD
+        , C.DCLR_PT_CD
+        , C.PRCS_STTS_CD
+        , C.TXPR_IDFY_NO
+        , (SELECT TXPR_CO_NM FROM TB_CLRI_DED_CO where DTL_DCSH_NO = C.DTL_DCSH_NO and DEL_YN = 'N') AS TXPR_CO_NM
+        /*, C.DCLR_SCTR_CD */
+        , C.DEPT_CD
+        , C.PYMN_AC_NO
+        , C.PYMN_BNK_CD
+        , C.PYMN_BNK_BRNH_CD
+        , (SELECT INVC_AMT FROM TB_CLRI_DED_VLUT_COMN WHERE DTL_DCSH_NO = C.DTL_DCSH_NO AND DEL_YN = 'N') AS INVC_AMT
+        , (SELECT CACH_AMT FROM TB_CLRI_DED_VLUT_COMN WHERE DTL_DCSH_NO = C.DTL_DCSH_NO AND DEL_YN = 'N') AS CACH_AMT
+        , (SELECT INVC_CURR_CD FROM TB_CLRI_DED_VLUT_COMN WHERE DTL_DCSH_NO = C.DTL_DCSH_NO AND DEL_YN = 'N') AS INVC_CURR_CD
+        , C.DLVR_COND_CD
+        , C.DLNG_PYMN_MEAN_CD
+        , (SELECT ASED_TTXBS_NCY_AMT  from TB_CLRI_DED_VLUT_AUDT_COMN  WHERE DTL_DCSH_NO = C.DTL_DCSH_NO AND DEL_YN = 'N' order by PRC_EV_DGCNT DESC LIMIT 1) AS ASED_TTXBS_NCY_AMT
+        , NVL((SELECT SUM(TAMT) FROM TB_COLI_NTFC WHERE REFF_NO = C.DTL_DCSH_NO AND DEL_YN ='N' AND NTFC_PT_CD IN ('G','C') AND RCVE_YN ='Y' ),0) PAY_TAX_TAMT
+        FROM (
+            SELECT T.*
+            FROM
+            (
+                    SELECT A.DTL_DCSH_NO
+                    , TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS DCLR_DT
+                    , A.DCLR_CSTM_CD
+                    , A.DCLR_PT_CD
+                    , A.PRCS_STTS_CD
+                    , A.TXPR_IDFY_NO
+                    /*, A.DCLR_SCTR_CD*/
+                    , A.DEPT_CD
+                    , A.PYMN_AC_NO
+                    , A.PYMN_BNK_CD
+                    , A.PYMN_BNK_BRNH_CD
+                    , A.DLVR_COND_CD
+                    , A.DLNG_PYMN_MEAN_CD
+                    FROM      TB_CLRI_DED_COMN A
+                    WHERE A.DEL_YN = 'N'
+                    <!--AND B.PDLS_NO = '1'-->
+                    <if test="dclrSctrCd != null and dclrSctrCd != ''">/** 신고섹터 */
+                        AND A.DCLR_CSTM_CD IN (SELECT ORGN_CD FROM  TB_POTI_ORGN WHERE DEL_YN ='N' AND UPR_ORGN_MGMT_CD = (SELECT ORGN_MGMT_CD FROM TB_POTI_ORGN WHERE ORGN_CD = #{dclrSctrCd} AND DEL_YN ='N'))
+                    </if>
+                    <if test="dclrCstmCd != null and dclrCstmCd != ''"> /** 신고세관 */
+                        AND A.DCLR_CSTM_CD = #{dclrCstmCd}
+                    </if>
+                    <if test="deptCd != null and deptCd != ''"> /** 부서 */
+                        AND A.DEPT_CD = #{deptCd}
+                    </if>
+                    <choose>
+                        <when test="dtlDcshNo != null and dtlDcshNo != ''">
+                            AND  A.DTL_DCSH_NO LIKE #{dtlDcshNo}||'%'
+                        </when>
+                        <otherwise>
+                            <if test="pymnBnkCd != null and pymnBnkCd != ''"> /** 은행명 */
+                                AND A.PYMN_BNK_CD = #{pymnBnkCd}
+                            </if>
+                            <if test='pymnBnkBrnhCd != null and !"".equals(pymnBnkBrnhCd)'>
+                                AND A.PYMN_BNK_BRNH_CD = #{pymnBnkBrnhCd}
+                            </if>
+                            <if test="txprIdfyNo != null and txprIdfyNo != ''"> /** 업체NIF */
+                                AND A.TXPR_IDFY_NO = #{txprIdfyNo}
+                            </if>
+                            <if test="txprCoNm != null and txprCoNm != ''"> /** 업체명 */
+                                AND A.TXPR_IDFY_NO IN (SELECT TXPR_IDFY_NO FROM TB_CLRI_DED_CO WHERE TXPR_CO_NM LIKE '%'||#{txprCoNm}||'%' AND DEL_YN = 'N')
+                            </if>
+                            <if test="pymnAcNo != null and pymnAcNo != ''"> /** 지불은행 계좌번호 */
+                                AND A.PYMN_AC_NO = #{pymnAcNo}
+                            </if>
+                            <if test="dclrDtTo != null and dclrDtFrom != ''"> /** 신고일자 */
+                                AND	A.DCLR_DT <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{dclrDtFrom},'DD/MM/YYYY'),'YYYYMMDD')
+                                AND	A.DCLR_DT <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{dclrDtTo},'DD/MM/YYYY'),'YYYYMMDD')
+                            </if>
+                            <if test="audtDeptCd != null and audtDeptCd != ''">
+                                AND A.AUDT_DEPT_CD = #{audtDeptCd} /** 심사부서 */
+                            </if>
+                            <if test="audtEmpId != null and audtEmpId != ''">
+                                AND A.AUDT_EMP_ID = #{audtEmpId} /** 심사자ID */
+                            </if>
+                            <if test="dlngPymnMeanCd != null and dlngPymnMeanCd != ''">
+                                AND A.DLNG_PYMN_MEAN_CD = #{dlngPymnMeanCd} /** Mode Financement !==자금조달 방법==! */
+                            </if>
+
+                        </otherwise>
+                    </choose>
+                    AND  A.PRCS_STTS_CD NOT IN ('A01') /* A01 : 임시저장 */
+            ) T
+        ) C
+        , TB_CLRI_DED_TAX D
+        WHERE C.DTL_DCSH_NO = D.DTL_DCSH_NO
+        AND D.DEL_YN = 'N'
+        AND D.PAY_KND_CD IN ('1', '2')
+        GROUP BY C.DTL_DCSH_NO
+        , C.DCLR_DT
+        , C.DCLR_CSTM_CD
+        , C.DCLR_PT_CD
+        , C.PRCS_STTS_CD
+        , C.TXPR_IDFY_NO
+        , C.DLNG_PYMN_MEAN_CD
+        /*, C.DCLR_SCTR_CD*/
+        , C.DEPT_CD
+        , C.PYMN_AC_NO
+        , C.PYMN_BNK_CD
+        , C.PYMN_BNK_BRNH_CD
+        , C.DLVR_COND_CD
+        ORDER BY DCLR_DT DESC, DTL_DCSH_NO DESC
+        <include refid="pagination.footer" ></include>
+    </select>
+
+</mapper>

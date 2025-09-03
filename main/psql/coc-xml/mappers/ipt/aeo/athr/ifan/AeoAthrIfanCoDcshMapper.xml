@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+Mapper : Gérer les experts externes. !== 외부전문관 관리 Mapper. ==!
+(wonjun.cha)
+-->
+<mapper namespace="alpass.ipt.aeo.athr.ifan.mapper.AeoAthrIfanCoDcshMapper">
+
+    <!--
+    [Consulter les déclarations d'OEA] Consulter la liste !== [AEO업체신고서조회] 목록조회 ==!
+    -->
+	<select id="selectAeoAthrIfanCoDcshList"
+	    parameterType="alpass.ipt.aeo.athr.ifan.vo.AeoAthrIfanCoDcshVo"
+	    resultType="alpass.ipt.aeo.athr.ifan.vo.AeoAthrIfanCoDcshVo">
+		/* selectAeoAthrIfanCoDcshList */
+	    <include refid="pagination.header"/>
+		SELECT
+				  B.AEO_ATHR_NO            /** Numéro d'OEA !== AEO공인번호 ==! */
+				, A.DTL_DCSH_NO            /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+				, TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS DCLR_DT    /** Date de déclaration !== 신고일자 ==! */
+				, A.DCLR_PT_CD             /** Code De Type De Déclaration !== 신고유형코드 ==! */
+				, A.CSCL_PLN_CD            /** Code De Plan De Dédouanement !== 통관계획코드 ==! */
+				, A.DCER_CD                /** Code Du Déclarant !== 신고인코드 ==! */
+				, A.IMPPN_IDFY_NO_TP_CD    /** Code De Type Du N° D'Identification De L'Importateur !== 수입자식별번호구분코드 ==! */
+				, A.IMPPN_IDFY_NO          /** N° D'Identification De L'Importateur !== 수입자식별번호 ==! */
+				, A.IMPPN_CMRC_REGS_NO     /** Numéro de registre de commerce de l’importateur !== 수입자상업등기번호 ==! */
+				, A.TXPR_IDFY_NO           /** N° D'Identification De Redevable !== 납세자식별번호 ==! */
+				, A.TXPR_CMRC_REGS_NO      /** Numéro de registre de commerce du redevable !== 납세자상업등기번호 ==! */
+				, A.CAG_MGMT_NO            /** CRN !== 화물관리번호 ==! */
+				, A.DCLR_CSTM_CD           /** Code De Bureau De Déclaration !== 신고세관코드 ==! */
+				, A.SELC_RSLT_CD           /** Code De Résultat De Ciblage !== 선별결과코드 ==! */
+				, A.AUDT_EMP_ID            /** ID de l'insepcteur !== 심사직원ID ==! */
+				, A.PRCS_STTS_CD           /** Code De Statut De Traitement !== 처리상태코드 ==! */
+				, (SELECT TXPR_CO_NM FROM TB_CLRI_DED_CO BB WHERE BB.DTL_DCSH_NO = A.DTL_DCSH_NO) AS CO_NM    /** Nom De L'Entreprise Contribuable !== 납세자업체명 ==! */
+		  FROM
+		  		  TB_CLRI_DED_COMN A       /** CLRI_COMMUN DE LA DÉCLARATION EN DÉTAIL(DOUANE) !== CLRI_상세(통관)신고서공통 ==! */
+				, TB_AEOI_ATHR_CO B        /** AEOI_OPÉRATEURS AGRÉÉS !== AEOI_공인업체 ==! */
+		 WHERE
+		 		  A.DEL_YN = 'N'
+		   AND    A.PRCS_STTS_CD NOT IN ('A01', 'A03', 'A04')
+		   AND	  B.NIF = A.IMPPN_IDFY_NO
+	    <if test='(srchStrtDt != null and !"".equals(srchStrtDt)) and (srchEndDt != null and !"".equals(srchEndDt))'>
+	       AND	  TO_CHAR(TO_DATE(A.DCLR_DT), 'YYYYMMDD') BETWEEN TO_CHAR(TO_DATE(REPLACE(#{srchStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(REPLACE(#{srchEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+	    </if>
+	    <if test='srchDtlDcshNo != null and !"".equals(srchDtlDcshNo)'>
+	       AND	  A.DTL_DCSH_NO = REPLACE(#{srchDtlDcshNo}, '-', '')
+	    </if>
+	    <if test='srchSelcRsltCd != null and !"".equals(srchSelcRsltCd)'>
+	       AND	  A.SELC_RSLT_CD = #{srchSelcRsltCd}
+	    </if>
+	    <if test='srchNif != null and !"".equals(srchNif)'>
+	       AND	  B.NIF = #{srchNif}
+	    </if>
+		<if test='srchCoCd != null and !"".equals(srchCoCd)'>
+		   AND	  B.NIF = #{srchCoCd}
+		</if>
+		<if test='srchAeoAthrNo != null and !"".equals(srchAeoAthrNo)'>
+		   AND	  B.AEO_ATHR_NO = REPLACE(#{srchAeoAthrNo}, '-', '')			/** Numéro d'OEA !== AEO공인번호 ==! */
+		</if>
+	    ORDER BY A.DCLR_DT DESC
+		<include refid="pagination.footer"/>
+	</select>
+
+	<!--
+    [Consulter les déclarations d'OEA-Opérateur] Consulter la liste !== [AEO업체신고서조회-업체] 목록조회 ==!
+    -->
+	<select id="selectAeoAthrIfanGnrlCoDcshList"
+	    parameterType="alpass.ipt.aeo.athr.ifan.vo.AeoAthrIfanCoDcshVo"
+	    resultType="alpass.ipt.aeo.athr.ifan.vo.AeoAthrIfanCoDcshVo">
+		/* selectAeoAthrIfanGnrlCoDcshList */
+	    <include refid="pagination.header"/>
+		SELECT
+				  '' AS AEO_ATHR_NO        /** Numéro d'OEA !== AEO공인번호 ==! */
+				, A.DTL_DCSH_NO            /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+				, TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS DCLR_DT    /** Date de déclaration !== 신고일자 ==! */
+				, A.DCLR_PT_CD             /** Code De Type De Déclaration !== 신고유형코드 ==! */
+				, A.CSCL_PLN_CD            /** Code De Plan De Dédouanement !== 통관계획코드 ==! */
+				, A.DCER_CD                /** Code Du Déclarant !== 신고인코드 ==! */
+				, A.IMPPN_IDFY_NO_TP_CD    /** Code De Type Du N° D'Identification De L'Importateur !== 수입자식별번호구분코드 ==! */
+				, A.IMPPN_IDFY_NO          /** N° D'Identification De L'Importateur !== 수입자식별번호 ==! */
+				, A.IMPPN_CMRC_REGS_NO     /** Numéro de registre de commerce de l’importateur !== 수입자상업등기번호 ==! */
+				, A.TXPR_IDFY_NO           /** N° D'Identification De Redevable !== 납세자식별번호 ==! */
+				, A.TXPR_CMRC_REGS_NO      /** Numéro de registre de commerce du redevable !== 납세자상업등기번호 ==! */
+				, A.CAG_MGMT_NO            /** CRN !== 화물관리번호 ==! */
+				, A.DCLR_CSTM_CD           /** Code De Bureau De Déclaration !== 신고세관코드 ==! */
+				, A.SELC_RSLT_CD           /** Code De Résultat De Ciblage !== 선별결과코드 ==! */
+				, A.AUDT_EMP_ID            /** ID de l'insepcteur !== 심사직원ID ==! */
+				, A.PRCS_STTS_CD           /** Code De Statut De Traitement !== 처리상태코드 ==! */
+				, (SELECT TXPR_CO_NM FROM TB_CLRI_DED_CO BB WHERE BB.DTL_DCSH_NO = A.DTL_DCSH_NO) AS CO_NM    /** Nom De L'Entreprise Contribuable !== 납세자업체명 ==! */
+		  FROM
+		  		  TB_CLRI_DED_COMN A       /** CLRI_COMMUN DE LA DÉCLARATION EN DÉTAIL(DOUANE) !== CLRI_상세(통관)신고서공통 ==! */
+		 WHERE
+		 		  A.DEL_YN = 'N'
+		   AND    A.PRCS_STTS_CD NOT IN ('A01', 'A03', 'A04')
+	    <if test='(srchStrtDt != null and !"".equals(srchStrtDt)) and (srchEndDt != null and !"".equals(srchEndDt))'>
+	       AND	  TO_CHAR(TO_DATE(A.DCLR_DT), 'YYYYMMDD') BETWEEN TO_CHAR(TO_DATE(REPLACE(#{srchStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(REPLACE(#{srchEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+	    </if>
+	    <if test='srchDtlDcshNo != null and !"".equals(srchDtlDcshNo)'>
+	       AND	  A.DTL_DCSH_NO = REPLACE(#{srchDtlDcshNo}, '-', '')
+	    </if>
+	    <if test='srchSelcRsltCd != null and !"".equals(srchSelcRsltCd)'>
+	       AND	  A.SELC_RSLT_CD = #{srchSelcRsltCd}
+	    </if>
+	    <if test='srchNif != null and !"".equals(srchNif)'>
+	       AND	  A.IMPPN_IDFY_NO = #{srchNif}
+	    </if>
+		<if test='srchCoCd != null and !"".equals(srchCoCd)'>
+		   AND	  A.IMPPN_IDFY_NO = #{srchCoCd}
+		</if>
+	    ORDER BY A.DCLR_DT DESC
+		<include refid="pagination.footer"/>
+	</select>
+
+	<!--
+    [Consulter les déclarations d'OEA] Consulter la liste (Télécharger en Excel) !== [AEO업체신고서조회] 목록조회 (엑셀다운로드) ==!
+    -->
+	<select id="selectAeoAthrIfanCoDcshXlsList"
+			parameterType="alpass.ipt.aeo.athr.ifan.vo.AeoAthrIfanCoDcshVo"
+			resultType="alpass.ipt.aeo.athr.ifan.vo.AeoAthrIfanCoDcshVo">
+		/* selectAeoAthrIfanCoDcshXlsList */
+		SELECT COUNT(*) OVER() AS TOT_CNT,
+			   SQLRSLT.*,
+			   ROWNUM as RNUM
+		FROM (
+			SELECT
+				  B.AEO_ATHR_NO            /** Numéro d'OEA !== AEO공인번호 ==! */
+				, A.DTL_DCSH_NO            /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+				, TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS DCLR_DT    /** Date de déclaration !== 신고일자 ==! */
+				, A.DCLR_PT_CD             /** Code De Type De Déclaration !== 신고유형코드 ==! */
+				, A.CSCL_PLN_CD            /** Code De Plan De Dédouanement !== 통관계획코드 ==! */
+				, A.DCER_CD                /** Code Du Déclarant !== 신고인코드 ==! */
+				, A.IMPPN_IDFY_NO_TP_CD    /** Code De Type Du N° D'Identification De L'Importateur !== 수입자식별번호구분코드 ==! */
+				, A.IMPPN_IDFY_NO          /** N° D'Identification De L'Importateur !== 수입자식별번호 ==! */
+				, A.IMPPN_CMRC_REGS_NO     /** Numéro de registre de commerce de l’importateur !== 수입자상업등기번호 ==! */
+				, A.TXPR_IDFY_NO           /** N° D'Identification De Redevable !== 납세자식별번호 ==! */
+				, A.TXPR_CMRC_REGS_NO      /** Numéro de registre de commerce du redevable !== 납세자상업등기번호 ==! */
+				, A.CAG_MGMT_NO            /** CRN !== 화물관리번호 ==! */
+				, A.DCLR_CSTM_CD           /** Code De Bureau De Déclaration !== 신고세관코드 ==! */
+				, A.SELC_RSLT_CD           /** Code De Résultat De Ciblage !== 선별결과코드 ==! */
+				, A.AUDT_EMP_ID            /** ID de l'insepcteur !== 심사직원ID ==! */
+				, A.PRCS_STTS_CD           /** Code De Statut De Traitement !== 처리상태코드 ==! */
+				, (SELECT TXPR_CO_NM FROM TB_CLRI_DED_CO BB WHERE BB.DTL_DCSH_NO = A.DTL_DCSH_NO) AS CO_NM    /** Nom De L'Entreprise Contribuable !== 납세자업체명 ==! */
+		    FROM
+		  		  TB_CLRI_DED_COMN A       /** CLRI_COMMUN DE LA DÉCLARATION EN DÉTAIL(DOUANE) !== CLRI_상세(통관)신고서공통 ==! */
+				, TB_AEOI_ATHR_CO B        /** AEOI_OPÉRATEURS AGRÉÉS !== AEOI_공인업체 ==! */
+		 WHERE
+		 		  A.DEL_YN = 'N'
+		   AND    A.PRCS_STTS_CD NOT IN ('A01', 'A03', 'A04')
+		   AND	  B.NIF = A.IMPPN_IDFY_NO
+	    <if test='(srchStrtDt != null and !"".equals(srchStrtDt)) and (srchEndDt != null and !"".equals(srchEndDt))'>
+	       AND	  TO_CHAR(TO_DATE(A.DCLR_DT), 'YYYYMMDD') BETWEEN TO_CHAR(TO_DATE(REPLACE(#{srchStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(REPLACE(#{srchEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+	    </if>
+	    <if test='srchDtlDcshNo != null and !"".equals(srchDtlDcshNo)'>
+	       AND	  A.DTL_DCSH_NO = REPLACE(#{srchDtlDcshNo}, '-', '')
+	    </if>
+	    <if test='srchSelcRsltCd != null and !"".equals(srchSelcRsltCd)'>
+	       AND	  A.SELC_RSLT_CD = #{srchSelcRsltCd}
+	    </if>
+	    <if test='srchNif != null and !"".equals(srchNif)'>
+	       AND	  B.NIF = #{srchNif}
+	    </if>
+		<if test='srchCoCd != null and !"".equals(srchCoCd)'>
+		   AND	  B.NIF = #{srchCoCd}
+		</if>
+		<if test='srchAeoAthrNo != null and !"".equals(srchAeoAthrNo)'>
+		   AND	  B.AEO_ATHR_NO = REPLACE(#{srchAeoAthrNo}, '-', '')			/** Numéro d'OEA !== AEO공인번호 ==! */
+		</if>
+	      ORDER BY A.DCLR_DT DESC
+		) SQLRSLT
+	</select>
+
+	<!--
+    [Consulter les déclarations d'OEA-Opérateur] Consulter la liste (Télécharger en Excel) !== [AEO업체신고서조회-업체] 목록조회 (엑셀다운로드) ==!
+    -->
+	<select id="selectAeoAthrIfanGnrlCoDcshXlsList"
+			parameterType="alpass.ipt.aeo.athr.ifan.vo.AeoAthrIfanCoDcshVo"
+			resultType="alpass.ipt.aeo.athr.ifan.vo.AeoAthrIfanCoDcshVo">
+		/* selectAeoAthrIfanGnrlCoDcshXlsList */
+		SELECT COUNT(*) OVER() AS TOT_CNT,
+			   SQLRSLT.*,
+			   ROWNUM as RNUM
+		FROM (
+			SELECT
+				  '' AS AEO_ATHR_NO        /** Numéro d'OEA !== AEO공인번호 ==! */
+				, A.DTL_DCSH_NO            /** Numero de la déclaration en détail !== 상세신고서번호 ==! */
+				, TO_CHAR(TO_DATE(A.DCLR_DT, 'YYYYMMDD'), 'DD/MM/YYYY') AS DCLR_DT    /** Date de déclaration !== 신고일자 ==! */
+				, A.DCLR_PT_CD             /** Code De Type De Déclaration !== 신고유형코드 ==! */
+				, A.CSCL_PLN_CD            /** Code De Plan De Dédouanement !== 통관계획코드 ==! */
+				, A.DCER_CD                /** Code Du Déclarant !== 신고인코드 ==! */
+				, A.IMPPN_IDFY_NO_TP_CD    /** Code De Type Du N° D'Identification De L'Importateur !== 수입자식별번호구분코드 ==! */
+				, A.IMPPN_IDFY_NO          /** N° D'Identification De L'Importateur !== 수입자식별번호 ==! */
+				, A.IMPPN_CMRC_REGS_NO     /** Numéro de registre de commerce de l’importateur !== 수입자상업등기번호 ==! */
+				, A.TXPR_IDFY_NO           /** N° D'Identification De Redevable !== 납세자식별번호 ==! */
+				, A.TXPR_CMRC_REGS_NO      /** Numéro de registre de commerce du redevable !== 납세자상업등기번호 ==! */
+				, A.CAG_MGMT_NO            /** CRN !== 화물관리번호 ==! */
+				, A.DCLR_CSTM_CD           /** Code De Bureau De Déclaration !== 신고세관코드 ==! */
+				, A.SELC_RSLT_CD           /** Code De Résultat De Ciblage !== 선별결과코드 ==! */
+				, A.AUDT_EMP_ID            /** ID de l'insepcteur !== 심사직원ID ==! */
+				, A.PRCS_STTS_CD           /** Code De Statut De Traitement !== 처리상태코드 ==! */
+				, (SELECT TXPR_CO_NM FROM TB_CLRI_DED_CO BB WHERE BB.DTL_DCSH_NO = A.DTL_DCSH_NO) AS CO_NM    /** Nom De L'Entreprise Contribuable !== 납세자업체명 ==! */
+		  FROM
+		  		  TB_CLRI_DED_COMN A       /** CLRI_COMMUN DE LA DÉCLARATION EN DÉTAIL(DOUANE) !== CLRI_상세(통관)신고서공통 ==! */
+		 WHERE
+		 		  A.DEL_YN = 'N'
+		   AND    A.PRCS_STTS_CD NOT IN ('A01', 'A03', 'A04')
+	    <if test='(srchStrtDt != null and !"".equals(srchStrtDt)) and (srchEndDt != null and !"".equals(srchEndDt))'>
+	       AND	  TO_CHAR(TO_DATE(A.DCLR_DT), 'YYYYMMDD') BETWEEN TO_CHAR(TO_DATE(REPLACE(#{srchStrtDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD') AND TO_CHAR(TO_DATE(REPLACE(#{srchEndDt}, '/', ''), 'DDMMYYYY'), 'YYYYMMDD')
+	    </if>
+	    <if test='srchDtlDcshNo != null and !"".equals(srchDtlDcshNo)'>
+	       AND	  A.DTL_DCSH_NO = REPLACE(#{srchDtlDcshNo}, '-', '')
+	    </if>
+	    <if test='srchSelcRsltCd != null and !"".equals(srchSelcRsltCd)'>
+	       AND	  A.SELC_RSLT_CD = #{srchSelcRsltCd}
+	    </if>
+	    <if test='srchNif != null and !"".equals(srchNif)'>
+	       AND	  A.IMPPN_IDFY_NO = #{srchNif}
+	    </if>
+		<if test='srchCoCd != null and !"".equals(srchCoCd)'>
+		   AND	  A.IMPPN_IDFY_NO = #{srchCoCd}
+		</if>
+	      ORDER BY A.DCLR_DT DESC
+		) SQLRSLT
+	</select>
+	
+</mapper>

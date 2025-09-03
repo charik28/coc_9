@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+Mapper : Gérer la fiche de synthèse !== 종합요약서 관리 Mapper. ==!
+(wonjun.cha)
+-->
+<mapper namespace="alpass.ipt.aeo.athr.syns.mapper.AeoAthrSynsSumrMapper">
+
+    <!--
+    [Rechercher] avis !== 심사결과를 조회한다.==!
+    -->
+	<select id="selectAeoComAudtRslt"
+	    parameterType="alpass.ipt.aeo.com.vo.AeoiAudtRsltVo"
+	    resultType="alpass.ipt.aeo.com.vo.AeoiAudtRsltVo">
+		/* selectAeoComAudtRslt */
+		SELECT
+				  A.AUDT_RSLT_NO               /** Numéro du résultat d'audit !== 심사결과번호 ==! */
+                , A.AEO_RQST_NO                /** Numéro de demande du statut OEA !== AEO신청번호 ==! */
+                , A.AEO_ATHR_NO                /** Numéro d'OEA !== AEO공인번호 ==! */
+                , A.PRCS_STTS_CD               /** Code De Statut De Traitement !== 처리상태코드 ==! */
+                , A.DTL_PRCS_STTS_CD           /** Code d'état détaillé du traitement !== 상세처리상태코드 ==! */
+                , A.AUDT_RSLT_CD               /** Code De Résultat De La Vérification !== 심사결과코드 ==! */
+                , A.AUDT_RSLT_CN               /** Contenu Du Résultat De La Vérification !== 심사결과내용 ==! */
+                , NVL(A.AEO_ATHR_GD_CD, '') AS AEO_ATHR_GD_CD             /** Code de classement d'OEA !== AEO공인등급코드 ==! */
+		  FROM
+		  		  TB_AEOI_AUDT_RSLT A          /** AEOI_RÉSULTAT D'AUDIT !== AEOI_심사결과 ==! */
+		 WHERE
+		 		  A.DEL_YN = 'N'
+           AND	  A.PRCS_STTS_CD = #{prcsSttsCd}					/** Code De Statut De Traitement !== 처리상태코드 ==! */
+           AND	  A.AEO_RQST_NO = #{aeoRqstNo}                     	/** Numéro de demande du statut OEA !== AEO신청번호 ==! */
+		 ORDER BY A.LAST_CHG_DTTM DESC
+		 LIMIT 1
+	</select>
+	
+</mapper>

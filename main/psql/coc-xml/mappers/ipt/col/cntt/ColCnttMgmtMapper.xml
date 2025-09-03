@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="alpass.ipt.col.cntt.mapper.ColCnttMgmtMapper">
+
+    <!--
+    Consulter la liste des avis de paiement reçus !==고지서 수신내역 목록 조회==!
+    -->
+    <select id="selectCnttMgmtLst" parameterType="alpass.ipt.col.cntt.vo.ColCnttMgmtVo" resultType="alpass.ipt.col.cntt.vo.ColCnttMgmtVo">
+        /** colCnttMgmt_selectCnttMgmtLst **/
+        <include refid="pagination.header" />
+        SELECT * FROM(
+                        SELECT NTFC_NO
+                        , RCVE_NO
+                        , RCVE_DTTM
+                        , TO_CHAR(RCVE_DTTM, 'yyyymmdd') as RCVE_DTTM2
+                        , ERR_MSG_CN
+                        , PRCS_STTS_CD
+                        , ORD_STTS_CD
+                        , DEL_YN
+                        FROM TB_COLI_CARD_STLM_RCVE_MGMT
+                        ) A
+        WHERE A.DEL_YN = 'N'
+        <if test="ntfcNo != null and ntfcNo !=''">
+            AND A.NTFC_NO LIKE TRIM(#{ntfcNo}) || '%'
+        </if>
+        <if test='ordSttsCd == "Y"'>
+            AND A.ORD_STTS_CD = '2'
+        </if>
+        <if test='ordSttsCd == "N"'>
+            AND (A.ORD_STTS_CD != '2' or A.ORD_STTS_CD is null)
+        </if>
+        <if test="rcveDttmFrom != null and rcveDttmFrom != '' and rcveDttmTo != null and rcveDttmTo != ''">
+            AND A.RCVE_DTTM2 <![CDATA[ >= ]]> TO_CHAR(TO_DATE(#{rcveDttmFrom}, 'DD/MM/YYYY'), 'YYYYMMDD')
+            AND A.RCVE_DTTM2 <![CDATA[ <= ]]> TO_CHAR(TO_DATE(#{rcveDttmTo}, 'DD/MM/YYYY'), 'YYYYMMDD')
+        </if>
+        ORDER BY A.RCVE_DTTM DESC
+
+        <include refid="pagination.footer" />
+    </select>
+
+</mapper>

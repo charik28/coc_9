@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="alpass.ipt.car.pvinf.cntrpcdn.mapper.CarCntrPcdnMapper">
+
+	<!--
+	Consulter l'état actuel des conteneurs !== 컨테이너 현황을 조회한다. ==!
+	-->
+	<select id="selectCarCntrPcdnList" parameterType="alpass.ipt.car.pvinf.cntrpcdn.vo.CarCntrPcdnVo"
+			resultType="alpass.ipt.car.pvinf.cntrpcdn.vo.CarCntrPcdnListVo">
+		/* CarCntrPcdnMapper.selectCarCntrPcdnList */
+		SELECT B.IBOBZ_CD                                                               AS PORT_IBOBZ_CD  /* zone sous douane !==보세구역==! */
+		 	 , (SELECT IBOBZ_NM FROM TB_CARI_IBOBZ WHERE DEL_YN = 'N' AND IBOBZ_CD = B.IBOBZ_CD) AS PORT_IBOBZ_NM   /* zone sous douane             !==보세구역==! */
+			 , SUM(C.DCSH_BL_CNTR_CNT)                                                  AS MNFS_SBMT_CNTR_GCNT /* nombre de TC manifestés. !==적하목록 제출한 컨테이너 개수==! */
+
+			 , SUM(CASE WHEN L.MRN IS NULL THEN 0 ELSE C.DCSH_BL_CNTR_CNT END )         AS LDUN_CNTR_GCNT      /* !==양하신청 제출한 컨테이너 개수==! */
+			 , NVL(SUM(R.LDUN_RPRT_CNTR_CNT),0)                                         AS LDUN_RPRT_CNTR_GCNT /* !==양하보고 제출한 컨테이너 개수==! */
+
+			 , SUM(CASE WHEN I.CAG_MGMT_NO IS NULL THEN 0 ELSE C.DCSH_BL_CNTR_CNT END ) AS CSCL_WTNG_CNTR_GCNT /* !==반입신고 제출한 컨테이너 개수==! */
+			 , SUM(CASE WHEN O.CAG_MGMT_NO IS NULL THEN 0 ELSE C.DCSH_BL_CNTR_CNT END ) AS RLSE_CNTR_GCNT      /* !==반출신고 된 컨테이너 개수==! */
+
+			 , SUM(NVL(RLBR_Z_BL_CNTR_CNT,0))                                           AS TRNP_CNTR_GCNT      /* !==운송된 컨테이너 개수==! */
+			 , SUM(CASE WHEN O.RLBR_PT_I  ='O' THEN C.DCSH_BL_CNTR_CNT ELSE 0 END )     AS CSCL_CNTR_GCNT      /* nombre de TC dédouanes. !==수입통관으로 반출된 컨테이너 수 (통관된 컨테이너 개수)==! */
+		  FROM TB_CARI_CAG_DCSH A
+		 INNER JOIN TB_CARI_CAG_PRCS_BRKD P
+		    ON A.CAG_DCSH_RGSR_MGMT_NO = P.CAG_RQST_NO
+		   AND P.PRCS_STTS_CD ='D08'
+		   AND P.DEL_YN = 'N'
+		<if test="searchPrcsDateFrom != null and searchPrcsDateFrom != ''"> /* Date de traitement (FROM) !== 처리일자 (FROM) ==! */
+			<if test="searchPrcsDateTo != null and searchPrcsDateTo != ''"> /* Date de traitement (TO) !== 처리일자 (TO) ==! */
+				AND A.REAL_ARVL_DTTM BETWEEN TO_DATE(#{searchPrcsDateFrom},'DD/MM/YYYY') AND TO_DATE(#{searchPrcsDateTo},'DD/MM/YYYY')
+			</if>
+		</if>
+		<if test="searchJrsdCstmCd != null and searchJrsdCstmCd != ''"> /* Code de bureau compétent !== 관할세관코드 ==! */
+			AND A.JRSD_ORGN_CD IN (SELECT UNNEST(STRING_TO_ARRAY(ALPASSINT.FN_CARI_GET_ORGCD('O', #{searchJrsdCstmCd}), ',')))
+		</if>
+		  INNER JOIN TB_CARI_CAG_DCSH_BL B
+			 ON B.DEL_YN = 'N'
+		    AND A.MRN = B.MRN
+			AND (B.BL_TP_CD = 'S' OR B.BL_PT_CD = 'H')
+		  INNER JOIN ( SELECT CAG_MGMT_NO
+							, COUNT(CNTR_NO) AS DCSH_BL_CNTR_CNT
+						 FROM TB_CARI_CAG_DCSH_BL_CNTR
+						WHERE DEL_YN ='N'
+						GROUP BY CAG_MGMT_NO
+		  ) C
+		     ON B.CAG_MGMT_NO = C.CAG_MGMT_NO
+           LEFT JOIN (SELECT M.MRN , B.BL_NO
+                        FROM TB_CARI_LDUN M
+                       INNER JOIN TB_CARI_LDUN_BL B
+                          ON B.DEL_YN='N'
+                            AND M.LDUN_RQST_NO = B.LDUN_RQST_NO
+                      INNER JOIN TB_CARI_CAG_PRCS_BRKD P
+                         ON M.LDUN_RQST_NO = P.CAG_RQST_NO
+                      WHERE M.CAG_RQST_TP_CD LIKE 'DC%' 
+                        AND M.DEL_YN ='N'
+                          AND P.DEL_YN ='N'
+                          AND P.PRCS_STTS_CD = 'D08'
+                          GROUP BY M.MRN , B.BL_NO
+            ) L
+		    ON A.MRN = L.MRN
+		   AND B.BL_NO = L.BL_NO
+		   LEFT JOIN ( SELECT L2.IBOBZ_CD
+						 , L1.MRN
+						 , L2.BL_NO
+						 , COUNT(L2.CNTR_SRNO) LDUN_RPRT_CNTR_CNT
+					  FROM TB_CARI_LDUN_RPRT L1
+			   		 INNER JOIN TB_CARI_CAG_PRCS_BRKD P
+						ON L1.LDUN_RPRT_NO  = P.CAG_RQST_NO
+					   AND P.PRCS_STTS_CD ='D08'
+					   AND P.DEL_YN = 'N'
+				     INNER JOIN  TB_CARI_LDUN_RPRT_CNTR L2
+						ON L1.LDUN_RPRT_NO = L2.LDUN_RPRT_NO
+					   AND L1.RPRT_DGCNT = L2.RPRT_DGCNT
+					   AND L2.DEL_YN ='N'
+					   AND L2.APRE_YN_CD ='O'
+				 	 GROUP BY L2.IBOBZ_CD, L1.MRN, L2.BL_NO
+		   ) R
+              ON A.MRN      = R.MRN
+             AND B.BL_NO    = R.BL_NO
+             AND B.IBOBZ_CD = R.IBOBZ_CD
+			LEFT JOIN ( SELECT R.IBOBZ_CD
+			                 , R.CAG_MGMT_NO
+						  FROM ALPASSINT.TB_CARI_RLBR R /*CARE_반출입*/
+					     INNER JOIN TB_CARI_CAG_PRCS_BRKD P
+							ON P.DEL_YN = 'N'
+						   AND P.PRCS_STTS_CD = 'D08'
+						   AND (R.RLBR_RQST_NO = P.CAG_RQST_NO OR R.BNDL_RLBR_RQNO = P.CAG_RQST_NO)
+						 WHERE R.DEL_YN = 'N'
+						   AND R.RLBR_TP_CD = 'I' /*반입*/
+			) I
+			  ON B.CAG_MGMT_NO = I.CAG_MGMT_NO
+		     AND B.IBOBZ_CD = I.IBOBZ_CD
+		    LEFT JOIN ( SELECT I.IBOBZ_CD
+			 			     , I.CAG_MGMT_NO
+						     , CASE WHEN I.RLBR_PT_CD <![CDATA[ = ]]> '65' THEN 'O' ELSE 'X' END RLBR_PT_I
+						     , CASE WHEN I.RLBR_PT_CD <![CDATA[ <> ]]> '65' THEN 'O' ELSE 'X' END RLBR_PT_X
+					     FROM TB_CARI_RLBR I
+					    INNER JOIN TB_CARI_CAG_PRCS_BRKD P
+					  	   On (I.RLBR_RQST_NO = P.CAG_RQST_NO OR I.BNDL_RLBR_RQNO = P.CAG_RQST_NO)
+					      AND P.DEL_YN = 'N'
+						  AND P.PRCS_STTS_CD = 'D08'
+						  AND I.DEL_YN = 'N'
+						  AND I.RLBR_TP_CD = 'O' /*반출*/
+		    ) O
+		      ON B.IBOBZ_CD    = O.IBOBZ_CD
+		     AND B.CAG_MGMT_NO = O.CAG_MGMT_NO
+		    LEFT JOIN ( SELECT T.DPRP_IBOBZ_CD
+							 , B.CAG_MGMT_NO
+							 , COUNT(C.CNTR_NO)  RLBR_Z_BL_CNTR_CNT
+						  FROM ALPASSINT.TB_CARI_TRNP T   /*CARI_운송*/
+						 INNER JOIN ALPASSINT.TB_CARI_CAG_PRCS_BRKD P
+							ON T.TRNP_RQST_NO = P.CAG_RQST_NO
+						   AND P.PRCS_STTS_CD = 'D08'
+					       AND P.DEL_YN ='N'
+					     INNER JOIN ALPASSINT.TB_CARI_TRNP_BL B /*CARI_운송_BL*/
+					        ON T.TRNP_RQST_NO = B.TRNP_RQST_NO
+					       AND B.DEL_YN = 'N'
+					     INNER JOIN ALPASSINT.TB_CARI_TRNP_CNTR C /*CARI_운송_컨테이너*/
+					        ON B.TRNP_RQST_NO = C.TRNP_RQST_NO
+					       AND C.DEL_YN = 'N'
+					     GROUP BY T.DPRP_IBOBZ_CD , B.CAG_MGMT_NO
+		    ) Z
+		      ON B.IBOBZ_CD = Z.DPRP_IBOBZ_CD
+		     AND B.CAG_MGMT_NO = Z.CAG_MGMT_NO
+		   GROUP BY B.IBOBZ_CD
+		   ORDER BY B.IBOBZ_CD
+	</select>
+
+	<!--
+	Etat du DT en temps réel  !== 장치장의 실시간 현황 ==!
+	-->
+	<select id="selectCarShedPcdnList" parameterType="alpass.ipt.car.pvinf.cntrpcdn.vo.CarCntrPcdnVo"
+			resultType="alpass.ipt.car.pvinf.cntrpcdn.vo.CarShedPcdnListVo">
+		/* CarCntrPcdnMapper.selectCarShedPcdnList */
+        SELECT A.IBOBZ_CD                 AS PORT_IBOBZ_CD        /* port maritime/zone sous douane  !==항구/보세구역==! */
+             , A.IBOBZ_NM                 AS PORT_IBOBZ_NM        /* port maritime/zone sous douane  !==항구/보세구역==! */
+             , NVL(A.ACPE_CNTR_GCNT,0)    AS ACPE_CNTR_GCNT
+             , COUNT(B.CNTR_NO)           AS STGE_CNTR_GCNT       /* nombre de TC entreposés.        !==장치된 컨테이너 개수==! */
+             , NVL(DECODE(NVL(A.ACPE_CNTR_GCNT,0), 0, '0', ROUND(COUNT(B.CNTR_NO) / NVL(A.ACPE_CNTR_GCNT,0) * 100,2)),'-') AS SATURATION                         /* taux de saturation.             !==포화도==! */
+          FROM TB_CARI_IBOBZ A
+            LEFT JOIN (SELECT X.IBOBZ_CD, Z.CNTR_NO
+                       FROM TB_CARI_INVN X
+                         INNER JOIN TB_CARI_CAG_DCSH_BL Y
+                           ON X.CAG_MGMT_NO = Y.CAG_MGMT_NO
+                         INNER JOIN TB_CARI_CAG_DCSH_BL_CNTR Z
+                           ON Y.CAG_MGMT_NO = Z.CAG_MGMT_NO
+                       WHERE X.DEL_YN = 'N'
+                         AND Y.DEL_YN = 'N'
+                         AND Z.DEL_YN = 'N'
+                         AND X.INVN_YN = 'Y'
+                       GROUP BY X.IBOBZ_CD, Z.CNTR_NO) B
+              ON A.IBOBZ_CD = B.IBOBZ_CD
+          WHERE A.DEL_YN = 'N'
+          <if test="searchJrsdCstmCd != null and searchJrsdCstmCd != ''"> /* Code de bureau compétent !== 관할세관코드 ==! */
+            AND A.JRSD_ORGN_CD  = #{searchJrsdCstmCd}
+          </if>
+          GROUP BY A.JRSD_ORGN_CD, A.IBOBZ_CD, NVL(A.ACPE_CNTR_GCNT,0)
+          ORDER BY A.IBOBZ_CD
+	</select>
+
+	<!--Etat actuel des conteneurs par zone sous douane !== 보세구역별 컨테이너 현황을 조회한다. ==!-->
+	<select id="selectIbobzCntrPcdnList" parameterType="alpass.ipt.car.pvinf.cntrpcdn.vo.CarCntrPcdnVo" resultType="alpass.ipt.car.pvinf.cntrpcdn.vo.CarCntrPcdnVo">
+		<include refid="pagination.header" ></include>
+		WITH W_RLBR AS (
+			SELECT DISTINCT R.IBOBZ_CD
+				 , R.CAG_MGMT_NO
+				 , R.RELA_NO
+				 , R.RLBR_TP_CD
+				 , R.RLBR_PT_CD
+				 , P.APRE_DT   /*반출입예정_승인일시*/
+				 , R.RLBR_DTTM /*반출입일시*/
+			  FROM ALPASSEXT.TB_CARE_RLBR R /*CARE_반출입*/
+			  LEFT JOIN ALPASSEXT.TB_CARE_RLBR_PRNG P
+			    ON P.DEL_YN = 'N'
+			   AND R.IBOBZ_CD = P.IBOBZ_CD
+			   AND R.RLBR_PRNG_NO = P.RLBR_PRNG_NO
+			 WHERE R.DEL_YN = 'N'
+			   AND R.IBOBZ_CD IN (SELECT IBOBZ_CD FROM ALPASSINT.TB_CARI_IBOBZ WHERE DEL_YN = 'N')
+				<if test="searchPrcsDateFrom != null and searchPrcsDateFrom != ''"> /* Date de traitement (FROM) !== 처리일자 (FROM) ==! */
+					<if test="searchPrcsDateTo != null and searchPrcsDateTo != ''"> /* Date de traitement (TO) !== 처리일자 (TO) ==! */
+			   AND R.RLBR_DTTM BETWEEN TO_DATE(#{searchPrcsDateFrom},'DD/MM/YYYY') AND TO_DATE(#{searchPrcsDateTo},'DD/MM/YYYY')
+					</if>
+				</if>
+				<if test="cagMgmtNo != '' and cagMgmtNo != null">
+			   AND R.CAG_MGMT_NO LIKE #{cagMgmtNo} || '%' /** CRN !==화물관리번호==! */
+				</if>
+			UNION ALL
+			SELECT IBOBZ_CD
+				 , CAG_MGMT_NO
+				 , RELA_NO
+				 , RLBR_TP_CD
+				 , RLBR_PT_CD
+				 , APRE_DT   /*반출입예정_승인일시*/
+				 , NULL AS RLBR_DTTM /*반출입일시*/
+			  FROM ALPASSEXT.TB_CARE_RLBR_PRNG P
+			 WHERE DEL_YN = 'N'
+			   AND RLBR_CMPL_YN = 'N' /*반출입완료여부*/
+			   AND IBOBZ_CD IN (SELECT IBOBZ_CD FROM ALPASSINT.TB_CARI_IBOBZ WHERE DEL_YN = 'N')
+			<if test="searchPrcsDateFrom != null and searchPrcsDateFrom != ''"> /* Date de traitement (FROM) !== 처리일자 (FROM) ==! */
+				<if test="searchPrcsDateTo != null and searchPrcsDateTo != ''"> /* Date de traitement (TO) !== 처리일자 (TO) ==! */
+			   AND TO_DATE(P.APRE_DT) BETWEEN TO_DATE(#{searchPrcsDateFrom},'DD/MM/YYYY') AND TO_DATE(#{searchPrcsDateTo},'DD/MM/YYYY')
+				</if>
+			</if>
+			<if test="cagMgmtNo != '' and cagMgmtNo != null">
+			   AND P.CAG_MGMT_NO LIKE #{cagMgmtNo} || '%' /** CRN !==화물관리번호==! */
+			</if>
+			   AND NOT EXISTS (
+					SELECT 1 FROM ALPASSEXT.TB_CARE_RLBR R /*CARE_반출입*/
+					 WHERE R.DEL_YN = 'N'
+					   AND R.IBOBZ_CD = P.IBOBZ_CD
+					   AND R.CAG_MGMT_NO = P.CAG_MGMT_NO
+					   AND R.RLBR_TP_CD = P.RLBR_TP_CD
+				)
+		)
+		, W_TRNP AS (
+			SELECT TB.DPRP_IBOBZ_CD /*출발지보세구역코드*/
+				 , TB.ARLC_IBOBZ_CD /*도착지보세구역코드*/
+				 , TB.CAG_MGMT_NO
+				 , (SELECT COUNT(CNTR_NO) FROM ALPASSINT.TB_CARI_TRNP_CNTR C WHERE C.DEL_YN = 'N' AND C.TRNP_RQST_NO = TB.TRNP_RQST_NO AND C.BL_SRNO = TB.BL_SRNO) AS CNTR_CNT
+			 FROM (
+				SELECT T.TRNP_RQST_NO, T.DPTR_DT, T.DPRP_IBOBZ_CD, T.ARLC_IBOBZ_CD, B.CAG_MGMT_NO, B.BL_SRNO
+				  FROM ALPASSINT.TB_CARI_TRNP      T   /*CARI_운송*/
+					 , ALPASSINT.TB_CARI_TRNP_BL   B /*CARI_운송_BL*/
+					 , ALPASSINT.TB_CARI_CAG_PRCS_BRKD P
+				 WHERE T.DEL_YN = 'N'
+				   AND B.DEL_YN = 'N'
+				   AND P.PRCS_STTS_CD = 'D08'
+				   AND T.TRNP_RQST_NO = B.TRNP_RQST_NO
+				   AND T.TRNP_RQST_NO = P.CAG_RQST_NO
+				<!--    
+				<if test="searchPrcsDateFrom != null and searchPrcsDateFrom != ''"> /* Date de traitement (FROM) !== 처리일자 (FROM) ==! */
+					<if test="searchPrcsDateTo != null and searchPrcsDateTo != ''"> /* Date de traitement (TO) !== 처리일자 (TO) ==! */
+				   AND TO_DATE(T.DPTR_DT) BETWEEN TO_DATE(#{searchPrcsDateFrom},'DD/MM/YYYY') AND TO_DATE(#{searchPrcsDateTo},'DD/MM/YYYY')
+					</if>
+				</if>
+				 -->
+			) TB
+		)
+		select AAA.IBOBZ_CD
+			 , DECODE(ACPE_CNTR_GCNT, '', '-', NVL(ACPE_CNTR_GCNT,0)) AS ACPE_CNTR_GCNT
+			 , NVL(DECODE(NVL(ACPE_CNTR_GCNT,0), 0, '0', ROUND(COUNT(B.CNTR_NO) / ACPE_CNTR_GCNT * 100,2)),'-') AS SATURATION
+			 , DECODE(I_APRE_DT  , 0, '-', I_APRE_DT  ) as BRNG_PRNG_GCNT
+			 , DECODE(I_RLBR_DTTM, 0, '-', I_RLBR_DTTM) as BRNG_GCNT
+			 , DECODE(O_APRE_DT  , 0, '-', O_APRE_DT  ) as RLSE_PRNG_GCNT
+			 , DECODE(O_RLBR_DTTM, 0, '-', O_RLBR_DTTM) as RLSE_GCNT
+			 , DECODE(ts_cntr_cnt, 0, '-', ts_cntr_cnt) as BRNG_TRNP_GCNT
+			 , DECODE(te_cntr_cnt, 0, '-', te_cntr_cnt) as RLSE_TRNP_GCNT
+		from (
+			select ibobz_cd
+				 , (SELECT ACPE_CNTR_GCNT FROM ALPASSINT.TB_CARI_IBOBZ I WHERE I.IBOBZ_CD = TT.IBOBZ_CD) AS ACPE_CNTR_GCNT
+				 , sum(cntr_cnt)    as cntr_cnt
+				 , sum(I_APRE_DT)   as I_APRE_DT
+				 , sum(I_RLBR_DTTM) as I_RLBR_DTTM
+				 , sum(O_APRE_DT)   as O_APRE_DT
+				 , sum(O_RLBR_DTTM) as O_RLBR_DTTM
+				 , sum(ts_cntr_cnt) as ts_cntr_cnt
+				 , sum(te_cntr_cnt) as te_cntr_cnt
+			from (
+				select ibobz_cd
+					 , nvl((select count(C.CNTR_NO) from W_RLBR B, TB_CARI_CAG_DCSH_BL_CNTR C where C.cag_mgmt_no = B.cag_mgmt_no and B.ibobz_cd = WR.ibobz_cd group by B.ibobz_cd),0) as cntr_cnt
+					 , count(APRE_DT)   as I_APRE_DT
+					 , count(RLBR_DTTM) as I_RLBR_DTTM
+					 , 0                as O_APRE_DT
+					 , 0                as O_RLBR_DTTM
+					 , nvl((select count(TS.CNTR_CNT) from W_RLBR B, W_TRNP TS where TS.cag_mgmt_no = B.cag_mgmt_no and TS.DPRP_IBOBZ_CD = B.ibobz_cd and B.ibobz_cd = WR.ibobz_cd and B.rlbr_tp_cd = 'I' group by B.ibobz_cd),0) as ts_cntr_cnt
+					 , 0 as te_cntr_cnt
+				  from W_RLBR WR
+				 where RLBR_TP_CD = 'I'
+				 group by ibobz_cd
+				 union
+				select ibobz_cd
+					 , nvl((select count(C.CNTR_NO) from W_RLBR B, TB_CARI_CAG_DCSH_BL_CNTR C where C.cag_mgmt_no = B.cag_mgmt_no and B.ibobz_cd = WR.ibobz_cd group by B.ibobz_cd),0) as cntr_cnt
+					 , 0                as I_APRE_DT
+					 , 0                as I_RLBR_DTTM
+					 , count(APRE_DT)   as O_APRE_DT
+					 , count(RLBR_DTTM) as O_RLBR_DTTM
+					 , 0 as ts_cntr_cnt
+					 , nvl((select count(TE.CNTR_CNT) from W_RLBR B, W_TRNP TE where TE.cag_mgmt_no = B.cag_mgmt_no and TE.DPRP_IBOBZ_CD = B.ibobz_cd and B.ibobz_cd = WR.ibobz_cd and B.rlbr_tp_cd = 'O' group by B.ibobz_cd),0) as te_cntr_cnt
+				  from W_RLBR WR
+				 where RLBR_TP_CD = 'O'
+				 group by ibobz_cd
+			) TT
+			group by ibobz_cd
+		) AAA
+        LEFT JOIN (SELECT X.IBOBZ_CD, Z.CNTR_NO
+                     FROM TB_CARI_INVN X
+                    INNER JOIN TB_CARI_CAG_DCSH_BL Y
+                       ON X.CAG_MGMT_NO = Y.CAG_MGMT_NO
+                    INNER JOIN TB_CARI_CAG_DCSH_BL_CNTR Z
+                       ON Y.CAG_MGMT_NO = Z.CAG_MGMT_NO
+                    WHERE X.DEL_YN = 'N'
+                      AND Y.DEL_YN = 'N'
+                      AND Z.DEL_YN = 'N'
+                      AND X.INVN_YN = 'Y'
+                    GROUP BY X.IBOBZ_CD, Z.CNTR_NO) B
+        ON AAA.IBOBZ_CD = B.IBOBZ_CD
+        WHERE 1=1
+        GROUP BY AAA.IBOBZ_CD, AAA.ACPE_CNTR_GCNT, I_APRE_DT, I_RLBR_DTTM, O_APRE_DT, O_RLBR_DTTM, TS_CNTR_CNT, TE_CNTR_CNT
+        ORDER BY AAA.IBOBZ_CD
+		<include refid="pagination.footer" ></include>
+	</select>
+
+	<!--Consulter l'état détaillé du conteneur par zone sous douane !== 보세구역별 컨테이너 상세현황을 조회한다.==!-->
+	<select id="selectIbobzCntrPcdnDetailList" parameterType="alpass.ipt.car.pvinf.cntrpcdn.vo.CarCntrPcdnVo" resultType="alpass.ipt.car.pvinf.cntrpcdn.vo.CarCntrPcdnVo">
+		WITH W_RLBR AS (
+			SELECT DISTINCT
+			       R.IBOBZ_CD
+				 , R.CAG_MGMT_NO
+				 , R.RELA_NO
+				 , R.RLBR_TP_CD
+				 , R.RLBR_PT_CD
+				 , P.APRE_DT   /*반출입예정_승인일시*/
+				 , R.RLBR_DTTM /*반출입일시*/
+			  FROM ALPASSEXT.TB_CARE_RLBR R /*CARE_반출입*/
+			  LEFT JOIN ALPASSEXT.TB_CARE_RLBR_PRNG P
+			    ON P.DEL_YN = 'N'
+			   AND R.IBOBZ_CD = P.IBOBZ_CD
+			   AND R.RLBR_PRNG_NO = P.RLBR_PRNG_NO
+			 WHERE R.DEL_YN = 'N'
+			   AND R.IBOBZ_CD IN (SELECT IBOBZ_CD FROM ALPASSINT.TB_CARI_IBOBZ WHERE DEL_YN = 'N')
+			<if test="ibobzCd != '' and ibobzCd != null">
+			   AND R.IBOBZ_CD = #{ibobzCd}
+			</if>
+			<if test="cagMgmtNo != '' and cagMgmtNo != null">
+			   AND R.CAG_MGMT_NO LIKE #{cagMgmtNo} || '%' /** CRN !==화물관리번호==! */
+			</if>
+			<if test="searchPrcsDateFrom != null and searchPrcsDateFrom != ''"> /* Date de traitement (FROM) !== 처리일자 (FROM) ==! */
+				<if test="searchPrcsDateTo != null and searchPrcsDateTo != ''"> /* Date de traitement (TO) !== 처리일자 (TO) ==! */
+			   AND R.RLBR_DTTM BETWEEN TO_DATE(#{searchPrcsDateFrom},'DD/MM/YYYY') AND TO_DATE(#{searchPrcsDateTo},'DD/MM/YYYY')
+				</if>
+			</if>
+			UNION ALL
+		   SELECT IBOBZ_CD
+				, CAG_MGMT_NO
+				, RELA_NO
+				, RLBR_TP_CD
+				, RLBR_PT_CD
+				, APRE_DT   /*반출입예정_승인일시*/
+				, NULL AS RLBR_DTTM /*반출입일시*/
+			 FROM ALPASSEXT.TB_CARE_RLBR_PRNG P
+			WHERE DEL_YN = 'N'
+		  	  AND RLBR_CMPL_YN = 'N' /*반출입완료여부*/
+		 	  AND IBOBZ_CD IN (SELECT IBOBZ_CD FROM ALPASSINT.TB_CARI_IBOBZ WHERE DEL_YN = 'N')
+			<if test="ibobzCd != '' and ibobzCd != null">
+			  AND P.IBOBZ_CD = #{ibobzCd}
+			</if>
+			<if test="cagMgmtNo != '' and cagMgmtNo != null">
+			  AND P.CAG_MGMT_NO LIKE #{cagMgmtNo} || '%' /** CRN !==화물관리번호==! */
+			</if>
+			<if test="searchPrcsDateFrom != null and searchPrcsDateFrom != ''"> /* Date de traitement (FROM) !== 처리일자 (FROM) ==! */
+				<if test="searchPrcsDateTo != null and searchPrcsDateTo != ''"> /* Date de traitement (TO) !== 처리일자 (TO) ==! */
+			  AND TO_DATE(P.APRE_DT) BETWEEN TO_DATE(#{searchPrcsDateFrom},'DD/MM/YYYY') AND TO_DATE(#{searchPrcsDateTo},'DD/MM/YYYY')
+				</if>
+			</if>
+			  AND NOT EXISTS (
+					SELECT 1 FROM ALPASSEXT.TB_CARE_RLBR R /*CARE_반출입*/
+					 WHERE R.DEL_YN = 'N'
+					   AND R.IBOBZ_CD = P.IBOBZ_CD
+					   AND R.CAG_MGMT_NO = P.CAG_MGMT_NO
+					   AND R.RLBR_TP_CD = P.RLBR_TP_CD
+				)
+		)
+	   , W_TRNP AS (
+			SELECT TB.DPRP_IBOBZ_CD /*출발지보세구역코드*/
+				 , TB.ARLC_IBOBZ_CD /*도착지보세구역코드*/
+				 , TB.CAG_MGMT_NO
+				 , (SELECT COUNT(CNTR_NO) FROM ALPASSINT.TB_CARI_TRNP_CNTR A WHERE A.DEL_YN = 'N' AND A.TRNP_RQST_NO = TB.TRNP_RQST_NO AND A.BL_SRNO = TB.BL_SRNO) AS CNTR_CNT
+			FROM (
+				 SELECT T.TRNP_RQST_NO, T.DPRP_IBOBZ_CD, T.ARLC_IBOBZ_CD, B.CAG_MGMT_NO, B.BL_SRNO
+				   FROM ALPASSINT.TB_CARI_TRNP      T /*CARI_운송*/
+					  , ALPASSINT.TB_CARI_TRNP_BL   B /*CARI_운송_BL*/
+					  , ALPASSINT.TB_CARI_CAG_PRCS_BRKD P
+				 WHERE T.DEL_YN = 'N'
+				   AND B.DEL_YN = 'N'
+				   AND P.PRCS_STTS_CD = 'D08'
+				   AND T.TRNP_RQST_NO = B.TRNP_RQST_NO
+				   AND T.TRNP_RQST_NO = P.CAG_RQST_NO
+				<!-- 
+				<if test="searchPrcsDateFrom != null and searchPrcsDateFrom != ''"> /* Date de traitement (FROM) !== 처리일자 (FROM) ==! */
+					<if test="searchPrcsDateTo != null and searchPrcsDateTo != ''"> /* Date de traitement (TO) !== 처리일자 (TO) ==! */
+				   AND TO_DATE(T.DPTR_DT) BETWEEN TO_DATE(#{searchPrcsDateFrom},'DD/MM/YYYY') AND TO_DATE(#{searchPrcsDateTo},'DD/MM/YYYY')
+					</if>
+				</if>
+				 -->
+			) TB
+		)
+		SELECT WR.TOT_CNT
+			 , WR.RNUM
+			 , WR.IBOBZ_CD
+			 , WR.CAG_MGMT_NO
+			 , I.RELA_NO                                            AS RELA_NO        /*관련번호(수출물품반입신청번호)*/
+			 , CASE WHEN I.RLBR_PT_CD = '17' THEN ( SELECT COUNT(CNTR_NO) FROM ALPASSINT.TB_CARI_EXP_CMDT_BRNG_CNTR B WHERE B.DEL_YN = 'N' AND B.EXP_CMDT_BRNG_RQNO = I.RELA_NO)
+					ELSE ( SELECT COUNT(CNTR_NO) FROM TB_CARI_CAG_DCSH_BL_CNTR B WHERE B.DEL_YN ='N' AND B.CAG_MGMT_NO = WR.CAG_MGMT_NO )
+			   END AS CNTR_GCNT /*컨테이너개수*/
+			 , I.RLBR_PT_CD                                         AS BRNG_PT_CD     /*반입유형코드*/
+			 , TO_CHAR(TO_DATE(I.APRE_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS BRNG_PRNG_DT   /*반입예정생성일자*/
+			 , TO_CHAR(I.RLBR_DTTM, 'DD/MM/YYYY HH24:mi:ss')        AS BRNG_DTTM      /*반입일시*/
+			 , O.RLBR_PT_CD                                         AS RLSE_PT_CD     /*반출유형코드*/
+			 , TO_CHAR(TO_DATE(O.APRE_DT, 'YYYYMMDD'),'DD/MM/YYYY') AS RLSE_PRNG_DT   /*반출예정생성일자*/
+			 , TO_CHAR(O.RLBR_DTTM, 'DD/MM/YYYY HH24:mi:ss')        AS RLSE_DTTM      /*반출일시*/
+			 , NVL((SELECT COUNT(TE.CNTR_CNT) FROM W_RLBR B, W_TRNP TE WHERE TE.CAG_MGMT_NO = B.CAG_MGMT_NO AND TE.DPRP_IBOBZ_CD = B.IBOBZ_CD AND B.RLBR_TP_CD = 'I' AND B.CAG_MGMT_NO = WR.CAG_MGMT_NO GROUP BY B.IBOBZ_CD),0) AS BRNG_TRNP_GCNT /*반입운송개수*/
+			 , NVL((SELECT COUNT(TS.CNTR_CNT) FROM W_RLBR B, W_TRNP TS WHERE TS.CAG_MGMT_NO = B.CAG_MGMT_NO AND TS.DPRP_IBOBZ_CD = B.IBOBZ_CD AND B.RLBR_TP_CD = 'O' AND B.CAG_MGMT_NO = WR.CAG_MGMT_NO GROUP BY B.IBOBZ_CD),0) AS RLSE_TRNP_GCNT /*반출운송개수*/
+		  FROM (
+			SELECT COUNT(*) OVER() AS TOT_CNT
+				 , ROWNUM as RNUM
+				 , SQLRSLT.*
+			  FROM (
+					SELECT IBOBZ_CD, CAG_MGMT_NO
+					  FROM W_RLBR
+					 GROUP BY IBOBZ_CD, CAG_MGMT_NO
+				) SQLRSLT
+			WHERE 1=1
+			OFFSET #{firstIndex} ROWS FETCH NEXT #{recordCountPerPage} ROWS ONLY
+			) WR
+		  LEFT JOIN W_RLBR I
+			on I.RLBR_TP_CD = 'I'
+		   and WR.IBOBZ_CD = I.IBOBZ_CD
+		   and WR.CAG_MGMT_NO = I.CAG_MGMT_NO
+		  LEFT JOIN W_RLBR O
+			on O.RLBR_TP_CD = 'O'
+		   and WR.IBOBZ_CD = O.IBOBZ_CD
+		   and WR.CAG_MGMT_NO = O.CAG_MGMT_NO
+		 WHERE 1=1
+	</select>
+
+</mapper>
