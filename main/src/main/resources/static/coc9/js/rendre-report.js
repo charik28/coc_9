@@ -129,6 +129,7 @@ const printVoConst =
     "brqOtsList": [],
     "brqIncList": []
   };
+
 function render(printVo) {
   if (!printVo)
     printVo = printVoConst;
@@ -151,10 +152,11 @@ function render(printVo) {
       <div style="text-align: left">
 
     <h5>الجزائر، في:
-${printVo.t0Dttm}
+        ${printVo.t0Dttm}
+    </h5>
+
       </div>
 
-    </h5>
     <div class='section'>
       <div >
         السيد اللواء، المدير العام للجمارك

@@ -1,7 +1,7 @@
 package dz.coc9.service;
 
 import dz.coc9.mappers.CocReportMapper;
-import dz.coc9.service.dtococ.CocReportDto2;
+import dz.coc9.service.dtococ.CocReportResultDto2;
 import dz.coc9.service.dtococ.PrintVo;
 import dz.coc9.service.dtococ.T6TransportMarchandiseHelper;
 import dz.coc9.service.dtococ.T7PsnrHelper;
@@ -27,10 +27,10 @@ public class CocReportService {
 
         printVo.setT0Dttm("يومي 03 و04 سبتمبر 2025");
 
-        ArrayList<CocReportDto2> brqSpsList = new ArrayList<>();
+        ArrayList<CocReportResultDto2> brqSpsList = new ArrayList<>();
         for (int i = 0; i < 4; i++)
         {
-        CocReportDto2 r = new CocReportDto2();
+        CocReportResultDto2 r = new CocReportResultDto2();
         r.setOrgnCd("0000000");
         r.setOrgnNm(": الفرقة المتعددة المهام للجمارك بالبويرة بالتنسيق مع مصلحة الوقاية وأمن الجيش بالبويرة.");
         r.setT2InfNature("حيازة بضاعة محظورة متمثلة في مؤثرات عقلية، أجنبية المنشأ (نيجيريا(، مزدوجة الإمضاء من نوع: بريغابالين 300 ملغ.");

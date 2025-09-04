@@ -8,8 +8,8 @@ import java.util.ArrayList;
 public class PrintVo {
 
     String t0Dttm;
-    ArrayList<CocReportDto2> brqSpsList  = new ArrayList<>();
-    ArrayList<CocReportDto2> brqOtsList  = new ArrayList<>();
-    ArrayList<CocReportDto2> brqIncList  = new ArrayList<>();
+    ArrayList<CocReportResultDto2> brqSpsList  = new ArrayList<>();
+    ArrayList<CocReportResultDto2> brqOtsList  = new ArrayList<>();
+    ArrayList<CocReportResultDto2> brqIncList  = new ArrayList<>();
 //    ArrayList<CocReportDto2> brqSpsList  = new ArrayList<>();
 }

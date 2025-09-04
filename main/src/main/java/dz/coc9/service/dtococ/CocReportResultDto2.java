@@ -6,7 +6,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class CocReportDto2 {
+public class CocReportResultDto2 {
 
 
         private String brqType="01"; // special / accidens /
