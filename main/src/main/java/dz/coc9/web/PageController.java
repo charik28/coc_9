@@ -30,15 +30,16 @@ public class PageController {
     public ModelAndView loadRoot() {
         return new ModelAndView("forward:/loader.html");
     }
-    @GetMapping("/home")
+//    @GetMapping("/home")
     public ModelAndView loadHome() {
         return new ModelAndView("forward:/app/home.html");
+//        return loadCocReport();
     }
     @GetMapping("/coc9")
     public ModelAndView loadCocHome() {
         return new ModelAndView("forward:/coc9/index.html");
     }
-    @GetMapping("/coc")
+    @GetMapping({"/coc" , "/home"})
     public ModelAndView loadCocReport() {
         return new ModelAndView("forward:/coc9/reports/coc-main.html");
     }

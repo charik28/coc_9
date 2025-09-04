@@ -17,7 +17,7 @@ public class T6TransportMarchandiseHelper {
         String s="";
         
         s +="سيارة من نوع" + vhclType;
-        s +="، تحمل لوحة الترقيم: " + vhclSSI;
+        s +=" تحمل لوحة الترقيم: " + vhclSSI;
         s +="الرقم التسلسلي في الطراز:" + vhclRefNo;
         s +="، ملك للمدعو" +propiritaire ; // "، ملك للمدعوة:
         if(fiminin) s += "ة";

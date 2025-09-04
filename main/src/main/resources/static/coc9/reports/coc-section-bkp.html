@@ -1,0 +1,107 @@
+<section class="content pt-3">
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header p-2" id="module-tab-container">
+        <!-- First level tabs -->
+        <ul class="nav nav-pills">
+          <li class="nav-item">
+            <a class="nav-link active" id="tab-0-nav" data-toggle="pill" href="#tab-0" role="tab">Contenu RAPPORT</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="tab-1-nav" data-toggle="pill" href="#tab-1" role="tab">BRQ 1</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="tab-2-nav" data-toggle="pill" href="#tab-2" role="tab">BRQ 2</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="tab-3-nav" data-toggle="pill" href="#tab-3" role="tab">BRQ 3</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="tab-4-nav" data-toggle="pill" href="#tab-4" role="tab">BRQ 4</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="tab-5-nav" data-toggle="pill" href="#tab-5" role="tab">BRQ 5</a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card-body">
+        <div class="tab-content" id="model-tabs-content">
+
+          <!-- Tab 0 -->
+          <div class="tab-pane fade show active" id="tab-0" role="tabpanel" aria-labelledby="tab-0-nav">
+
+
+
+            <!-- Details Section with Second-level Tabs -->
+            <div class="card card-outline card-success mt-3">
+              <div class="card-header">
+                <h3 class="card-title">📑 Détails</h3>
+              </div>
+              <div class="card-body">
+                <ul class="nav nav-tabs" id="detailTabs" role="tablist">
+                  <li class="nav-item">
+                    <a class="nav-link active" id="brq-reports-tab" data-toggle="tab" href="#brq-reports" role="tab">Rapport des BRQ</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" id="brq-list-tab" data-toggle="tab" href="#brq-list" role="tab">Liste des BRQ</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" id="vehic-tab" data-toggle="tab" href="#vehic" role="tab">Véhicules</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" id="armes-tab" data-toggle="tab" href="#armes" role="tab">Armes</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" id="mun-tab" data-toggle="tab" href="#mun" role="tab">Munitions</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" id="eqp-tab" data-toggle="tab" href="#eqp" role="tab">Équipements</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" id="brig-tab" data-toggle="tab" href="#brig" role="tab">Brigades Canines</a>
+                  </li>
+                </ul>
+
+                <div class="tab-content mt-3">
+                  <div class="tab-pane fade show active" id="brq-reports" role="tabpanel" aria-labelledby="brq-reports-tab">
+                    <div id="report-parent-container" class="rtl-box">
+                      <div id="report-container" class="rtl-box"></div>
+                    </div>
+                  </div>
+
+                  <div class="tab-pane fade" id="brq-list" role="tabpanel" aria-labelledby="brq-list-tab">
+                    <!-- zone pour jsGrid -->
+                    <div id="brq1_results_grid"></div>
+                    <div class="card-footer clearfix">
+                      <div class="float-left">Total: <b id="total"></b></div>
+                      <ul class="pagination pagination-sm m-0 float-right">
+                        <li class="page-item"><a class="page-link" href="#">«</a></li>
+                        <li class="page-item"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">»</a></li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div class="tab-pane fade" id="vehic" role="tabpanel" aria-labelledby="vehic-tab">Infos véhicules…</div>
+                  <div class="tab-pane fade" id="armes" role="tabpanel" aria-labelledby="armes-tab">Armes saisies…</div>
+                  <div class="tab-pane fade" id="mun" role="tabpanel" aria-labelledby="mun-tab">Munitions…</div>
+                  <div class="tab-pane fade" id="eqp" role="tabpanel" aria-labelledby="eqp-tab">Équipements…</div>
+                  <div class="tab-pane fade" id="brig" role="tabpanel" aria-labelledby="brig-tab">Unités canines…</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Other main tabs -->
+          <div class="tab-pane fade" id="tab-1" role="tabpanel" aria-labelledby="tab-1-nav">tab 1</div>
+          <div class="tab-pane fade" id="tab-2" role="tabpanel" aria-labelledby="tab-2-nav">tab 2</div>
+          <div class="tab-pane fade" id="tab-3" role="tabpanel" aria-labelledby="tab-3-nav">tab 3</div>
+          <div class="tab-pane fade" id="tab-4" role="tabpanel" aria-labelledby="tab-4-nav">tab 4</div>
+          <div class="tab-pane fade" id="tab-5" role="tabpanel" aria-labelledby="tab-5-nav">tab 5</div>
+        </div><!-- /.tab-content -->
+      </div><!-- /.card-body -->
+    </div><!-- /.card -->
+  </div>
+</section>

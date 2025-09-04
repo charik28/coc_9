@@ -12,12 +12,13 @@ public class CocReportDto2 {
         private String brqType="01"; // special / accidens /
         private String t1ReportNature; // special / accidens /
 
+        private String orgnCd;
         private String orgnNm;
         private String t2InfNature;
         private String t4Emplacement;
         private String t4Dttm;
         private String t5TypeMarchandise;
-        private String t6ValueMarchandise="لم تحدد. ";
+        private String t6ValueMarchandise="لم تحدد";
         private String t6TransportMarchandis;
 
         @JsonIgnore

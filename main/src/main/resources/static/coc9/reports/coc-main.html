@@ -64,20 +64,9 @@
             <i class="fas fa-search"></i>
           </a>
           <div class="navbar-search-block">
-            <form class="form-inline" id="brq1_form_reports_search">
-              <div class="input-group input-group-sm">
-                <input class="form-control form-control-navbar" type="search" placeholder="Search"
-                       aria-label="Search">
-                <div class="input-group-append">
-                  <button class="btn btn-navbar" type="submit">
-                    <i class="fas fa-search"></i>
-                  </button>
-                  <button class="btn btn-navbar" type="button" data-widget="navbar-search">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </div>
-              </div>
-            </form>
+
+
+
           </div>
         </li>
 
@@ -266,54 +255,41 @@
 
   <!-- Content Wrapper. Contains page content -->
   <div class="content-wrapper">
+
     <section class="content pt-3">
       <div class="container-fluid">
         <div class="card">
           <div class="card-header p-2" id="module-tab-container">
-            <!-- 8 Tabs -->
-            <!--            tab-content mt-3-->
+            <!-- First level tabs -->
             <ul class="nav nav-pills">
-
-
-
               <li class="nav-item">
-                <a class="nav-link " id="tab-0-nav" data-toggle="pill" href="#tab-2" role="tab">BRQ 1 </a>
-              </li>
-
-              <li class="nav-item">
-                <a class="nav-link " id="tab-1-nav" data-toggle="pill" href="#tab-3" role="tab">BRQ 2</a>
-              </li>
-
-              <li class="nav-item">
-                <a class="nav-link " id="tab-2-nav" data-toggle="pill" href="#tab-4" role="tab">BRQ 3</a>
-              </li>
-
-              <li class="nav-item">
-                <a class="nav-link " id="tab-3-nav" data-toggle="pill" href="#tab-4" role="tab">BRQ 4</a>
-              </li>
-   <li class="nav-item">
-                <a class="nav-link " id="tab-4-nav" data-toggle="pill" href="#tab-4" role="tab">BRQ 5</a>
-              </li>
-
-
-
-              <li class="nav-item">
-                <a class="nav-link " id="tab-5-nav" data-toggle="pill" href="#tab-6" role="tab">BRQ 6</a>
+                <a class="nav-link active" id="tab-0-nav" data-toggle="pill" href="#tab-0" role="tab">Contenu RAPPORT</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link " id="tab-6-nav" data-toggle="pill" href="#tab-6" role="tab">BRQ 7</a>
+                <a class="nav-link" id="tab-1-nav" data-toggle="pill" href="#tab-1" role="tab">Rapport BRQ</a>
               </li>
-
               <li class="nav-item">
-                <a class="nav-link " id="tab-7-nav" data-toggle="pill" href="#tab-7" role="tab">BRQ 8</a>
+                <a class="nav-link" id="tab-2-nav" data-toggle="pill" href="#tab-2" role="tab">Opérations BRQ</a>
               </li>
-
-
+              <li class="nav-item">
+                <a class="nav-link" id="tab-3-nav" data-toggle="pill" href="#tab-3" role="tab">Analyse BRQ</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="tab-4-nav" data-toggle="pill" href="#tab-4" role="tab">Annexes BRQ</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="tab-5-nav" data-toggle="pill" href="#tab-5" role="tab">Historique BRQ</a>
+              </li>
             </ul>
           </div>
+
           <div class="card-body">
             <div class="tab-content" id="model-tabs-content">
-              <div class="tab-pane fade show active" id="tab-0" role="tabpanel">
+
+              <!-- Tab 0 -->
+              <div class="tab-pane fade show active" id="tab-0" role="tabpanel" aria-labelledby="tab-0-nav">
+                <h5 class="mb-3">Vue d’ensemble</h5>
+                <p>Section pour recherche globale et résumé du rapport.</p>
 
                 <!-- Search Box -->
                 <div class="card card-outline card-primary">
@@ -321,111 +297,64 @@
                     <h3 class="card-title">🔎 Recherche</h3>
                   </div>
                   <div class="card-body">
-                    <form class="form-row">
+                    <form class="form-row" id="form-brq-search">
                       <div class="form-group col-md-3">
                         <label>Code de service</label>
-                        <input type="text" class="form-control" placeholder="Code de service">
+                        <input type="text" class="form-control" id="serviceCode" placeholder="Code de service">
                       </div>
                       <div class="form-group col-md-3">
                         <label>Ordre service</label>
-                        <input type="text" class="form-control" placeholder="Ordre service">
-                      </div>
-                      <div class="form-group col-md-3">
-                        <label>Numéro de référence d'opération</label>
-                        <input type="text" class="form-control" placeholder="Numéro référence">
+                        <input type="text" class="form-control" id="orderService" placeholder="Ordre service">
                       </div>
                       <div class="form-group col-md-3">
                         <label>Titre d'opération</label>
-                        <input type="text" class="form-control" placeholder="Titre">
+                        <input type="text" class="form-control" id="operationTitle" placeholder="Titre">
                       </div>
                       <div class="form-group col-md-3">
                         <label>Type d'opération</label>
-                        <select class="form-control">
+                        <select class="form-control" id="operationType">
                           <option>Sélectionner</option>
+                          <!-- Add options here -->
                         </select>
                       </div>
                       <div class="form-group col-md-3">
                         <label>Statut de l'opération</label>
-                        <select class="form-control">
+                        <select class="form-control" id="operationStatus">
                           <option>Sélectionner</option>
+                          <!-- Add options here -->
                         </select>
                       </div>
                       <div class="form-group col-md-3">
-                        <label>Date de l'opération</label>
-                        <input type="date" class="form-control">
+                        <label>Date de l'opération (début)</label>
+                        <input type="date" class="form-control" id="operationDate1">
+                      </div>
+                      <div class="form-group col-md-3">
+                        <label>Date de l'opération (fin)</label>
+                        <input type="date" class="form-control" id="operationDate2">
                       </div>
                       <div class="form-group col-md-12 mt-2">
-                        <button type="reset" class="btn btn-secondary"><i class="fas fa-undo"></i> Réinitialiser</button>
-                        <button type="submit" class="btn btn-primary float-right" onclick="brq1_bntsearch_click()"><i class="fas fa-search"></i> Rechercher</button>
+                        <button type="reset" class="btn btn-secondary">
+                          <i class="fas fa-undo"></i> Réinitialiser
+                        </button>
+                        <button type="submit" class="btn btn-primary float-right" onclick="brq1_bntsearch_click(event)">
+                          <i class="fas fa-search"></i> Rechercher
+                        </button>
                       </div>
                     </form>
                   </div>
                 </div>
-
-                <!-- Results Table -->
-                <div class="card card-outline card-info mt-3">
-                  <div class="card-header">
-                    <h3 class="card-title">📋 Résultats</h3>
-                  </div>
-                  <div class="card-body table-responsive p-0" style="max-height: 400px;">
-                    <table class="table table-hover text-nowrap">
-                      <thead class="thead-light">
-                      <tr>
-                        <th>Numéro de référence d'opération</th>
-                        <th>Ordre service</th>
-                        <th>Titre d'opération</th>
-                        <th>État d'opération</th>
-                        <th>Type d'opération</th>
-                        <th>Statut</th>
-                      </tr>
-                      </thead>
-                      <tbody>
-                      <tr>
-                        <td>508048071-2025-OPR-000046-I</td>
-                        <td>408</td>
-                        <td>نقطة تفتيش</td>
-                        <td>Programmée</td>
-                        <td>Type A</td>
-                        <td><span class="badge badge-success">En cours</span></td>
-                      </tr>
-                      <tr>
-                        <td>514028091-2025-OPR-000033-I</td>
-                        <td>1247</td>
-                        <td>مداهمة</td>
-                        <td>Programmée</td>
-                        <td>Type B</td>
-                        <td><span class="badge badge-warning">Programmée</span></td>
-                      </tr>
-                      </tbody>
-                    </table>
-
-
-                    <!-- zone pour jsGrid -->
-                    <div id="brq1_results_grid"></div>
-                  </div>
-                  <div class="card-footer clearfix">
-                    <div class="float-left">Total: <b>4039</b></div>
-                    <ul class="pagination pagination-sm m-0 float-right">
-                      <li class="page-item"><a class="page-link" href="#">«</a></li>
-                      <li class="page-item"><a class="page-link" href="#">1</a></li>
-                      <li class="page-item"><a class="page-link" href="#">2</a></li>
-                      <li class="page-item"><a class="page-link" href="#">»</a></li>
-                    </ul>
-                  </div>
-                </div>
-
-                <!-- Details Section with Tabs -->
                 <div class="card card-outline card-success mt-3">
                   <div class="card-header">
-                    <h3 class="card-title">📑 Détails</h3>
+                    <h3 class="card-title">📑 Détails Rapport BRQ</h3>
                   </div>
                   <div class="card-body">
+                    <!-- Second-level tabs -->
                     <ul class="nav nav-tabs" id="detailTabs" role="tablist">
                       <li class="nav-item">
-                        <a class="nav-link active" id="info-tab" data-toggle="tab" href="#info" role="tab">Informations générales</a>
+                        <a class="nav-link active" id="brq-reports-tab" data-toggle="tab" href="#brq-reports" role="tab">Rapports</a>
                       </li>
                       <li class="nav-item">
-                        <a class="nav-link" id="douane-tab" data-toggle="tab" href="#douane" role="tab">Douaniers</a>
+                        <a class="nav-link" id="brq-list-tab" data-toggle="tab" href="#brq-list" role="tab">Liste BRQ</a>
                       </li>
                       <li class="nav-item">
                         <a class="nav-link" id="vehic-tab" data-toggle="tab" href="#vehic" role="tab">Véhicules</a>
@@ -443,72 +372,65 @@
                         <a class="nav-link" id="brig-tab" data-toggle="tab" href="#brig" role="tab">Brigades Canines</a>
                       </li>
                     </ul>
-                    <div class="tab-content mt-3" id="detailTabsContent">
-                      <div class="tab-pane fade show active" id="info" role="tabpanel">Contenu Informations générales…</div>
-                      <div class="tab-pane fade" id="douane" role="tabpanel">Liste des douaniers…</div>
-                      <div class="tab-pane fade" id="vehic" role="tabpanel">Infos véhicules…</div>
-                      <div class="tab-pane fade" id="armes" role="tabpanel">Armes saisies…</div>
-                      <div class="tab-pane fade" id="mun" role="tabpanel">Munitions…</div>
-                      <div class="tab-pane fade" id="eqp" role="tabpanel">Équipements…</div>
-                      <div class="tab-pane fade" id="brig" role="tabpanel">Unités canines…</div>
+
+                    <!-- Second-level content -->
+                    <div class="tab-content mt-3">
+                      <div class="tab-pane fade show active" id="brq-reports" role="tabpanel" aria-labelledby="brq-reports-tab">
+
+                        <!-- Contenu des rapports -->
+
+                        <div id="reports-parent-container" class="rtl-box">
+                          <div id="report-container" class="rtl-box">
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="tab-pane fade" id="brq-list" role="tabpanel" aria-labelledby="brq-list-tab">
+                        <!-- zone pour jsGrid -->
+                        <div id="brq1_results_grid">
+                          <div class="card-footer clearfix">
+                            <div class="float-left">Total: <b id="total"></b></div>
+                            <ul class="pagination pagination-sm m-0 float-right">
+                              <li class="page-item"><a class="page-link" href="#">«</a></li>
+                              <li class="page-item"><a class="page-link" href="#">1</a></li>
+                              <li class="page-item"><a class="page-link" href="#">2</a></li>
+                              <li class="page-item"><a class="page-link" href="#">»</a></li>
+                            </ul>
+                          </div>
+                        </div>
+
+                      </div>
+
+                      <div class="tab-pane fade" id="vehic" role="tabpanel" aria-labelledby="vehic-tab">Infos véhicules…</div>
+                      <div class="tab-pane fade" id="armes" role="tabpanel" aria-labelledby="armes-tab">Armes saisies…</div>
+                      <div class="tab-pane fade" id="mun" role="tabpanel" aria-labelledby="mun-tab">Munitions…</div>
+                      <div class="tab-pane fade" id="eqp" role="tabpanel" aria-labelledby="eqp-tab">Équipements…</div>
+                      <div class="tab-pane fade" id="brig" role="tabpanel" aria-labelledby="brig-tab">Unités canines…</div>
                     </div>
                   </div>
                 </div>
 
 
-                <h1>- كشف الاستعلامات</h1>
-                <h3 id="report-date">التاريخ: -</h3>
-
-                <div class="controls">
-                  <label>صيغة العرض:
-                    <select id="viewMode">
-                      <option value="table">جدول</option>
-                      <option value="text">نص مبسط</option>
-                    </select>
-                  </label>
-                  <button onclick="render()">تطبيق</button>
-                </div>
-
-                <div id="report-parent-container" class="rtl-box">
-                <div id="report-container" class="rtl-box"></div>
-                </div>
               </div>
 
-              <div class="tab-pane fade " id="tab-1" role="tabpanel">
+              <!-- Tab 1: Rapport BRQ (with second-level tabs) -->
+              <div class="tab-pane fade" id="tab-1" role="tabpanel" aria-labelledby="tab-1-nav">
+
+                Tab 1
               </div>
 
-              <div class="tab-pane fade " id="tab-2" role="tabpanel">
-              </div>
+              <!-- Other main tabs -->
+              <div class="tab-pane fade" id="tab-2" role="tabpanel" aria-labelledby="tab-2-nav">Section Opérations BRQ</div>
+              <div class="tab-pane fade" id="tab-3" role="tabpanel" aria-labelledby="tab-3-nav">Section Analyse BRQ</div>
+              <div class="tab-pane fade" id="tab-4" role="tabpanel" aria-labelledby="tab-4-nav">Annexes BRQ</div>
+              <div class="tab-pane fade" id="tab-5" role="tabpanel" aria-labelledby="tab-5-nav">Historique BRQ</div>
 
-              <div class="tab-pane fade " id="tab-3" role="tabpanel">
-              </div>
-
-              <div class="tab-pane fade " id="tab-4" role="tabpanel">
-              </div>
-
-              <div class="tab-pane fade " id="tab-5" role="tabpanel">
-              </div>
-
-              <div class="tab-pane fade " id="tab-6" role="tabpanel">
-              </div>
-
-              <div class="tab-pane fade " id="tab-7" role="tabpanel">
-              </div>
-
-              <div class="tab-pane fade " id="tab-8" role="tabpanel">
-              </div>
-
-              <div class="tab-pane fade " id="tab-9" role="tabpanel">
-              </div>
-
-              <div class="tab-pane fade " id="tab-10" role="tabpanel">
-              </div>
-
-            </div>
+            </div><!-- /.tab-content -->
           </div><!-- /.card-body -->
         </div><!-- /.card -->
       </div>
     </section>
+
 
     <!-- Universal Relationship Selector -->
     <!-- 🔹 Global Popup -->

@@ -1,46 +1,134 @@
-const server1Url = "http://localhost:8080";
+const server1BaseUrl = "http://localhost:8080";
 
 
 // ⬇ بيانات محاكاة من الـ API (printVoPram)
-const printVoConst = {
-  dt: "2025-08-28",
-  brqSpsList: [
-    {
-      rprtRefNo: "BRQ001",
-      rprtTpCd: "الحجوزات النوعية",
-      orgnCd: "308000000",
-      rprtInfNtr: "تهريب مخدرات",
-      rprtInfDttm: "2025-08-20 12:30",
-      rprtInfPlc: "الحدود الغربية",
-      cagValTtl: 200000,
-      rprtInfPrcd: "إجراءات قانونية",
-      rprtInfJrdqTxt: "المادة 12 من القانون"
-    }
-  ],
-  brqOtsList: [
-    {
-      rprtRefNo: "BRQ002",
-      rprtTpCd: "الحجوزات الأخرى",
-      orgnCd: "307000000",
-      rprtInfNtr: "سجائر مهربة",
-      rprtInfDttm: "2025-08-21 10:00",
-      rprtInfPlc: "ميناء الجزائر",
-      cagValTtl: 50000,
-      rprtInfPrcd: "مصادرة",
-      rprtInfJrdqTxt: "المادة 5 من القانون"
-    }
-  ],
-  brqIncList: [
-    {
-      rprtIncRefNo: "INC001",
-      rprtIncTtl: "حادث سير",
-      rprtIncDesc: "اصطدام مركبتين لنقل بضائع",
-      rprtIncDttm: "2025-08-22 14:00",
-      orgnCd: "306000000"
-    }
-  ]
-};
-
+const printVoConst =
+  {
+    "t0Dttm": "يومي 03 و04 سبتمبر 2025",
+    "brqSpsList": [{
+      "brqType": "01",
+      "t1ReportNature": null,
+      "orgnNm": ": الفرقة المتعددة المهام للجمارك بالبويرة بالتنسيق مع مصلحة الوقاية وأمن الجيش بالبويرة.",
+      "t2InfNature": "حيازة بضاعة محظورة متمثلة في مؤثرات عقلية، أجنبية المنشأ (نيجيريا(، مزدوجة الإمضاء من نوع: بريغابالين 300 ملغ.",
+      "t4Emplacement": ": الطريق السيار شرق – غرب، بالمنطقة المسماة \"الأخضرية\"، أمام ثكنة الجيش الوطني الشعبي بإتجاه الجزائر.     ",
+      "t4Dttm": ": 02/09/2025 على الساعة 22:20 ليلا. ",
+      "t5TypeMarchandise": "8850 قرص مهلوس من نوع بريغابالين 300 ملغ.",
+      "t6ValueMarchandise": "لم تحدد.",
+      "t6TransportMarchandis": "سيارة من نوعفولكس فاغن، تحمل لوحة الترقيم: 12686-107-16، الرقم التسلسلي في الطراز:WVGZZZ1TZ7W079016، ملك للمدعومنسل عائدة.  :.",
+      "t6TransportValue": "لم تحدد. ",
+      "t7DetectionTechnology": "سد جمارك مع مصالح الوقاية وأمن الجيش بالبويرة، حيث وجدت الأقراص المهلوسة مخبأة بأحكام بالعجلة الاحتياطية وكمية أخرى تحتي المقاعد الخلفية للسيارة.",
+      "t8Personne": "المدعو: منسل صدامالمولود بتاريخ: : 28/01/1991 بتبسةمتزوج",
+      "t9InractionValue": null,
+      "t10Loitxt": "المواد 21 – 336 من قانون الجمارك ومواد الأمر 05-06 المتعلق بمكافحة التهريب. ",
+      "t11ActionsTaken": ": تحرير محضر الحجز ضد المخالف.",
+      "reportInfoNature": null,
+      "reportInfoDateTime": null,
+      "reportInfoPlace": null,
+      "reportInfoTech": null,
+      "reportInfoPrice": null,
+      "reportInfoAmount": null,
+      "currencyCode": null,
+      "reportInfoDescription": null,
+      "attachmentFileId": null,
+      "totalValue": null,
+      "validityStatus": null,
+      "operationRefNo": null,
+      "unknownYn": null,
+      "changeReason": null
+    }, {
+      "brqType": "01",
+      "t1ReportNature": null,
+      "orgnNm": "المديرية الجهوية للجمارك بورقلة :",
+      "t2InfNature": "حيازة بضاعة محظورة متمثلة في مؤثرات عقلية، أجنبية المنشأ (نيجيريا(، مزدوجة الإمضاء من نوع: بريغابالين 300 ملغ.",
+      "t4Emplacement": ": الطريق السيار شرق – غرب، بالمنطقة المسماة \"الأخضرية\"، أمام ثكنة الجيش الوطني الشعبي بإتجاه الجزائر.     ",
+      "t4Dttm": ": 02/09/2025 على الساعة 22:20 ليلا. ",
+      "t5TypeMarchandise": "8850 قرص مهلوس من نوع بريغابالين 300 ملغ.",
+      "t6ValueMarchandise": "لم تحدد.",
+      "t6TransportMarchandis": "سيارة من نوعفولكس فاغن، تحمل لوحة الترقيم: 12686-107-16، الرقم التسلسلي في الطراز:WVGZZZ1TZ7W079016، ملك للمدعومنسل عائدة.  :.",
+      "t6TransportValue": "لم تحدد. ",
+      "t7DetectionTechnology": "سد جمارك مع مصالح الوقاية وأمن الجيش بالبويرة، حيث وجدت الأقراص المهلوسة مخبأة بأحكام بالعجلة الاحتياطية وكمية أخرى تحتي المقاعد الخلفية للسيارة.",
+      "t8Personne": "المدعو: منسل صدامالمولود بتاريخ: : 28/01/1991 بتبسةمتزوج",
+      "t9InractionValue": null,
+      "t10Loitxt": "المواد 21 – 336 من قانون الجمارك ومواد الأمر 05-06 المتعلق بمكافحة التهريب. ",
+      "t11ActionsTaken": ": تحرير محضر الحجز ضد المخالف.",
+      "reportInfoNature": null,
+      "reportInfoDateTime": null,
+      "reportInfoPlace": null,
+      "reportInfoTech": null,
+      "reportInfoPrice": null,
+      "reportInfoAmount": null,
+      "currencyCode": null,
+      "reportInfoDescription": null,
+      "attachmentFileId": null,
+      "totalValue": null,
+      "validityStatus": null,
+      "operationRefNo": null,
+      "unknownYn": null,
+      "changeReason": null
+    }, {
+      "brqType": "01",
+      "t1ReportNature": null,
+      "orgnNm": "المديرية الجهوية للجمارك بالجزائر خارجية :",
+      "t2InfNature": "حيازة بضاعة محظورة متمثلة في مؤثرات عقلية، أجنبية المنشأ (نيجيريا(، مزدوجة الإمضاء من نوع: بريغابالين 300 ملغ.",
+      "t4Emplacement": ": الطريق السيار شرق – غرب، بالمنطقة المسماة \"الأخضرية\"، أمام ثكنة الجيش الوطني الشعبي بإتجاه الجزائر.     ",
+      "t4Dttm": ": 02/09/2025 على الساعة 22:20 ليلا. ",
+      "t5TypeMarchandise": "8850 قرص مهلوس من نوع بريغابالين 300 ملغ.",
+      "t6ValueMarchandise": "لم تحدد.",
+      "t6TransportMarchandis": "سيارة من نوعفولكس فاغن، تحمل لوحة الترقيم: 12686-107-16، الرقم التسلسلي في الطراز:WVGZZZ1TZ7W079016، ملك للمدعومنسل عائدة.  :.",
+      "t6TransportValue": "لم تحدد. ",
+      "t7DetectionTechnology": "سد جمارك مع مصالح الوقاية وأمن الجيش بالبويرة، حيث وجدت الأقراص المهلوسة مخبأة بأحكام بالعجلة الاحتياطية وكمية أخرى تحتي المقاعد الخلفية للسيارة.",
+      "t8Personne": "المدعو: منسل صدامالمولود بتاريخ: : 28/01/1991 بتبسةمتزوج",
+      "t9InractionValue": null,
+      "t10Loitxt": "المواد 21 – 336 من قانون الجمارك ومواد الأمر 05-06 المتعلق بمكافحة التهريب. ",
+      "t11ActionsTaken": ": تحرير محضر الحجز ضد المخالف.",
+      "reportInfoNature": null,
+      "reportInfoDateTime": null,
+      "reportInfoPlace": null,
+      "reportInfoTech": null,
+      "reportInfoPrice": null,
+      "reportInfoAmount": null,
+      "currencyCode": null,
+      "reportInfoDescription": null,
+      "attachmentFileId": null,
+      "totalValue": null,
+      "validityStatus": null,
+      "operationRefNo": null,
+      "unknownYn": null,
+      "changeReason": null
+    }, {
+      "brqType": "01",
+      "t1ReportNature": null,
+      "orgnNm": " المديرية الجهوية للجمارك بتبسة :",
+      "t2InfNature": "حيازة بضاعة محظورة متمثلة في مؤثرات عقلية، أجنبية المنشأ (نيجيريا(، مزدوجة الإمضاء من نوع: بريغابالين 300 ملغ.",
+      "t4Emplacement": ": الطريق السيار شرق – غرب، بالمنطقة المسماة \"الأخضرية\"، أمام ثكنة الجيش الوطني الشعبي بإتجاه الجزائر.     ",
+      "t4Dttm": ": 02/09/2025 على الساعة 22:20 ليلا. ",
+      "t5TypeMarchandise": "8850 قرص مهلوس من نوع بريغابالين 300 ملغ.",
+      "t6ValueMarchandise": "لم تحدد.",
+      "t6TransportMarchandis": "سيارة من نوعفولكس فاغن، تحمل لوحة الترقيم: 12686-107-16، الرقم التسلسلي في الطراز:WVGZZZ1TZ7W079016، ملك للمدعومنسل عائدة.  :.",
+      "t6TransportValue": "لم تحدد. ",
+      "t7DetectionTechnology": "سد جمارك مع مصالح الوقاية وأمن الجيش بالبويرة، حيث وجدت الأقراص المهلوسة مخبأة بأحكام بالعجلة الاحتياطية وكمية أخرى تحتي المقاعد الخلفية للسيارة.",
+      "t8Personne": "المدعو: منسل صدامالمولود بتاريخ: : 28/01/1991 بتبسةمتزوج",
+      "t9InractionValue": null,
+      "t10Loitxt": "المواد 21 – 336 من قانون الجمارك ومواد الأمر 05-06 المتعلق بمكافحة التهريب. ",
+      "t11ActionsTaken": ": تحرير محضر الحجز ضد المخالف.",
+      "reportInfoNature": null,
+      "reportInfoDateTime": null,
+      "reportInfoPlace": null,
+      "reportInfoTech": null,
+      "reportInfoPrice": null,
+      "reportInfoAmount": null,
+      "currencyCode": null,
+      "reportInfoDescription": null,
+      "attachmentFileId": null,
+      "totalValue": null,
+      "validityStatus": null,
+      "operationRefNo": null,
+      "unknownYn": null,
+      "changeReason": null
+    }],
+    "brqOtsList": [],
+    "brqIncList": []
+  };
 function render(printVo) {
   if (!printVo)
     printVo = printVoConst;
@@ -77,7 +165,7 @@ ${printVo.t0Dttm}
 </div>
 `
 
-  document.getElementById("report-date").textContent = `التاريخ: ${printVo.t0Dttm || "-"}`;
+  // document.getElementById("report-date").textContent = `التاريخ: ${printVo.t0Dttm || "-"}`;
 
   // SPS
   if (printVo.brqSpsList?.length) {
@@ -124,9 +212,9 @@ function renderSection(container, title, list) {
   section.className = "report-section";
 
   console.log(list)
-  section.innerHTML =`<h2 style="color: darkred">${title}</h2>`;
+  section.innerHTML = `<h2 style="color: darkred">${title}</h2>`;
 
-  var orgnindx=1;
+  var orgnindx = 1;
   for (const listElement of list) {
 
     console.error(listElement)
@@ -150,7 +238,7 @@ function renderSection(container, title, list) {
     orgnindx++;
   }
 
-   // section.appendChild(div);
+  // section.appendChild(div);
 
   container.appendChild(section);
 }
@@ -171,19 +259,47 @@ function renderSection(container, title, list) {
   }
 }*/
 
-async function brq1_bntsearch_click() {
+async function brq1_bntsearch_click(event) {
 
   console.debug('brq1_bntsearch_click')
   try {
     // 1️⃣ Construire la requête (tu peux ajouter params du formulaire ici)
     // const url = "/api/coc/reports";
-    const url =server1Url+ "/api/coc/print-test";
 
-    // 2️⃣ Fetch API
+    if (event)
+      event.preventDefault(); // Prevent the form from submitting
+
+    // Gather form data
+    const serviceCode = document.getElementById('serviceCode').value;
+    const orderService = document.getElementById('orderService').value;
+    const operationTitle = document.getElementById('operationTitle').value;
+    const operationType = document.getElementById('operationType').value;
+    const operationStatus = document.getElementById('operationStatus').value;
+    const operationDate1 = document.getElementById('operationDate1').value;
+    const operationDate2 = document.getElementById('operationDate2').value;
+
+    // Build the query string
+    const params = new URLSearchParams({
+      serviceCode,
+      orderService,
+      operationTitle,
+      operationType,
+      operationStatus,
+      operationDate1,
+      operationDate2,
+      startDt: Date.now(),
+      endDt: Date.now() //- hier
+    });
+
+    // const url =+ "/api/coc/print-test";
+    const url = `${server1BaseUrl}/api/coc/print-test?${params.toString()}`;
+
+    // Fetch API call
     const response = await fetch(url, {
       method: "GET",
-      // headers: {"Content-Type": "application/json"}
+      headers: {"Content-Type": "application/json"}
     });
+
 
     if (!response.ok) {
       throw new Error("Erreur API: " + response.status);
@@ -208,29 +324,31 @@ async function brq1_bntsearch_click() {
       data: brqCombinedList,
 
       fields: [
-        {name: "brqType", title: "Type", type: "text", width: 150 ,
-          itemTemplate:function (value) {
-            if (value === "01" || value==="Spc" ) {
-              return '<span class="badge badge-success">' + value + '</span>';
-            } else if (value === "Annulé") {
-              return '<span class="badge badge-danger">' + value + '</span>';
+        {
+          name: "brqType", title: "Type", type: "text", width: 150,
+          itemTemplate: function (value) {
+            if (value === "01" || value === "Spc") {
+              return '<span class="badge badge-danger">حجز نوعي</span>';
+            } else if (value === "02") {
+              return '<span class="badge badge-success">حجز آخر</span>';
             } else {
-              return value; // Default rendering for other statuses
+              return '<span className="badge badge-info">حدث</span>'; // Default rendering for other statuses
             }
-          } },
-        {name: "orgnNm", title: "N° Réf", type: "text", width: 150},
-        {name: "t2InfNature", title: "Code org.", type: "text", width: 80},
-        {name: "t4Emplacement", title: "Type", type: "text", width: 70},
-        {name: "t4Dttm", title: "Date", type: "text", width: 120},
-        {name: "t5TypeMarchandise", title: "Nature", type: "text", width: 200},
-        {name: "t6ValueMarchandise", title: "État", type: "text", width: 100},
-        {name: "t6TransportMarchandis", title: "État2", type: "text", width: 100}
+          }
+        },
+        {name: "orgnCd", title: "Code Brigade", type: "number", width: 15},
+        // {name: "t2InfNature", title: "Code org.", type: "text", width: 80},
+        // {name: "t4Emplacement", title: "Type", type: "text", width: 70},
+        {name: "t4Dttm", title: "Date", type: "text", width: 25},
+        {name: "t5TypeMarchandise", title: "Type de Marchandise", type: "text", width: 100},
+        {name: "t6ValueMarchandise", title: "Value de Marchandise", type: "text", width: 100},
+        // {name: "t6TransportMarchandis", title: "État2", type: "text", width: 100}
       ]
     });
 
     // 4️⃣ Appeler la fonction render() pour préparer l’impression
 
-    render(printVo.brqSpsList);
+    render(printVo);
 
   } catch (err) {
     console.error("Erreur lors du fetch des rapports:", err);
