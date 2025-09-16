@@ -224,17 +224,17 @@ function renderSection(container, title, list) {
             <h5><u> <b>${orgnindx} - ${t1Orgn} </b> </u></u>
              ${listElement.orgnNm}
             </h5>
-            <h5> <u> <b>${t2InfNature} </b>  </u>${listElement.t2InfNature}</h5>
-            <h5> <u> <b>${t4Emplacment} </b>  </u>${listElement.t4Emplacement}</h5>
-            <h5> <u> <b>${t4Dttm} </b>  </u>${listElement.t4Dttm}</h5>
+            <h5> <u> <b>${t2InfNature} </b>  </u>${listElement.rprtInfNtr}</h5>
+            <h5> <u> <b>${t4Emplacment} </b>  </u>${listElement.rprtInfPlc}</h5>
+            <h5> <u> <b>${t4Dttm} </b>  </u>${listElement.rprtInfDttm}</h5>
             <h5> <u> <b>${t5TypeMarchandise} </b>  </u>${listElement.t5TypeMarchandise}</h5>
             <h5> <u> <b>${t6TransportMarchandis} </b>  </u>${listElement.t6TransportMarchandis}</h5>
             <h5> <u> <b>${t6TransportValue} </b> </u>${listElement.t6TransportValue}</h5>
-            <h5> <u> <b>${t7DetectionTechnology} </b> </u>${listElement.t7DetectionTechnology}</h5>
+            <h5> <u> <b>${t7DetectionTechnology} </b> </u>${listElement.rprtInfTch}</h5>
             <h5> <u> <b>${t8Personne} </b> </u>${listElement.t8Personne}</h5>
-            <h5> <u> <b>${t9InractionValue} </b> </u>${listElement.t9InractionValue}</h5>
-            <h5> <u> <b>${t10Loitxt} </b> </u>${listElement.t10Loitxt}</h5>
-            <h5> <u> <b>${t11ActionsTaken} </b> </u>${listElement.t11ActionsTaken}</h5>
+            <h5> <u> <b>${t9InractionValue} </b> </u>${listElement.cagValTtl}</h5>
+            <h5> <u> <b>${t10Loitxt} </b> </u>${listElement.rprInfJrdqTxt}</h5>
+            <h5> <u> <b>${t11ActionsTaken} </b> </u>${listElement.rprtIntPRcd}</h5>
 `
     ;
     orgnindx++;
@@ -294,7 +294,8 @@ async function brq1_bntsearch_click(event) {
     });
 
     // const url =+ "/api/coc/print-test";
-    const url = `${server1BaseUrl}/api/coc/print-test?${params.toString()}`;
+    // const url = `${server1BaseUrl}/api/coc/print-test?${params.toString()}`;
+    const url = `${server1BaseUrl}/api/coc/reports?${params.toString()}`;
 
     // Fetch API call
     const response = await fetch(url, {
@@ -311,28 +312,27 @@ async function brq1_bntsearch_click(event) {
     console.log("Résultats reçus:", printVo);
 
     // Combine the lists
-    const brqCombinedList = [...printVo.brqSpsList, ...printVo.brqIncList, ...printVo.brqOtsList];
+    const brqCombinedList = [...printVo.brqSpsoTSList, ...printVo.brqIncList ];
 
     // 3️⃣ Injecter les résultats dans jsGrid
     $("#brq1_results_grid").jsGrid({
       width: "100%",
       height: "400px",
-
       inserting: false,
       editing: false,
       sorting: true,
       paging: true,
-
       data: brqCombinedList,
-
       fields: [
         {
           name: "brqType", title: "Type", type: "text", width: 150,
           itemTemplate: function (value) {
-            if (value === "01" || value === "Spc") {
+            if (value === "01" || value === "SPS") {
               return '<span class="badge badge-danger">حجز نوعي</span>';
-            } else if (value === "02") {
+            } else if (value === "02" || value==='OTS') {
               return '<span class="badge badge-success">حجز آخر</span>';
+            } else if (value === "03" || value==='') {
+              return '<span class="badge badge-success">حادث</span>';
             } else {
               return '<span className="badge badge-info">حدث</span>'; // Default rendering for other statuses
             }

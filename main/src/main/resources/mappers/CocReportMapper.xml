@@ -28,11 +28,9 @@
         <result property="deleteFlag" column="del_yn"/>
     </resultMap>
 
-    <select id="selectRprtList" resultMap="CocReportResultMap" parameterType="dz.coc9.service.dtococ.request.CocReportRequest">
+    <select id="selectRprtList" resultType="dz.coc9.service.dtococ.CocReportResultDto2" parameterType="dz.coc9.service.dtococ.request.CocReportRequest">
         /** selectRprtList */
         SELECT
-            'false' AS chkSel,
-            B.RPRT_REF_NO,
             B.RPRT_TP_CD,
             B.ORGN_CD,
             B.RPRT_INF_NTR,
@@ -101,6 +99,7 @@
             'YYYYMMDD')
         </if>
         ORDER BY TO_CHAR(B.FRST_RGSR_DTTM,'YYYYMMDD') DESC
+        limit 50
     </select>
     <select id="findAllReports" resultType="dz.coc9.service.dtococ.CocReportDto">
         /** todo selectChngList */

@@ -2,3 +2,6 @@
 CREATE ROLE coc9 SUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT LOGIN NOREPLICATION NOBYPASSRLS
     PASSWORD 'cocd08';
 
+create schema alpassint AUTHORIZATION coc9;
+
+alter user coc9 set search_path =alpassint;

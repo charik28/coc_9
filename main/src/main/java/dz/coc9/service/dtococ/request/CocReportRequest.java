@@ -15,13 +15,13 @@ public class CocReportRequest {
     // Search filters used in  CocReportMapper.xml
 
     private String  vldtStts;
-    private String  orgnCd;
+    private String  orgnCd  ="000000000";
     private String  srchVldtStts;//searchValidationStatus
     private String  srchRprtTpCd;//searchReportTypeCode
     private String  srchOrgnCd;
     private String  srchRprtInfNtr;//searchReportInfNature
-    private String  rprtRqstDtFrom;
-    private String  rprtRqstDtTo;
+    private String  rprtRqstDtFrom ;//= "20250828";
+    private String  rprtRqstDtTo ;//= "20250901";
 
 
 //    private String
