@@ -260,7 +260,13 @@ function renderSection(container, title, list) {
     return value; // Default rendering for other statuses
   }
 }*/
-
+function formatDate(d) {
+  const date = new Date(d);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0"); // JS months are 0-based
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
 async function brq1_bntsearch_click(event) {
 
   console.debug('brq1_bntsearch_click')
@@ -280,29 +286,29 @@ async function brq1_bntsearch_click(event) {
     const operationDate1 = document.getElementById('operationDate1').value;
     const operationDate2 = document.getElementById('operationDate2').value;
 
-    // Build the query string
-    const params = new URLSearchParams({
-      serviceCode,
-      orderService,
-      operationTitle,
-      operationType,
-      operationStatus,
-      operationDate1,
-      operationDate2,
-      startDt: Date.now(),
-      endDt: Date.now() //- hier
-    });
+    const requestBody = {
+      vldtStts: operationStatus || "",
+      orgnCd: serviceCode || "",
+      srchVldtStts: operationType || "",
+      srchRprtTpCd: orderService || "",
+      srchOrgnCd: operationTitle || "",
+      srchRprtInfNtr: "", // not mapped in your original vars, left empty
+      rprtRqstDtFrom: operationDate1 || formatDate(new Date(Date.now() - 2400 * 60 * 60 * 1000).toISOString()),
+      rprtRqstDtTo: operationDate2 ||  formatDate(new Date().toISOString())
+    };
 
-    // const url =+ "/api/coc/print-test";
-    // const url = `${server1BaseUrl}/api/coc/print-test?${params.toString()}`;
-    const url = `${server1BaseUrl}/api/coc/reports?${params.toString()}`;
 
-    // Fetch API call
+// Define URL without query params
+    const url = `${server1BaseUrl}/api/coc/reports`;
+
+// Fetch API call
     const response = await fetch(url, {
-      method: "GET",
-      headers: {"Content-Type": "application/json"}
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody)
     });
 
+    console.log(response);
 
     if (!response.ok) {
       throw new Error("Erreur API: " + response.status);
@@ -354,6 +360,7 @@ async function brq1_bntsearch_click(event) {
 
   } catch (err) {
     console.error("Erreur lors du fetch des rapports:", err);
+    throw err;
     alert("Impossible de charger les rapports.");
   }
 }

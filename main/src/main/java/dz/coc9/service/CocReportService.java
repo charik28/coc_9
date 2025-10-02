@@ -3,11 +3,13 @@ package dz.coc9.service;
 import dz.coc9.mappers.CocReportMapper;
 import dz.coc9.service.dtococ.*;
 import dz.coc9.service.dtococ.request.CocReportRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 public class CocReportService {
     private final CocReportMapper cocReportMapper;
@@ -24,10 +26,12 @@ public class CocReportService {
 
         ArrayList<CocReportResultDto2>  cocReportDtos = cocReportMapper.selectRprtList(cocReportRequest);
 
+        log.debug(cocReportDtos.toString());
+
         printVo.setBrqSpsOtsList(cocReportDtos);
 
 
-        return null;
+        return printVo;
     }
     public PrintVo getReportsTest() {
 

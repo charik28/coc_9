@@ -9,29 +9,27 @@ import java.time.LocalDateTime;
 public class CocReportResultDto2 {
 
 
-        private String rprtTpCd ; // SPS. OTS.   == brqType
-//        private String  rprtTpCd; //RPRT_TP_CD
-
-        private String t1ReportNature;
-
-        private String orgnCd;
-        private String orgnNm;
-        private String rprtInfNtr; // tptyInfNtr=t2InfNature
-        private String rprtInfPlc; //t4Emplacement;
-        private String rprtInfDttm;//t4Dttm;
-        private String t5TypeMarchandise;
+        private String rprtTpCd="" ; // SPS. OTS.   == brqType
+//        private String  rprtTpCd; // RPRT_TP_CD
+        private String t1ReportNature="";
+        private String orgnCd="";
+        private String orgnNm="";
+        private String rprtInfNtr =""; // tptyInfNtr=t2InfNature
+        private String rprtInfPlc=""; // t4Emplacement;
+        private String rprtInfDttm="";// t4Dttm;
+        private String t5TypeMarchandise="";
         private String t6ValueMarchandise="لم تحدد";
-        private String t6TransportMarchandis;
+        private String t6TransportMarchandis ="";
 
-        private String t6TransportValue = "لم تحدد. ";
+        private String t6TransportValue = "لم تحدد.";
 
-        private String rprtInfTch; //t7DetectionTechnology ;
-        private String t8Personne ;
-        private String unknownYn ;
-        private String cagValTtl;// rprtInfAmd;// t9InractionValue ;
-        private String currCd; // DZD
-        private String rprInfJrdqTxt;//t10Loitxt ;
-        private String rprtIntPRcd;// t11ActionsTaken =": تحرير محضر الحجز ضد المخالف.";
+        private String rprtInfTch=""; // t7DetectionTechnology ;
+        private String t8Personne ="";
+        private String unknownYn ="";
+        private String cagValTtl="";// rprtInfAmd;// t9InractionValue ;
+        private String currCd=""; // DZD
+        private String rprInfJrdqTxt="";// t10Loitxt ;
+        private String rprtIntPRcd="";// t11ActionsTaken =": تحرير محضر الحجز ضد المخالف.";
 
         @JsonIgnore
         private T6TransportMarchandiseHelper t6TransportMarchandiseHelper;
@@ -44,7 +42,15 @@ public class CocReportResultDto2 {
 
         }
 
-
+        @Override
+        public String toString() {
+                return "CocReportResultDto2{" +
+                        "t1ReportNature='" + t1ReportNature + '\'' +
+                        ", rprtInfDttm='" + rprtInfDttm + '\'' +
+                        ", rprtTpCd='" + rprtTpCd + '\'' +
+                        ", orgnCd='" + orgnCd + '\'' +
+                        '}';
+        }
 /*
         private String reportInfoNature; // طبيعة المعلومات
         private LocalDateTime reportInfoDateTime; // تاريخ ووقت المعلومات

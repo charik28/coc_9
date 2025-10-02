@@ -98,5 +98,8 @@
     <logger name="org.springframework" level="WARN"/>
     <logger name="org.springframework.web" level="WARN"/>
     <logger name="org.springframework.security" level="WARN"/>
-
+    <Logger name="org.apache.coyote.http11.Http11Processor" level="DEBUG"/>
+    <Logger name="org.postgresql.jdbc.PgConnection" level="INFO"/>
+    <Logger name="org.postgresql.Driver" level="INFO"/>
+    <Logger name="o.p.core.v3.ConnectionFactoryImpl" level="INFO"/>
 </configuration>

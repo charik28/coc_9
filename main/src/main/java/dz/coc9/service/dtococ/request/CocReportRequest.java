@@ -2,6 +2,8 @@ package dz.coc9.service.dtococ.request;
 
 import lombok.Data;
 
+import java.util.Date;
+
 @Data
 public class CocReportRequest {
 
@@ -15,13 +17,13 @@ public class CocReportRequest {
     // Search filters used in  CocReportMapper.xml
 
     private String  vldtStts;
-    private String  orgnCd  ="000000000";
+    private String  orgnCd ;
     private String  srchVldtStts;//searchValidationStatus
     private String  srchRprtTpCd;//searchReportTypeCode
     private String  srchOrgnCd;
     private String  srchRprtInfNtr;//searchReportInfNature
-    private String  rprtRqstDtFrom ;//= "20250828";
-    private String  rprtRqstDtTo ;//= "20250901";
+    private String  rprtRqstDtFrom = new Date().toString();//= "20250828";
+    private String  rprtRqstDtTo  = new Date().toString() ;//= "20250901";
 
 
 //    private String
