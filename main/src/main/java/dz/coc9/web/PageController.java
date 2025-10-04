@@ -35,6 +35,11 @@ public class PageController {
         return new ModelAndView("forward:/app/home.html");
 //        return loadCocReport();
     }
+    @GetMapping("/ded")
+    public ModelAndView load2() {
+        return new ModelAndView("forward:/app/declarations.html");
+//        return loadCocReport();
+    }
     @GetMapping("/coc9")
     public ModelAndView loadCocHome() {
         return new ModelAndView("forward:/coc9/index.html");
