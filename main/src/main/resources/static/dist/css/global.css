@@ -1,0 +1,6 @@
+#map { height: 350px; width: 100%; border-radius: 10px; }
+.small-box h3 { font-size: 2rem; }
+.card-title i { margin-right: 6px; }
+.export-buttons button { margin-right: 6px; }
+.section { animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from {opacity:0;} to {opacity:1;} }

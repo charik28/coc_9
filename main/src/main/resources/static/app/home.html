@@ -1,20 +1,21 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lutte contre la Contrebande - Tableau de Bord</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lutte contre la Contrebande</title>
 
-  <!-- AdminLTE & Dependencies -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
+  <!-- AdminLTE & Bootstrap -->
+  <link rel="stylesheet" href="../plugins/fontawesome-free/css/all.min.css" />
+  <link rel="stylesheet" href="../../plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+  <link rel="stylesheet" href="../dist/css/adminlte.min.css" />
 
-  <style>
-    #map { height: 350px; width: 100%; border-radius: 8px; }
-    .brand-text { font-weight: bold; letter-spacing: 0.5px; }
-    .content-header h1 { font-weight: 600; }
-  </style>
+  <!-- jsGrid -->
+  <link rel="stylesheet" href="../plugins/jsgrid/jsgrid.min.css" />
+  <link rel="stylesheet" href="../plugins/jsgrid/jsgrid-theme.min.css" />
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="./dist/css/global.css" />
 </head>
 
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -38,32 +39,22 @@
       <i class="fas fa-shield-alt"></i>
       <span class="brand-text">Anti-Contrebande</span>
     </a>
-
     <div class="sidebar">
       <nav class="mt-2">
         <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
           <li class="nav-item">
-            <a href="#dashboard" class="nav-link active">
-              <i class="nav-icon fas fa-tachometer-alt"></i>
-              <p>Tableau de bord</p>
+            <a href="#" class="nav-link active" onclick="showSection('dashboard')">
+              <i class="nav-icon fas fa-tachometer-alt"></i><p>Tableau de Bord</p>
             </a>
           </li>
           <li class="nav-item">
-            <a href="#declarations" class="nav-link">
-              <i class="nav-icon fas fa-file-alt"></i>
-              <p>Déclarations</p>
+            <a href="#" class="nav-link" onclick="showSection('declarations')">
+              <i class="nav-icon fas fa-file-alt"></i><p>Déclarations</p>
             </a>
           </li>
           <li class="nav-item">
-            <a href="#voyages" class="nav-link">
-              <i class="nav-icon fas fa-plane"></i>
-              <p>Voyages et Titres</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="#cartes" class="nav-link">
-              <i class="nav-icon fas fa-map-marked-alt"></i>
-              <p>Cartes et Statistiques</p>
+            <a href="#" class="nav-link" onclick="showSection('statistiques')">
+              <i class="nav-icon fas fa-chart-line"></i><p>Statistiques</p>
             </a>
           </li>
         </ul>
@@ -75,78 +66,70 @@
   <div class="content-wrapper">
     <div class="content-header">
       <div class="container-fluid">
-        <h1 class="m-0">Tableau de Bord National - Lutte contre la Contrebande</h1>
+        <h1 id="pageTitle">Lutte contre la Contrebande</h1>
       </div>
     </div>
 
-    <!-- Main content -->
     <section class="content">
       <div class="container-fluid">
 
-        <!-- Stat Boxes -->
-        <div class="row">
-          <div class="col-lg-3 col-6">
-            <div class="small-box bg-info">
-              <div class="inner">
-                <h3 id="totalSaisies">0</h3>
-                <p>Saisies Totales</p>
+        <!-- DASHBOARD -->
+        <div id="section-dashboard" class="section">
+          <div class="row" id="dashboardStats"></div>
+          <div class="row mt-3">
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header bg-primary text-white">
+                  <h3 class="card-title"><i class="fas fa-chart-bar"></i> Tendance des Saisies</h3>
+                </div>
+                <div class="card-body"><canvas id="saisiesChart" height="150"></canvas></div>
               </div>
-              <div class="icon"><i class="fas fa-boxes"></i></div>
             </div>
-          </div>
-
-          <div class="col-lg-3 col-6">
-            <div class="small-box bg-success">
-              <div class="inner">
-                <h3 id="totalArrestations">0</h3>
-                <p>Arrestations</p>
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header bg-success text-white">
+                  <h3 class="card-title"><i class="fas fa-map-marked-alt"></i> Carte des Saisies</h3>
+                </div>
+                <div class="card-body"><div id="map"></div></div>
               </div>
-              <div class="icon"><i class="fas fa-user-shield"></i></div>
-            </div>
-          </div>
-
-          <div class="col-lg-3 col-6">
-            <div class="small-box bg-warning">
-              <div class="inner">
-                <h3 id="totalVoyages">0</h3>
-                <p>Voyages Contrôlés</p>
-              </div>
-              <div class="icon"><i class="fas fa-plane"></i></div>
-            </div>
-          </div>
-
-          <div class="col-lg-3 col-6">
-            <div class="small-box bg-danger">
-              <div class="inner">
-                <h3 id="totalAlertes">0</h3>
-                <p>Alertes</p>
-              </div>
-              <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
             </div>
           </div>
         </div>
 
-        <!-- Charts + Map -->
-        <div class="row">
-          <div class="col-md-6">
-            <div class="card">
-              <div class="card-header bg-primary text-white">
-                <h3 class="card-title">Tendances des Saisies (Mensuelles)</h3>
+        <!-- DECLARATIONS -->
+        <div id="section-declarations" class="section" style="display:none;">
+          <div class="card card-outline card-info">
+            <div class="card-header bg-info text-white">
+              <h3 class="card-title"><i class="fas fa-file-alt"></i> Déclarations Douanières</h3>
+            </div>
+            <div class="card-body">
+              <form id="formDeclaration" class="mb-4">
+                <div class="form-row">
+                  <div class="col-md-3"><input type="text" class="form-control" placeholder="Nom du voyageur" id="nomVoyageur" required></div>
+                  <div class="col-md-3"><input type="text" class="form-control" placeholder="Pays d’origine" id="paysOrigine" required></div>
+                  <div class="col-md-3"><input type="text" class="form-control" placeholder="Poste frontalier" id="poste"></div>
+                  <div class="col-md-2"><input type="number" class="form-control" placeholder="Montant (DZD)" id="montant"></div>
+                  <div class="col-md-1"><button type="submit" class="btn btn-primary btn-block"><i class="fas fa-plus"></i></button></div>
+                </div>
+              </form>
+              <div class="export-buttons mb-3">
+                <button class="btn btn-outline-secondary btn-sm" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> Export PDF</button>
               </div>
-              <div class="card-body">
-                <canvas id="saisiesChart" height="150"></canvas>
-              </div>
+              <div id="jsGrid"></div>
             </div>
           </div>
+        </div>
 
-          <div class="col-md-6">
-            <div class="card">
-              <div class="card-header bg-success text-white">
-                <h3 class="card-title">Carte des Saisies</h3>
-              </div>
-              <div class="card-body">
-                <div id="map"></div>
-              </div>
+        <!-- STATISTIQUES -->
+        <div id="section-statistiques" class="section" style="display:none;">
+          <div class="card card-outline card-success">
+            <div class="card-header bg-success text-white">
+              <h3 class="card-title"><i class="fas fa-chart-line"></i> Statistiques Générales</h3>
+            </div>
+            <div class="card-body">
+              <canvas id="barChart" height="120"></canvas>
+              <canvas id="pieChart" height="120" class="mt-4"></canvas>
             </div>
           </div>
         </div>
@@ -156,26 +139,19 @@
   </div>
 
   <footer class="main-footer text-center">
-    <strong>&copy; 2025 Direction Générale des Douanes - Algérie</strong>
+    <strong>Direction Générale des Douanes © 2025</strong> - Lutte contre la Contrebande
   </footer>
 </div>
 
-
-<!-- jQuery -->
+<!-- JS LIBS -->
 <script src="plugins/jquery/jquery.min.js"></script>
-<!-- Bootstrap 4 -->
 <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-<!-- AdminLTE App -->
 <script src="dist/js/adminlte.min.js"></script>
-<!-- Dependencies -->
-<!-- ChartJS -->
 <script src="./plugins/chart.js/Chart.min.js"></script>
+<script src="../plugins/jsgrid/jsgrid.min.js"></script>
 
-<!--<script src="cdn/leaflet.js"></script>-->
-
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<!-- Custom dashboard logic -->
-<script src="../js/dashboard.js"></script>
+<!-- Project Scripts -->
+<script src="./js/data.js"></script>
+<script src="./js/app.js"></script>
 </body>
 </html>
