@@ -1,5 +1,5 @@
 async function initDashboard() {
-  const response = await fetch('data.json');
+  const response = await fetch('/js/data.json');
   const dataStats = await response.json();
 
   // Update stat boxes

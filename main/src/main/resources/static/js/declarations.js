@@ -3,7 +3,7 @@ $(function () {
   let selectedId = null;
 
   // Charger les données
-  $.getJSON("fake-data.json", function (data) {
+  $.getJSON("/js/fake-data.json", function (data) {
     declarations = data.map((d, i) => ({ id: i + 1, ...d }));
     initGrid(declarations);
   });
