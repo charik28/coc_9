@@ -1,241 +1,173 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Metadata Generator UI</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lutte contre la Contrebande - Tableau de Bord</title>
+
+  <!-- AdminLTE & Dependencies -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
+
   <style>
-    body{font-family: Inter, Roboto, Arial; margin:18px; color:#222}
-    h1{font-size:20px}
-    .grid{display:grid;grid-template-columns:380px 1fr;gap:18px}
-    .card{border:1px solid #e6e6e6;border-radius:8px;padding:12px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.03)}
-    label{display:block;font-size:12px;color:#555;margin-top:8px}
-    input[type=text], select{width:100%;padding:8px;border:1px solid #ddd;border-radius:6px}
-    button{margin-top:10px;padding:8px 12px;border-radius:6px;border:0;background:#2563eb;color:#fff;cursor:pointer}
-    button.ghost{background:#f3f4f6;color:#111}
-    pre{background:#0f172a;color:#e6eef8;padding:10px;border-radius:6px;max-height:300px;overflow:auto}
-    .row{display:flex;gap:8px}
-    .small{font-size:12px;color:#666}
-    ul{padding-left:18px}
-    .meta-list{max-height:420px;overflow:auto}
-    .entity-item{padding:6px;border-bottom:1px solid #f1f1f1;cursor:pointer}
-    .entity-item:hover{background:#fbfbff}
-    .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef2ff;color:#1e40af;font-size:12px}
+    #map { height: 350px; width: 100%; border-radius: 8px; }
+    .brand-text { font-weight: bold; letter-spacing: 0.5px; }
+    .content-header h1 { font-weight: 600; }
   </style>
 </head>
-<body>
-<h1>Metadata Generator — UI Controller</h1>
-<p class="small">Use this page to interact with the backend generator services: scan models, persist metadata, generate UI fragments and inspect saved metadata.</p>
 
-<div class="grid">
-  <div>
-    <div class="card">
-      <h3>Scan Project (.jhipster)</h3>
-      <label>Project root path (server filesystem)</label>
-      <input id="projectRoot" type="text" placeholder="e.g. C:\\wrk\\assu\\wrkspc\\afaris-devv" />
-      <label>Application name (for i18n base)</label>
-      <input id="appName" type="text" placeholder="afarisApp" value="afarisApp" />
-      <div class="row">
-        <button id="btnScan">Scan & Save Metadata</button>
-        <button id="btnGenerate" class="ghost">Generate UI Files</button>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+
+  <!-- Navbar -->
+  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a>
+      </li>
+      <li class="nav-item d-none d-sm-inline-block">
+        <a href="#" class="nav-link">Accueil</a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Sidebar -->
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <a href="#" class="brand-link text-center">
+      <i class="fas fa-shield-alt"></i>
+      <span class="brand-text">Anti-Contrebande</span>
+    </a>
+
+    <div class="sidebar">
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+          <li class="nav-item">
+            <a href="#dashboard" class="nav-link active">
+              <i class="nav-icon fas fa-tachometer-alt"></i>
+              <p>Tableau de bord</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#declarations" class="nav-link">
+              <i class="nav-icon fas fa-file-alt"></i>
+              <p>Déclarations</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#voyages" class="nav-link">
+              <i class="nav-icon fas fa-plane"></i>
+              <p>Voyages et Titres</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#cartes" class="nav-link">
+              <i class="nav-icon fas fa-map-marked-alt"></i>
+              <p>Cartes et Statistiques</p>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- Content Wrapper -->
+  <div class="content-wrapper">
+    <div class="content-header">
+      <div class="container-fluid">
+        <h1 class="m-0">Tableau de Bord National - Lutte contre la Contrebande</h1>
       </div>
-      <label>Quick actions</label>
-      <div class="row">
-        <button id="btnListEntities" class="ghost">Refresh Entities</button>
-        <button id="btnOpenGenerated" class="ghost">Open generated-home.html</button>
+    </div>
+
+    <!-- Main content -->
+    <section class="content">
+      <div class="container-fluid">
+
+        <!-- Stat Boxes -->
+        <div class="row">
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-info">
+              <div class="inner">
+                <h3 id="totalSaisies">0</h3>
+                <p>Saisies Totales</p>
+              </div>
+              <div class="icon"><i class="fas fa-boxes"></i></div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-success">
+              <div class="inner">
+                <h3 id="totalArrestations">0</h3>
+                <p>Arrestations</p>
+              </div>
+              <div class="icon"><i class="fas fa-user-shield"></i></div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-warning">
+              <div class="inner">
+                <h3 id="totalVoyages">0</h3>
+                <p>Voyages Contrôlés</p>
+              </div>
+              <div class="icon"><i class="fas fa-plane"></i></div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-danger">
+              <div class="inner">
+                <h3 id="totalAlertes">0</h3>
+                <p>Alertes</p>
+              </div>
+              <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts + Map -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header bg-primary text-white">
+                <h3 class="card-title">Tendances des Saisies (Mensuelles)</h3>
+              </div>
+              <div class="card-body">
+                <canvas id="saisiesChart" height="150"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header bg-success text-white">
+                <h3 class="card-title">Carte des Saisies</h3>
+              </div>
+              <div class="card-body">
+                <div id="map"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
-    </div>
-
-    <div class="card" style="margin-top:12px;">
-      <h3>API / Service</h3>
-      <p class="small">Assumed endpoints used by this UI:</p>
-      <ul class="small">
-        <li><code>POST /api/gen/scan?projectRoot=...&appName=...</code></li>
-        <li><code>POST /api/gen/generate</code></li>
-        <li><code>GET  /api/meta/entities</code></li>
-        <li><code>GET  /api/meta/entities/{id}</code></li>
-        <li><code>GET  /api/meta/entities/{id}/fields</code></li>
-      </ul>
-    </div>
-
-    <div class="card" style="margin-top:12px;">
-      <h3>Logs</h3>
-      <pre id="log">Ready.</pre>
-    </div>
+    </section>
   </div>
 
-  <div>
-    <div class="card">
-      <h3>Entities (metadata)</h3>
-      <div class="meta-list" id="entitiesList"></div>
-    </div>
-
-    <div class="card" style="margin-top:12px;" id="entityDetailCard" hidden>
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <h3 id="entityTitle">Entity</h3>
-        <div><span class="pill" id="entityCount">0 fields</span></div>
-      </div>
-      <div style="margin-top:8px">
-        <strong>Table:</strong> <span id="entityTable" class="small"></span>
-      </div>
-
-      <h4 style="margin-top:12px">Fields</h4>
-      <div id="fieldsRoot"></div>
-
-      <h4 style="margin-top:12px">Relations</h4>
-      <div id="relationsRoot"></div>
-
-      <div style="margin-top:12px">
-        <button id="btnDeleteEntity" class="ghost">Delete Entity (DB)</button>
-      </div>
-    </div>
-
-    <div class="card" style="margin-top:12px;">
-      <h3>Response Preview</h3>
-      <pre id="responsePreview">--</pre>
-    </div>
-  </div>
+  <footer class="main-footer text-center">
+    <strong>&copy; 2025 Direction Générale des Douanes - Algérie</strong>
+  </footer>
 </div>
 
-<script>
-  const logEl = document.getElementById('log');
-  const respEl = document.getElementById('responsePreview');
-  const entitiesListEl = document.getElementById('entitiesList');
-  const detailCard = document.getElementById('entityDetailCard');
-  const entityTitle = document.getElementById('entityTitle');
-  const entityCount = document.getElementById('entityCount');
-  const entityTable = document.getElementById('entityTable');
-  const fieldsRoot = document.getElementById('fieldsRoot');
-  const relationsRoot = document.getElementById('relationsRoot');
+<!-- Dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  document.getElementById('projectRoot').value = localStorage.getItem("projectRoot");
-  document.getElementById('appName').value = localStorage.getItem("appName");
-  function log(msg){
-    const now = new Date().toLocaleTimeString();
-    logEl.textContent = `[${now}] ${msg}\n` + logEl.textContent;
-  }
-
-  function showResponse(o){
-    try{ respEl.textContent = JSON.stringify(o, null, 2); }catch(e){ respEl.textContent = String(o); }
-  }
-
-  async function scanProject(){
-
-    const root = document.getElementById('projectRoot').value.trim();
-
-    const appName = document.getElementById('appName').value.trim();
-
-    localStorage.setItem("projectRoot" , root);
-    localStorage.setItem("appName" , appName);
-
-    if(!root){ alert('Provide project root path on server'); return; }
-    log('Triggering scan...');
-    try{
-      const res = await fetch(`/api/gen/scan?projectRoot=${encodeURIComponent(root)}&appName=${encodeURIComponent(appName)}`, { method: 'POST' });
-      const body = await res.json().catch(()=> ({ status: res.status }));
-      showResponse(body);
-      log('Scan finished: ' + res.status);
-      await listEntities();
-    }catch(e){ log('Scan failed: '+e.message); }
-  }
-
-  async function generateFiles(){
-    log('Triggering generation...');
-    try{
-      const res = await fetch('/api/gen/generate', { method: 'POST' });
-      const b = await res.json().catch(()=> ({ status: res.status }));
-      showResponse(b);
-      log('Generate finished: ' + res.status);
-    }catch(e){ log('Generate failed: '+e.message); }
-  }
-
-  async function listEntities(){
-    log('Loading entities...');
-    try{
-      const res = await fetch('/api/meta/entities');
-      if(!res.ok) { log('Failed to list entities: '+res.status); respEl.textContent = await res.text(); return; }
-      const list = await res.json();
-      showResponse(list);
-      renderEntities(list);
-      log('Loaded ' + (list.length||0) + ' entities');
-    }catch(e){ log('List failed: '+e.message); }
-  }
-
-  function renderEntities(list){
-    entitiesListEl.innerHTML = '';
-    if(!Array.isArray(list) || !list.length){ entitiesListEl.innerHTML = '<div class="small">No entities</div>'; return; }
-    for(const ent of list){
-      const div = document.createElement('div');
-      div.className = 'entity-item';
-      div.innerHTML = `<strong>${ent.entityName}</strong> <div class="small">${ent.tableName || ''}</div>`;
-      div.onclick = ()=> loadEntityDetail(ent.id);
-      entitiesListEl.appendChild(div);
-    }
-  }
-
-  async function loadEntityDetail(id){
-    detailCard.hidden = true;
-    log('Loading entity ' + id);
-    try{
-      const res = await fetch('/api/meta/entities/' + encodeURIComponent(id));
-      if(!res.ok){ log('Failed to load entity: '+res.status); return; }
-      const data = await res.json();
-      showResponse(data);
-      displayEntity(data);
-      detailCard.hidden = false;
-    }catch(e){ log('Load detail failed: '+e.message); }
-  }
-
-  function displayEntity(data){
-    entityTitle.textContent = data.entityName + ' (id:' + data.id + ')';
-    entityCount.textContent = (data.fields && data.fields.length ? data.fields.length : 0) + ' fields';
-    entityTable.textContent = data.tableName || '(none)';
-    fieldsRoot.innerHTML = '';
-    if(Array.isArray(data.fields)){
-      const ul = document.createElement('ul');
-      for(const f of data.fields){
-        const li = document.createElement('li');
-        li.innerHTML = `<strong>${f.name}</strong> <span class="small">[${f.type}]</span> — <span class="small">${f.i18nKey || ''}</span>`;
-        ul.appendChild(li);
-      }
-      fieldsRoot.appendChild(ul);
-    }
-    relationsRoot.innerHTML = '';
-    if(Array.isArray(data.relations) && data.relations.length){
-      const ul = document.createElement('ul');
-      for(const r of data.relations){
-        const li = document.createElement('li');
-        li.innerHTML = `<strong>${r.name}</strong> <span class="small">→ ${r.target}</span>`;
-        ul.appendChild(li);
-      }
-      relationsRoot.appendChild(ul);
-    }
-  }
-
-  async function deleteEntity(id){
-    if(!confirm('Delete entity metadata id=' + id + '?')) return;
-    log('Deleting entity ' + id);
-    try{
-      const res = await fetch('/api/meta/entities/' + encodeURIComponent(id), { method: 'DELETE' });
-      log('Delete status: ' + res.status);
-      await listEntities();
-    }catch(e){ log('Delete failed: '+e.message); }
-  }
-
-  document.getElementById('btnScan').addEventListener('click', scanProject);
-  document.getElementById('btnGenerate').addEventListener('click', generateFiles);
-  document.getElementById('btnListEntities').addEventListener('click', listEntities);
-  document.getElementById('btnOpenGenerated').addEventListener('click', ()=>{
-    window.open('/generated', '_blank');
-  });
-  document.getElementById('btnDeleteEntity').addEventListener('click', ()=>{
-    const match = entityTitle.textContent.match(/id:(\d+)/);
-    if(!match) return alert('No entity selected');
-    deleteEntity(Number(match[1]));
-  });
-
-  // initial
-  listEntities();
-</script>
+<!-- Custom dashboard logic -->
+<script src="dashboard.js"></script>
 </body>
 </html>

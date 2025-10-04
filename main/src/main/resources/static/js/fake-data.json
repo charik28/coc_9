@@ -1,0 +1,23 @@
+[
+  {
+    "type": "Voyage",
+    "nom": "Ahmed Benali",
+    "nationalite": "Algérienne",
+    "poste": "Tlemcen",
+    "montant": 120000
+  },
+  {
+    "type": "Devise",
+    "nom": "Fatima Zohra",
+    "nationalite": "Algérienne",
+    "poste": "Alger Aéroport",
+    "montant": 3000
+  },
+  {
+    "type": "Titre de passage",
+    "nom": "Mohamed Karim",
+    "nationalite": "Tunisienne",
+    "poste": "Annaba",
+    "montant": 45000
+  }
+]

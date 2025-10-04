@@ -30,7 +30,7 @@ public class PageController {
     public ModelAndView loadRoot() {
         return new ModelAndView("forward:/loader.html");
     }
-//    @GetMapping("/home")
+    @GetMapping("/home")
     public ModelAndView loadHome() {
         return new ModelAndView("forward:/app/home.html");
 //        return loadCocReport();
@@ -39,7 +39,7 @@ public class PageController {
     public ModelAndView loadCocHome() {
         return new ModelAndView("forward:/coc9/index.html");
     }
-    @GetMapping({"/coc" , "/home"})
+    @GetMapping({"/brq" , })
     public ModelAndView loadCocReport() {
         return new ModelAndView("forward:/coc9/reports/coc-main.html");
     }

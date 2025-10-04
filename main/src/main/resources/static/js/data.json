@@ -1,0 +1,15 @@
+{
+  "totalSaisies": 124,
+  "totalArrestations": 43,
+  "totalVoyages": 512,
+  "totalAlertes": 9,
+  "labels": ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"],
+  "saisiesMensuelles": [12, 9, 15, 20, 14, 25, 30, 40, 35, 28, 23, 18],
+  "mapPoints": [
+    { "name": "Tlemcen", "lat": 34.888, "lon": -1.316, "qty": 12 },
+    { "name": "Oran", "lat": 35.697, "lon": -0.633, "qty": 20 },
+    { "name": "Tamanrasset", "lat": 22.785, "lon": 5.522, "qty": 8 },
+    { "name": "Annaba", "lat": 36.9, "lon": 7.75, "qty": 15 },
+    { "name": "Alger", "lat": 36.75, "lon": 3.06, "qty": 25 }
+  ]
+}
