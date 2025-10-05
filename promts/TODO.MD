@@ -11,7 +11,7 @@
 
 ### 🏗️ **1. UI / UX & Layout (AdminLTE Integration)**
 
-* [ ] Integrate **AdminLTE 3+** template with your Angular/JHipster project.
+* [x] Integrate **AdminLTE 3+** template with your Angular/JHipster project.
 * [ ] Build a **modern landing page** (“Lutte contre la Contrebande”) with:
 
     * [ ] A hero **slideshow (carousel)** describing the project goals.
@@ -35,10 +35,10 @@
 
 * [ ] **Voyages & Déclarations** module:
 
-    * [ ] Form for **Déclaration de titre de passage en douane**
-    * [ ] Form for **Déclaration de devises** (ports, aéroports, postes frontaliers)
-    * [ ] Form for **Déclaration de marchandises suspectes**
-    * [ ] Form for **Déclaration d’incident (interception, saisie, arrestation, etc.)**
+    * [x] Form for **Déclaration de titre de passage en douane**
+    * [x] Form for **Déclaration de devises** (ports, aéroports, postes frontaliers)
+    * [x] Form for **Déclaration de marchandises suspectes**
+    * [x] Form for **Déclaration d’incident (interception, saisie, arrestation, etc.)**
 * [ ] Implement **dynamic validation** and **auto-suggestions** for:
 
     * Pays d’origine / destination

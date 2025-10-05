@@ -2,152 +2,115 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>مستند - نمط Word</title>
-  <!-- Simple Word-like styling for printed page -->
+  <title>مستند عربي بنمط Word</title>
   <style>
-    :root{
-      --page-width:210mm; /* A4 */
-      --page-height:297mm;
-      --page-margin:25mm;
-      --body-font: "Times New Roman", "Amiri", serif;
+    :root {
+      --page-width: 210mm;
+      --page-height: 297mm;
+      --page-margin: 25mm;
+      --font: "Times New Roman", "Amiri", serif;
     }
 
-    html,body{
-      height:100%;
-      margin:0;
-      background:#888; /* contrast to show page */
-      font-family:var(--body-font);
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #e0e0e0;
+      font-family: var(--font);
     }
 
-    .toolbar{
-      display:flex;
-      gap:8px;
-      padding:12px;
-      background:#f3f3f3;
-      align-items:center;
-      box-shadow:0 1px 2px rgba(0,0,0,0.1);
-      direction:ltr; /* keep buttons left-to-right */
+    .toolbar {
+      background: #f3f3f3;
+      padding: 10px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      display: flex;
+      justify-content: flex-start;
+      gap: 8px;
+      direction: ltr;
     }
 
-    .btn{
-      padding:8px 12px;
-      border-radius:6px;
-      border:1px solid #cfcfcf;
-      background:white;
-      cursor:pointer;
-      font-size:14px;
+    .btn {
+      background: white;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 14px;
     }
 
-    .btn:active{transform:translateY(1px)}
-
-    .workspace{
-      padding:24px;
-      display:flex;
-      justify-content:center;
-      gap:24px;
+    .workspace {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px;
     }
 
-    .page{
-      width:calc(var(--page-width));
-      min-height:calc(var(--page-height));
-      background:white;
-      box-shadow:0 8px 30px rgba(0,0,0,0.35);
-      padding:var(--page-margin);
-      box-sizing:border-box;
-      position:relative;
-      color:#111;
-      line-height:1.7;
-      overflow:auto;
+    .page {
+      width: var(--page-width);
+      height: var(--page-height);
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      padding: var(--page-margin);
+      box-sizing: border-box;
+      overflow: auto;
+      direction: rtl;
+      text-align: justify;
+      line-height: 1.7;
     }
 
-    /* Word-like default paragraph and headings */
-    .page h1{font-size:22px;margin:0 0 12px 0;font-weight:700}
-    .page h2{font-size:18px;margin:18px 0 10px 0}
-    .page p{font-size:16px;margin:8px 0}
+    .page h1 { font-size: 22px; margin-bottom: 10px; }
+    .page h2 { font-size: 18px; margin-top: 20px; }
+    .page p  { font-size: 16px; margin: 8px 0; }
 
-    /* Right-to-left specifics */
-    .page{direction:rtl;text-align:justify}
-
-    /* Simple ruler for margins when printing */
-    @media print{
-      html,body{background:white}
-      .toolbar, .workspace{display:none}
-      .page{box-shadow:none}
-      @page{size:A4;margin:0}
+    @media print {
+      html, body { background: white; }
+      .toolbar { display: none; }
+      @page { size: A4; margin: 0; }
+      .page { box-shadow: none; }
     }
-
-    /* small helper for editable area look */
-    .editable{min-height:120mm}
   </style>
 </head>
 <body>
 <div class="toolbar">
-  <button class="btn" id="downloadDocx">تحميل كملف .docx</button>
-  <button class="btn" id="downloadHtml">تحميل HTML</button>
-  <div style="flex:1"></div>
-  <span style="font-size:13px;color:#666">معاينة نمط Word — نص عربي</span>
+  <button class="btn" id="downloadDocx">📄 تحميل كـ DOCX</button>
 </div>
 
 <div class="workspace">
-  <div class="page" id="docContent" contenteditable="true" spellcheck="false">
+  <div class="page" id="docContent" contenteditable="true">
     <h1>عنوان الوثيقة</h1>
-    <p>هذا نص عربي تجريبي داخل صفحة مصمّمة لتشبه مظهر مستند مايكروسوفت وورد. يمكنك تعديل النص مباشرة هنا — الحقل قابل للتحرير.</p>
-
-    <h2>فقرة توضيحية</h2>
-    <p class="editable">لوريم إيبسوم عربي — هذا نص افتراضي للتجربة. ضع أي نص عربي تريد: فقرات، قوائم، عناوين. عند الضغط على زر "تحميل كملف .docx" سيُحوّل المحتوى داخل هذا المستند إلى ملف .docx قابل للفتح في وورد مع الحفاظ على اتجاه النص RTL والترتيب.</p>
-
-    <h2>قائمة توضيحية</h2>
-    <ul>
-      <li>بند أول في القائمة</li>
-      <li>بند ثاني مع عبارة أطول لعرض التفاف النص داخل السطر</li>
-      <li>بند ثالث</li>
-    </ul>
-
-    <p>تلميح: عند الطباعة استخدم إعدادات الطابعة للهوامش A4 إن رغبت في تطابق أفضل.</p>
+    <p>هذا نص عربي تجريبي في صفحة بحجم A4 تحاكي مظهر مستند وورد. يمكنك تعديل النص مباشرة، ثم حفظه كملف DOCX.</p>
+    <h2>فقرة تجريبية</h2>
+    <p>يمكنك إضافة فقرات جديدة أو قوائم هنا مع الحفاظ على التنسيق العربي والاتجاه من اليمين إلى اليسار.</p>
   </div>
 </div>
 
-<!--
-
- /plugins/html-docx-js
- Libraries: html-docx-js + FileSaver. These are served via CDN. If you are offline, include the libraries locally. -->
+<!-- Use your local copies -->
 <script src="../../plugins/html-docx-js/html-docx.js"></script>
 <script src="../../plugins/FileSaver/FileSaver.min.js"></script>
 
 <script>
-  // Helper to produce a clean HTML wrapper that Word likes
-  function buildHtmlForDocx(innerHtml){
-    // We include dir and lang on the wrapper so Word preserves RTL
-    return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"/></head><body>${innerHtml}</body></html>`;
+  function wrapForDocx(inner) {
+    return `
+        <!DOCTYPE html>
+        <html lang=\"ar\" dir=\"rtl\">
+          <head>
+            <meta charset=\"utf-8\">
+            <style>
+              body { font-family: 'Times New Roman', 'Amiri', serif; direction: rtl; text-align: justify; }
+            </style>
+          </head>
+          <body>${inner}</body>
+        </html>`;
   }
 
-  document.getElementById('downloadDocx').addEventListener('click', function(){
-    const contentEl = document.getElementById('docContent');
-    // Clone to remove editing outlines and any UI-specific attributes
-    const clone = contentEl.cloneNode(true);
-    // Remove contenteditable attribute on cloned tree
-    clone.querySelectorAll('[contenteditable]').forEach(n=>n.removeAttribute('contenteditable'));
+  document.getElementById('downloadDocx').addEventListener('click', function() {
+    const content = document.getElementById('docContent').innerHTML;
+    const fullHtml = wrapForDocx(content);
 
-    const html = buildHtmlForDocx(clone.innerHTML);
+    // Convert HTML to .docx Blob
+    const blob = window.htmlDocx.asBlob(fullHtml, { orientation: 'portrait' });
 
-    try{
-      const converted = htmlDocx.asBlob(html, {orientation: 'portrait'});
-      saveAs(converted, 'document.docx');
-    }catch(err){
-      console.error(err);
-      alert('فشل إنشاء ملف .docx — تأكد من اتصالك بالإنترنت لتحمّل المكتبات أو استضف المكتبات محلياً.');
-    }
-  });
-
-  // Optional: download as HTML file (useful for users)
-  document.getElementById('downloadHtml').addEventListener('click', function(){
-    const contentEl = document.getElementById('docContent');
-    const html = buildHtmlForDocx(contentEl.innerHTML);
-    const blob = new Blob([html], {type:'text/html;charset=utf-8'});
-    saveAs(blob, 'document.html');
+    // Save the file
+    window.saveAs(blob, 'document.docx');
   });
 </script>
 </body>

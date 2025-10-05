@@ -44,6 +44,13 @@ public class PageController {
     public ModelAndView loadCocHome() {
         return new ModelAndView("forward:/coc9/index.html");
     }
+    @GetMapping("/app-{name}")
+    public ModelAndView loadHtmlByFileName(@PathVariable String name) {
+        if(!name.contains(".html"))
+            name = name+".html";
+
+        return new ModelAndView("forward:/app/"+name);
+    }
     @GetMapping({"/brq" , })
     public ModelAndView loadCocReport() {
         return new ModelAndView("forward:/coc9/reports/coc-main.html");
