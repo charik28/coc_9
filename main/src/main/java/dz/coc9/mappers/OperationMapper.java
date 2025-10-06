@@ -16,6 +16,7 @@ public interface OperationMapper {
      * Select all operations (basic list for grid).
      */
     List<OperationVo> findAll(HashMap<String,Object> map);
+    List<OperationVo> findOperation(HashMap<String,Object> map);
 
     List<OperationVo> findAllByFilter(@Param("filter") OperationFilter filter);
     /**

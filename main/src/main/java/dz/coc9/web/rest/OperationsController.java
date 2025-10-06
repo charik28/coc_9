@@ -4,6 +4,7 @@ package dz.coc9.web.rest;
 import dz.coc9.service.OperationService;
 import dz.coc9.service.dto.OperationFilter;
 import dz.coc9.vo.OperationVo;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,8 +37,8 @@ public class OperationsController {
         return operationsService.findAllByFilter(filter);
     }
     @GetMapping
-    public List<OperationVo> getOperations(){
+    public ResponseEntity<List<OperationVo>> getOperations(){
 
-        return operationsService.findAll();
+        return ResponseEntity.ok(operationsService.findAll());
     }
 }

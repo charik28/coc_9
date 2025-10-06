@@ -15,11 +15,24 @@
 
     </resultMap>
 
-    <select id="findAll" parameterType="map" resultMap="marchandiseResultMap">
+    <select id="findAllMarchansiseTypes" parameterType="map" resultMap="marchandiseResultMap">
         select * from type_marchansise
         where true
         <if test="level != null">
             and groupe_level = #{level}
+        </if>
+
+          <if test="operationId != null">
+            and id = #{operationId}
+        </if>
+    </select>
+
+    <select id="findAll" parameterType="map" resultMap="marchandiseResultMap">
+        select * from rendement_seized_goods
+        where true
+
+          <if test="operationId != null">
+            and id = #{operationId}
         </if>
     </select>
 

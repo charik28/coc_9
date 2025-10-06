@@ -8,7 +8,7 @@
     <!-- Result map for nested VO mapping -->
     <resultMap id="OperationResultMap" type="dz.coc9.vo.OperationVo">
         <id property="id" column="id" jdbcType="BIGINT"/>
-        <result property="date" column="created_at" jdbcType="TIMESTAMP"/>
+        <result property="dateString" column="created_at" jdbcType="TIMESTAMP"/>
         <result property="time" column="updated_at" jdbcType="TIMESTAMP"/>
         <result property="quantite" column="total_affaires" jdbcType="INTEGER"/>
         <result property="agent" column="orgn_cd" jdbcType="VARCHAR"/>
@@ -21,8 +21,9 @@
         </association>
 
         <!-- Marchandise nested object (top-level info) -->
-        <association property="marchandie" javaType="dz.coc9.vo.MarchandiseVo">
+        <association property="marchandies" javaType="dz.coc9.vo.MarchandiseVo">
             <!-- the VO fields: id (not provided here), nom, description -->
+            <result property="id" column="marchandise_id"/>
             <result property="nm" column="marchandise_name_ar"/>
             <result property="frNm" column="marchandise_name"/>
         </association>
@@ -92,16 +93,29 @@
     <select id="findById" parameterType="long" resultMap="OperationResultMap">
         SELECT * FROM coc10.v_operations WHERE id = #{id}
     </select>
+    <select id="findOperation" parameterType="map" resultMap="OperationResultMap">
+        SELECT id,orgn_cd ,wilaya,collaboration,concat(mois,' ',annee) as dateString ,data_source FROM coc10.rendement
+        WHERE true
+            <if test="id != null">
+            and id = #{id}
+            </if>
+          <if test="limit != null">
+              limit #{limit}
+            </if>
+          <if test="offset != null">
+              offset = #{offset}
+            </if>
+
+
+    </select>
 
     <!-- select points (path) for a given operation id (raw string id used to join location table) -->
-    <select id="selectPointsByOperationId" parameterType="string" resultType="dz.coc9.vo.PointVo">
-        SELECT
-            COALESCE(localisation_geographique_n::double precision, NULL) AS latitude,
-            COALESCE(localisation_geographique_e::double precision, NULL) AS longitude
-        FROM coc10."location"
-        WHERE id = #{id}
-        -- If you have multiple rows representing a trajectory, order appropriately:
-        ORDER BY toponymie NULLS LAST
+    <select id="selectPointsByOperationId" parameterType="string" resultType="dz.coc9.vo.VilleVo">
+        select v.nm, r.wilaya,v.latitude,v.longitude  from rendement r
+         join ville v on r.wilaya ilike v.nm
+        WHERE r.id = #{id}
+        and v.latitude is not null
+        limit 1
     </select>
 
 </mapper>

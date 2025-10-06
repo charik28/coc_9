@@ -13,13 +13,28 @@ import java.util.List;
 public class OperationService implements IOperationService {
 
     private final OperationMapper mapper;
-    public OperationService(OperationMapper mapper) { this.mapper = mapper; }
+    private final OrgnService orgnService;
+    private final MarchandiseService marchandiseService;
+
+    public OperationService(OperationMapper mapper, OrgnService orgnService, MarchandiseService marchandiseService) { this.mapper = mapper;
+        this.orgnService = orgnService;
+        this.marchandiseService = marchandiseService;
+    }
+
     public List<OperationVo> findAll() {
 
         HashMap<String,Object> map  = new HashMap<>();
         map.put("limit" , 100);
         map.put("offset" , 0);
-        return mapper.findAll(map);
+
+        List<OperationVo>  operations =mapper.findAll(map);
+
+        for (OperationVo operation : operations) {
+            operation.setOrgn(orgnService.findOrgnByCd(operation.getOrgnCd()));
+            operation.setMarchandies(marchandiseService.findMarchandisesByOperationId(operation.getId()));
+        }
+
+        return operations;
     }
     public List<OperationVo> findAllByFilter(OperationFilter filter) {
         return mapper.findAllByFilter(filter);
