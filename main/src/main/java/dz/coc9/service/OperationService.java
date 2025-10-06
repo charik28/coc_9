@@ -6,6 +6,7 @@ import dz.coc9.service.interfaces.IOperationService;
 import dz.coc9.vo.OperationVo;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
 
 @Service
@@ -13,7 +14,13 @@ public class OperationService implements IOperationService {
 
     private final OperationMapper mapper;
     public OperationService(OperationMapper mapper) { this.mapper = mapper; }
-    public List<OperationVo> findAll() { return mapper.findAll(); }
+    public List<OperationVo> findAll() {
+
+        HashMap<String,Object> map  = new HashMap<>();
+        map.put("limit" , 100);
+        map.put("offset" , 0);
+        return mapper.findAll(map);
+    }
     public List<OperationVo> findAllByFilter(OperationFilter filter) {
         return mapper.findAllByFilter(filter);
     }

@@ -18,7 +18,7 @@ public class DeclarationMarchandisesSuspectesVo {
     private OrgnVo orgn;
 
     /** Wilaya où la déclaration a eu lieu */
-    private WilayaVo wilaya;
+    private VilleVo wilaya;
 
     /** Date et heure de saisie de la déclaration */
     private Instant dateSaisie;

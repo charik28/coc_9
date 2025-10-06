@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dz.coc9.mappers.MarchandiseMapper">
+
+    <resultMap id="marchandiseResultMap" type="dz.coc9.vo.MarchandiseVo">
+
+        <result property="id" column="id" />
+            <result property="groupeLevel" column="groupe_level" />
+        <result property="nm" column="article_name_ar" />
+        <result property="frNm" column="article_name" />
+
+
+    </resultMap>
+
+    <select id="findAll" parameterType="map" resultMap="marchandiseResultMap">
+        select * from type_marchansise
+        where true
+        <if test="level != null">
+            and groupe_level = #{level}
+        </if>
+    </select>
+
+
+
+</mapper>

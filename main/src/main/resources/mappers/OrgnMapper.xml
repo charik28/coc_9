@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dz.coc9.mappers.OrgnMapper">
+
+    <resultMap id="orgnResultMap" type="dz.coc9.vo.OrgnVo">
+
+        <result property="id" column="orgn_mgmt_cd" />
+        <result property="cd" column="orgn_cd" />
+        <result property="nm" column="orgn_nm" />
+        <result property="arNm" column="orgn_ar_nm" />
+        <result property="tpCd" column="orgn_tp_cd" />
+        <result property="lngt" column="lngt" />
+        <result property="lttd" column="lttd" />
+        
+    </resultMap>
+
+    <select id="findAll" resultMap="orgnResultMap">
+        select * from alpassint.tb_poti_orgn
+
+    </select>
+    <select id="findAllDrs" resultMap="orgnResultMap">
+        select orgn_mgmt_cd,orgn_cd , orgn_nm ,orgn_ar_nm,orgn_tp_cd  ,lttd,lngt from alpassint.tb_poti_orgn o
+        where
+            "left"(orgn_cd,1)='5'
+            and orgn_tp_cd = 'DIR'
+        order by orgn_mgmt_cd, orgn_cd
+    </select>
+    <select id="findSubOrgnByParentCd" resultMap="orgnResultMap">
+        select orgn_mgmt_cd ,orgn_cd , orgn_nm,orgn_ar_nm,orgn_tp_cd,lttd,lngt from alpassint.tb_poti_orgn o
+        where true
+        <if test="orgnTpCd != null">
+          and  orgn_tp_cd = #{orgnTpCd}
+        </if>
+
+        <if test="parentCd != null">
+            and "left"(orgn_cd, 3) = "left"(#{parentCd},3)
+        </if>
+        order by orgn_mgmt_cd, orgn_cd
+
+
+    </select>
+
+    <select id="findAllTpCd" resultMap="orgnResultMap">
+        select distinct orgn_tp_cd from alpassint.tb_poti_orgn o
+
+    </select>
+
+
+</mapper>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dz.coc9.mappers.VilleMapper">
+
+    <resultMap id="orgnResultMap" type="dz.coc9.vo.VilleVo">
+
+        <result property="id" column="id" />
+        <result property="code" column="cd" />
+        <result property="name" column="nm" />
+        <result property="arName" column="ar_nm" />
+        <result property="villeType" column="ville_type" />
+        <result property="latitude" column="lngt" />
+        <result property="longitude" column="lttd" />
+
+    </resultMap>
+
+
+<select id="findAllVilles" parameterType="map" resultType="dz.coc9.vo.VilleVo">
+    SELECT id, cd, nm, nm_ar, ville_type, latitude, longitude
+    FROM ville v
+    where true
+    <if test="villeType !=null">
+        and ville_type = #{villeType}
+    </if>
+</select>
+    <select id="findVilleById" resultType="dz.coc9.vo.VilleVo">
+        SELECT id, cd, nm, nm_ar, ville_type, latitude, longitude
+        FROM ville v
+        where true
+        and id=#{id}
+    </select>
+
+
+</mapper>

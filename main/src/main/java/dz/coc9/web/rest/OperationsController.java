@@ -37,6 +37,7 @@ public class OperationsController {
     }
     @GetMapping
     public List<OperationVo> getOperations(){
+
         return operationsService.findAll();
     }
 }

@@ -1,4 +1,9 @@
- **enhanced, structured, and clear TODO list** for your **“Lutte contre la Contrebande (CoC)”** project,
+
+06/10 todo
+osm json regions
+villes lat,long
+
+**enhanced, structured, and clear TODO list** for your **“Lutte contre la Contrebande (CoC)”** project,
  aligned with your **AdminLTE** frontend and **data-driven** backend vision:
 
 ---

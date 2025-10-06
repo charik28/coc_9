@@ -10,8 +10,9 @@ import java.util.List;
 public class MarchandiseVo {
 
     private String id;
-    private String nom;
-    private String description;
+    private String nm;
+    private String frNm;
+    private int groupeLevel;
     private MarchandiseVo parent;
     /** Sous-catégories (ex: armes à feu sous "Armes") */
     private List<MarchandiseVo> sousCategories;

@@ -90,7 +90,7 @@ function exportToPDF() { alert("Export PDF simulé ✅"); }
   $('.select2[data-api]').each(function() {
     const $el = $(this);
     fetch($el.data('api')).then(res => res.json()).then(data => {
-      $el.append(data.map(opt => `<option value="${opt.id}">${opt.name || opt.label}</option>`));
+      $el.append(data.map(opt => `<option value="${opt.id}">${opt.name || opt.nm}</option>`));
     });
   });
 
@@ -108,10 +108,10 @@ function exportToPDF() { alert("Export PDF simulé ✅"); }
   fields: [
 { name: "date", title: "Date", type: "text", width: 70 },
 { name: "wilaya", title: "Wilaya", type: "text", width: 70 },
-{ name: "marchandise", title: "Marchandise", type: "text", width: 100 },
+{ name: "marchandiseNm", title: "Marchandise", type: "text", width: 100 },
 { name: "quantite", title: "Quantité", type: "number", width: 60 },
 { name: "unite", title: "Unité", type: "text", width: 50 },
-{ name: "agent", title: "Agent", type: "text", width: 80 }
+{ name: "orgn", title: "Brigade", type: "text", width: 80 }
   ]
 });
 

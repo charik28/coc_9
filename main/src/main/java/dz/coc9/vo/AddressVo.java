@@ -6,6 +6,6 @@ import lombok.Data;
 public class AddressVo {
 
     private String adresse;
-    private WilayaVo wilaya;
+    private VilleVo wilaya;
     private OrgnVo orgn;
 }

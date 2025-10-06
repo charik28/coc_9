@@ -15,16 +15,16 @@
         <!-- Orgn nested object -->
         <association property="orgn" javaType="dz.coc9.vo.OrgnVo">
             <result property="id" column="orgn_id"/>
-            <result property="orgnCd" column="orgn_cd"/>
-            <result property="orgnNm" column="orgn_cd"/>
+            <result property="cd" column="orgn_cd"/>
+            <result property="nm" column="orgn_cd"/>
             <!-- orgnType not present in view; set later if needed -->
         </association>
 
         <!-- Marchandise nested object (top-level info) -->
         <association property="marchandie" javaType="dz.coc9.vo.MarchandiseVo">
             <!-- the VO fields: id (not provided here), nom, description -->
-            <result property="nom" column="marchandise_name"/>
-            <result property="description" column="marchandise_name_ar"/>
+            <result property="nm" column="marchandise_name_ar"/>
+            <result property="frNm" column="marchandise_name"/>
         </association>
 
         <!-- path is a collection of TrajetVo; TrajetVo contains List<PointVo> point -->
@@ -37,6 +37,12 @@
     <select id="findAll" resultMap="OperationResultMap">
         SELECT * FROM coc10.v_operations
         ORDER BY id DESC
+        <if test="limit != null">
+            limit #{limit}
+        </if>
+        <if test="offset != null">
+            offset #{offset}
+        </if>
     </select>
     <select id="findAllByFilter" parameterType="dz.coc9.service.dto.OperationFilter"
             resultType="dz.coc9.vo.OperationVo">

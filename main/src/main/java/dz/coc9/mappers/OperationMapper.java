@@ -6,6 +6,7 @@ import dz.coc9.vo.PointVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.HashMap;
 import java.util.List;
 
 @Mapper
@@ -14,7 +15,7 @@ public interface OperationMapper {
     /**
      * Select all operations (basic list for grid).
      */
-    List<OperationVo> findAll();
+    List<OperationVo> findAll(HashMap<String,Object> map);
 
     List<OperationVo> findAllByFilter(@Param("filter") OperationFilter filter);
     /**
