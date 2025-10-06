@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dz.coc9.mappers.OperationMapper">
+
+    <!-- Result map for nested VO mapping -->
+    <resultMap id="OperationResultMap" type="dz.coc9.vo.OperationVo">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="date" column="created_at" jdbcType="TIMESTAMP"/>
+        <result property="time" column="updated_at" jdbcType="TIMESTAMP"/>
+        <result property="quantite" column="total_affaires" jdbcType="INTEGER"/>
+        <result property="agent" column="orgn_cd" jdbcType="VARCHAR"/>
+        <!-- Orgn nested object -->
+        <association property="orgn" javaType="dz.coc9.vo.OrgnVo">
+            <result property="id" column="orgn_id"/>
+            <result property="orgnCd" column="orgn_cd"/>
+            <result property="orgnNm" column="orgn_cd"/>
+            <!-- orgnType not present in view; set later if needed -->
+        </association>
+
+        <!-- Marchandise nested object (top-level info) -->
+        <association property="marchandie" javaType="dz.coc9.vo.MarchandiseVo">
+            <!-- the VO fields: id (not provided here), nom, description -->
+            <result property="nom" column="marchandise_name"/>
+            <result property="description" column="marchandise_name_ar"/>
+        </association>
+
+        <!-- path is a collection of TrajetVo; TrajetVo contains List<PointVo> point -->
+        <!-- We'll map to OperationVo.path which is List<TrajetVo> containing points -->
+        <collection property="path" ofType="dz.coc9.vo.TrajetVo" javaType="java.util.ArrayList"
+                    select="selectPointsByOperationId" column="raw_id"/>
+    </resultMap>
+
+    <!-- select all operations -->
+    <select id="findAll" resultMap="OperationResultMap">
+        SELECT * FROM coc10.v_operations
+        ORDER BY id DESC
+    </select>
+    <select id="findAllByFilter" parameterType="dz.coc9.service.dto.OperationFilter"
+            resultType="dz.coc9.vo.OperationVo">
+        SELECT
+        id,
+        orgn_dir AS orgnDir,
+        orgn_div AS orgnDiv,
+        orgn_dr AS orgnDr,
+        type_operation AS typeOperation,
+        marchandise,
+        wilaya,
+        latitude,
+        longitude,
+        address,
+        quantite,
+        unite,
+        date_operation AS dateOperation,
+        path_json AS pathJson,
+        observations
+        FROM v_operations
+        <where>
+            <if test="filter.orgnDir != null and filter.orgnDir != ''">
+                AND orgn_dir = #{filter.orgnDir}
+            </if>
+            <if test="filter.orgnDiv != null and filter.orgnDiv != ''">
+                AND orgn_div = #{filter.orgnDiv}
+            </if>
+            <if test="filter.orgnDr != null and filter.orgnDr != ''">
+                AND orgn_dr = #{filter.orgnDr}
+            </if>
+            <if test="filter.marchandise != null and filter.marchandise != ''">
+                AND marchandise = #{filter.marchandise}
+            </if>
+            <if test="filter.wilaya != null and filter.wilaya != ''">
+                AND wilaya = #{filter.wilaya}
+            </if>
+            <if test="filter.dateFrom != null">
+                AND date_operation &gt;= #{filter.dateFrom}
+            </if>
+            <if test="filter.dateTo != null">
+                AND date_operation &lt;= #{filter.dateTo}
+            </if>
+        </where>
+        ORDER BY date_operation DESC
+    </select>
+    <!-- select single operation -->
+    <select id="findById" parameterType="long" resultMap="OperationResultMap">
+        SELECT * FROM coc10.v_operations WHERE id = #{id}
+    </select>
+
+    <!-- select points (path) for a given operation id (raw string id used to join location table) -->
+    <select id="selectPointsByOperationId" parameterType="string" resultType="dz.coc9.vo.PointVo">
+        SELECT
+            COALESCE(localisation_geographique_n::double precision, NULL) AS latitude,
+            COALESCE(localisation_geographique_e::double precision, NULL) AS longitude
+        FROM coc10."location"
+        WHERE id = #{id}
+        -- If you have multiple rows representing a trajectory, order appropriately:
+        ORDER BY toponymie NULLS LAST
+    </select>
+
+</mapper>

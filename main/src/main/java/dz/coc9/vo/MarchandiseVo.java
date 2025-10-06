@@ -9,18 +9,10 @@ import java.util.List;
 @Data
 public class MarchandiseVo {
 
-    /** Identifiant interne (optionnel) */
-    private Long id;
-
-    /** Nom ou type de la marchandise */
+    private String id;
     private String nom;
-
-    /** Description éventuelle */
     private String description;
-
-    /** Catégorie parent (null si racine) */
     private MarchandiseVo parent;
-
     /** Sous-catégories (ex: armes à feu sous "Armes") */
     private List<MarchandiseVo> sousCategories;
 }

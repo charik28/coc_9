@@ -82,3 +82,59 @@ $("#formDeclaration").on("submit", function (e) {
 // Export simulation
 function exportToExcel() { alert("Export Excel simulé ✅"); }
 function exportToPDF() { alert("Export PDF simulé ✅"); }
+
+
+<!-- Fragment: Operations Dashboard -->
+  $(function() {
+  // Initialize Select2 with API
+  $('.select2[data-api]').each(function() {
+    const $el = $(this);
+    fetch($el.data('api')).then(res => res.json()).then(data => {
+      $el.append(data.map(opt => `<option value="${opt.id}">${opt.name || opt.label}</option>`));
+    });
+  });
+
+  // Initialize jsGrid
+  $("#jsGrid-operations").jsGrid({
+  width: "100%",
+  height: "400px",
+  paging: true,
+  autoload: true,
+  controller: {
+  loadData: function() {
+  return fetch('/api/operations').then(res => res.json());
+}
+},
+  fields: [
+{ name: "date", title: "Date", type: "text", width: 70 },
+{ name: "wilaya", title: "Wilaya", type: "text", width: 70 },
+{ name: "marchandise", title: "Marchandise", type: "text", width: 100 },
+{ name: "quantite", title: "Quantité", type: "number", width: 60 },
+{ name: "unite", title: "Unité", type: "text", width: 50 },
+{ name: "agent", title: "Agent", type: "text", width: 80 }
+  ]
+});
+
+  // Initialize Map (Leaflet)
+  const map = L.map('map-operations').setView([36.75, 3.05], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OSM'
+}).addTo(map);
+
+  // Initialize Charts
+  new Chart(document.getElementById('chart-quantite'), {
+  type: 'bar',
+  data: {
+  labels: ["Cocaïne", "Armes", "Tabac", "Fuel"],
+  datasets: [{ label: "Quantité", data: [30, 12, 54, 20] }]
+}
+});
+
+  new Chart(document.getElementById('chart-categories'), {
+  type: 'pie',
+  data: {
+  labels: ["Narcotiques", "Contrebande", "Devises", "Armes"],
+  datasets: [{ data: [35, 25, 20, 20] }]
+}
+});
+});
