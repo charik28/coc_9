@@ -24,8 +24,8 @@ public class OperationService implements IOperationService {
     public List<OperationVo> findAll() {
 
         HashMap<String,Object> map  = new HashMap<>();
-        map.put("limit" , 100);
-        map.put("offset" , 0);
+        map.put("limit" , 100L);
+        map.put("offset" , 0L);
 
         List<OperationVo>  operations =mapper.findAll(map);
 
