@@ -27,8 +27,9 @@
         </if>
     </select>
 
-    <select id="findAll" parameterType="map" resultMap="marchandiseResultMap">
-        select * from rendement_seized_goods
+    <select id="findSeizedGoods" parameterType="map" resultMap="marchandiseResultMap">
+        select * from rendement_base rb
+                 left join type_marchansise tm on rb.
         where true
 
           <if test="operationId != null">

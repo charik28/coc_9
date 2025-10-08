@@ -1,8 +1,10 @@
 package dz.coc9.mappers;
 
 import dz.coc9.service.dto.OperationFilter;
+import dz.coc9.vo.OperationGridResponce;
 import dz.coc9.vo.OperationVo;
 import dz.coc9.vo.PointVo;
+import dz.coc9.vo.TrajetVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -16,7 +18,7 @@ public interface OperationMapper {
      * Select all operations (basic list for grid).
      */
     List<OperationVo> findAll(HashMap<String,Object> map);
-    List<OperationVo> findOperation(HashMap<String,Object> map);
+    List<OperationVo> findOperations(HashMap<String,Object> map);
 
     List<OperationVo> findAllByFilter(@Param("filter") OperationFilter filter);
     /**
@@ -28,5 +30,9 @@ public interface OperationMapper {
      * Select points (path) for an operation id.
      * This is used by the collection mapping in XML.
      */
-    List<PointVo> selectPointsByOperationId(@Param("id") String rawId);
+    PointVo selectOperationLocation(@Param("id") String operationId);
+
+    TrajetVo selectTrajetByOperationId(@Param("id") String rawId);
+    List<OperationGridResponce> selectOperationGridResponce(HashMap<String,Object> map);
+
 }

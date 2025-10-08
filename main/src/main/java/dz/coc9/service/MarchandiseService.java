@@ -29,6 +29,10 @@ public class MarchandiseService {
         Map<String,Object> map = new HashMap<>();
         map.put("operationId",operationId);
 
-        return marchandiseMapper.findAll(map);
+        return marchandiseMapper.findSeizedGoods(map);
     }
+
+
+
+
 }

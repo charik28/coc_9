@@ -8,7 +8,7 @@ $(function () {
 */
 
   // Fetch operations from backend API
-  $.getJSON("/api/operations", function (data) {
+  $.getJSON("/api/operation", function (data) {
     initJsGrid(data);
     plotOperations(data);
   });

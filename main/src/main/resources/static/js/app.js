@@ -102,16 +102,22 @@ function exportToPDF() { alert("Export PDF simulé ✅"); }
   autoload: true,
   controller: {
   loadData: function() {
-  return fetch('/api/operations').then(res => res.json());
+  return fetch('/api/operation/grid').then(res => res.json());
 }
 },
+    //id,mois,annee,dr,idd,nm ,wilaya,collaboration
   fields: [
-{ name: "date", title: "Date", type: "text", width: 70 },
+{ name: "id", title: "id", type: "text", width: 20 },
+{ name: "mois", title: "Mois", type: "text", width: 70 },
+{ name: "annee", title: "Année", type: "text", width: 70 },
+{ name: "dr", title: "DR", type: "text", width: 70 },
+{ name: "idd", title: "IDD", type: "text", width: 70 },
+{ name: "nm", title: "Brigade", type: "text", width: 70 },
 { name: "wilaya", title: "Wilaya", type: "text", width: 70 },
+
 { name: "marchandiseNm", title: "Marchandise", type: "text", width: 100 },
 { name: "quantite", title: "Quantité", type: "number", width: 60 },
 { name: "unite", title: "Unité", type: "text", width: 50 },
-{ name: "orgn", title: "Brigade", type: "text", width: 80 }
   ]
 });
 

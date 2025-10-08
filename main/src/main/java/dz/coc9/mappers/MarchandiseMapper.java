@@ -11,6 +11,6 @@ public interface MarchandiseMapper {
 
 
     public List<MarchandiseVo> findAllMarchansiseTypes(Map<String, Object> map);
-    public List<MarchandiseVo> findAll(Map<String, Object> map);
+    public List<MarchandiseVo> findSeizedGoods(Map<String, Object> map);
 
 }

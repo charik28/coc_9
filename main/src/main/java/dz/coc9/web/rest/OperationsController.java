@@ -3,14 +3,16 @@ package dz.coc9.web.rest;
 
 import dz.coc9.service.OperationService;
 import dz.coc9.service.dto.OperationFilter;
+import dz.coc9.vo.OperationGridResponce;
 import dz.coc9.vo.OperationVo;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/operations")
+@RequestMapping("/api/operation")
 @CrossOrigin("*")
 public class OperationsController {
 
@@ -40,5 +42,15 @@ public class OperationsController {
     public ResponseEntity<List<OperationVo>> getOperations(){
 
         return ResponseEntity.ok(operationsService.findAll());
+    }
+    @GetMapping("/grid")
+    public ResponseEntity<List<OperationGridResponce>> selectOperationGridResponce(@RequestBody(required = false) OperationFilter filter) {
+
+        HashMap<String,Object> map = new HashMap<>();
+        map.put("filter", filter);
+        map.put("limit",100);
+        map.put("offset",0);
+
+        return ResponseEntity.ok(operationsService.selectOperationGridResponce(map));
     }
 }

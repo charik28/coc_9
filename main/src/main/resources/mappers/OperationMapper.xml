@@ -5,8 +5,16 @@
 
 <mapper namespace="dz.coc9.mappers.OperationMapper">
 
-    <!-- Result map for nested VO mapping -->
     <resultMap id="OperationResultMap" type="dz.coc9.vo.OperationVo">
+    <id property="id" column="id" jdbcType="BIGINT"/>
+    <result property="dateString" column="created_at" jdbcType="TIMESTAMP"/>
+    <result property="time" column="updated_at" jdbcType="TIMESTAMP"/>
+    <result property="quantite" column="total_affaires" jdbcType="INTEGER"/>
+    <result property="agent" column="orgn_cd" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- Result map for nested VO mapping -->
+    <resultMap id="OperationNestedResultMap" type="dz.coc9.vo.OperationVo">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="dateString" column="created_at" jdbcType="TIMESTAMP"/>
         <result property="time" column="updated_at" jdbcType="TIMESTAMP"/>
@@ -30,12 +38,12 @@
 
         <!-- path is a collection of TrajetVo; TrajetVo contains List<PointVo> point -->
         <!-- We'll map to OperationVo.path which is List<TrajetVo> containing points -->
-        <collection property="path" ofType="dz.coc9.vo.TrajetVo" javaType="java.util.ArrayList"
-                    select="selectPointsByOperationId" column="raw_id"/>
+<!--        <collection property="path" ofType="dz.coc9.vo.TrajetVo" javaType="java.util.ArrayList"
+                    select="selectPointsByOperationId" column="raw_id"/>-->
     </resultMap>
 
     <!-- select all operations -->
-    <select id="findAll" resultMap="OperationResultMap">
+    <select id="findAll" resultMap="OperationNestedResultMap">
         SELECT * FROM coc10.v_operations
         ORDER BY id DESC
         <if test="limit != null">
@@ -90,10 +98,10 @@
         ORDER BY date_operation DESC
     </select>
     <!-- select single operation -->
-    <select id="findById" parameterType="long" resultMap="OperationResultMap">
+    <select id="findById" parameterType="long" resultMap="OperationNestedResultMap">
         SELECT * FROM coc10.v_operations WHERE id = #{id}
     </select>
-    <select id="findOperation" parameterType="map" resultMap="OperationResultMap">
+    <select id="findOperations" parameterType="map" resultMap="OperationResultMap">
         SELECT id,orgn_cd ,wilaya,collaboration,concat(mois,' ',annee) as dateString ,data_source FROM coc10.rendement
         WHERE true
             <if test="id != null">
@@ -110,12 +118,18 @@
     </select>
 
     <!-- select points (path) for a given operation id (raw string id used to join location table) -->
-    <select id="selectPointsByOperationId" parameterType="string" resultType="dz.coc9.vo.VilleVo">
+    <select id="selectOperationLocation" parameterType="string" resultType="dz.coc9.vo.PointVo">
         select v.nm, r.wilaya,v.latitude,v.longitude  from rendement r
          join ville v on r.wilaya ilike v.nm
         WHERE r.id = #{id}
         and v.latitude is not null
-        limit 1
+
+    </select>
+    <select id="selectTrajetByOperationId" resultType="dz.coc9.vo.TrajetVo">
+
+    </select>
+    <select id="selectOperationGridResponce" resultType="dz.coc9.vo.OperationGridResponce">
+        select id,mois,annee,dr,idd,nm ,wilaya,collaboration from coc10.rendement
     </select>
 
 </mapper>

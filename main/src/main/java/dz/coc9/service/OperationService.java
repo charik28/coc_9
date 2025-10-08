@@ -3,6 +3,7 @@ package dz.coc9.service;
 import dz.coc9.mappers.OperationMapper;
 import dz.coc9.service.dto.OperationFilter;
 import dz.coc9.service.interfaces.IOperationService;
+import dz.coc9.vo.OperationGridResponce;
 import dz.coc9.vo.OperationVo;
 import org.springframework.stereotype.Service;
 
@@ -40,4 +41,14 @@ public class OperationService implements IOperationService {
         return mapper.findAllByFilter(filter);
     }
     public OperationVo findById(Long id) { return mapper.findById(id); }
+
+    public List<OperationGridResponce> selectOperationGridResponce(HashMap<String,Object> map) {
+
+        List<OperationGridResponce> operations = mapper.selectOperationGridResponce(map);
+        for (OperationGridResponce operation : operations) {
+            marchandiseService.findMarchandisesByOperationId(operation.getId());
+        }
+        return operations;
+
+    }
 }
