@@ -1,38 +1,45 @@
-  // --- Fake data example, replace with AJAX fetch from backend ---
-  const nodes = [
-  { id: '1', article_name_ar: 'مواد غذائية', groupe_level: 0, groupe_parent: null },
-  { id: '2', article_name_ar: 'مشروبات', groupe_level: 0, groupe_parent: null },
-  { id: '3', article_name_ar: 'مياه معدنية', groupe_level: 1, groupe_parent: '2' },
-  { id: '4', article_name_ar: 'عصائر', groupe_level: 1, groupe_parent: '2' },
-  ];
 
-  // Build tree
-  function buildTree() {
-  const topLevel = nodes.filter(n => !n.groupe_parent);
-  $('#tree').empty();
-  topLevel.forEach(node => {
-  const li = $('<li>').append(
-  $('<div>')
-  .addClass('node-item')
-  .text(node.article_name_ar)
-  .click(() => selectNode(node.id))
-  );
-  $('#tree').append(li);
-});
+
+let nodes = []; // Global array to hold all nodes
+
+async function buildTree() {
+
+  try {
+    // Fetch data from API
+    const response = await fetch('/api/marchandise/groupes', {method: 'GET'});
+    if (!response.ok) throw new Error('Erreur de chargement des marchandises');
+    nodes = await response.json();
+
+
+    const topLevel = nodes.filter(n => n.groupeLevel<3);
+    $('#tree').empty();
+    topLevel.forEach(node => {
+      const li = $('<li>').append(
+        $('<div>')
+          .addClass('node-item')
+          .text(node.nm)
+          .click(() => selectNode(node.id))
+      );
+      $('#tree').append(li);
+    });
+  } catch (err) {
+    console.error('Erreur:', err);
+    $('#tree').html('<li>Erreur de chargement des données.</li>');
+  }
 }
 
   // Show children on right side
   function selectNode(id) {
   $('.node-item').removeClass('selected');
   event.target.classList.add('selected');
-  const childs = nodes.filter(n => n.groupe_parent === id);
+  const childs = nodes.filter(n => n.groupeParentId === id);
   const tbody = $('#childTable').empty();
   childs.forEach(ch => {
   const tr = $('<tr>')
-  .append($('<td>').text(ch.reference_number || ''))
-  .append($('<td>').text(ch.article_name_ar))
-  .append($('<td>').text(ch.unit || ''))
-  .append($('<td>').text(ch.article_number || ''))
+  .append($('<td>').text(ch.id || 'NULL'))
+  .append($('<td>').text(ch.nm || 'NULL'))
+  .append($('<td>').text(ch.unit || 'NULL'))
+  .append($('<td>').text(ch.article_number || 'NULL'))
   .append(
   $('<td>').html(`<button class="btn btn-sm btn-info" onclick="editNode('${ch.id}')"><i class="fas fa-edit"></i></button>`)
   );
@@ -43,11 +50,11 @@
   function editNode(id) {
   const n = nodes.find(n => n.id === id);
   $('#id').val(n.id);
-  $('#article_name_ar').val(n.article_name_ar);
-  $('#article_name').val(n.article_name);
+  $('#nm').val(n.nm);
+  $('#frNm').val(n.nm);
   $('#unit').val(n.unit);
-  $('#reference_number').val(n.reference_number);
-  $('#article_number').val(n.article_number);
+  $('#parent').val(n.id);
+  $('#article_number').val(n.nm);
 }
 
   function saveNode() {
@@ -59,4 +66,4 @@
   $('#id').val('');
 }
 
-  $(document).ready(buildTree);
+  // $(document).ready(buildTree);

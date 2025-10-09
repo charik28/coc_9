@@ -1,12 +1,6 @@
-$(function () {
-  // Initialize map
-/*
-  const map = L.map("map-operations").setView([28.0, 2.0], 5);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap contributors",
-  }).addTo(map);
-*/
+function loadOperations() {
 
+  console.debug("Loading operations");
   // Fetch operations from backend API
   $.getJSON("/api/operation/grid", function (data) {
     initJsGrid(data);
@@ -26,14 +20,18 @@ $(function () {
       autoload: true,
       data: data,
       fields: [
-        { name: "id", type: "text", title: "ID", width: 50 },
-        { name: "orgn.orgnNm", type: "text", title: "Organisation" },
-        { name: "collaborationType", type: "text", title: "Collaboration" },
-        { name: "marchandie.nom", type: "text", title: "Marchandise" },
-        { name: "quantite", type: "text", title: "Quantité" },
-        { name: "unite", type: "text", title: "Unité" },
-        { name: "date", type: "text", title: "Date" },
-        { name: "time", type: "text", title: "Heure" },
+        { name: "id", title: "id", type: "text", width: 20 },
+        { name: "mois", title: "Mois", type: "text", width: 70 },
+        { name: "annee", title: "Année", type: "text", width: 70 },
+        { name: "dr", title: "DR", type: "text", width: 70 },
+        { name: "idd", title: "IDD", type: "text", width: 70 },
+        { name: "nm", title: "Brigade", type: "text", width: 70 },
+        { name: "wilaya", title: "Wilaya", type: "text", width: 70 },
+
+        { name: "marchandiseNm", title: "Marchandise", type: "text", width: 100 },
+        { name: "quantite", title: "Quantité", type: "number", width: 60 },
+        { name: "unite", title: "Unité", type: "text", width: 50 },
+
         {
           name: "path",
           title: "Position",
@@ -46,7 +44,7 @@ $(function () {
       ],
     });
   }
-
+}
   // Plot operations on Leaflet
   function plotOperations(data) {
     data.forEach((op) => {
@@ -75,7 +73,7 @@ $(function () {
   $("#exportExcel").click(() => exportGrid("excel"));
   $("#exportPdf").click(() => exportGrid("pdf"));
 
-  function exportGrid(type) {
+function exportGrid(type) {
     const data = $("#jsGrid").jsGrid("option", "data");
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: "application/json",
@@ -85,5 +83,5 @@ $(function () {
     a.href = url;
     a.download = `operations_${type}.json`;
     a.click();
-  }
-});
+}
+

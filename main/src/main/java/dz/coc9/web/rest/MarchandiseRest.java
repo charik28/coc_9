@@ -23,9 +23,14 @@ public class MarchandiseRest {
 
         return this.findGroupsByLevel(1);
     }
+    @GetMapping("groupes")
+    public ResponseEntity<List<MarchandiseVo>> findAllTypeMarchandies(){
+
+        return ResponseEntity.ok(marchandiseService.findTypeMarchandisesByLevel(-1));
+    }
 
     @GetMapping("/groupe/{level}")
-    public ResponseEntity<List<MarchandiseVo>> findGroupsByLevel(@PathVariable(required = true) int level){
+    public ResponseEntity<List<MarchandiseVo>> findGroupsByLevel( int level){
 
         return ResponseEntity.ok(marchandiseService.findTypeMarchandisesByLevel(level));
     }

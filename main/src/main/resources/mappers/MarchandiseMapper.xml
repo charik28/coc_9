@@ -8,15 +8,19 @@
     <resultMap id="marchandiseResultMap" type="dz.coc9.vo.MarchandiseVo">
 
         <result property="id" column="id" />
-            <result property="groupeLevel" column="groupe_level" />
+        <result property="groupeLevel" column="groupe_level" />
         <result property="nm" column="article_name_ar" />
         <result property="frNm" column="article_name" />
+        <result property="groupeParentId" column="groupe_parent" />
+        <result property="unitAr" column="unit" />
+        <result property="unit" column="unit_ar" />
 
 
     </resultMap>
 
     <select id="findAllMarchansiseTypes" parameterType="map" resultMap="marchandiseResultMap">
-        select * from type_marchansise
+        SELECT unit_ar, article_name_ar, unit, article_name, id, reference_number, article_number, groupe_level, groupe_parent
+        from type_marchansise
         where true
         <if test="level != null">
             and groupe_level = #{level}

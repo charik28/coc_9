@@ -20,7 +20,8 @@ public class MarchandiseService {
 
     public List<MarchandiseVo> findTypeMarchandisesByLevel(int level){
         Map<String,Object> map = new HashMap<>();
-        map.put("level",level);
+        if(level != -1)
+            map.put("level",level);
 
         return marchandiseMapper.findAllMarchansiseTypes(map);
     }

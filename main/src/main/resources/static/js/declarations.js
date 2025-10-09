@@ -129,3 +129,24 @@ $(function () {
     a.click();
   }
 });
+
+
+// Form handler
+$("#formDeclaration").on("submit", function (e) {
+  e.preventDefault();
+  const item = {
+    id: fakeDeclarations.length + 1,
+    voyageur: $("#nomVoyageur").val(),
+    pays: $("#paysOrigine").val(),
+    poste: $("#poste").val(),
+    montant: parseFloat($("#montant").val()) || 0,
+  };
+  fakeDeclarations.push(item);
+  $("#jsGrid").jsGrid("option", "data", fakeDeclarations);
+  this.reset();
+});
+
+// Export simulation
+function exportToExcel() { alert("Export Excel simulé ✅"); }
+function exportToPDF() { alert("Export PDF simulé ✅"); }
+

@@ -7,3 +7,32 @@
 .export-buttons {
   margin-bottom: 10px;
 }
+
+.tree-panel {
+  height: 75vh;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fff;
+}
+.child-panel {
+  height: 75vh;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fff;
+}
+.node-item {
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+.node-item:hover {
+  background-color: #f0f0f0;
+}
+.selected {
+  background-color: #007bff;
+  color: #fff;
+}
