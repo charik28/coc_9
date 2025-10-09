@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lutte contre la Contrebande</title>
+
+  <link rel="stylesheet" href="../plugins/leaflet/leaflet.css" />
+
+  <!-- AdminLTE & Bootstrap -->
+  <link rel="stylesheet" href="../plugins/fontawesome-free/css/all.min.css" />
+  <link rel="stylesheet" href="../../plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+  <link rel="stylesheet" href="../dist/css/adminlte.min.css" />
+
+
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="./dist/css/global.css" />
+  <link rel="stylesheet" href="../plugins/jsgrid/jsgrid.min.css" />
+  <link rel="stylesheet" href="../plugins/jsgrid/jsgrid-theme.min.css" />
+
+</head>
+
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+
+  <!-- Navbar -->
+  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a>
+      </li>
+      <li class="nav-item d-none d-sm-inline-block">
+        <a href="#" class="nav-link">Accueil</a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Sidebar -->
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <a href="#" class="brand-link text-center">
+      <i class="fas fa-shield-alt"></i>
+      <span class="brand-text">Anti-Contrebande</span>
+    </a>
+    <div class="sidebar">
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+          <li class="nav-item">
+            <a href="#" class="nav-link active" onclick="showSection('dashboard')">
+              <i class="nav-icon fas fa-tachometer-alt"></i><p>Tableau de Bord</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link" onclick="showSection('declarations')">
+              <i class="nav-icon fas fa-file-alt"></i><p>Déclarations</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link" onclick="showSection('statistiques')">
+              <i class="nav-icon fas fa-chart-line"></i><p>Statistiques</p>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- Content Wrapper -->
+  <div class="content-wrapper">
+    <div class="content-header">
+      <div class="container-fluid">
+        <h1 id="pageTitle">Lutte contre la Contrebande</h1>
+      </div>
+    </div>
+
+    <section class="content">
+      <div class="container-fluid">
+
+        <!-- DASHBOARD -->
+        <div id="section-dashboard" class="section">
+          <div class="row" id="dashboardStats"></div>
+          <div class="row mt-3">
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header bg-primary text-white">
+                  <h3 class="card-title"><i class="fas fa-chart-bar"></i> Tendance des Saisies</h3>
+                </div>
+                <div class="card-body"><canvas id="saisiesChart" height="150"></canvas></div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header bg-success text-white">
+                  <h3 class="card-title"><i class="fas fa-map-marked-alt"></i> Carte des Saisies</h3>
+                </div>
+                <div class="card-body"><div id="map"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DECLARATIONS -->
+        <div id="section-declarations" class="section" style="display:none;">
+          <div class="card card-outline card-info">
+            <div class="card-header bg-info text-white">
+              <!--              <h3 class="card-title"><i class="fas fa-file-alt"></i> Déclarations & Formulaires</h3>-->
+              <h3 class="mb-3 card-title"><i class="fas fa-file-alt text-primary"></i> Déclarations & Formulaires</h3>
+
+            </div>
+            <!-- ============================ -->
+
+          </div>
+        </div>
+
+        <!-- STATISTIQUES -->
+        <div id="section-statistiques" class="section" style="display:none;">
+          <div class="card card-outline card-success">
+            <div class="card-header bg-success text-white">
+              <h3 class="card-title"><i class="fas fa-chart-line"></i> Statistiques Générales</h3>
+            </div>
+
+
+            <!-- ===============================
+  📍 Fragment: Operations Dashboard
+  Based on AdminLTE + Bootstrap + jsGrid + Leaflet + Chart.js
+================================ -->
+            <section class="content p-3" id="operations-dashboard">
+
+              <!-- Search / Filters -->
+              <div class="card card-primary shadow-lg mb-3">
+                <div class="card-header">
+                  <h3 class="card-title"><i class="fas fa-search"></i> Recherche des Opérations</h3>
+                </div>
+                <div class="card-body">
+                  <form id="form-operations-filter" class="form-row align-items-end">
+
+                    <!-- ORGN -->
+                    <div class="form-group col-md-3">
+                      <label  for="orgn-dr">Direction Régionale</label>
+                      <select id="orgn-dr" class="form-control select2" data-api="/api/orgn/dr"></select>
+                    </div>
+                    <div class="form-group col-md-3">
+                      <label for="orgn-ins">Division</label>
+                      <select id="orgn-ins" class="form-control select2" data-api="/api/orgn/ins"></select>
+                    </div>
+                    <div class="form-group col-md-3">
+                      <label for="orgn-bri">DR</label>
+                      <select id="orgn-bri" class="form-control select2" data-api="/api/orgn/bri"></select>
+                    </div>
+
+                    <!-- Collaboration -->
+                    <div class="form-group col-md-3">
+                      <label>Type d’Opération</label>
+                      <select id="collaborationType" class="form-control">
+                        <option value="individuelle">Individuelle</option>
+                        <option value="collaborative">En collaboration</option>
+                      </select>
+                    </div>
+
+                    <!-- Marchandise -->
+                    <div class="form-group col-md-4">
+                      <label>Marchandise</label>
+                      <select id="marchandise" class="form-control select2" data-api="/api/marchandise/groupe"></select>
+                    </div>
+
+                    <!-- Wilaya + Position -->
+                    <div class="form-group col-md-4">
+                      <label>Wilaya</label>
+                      <select id="wilaya" class="form-control select2" data-api="/api/ville"></select>
+                    </div>
+                    <div class="form-group col-md-4">
+                      <label>Coordonnées GPS</label>
+                      <input type="text" id="coordonnees" class="form-control" placeholder="Lat, Lng">
+                    </div>
+
+                    <!-- Quantité -->
+                    <div class="form-group col-md-3">
+                      <label>Quantité</label>
+                      <input type="number" id="quantite" class="form-control" placeholder="Ex: 10.5">
+                    </div>
+
+                    <!-- Date / Heure -->
+                    <div class="form-group col-md-3">
+                      <label>Date</label>
+                      <input type="date" id="date" class="form-control">
+                    </div>
+                    <div class="form-group col-md-3">
+                      <label>Heure</label>
+                      <input type="time" id="time" class="form-control">
+                    </div>
+
+                    <!-- Chemin / Trajet -->
+                    <div class="form-group col-md-3">
+                      <label>Itinéraire / Trajet</label>
+                      <button type="button" class="btn btn-outline-primary btn-block" id="btn-add-path">
+                        <i class="fas fa-route"></i> Ajouter un trajet
+                      </button>
+                    </div>
+
+                    <div class="form-group col-md-12 text-right">
+                      <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Rechercher</button>
+                      <button type="reset" class="btn btn-secondary"><i class="fas fa-undo"></i> Réinitialiser</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Tabs -->
+              <div class="card card-outline card-info shadow">
+                <div class="card-header p-2">
+                  <ul class="nav nav-pills" id="operationsTabs" role="tablist">
+                    <li class="nav-item"><a class="nav-link active" href="#tab-grid" data-toggle="tab"><i class="fas fa-table"></i> Tableau</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#tab-map" data-toggle="tab"><i class="fas fa-map"></i> Carte</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#tab-charts" data-toggle="tab"><i class="fas fa-chart-bar"></i> Statistiques</a></li>
+                  </ul>
+                </div>
+                <div class="card-body">
+                  <div class="tab-content">
+
+                    <!-- jsGrid Table -->
+                    <div class="tab-pane fade show active" id="tab-grid">
+                      <div id="jsGrid-operations" class="p-2"></div>
+
+                    </div>
+
+                    <!-- Map -->
+                    <div class="tab-pane fade" id="tab-map">
+                      <div id="map-operations" style="height: 480px;" class="rounded border"></div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="tab-pane fade" id="tab-charts">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <canvas id="barChart" height="60" width="80"></canvas>
+                          <canvas id="pieChart" height="120" class="mt-4"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                          <canvas id="chart-quantite" height="200"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                          <canvas id="chart-categories" height="200"></canvas>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+            </section>
+
+            </script>
+
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+  <footer class="main-footer text-center">
+    <strong>Direction Générale des Douanes © 2025</strong> - Lutte contre la Contrebande
+  </footer>
+</div>
+
+<!-- JS LIBS -->
+<script src="plugins/jquery/jquery.min.js"></script>
+<script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="dist/js/adminlte.min.js"></script>
+<script src="./plugins/chart.js/Chart.min.js"></script>
+<script src="../plugins/jsgrid/jsgrid.min.js"></script>
+
+<script src="../plugins/leaflet/leaflet.js"></script>
+
+<!-- Project Scripts -->
+<script src="./js/data.js"></script>
+<script src="./js/app.js"></script>
+<script src="../js/operations.js"></script>
+</body>
+</html>

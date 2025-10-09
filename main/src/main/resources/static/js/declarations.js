@@ -1,64 +1,66 @@
+
 $(function () {
-  let declarations = [];
-  let selectedId = null;
+  /*  let declarations = [];
+    let selectedId = null;
 
-  // Charger les données
-  $.getJSON("/js/fake-data.json", function (data) {
-    declarations = data.map((d, i) => ({ id: i + 1, ...d }));
-    initGrid(declarations);
-  });
-
-  function initGrid(data) {
-    $("#jsGrid").jsGrid({
-      width: "100%",
-      height: "500px",
-      sorting: true,
-      paging: true,
-      autoload: true,
-      data: data,
-      fields: [
-        { name: "id", title: "ID", type: "number", width: 30, align: "center" },
-        { name: "type", title: "Type", type: "text", width: 80 },
-        { name: "nom", title: "Nom", type: "text", width: 120 },
-        { name: "nationalite", title: "Nationalité", type: "text", width: 80 },
-        { name: "poste", title: "Poste", type: "text", width: 80 },
-        { name: "montant", title: "Montant (DA)", type: "number", width: 70 },
-        {
-          type: "control",
-          itemTemplate: function (_, item) {
-            return $("<div>")
-              .append(
-                $("<button>")
-                  .addClass("btn btn-sm btn-info mr-1")
-                  .html('<i class="fas fa-edit"></i>')
-                  .click(() => editDeclaration(item))
-              )
-              .append(
-                $("<button>")
-                  .addClass("btn btn-sm btn-danger")
-                  .html('<i class="fas fa-trash"></i>')
-                  .click(() => deleteDeclaration(item.id))
-              );
-          },
-        },
-      ],
+    // Charger les données
+    $.getJSON("/js/fake-data.json", function (data) {
+      declarations = data.map((d, i) => ({ id: i + 1, ...d }));
+      initGrid(declarations);
     });
-  }
 
-  // Filtrage
-  $("#applyFilter").click(function () {
-    const nom = $("#filterNom").val().toLowerCase();
-    const type = $("#filterType").val();
-    const poste = $("#filterPoste").val().toLowerCase();
+    function initGrid(data) {
+      $("#operations-jsGrid").jsGrid({
+        width: "100%",
+        height: "500px",
+        sorting: true,
+        paging: true,
+        autoload: true,
+        data: data,
+        fields: [
+          { name: "id", title: "ID", type: "number", width: 30, align: "center" },
+          { name: "type", title: "Type", type: "text", width: 80 },
+          { name: "nom", title: "Nom", type: "text", width: 120 },
+          { name: "nationalite", title: "Nationalité", type: "text", width: 80 },
+          { name: "poste", title: "Poste", type: "text", width: 80 },
+          { name: "montant", title: "Montant (DA)", type: "number", width: 70 },
+          {
+            type: "control",
+            itemTemplate: function (_, item) {
+              return $("<div>")
+                .append(
+                  $("<button>")
+                    .addClass("btn btn-sm btn-info mr-1")
+                    .html('<i class="fas fa-edit"></i>')
+                    .click(() => editDeclaration(item))
+                )
+                .append(
+                  $("<button>")
+                    .addClass("btn btn-sm btn-danger")
+                    .html('<i class="fas fa-trash"></i>')
+                    .click(() => deleteDeclaration(item.id))
+                );
+            },
+          },
+        ],
+      });
+    }
 
-    const filtered = declarations.filter(
-      (d) =>
-        (!nom || d.nom.toLowerCase().includes(nom)) &&
-        (!type || d.type === type) &&
-        (!poste || d.poste.toLowerCase().includes(poste))
-    );
-    $("#jsGrid").jsGrid("option", "data", filtered);
-  });
+    // Filtrage
+    $("#applyFilter").click(function () {
+      const nom = $("#filterNom").val().toLowerCase();
+      const type = $("#filterType").val();
+      const poste = $("#filterPoste").val().toLowerCase();
+
+      const filtered = declarations.filter(
+        (d) =>
+          (!nom || d.nom.toLowerCase().includes(nom)) &&
+          (!type || d.type === type) &&
+          (!poste || d.poste.toLowerCase().includes(poste))
+      );
+      $("#operations-jsGrid").jsGrid("option", "data", filtered);
+    });
+  */
 
   // Ajouter ou modifier une déclaration
   $("#declarationForm").on("submit", function (e) {
@@ -73,7 +75,7 @@ $(function () {
       declarations.push(formData);
     }
 
-    $("#jsGrid").jsGrid("option", "data", declarations);
+    $("#operations-jsGrid").jsGrid("option", "data", declarations);
     $("#modalDeclaration").modal("hide");
     this.reset();
   });
@@ -92,7 +94,7 @@ $(function () {
   function deleteDeclaration(id) {
     if (!confirm("Supprimer cette déclaration ?")) return;
     declarations = declarations.filter((d) => d.id !== id);
-    $("#jsGrid").jsGrid("option", "data", declarations);
+    $("#operations-jsGrid").jsGrid("option", "data", declarations);
   }
 
   // Export Excel

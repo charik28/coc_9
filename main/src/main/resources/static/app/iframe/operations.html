@@ -1,0 +1,84 @@
+<section class="content">
+  <!-- Filtres -->
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">Filtres de recherche</h3></div>
+    <div class="card-body">
+      <form id="filterForm" class="form-row">
+        <div class="col-md-3">
+          <input type="text" id="filterNom" class="form-control" placeholder="Nom / Prénom" />
+        </div>
+        <div class="col-md-3">
+          <select id="filterType" class="form-control">
+            <option value="">Type</option>
+            <option>Voyage</option>
+            <option>Devise</option>
+            <option>Titre de passage</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <input type="text" id="filterPoste" class="form-control" placeholder="Poste frontalier" />
+        </div>
+        <div class="col-md-3">
+          <button type="button" id="applyFilter" class="btn btn-outline-primary btn-block"><i class="fas fa-search"></i> Rechercher</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- jsGrid -->
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h3 class="card-title">Liste des Déclarations</h3>
+      <div>
+        <button id="exportExcel" class="btn btn-outline-success btn-sm"><i class="fas fa-file-excel"></i> Excel</button>
+        <button id="exportPDF" class="btn btn-outline-danger btn-sm"><i class="fas fa-file-pdf"></i> PDF</button>
+      </div>
+    </div>
+    <div class="card-body"><div id="jsGrid-operations"></div></div>
+  </div>
+</section>
+<!-- Modal Déclaration -->
+<div class="modal fade" id="modalDeclaration" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="declarationForm">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Déclaration</h5>
+          <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="modal-body row">
+          <input type="hidden" name="id" />
+          <div class="form-group col-md-6">
+            <label>Type de Déclaration</label>
+            <select class="form-control" name="type" required>
+              <option value="">-- Sélectionner --</option>
+              <option>Voyage</option>
+              <option>Devise</option>
+              <option>Titre de passage</option>
+            </select>
+          </div>
+          <div class="form-group col-md-6">
+            <label>Nom et Prénom</label>
+            <input type="text" name="nom" class="form-control" required />
+          </div>
+          <div class="form-group col-md-6">
+            <label>Nationalité</label>
+            <input type="text" name="nationalite" class="form-control" />
+          </div>
+          <div class="form-group col-md-6">
+            <label>Poste frontalier</label>
+            <input type="text" name="poste" class="form-control" />
+          </div>
+          <div class="form-group col-md-6">
+            <label>Montant / Valeur estimée</label>
+            <input type="number" name="montant" class="form-control" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Enregistrer</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

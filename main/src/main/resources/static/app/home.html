@@ -1,471 +1,181 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lutte contre la Contrebande</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Anti-Contrebande - Tableau de Bord</title>
 
-  <link rel="stylesheet" href="../plugins/leaflet/leaflet.css" />
+  <!-- AdminLTE and Plugins -->
+  <link rel="stylesheet" href="../plugins/fontawesome-free/css/all.min.css">
+  <link rel="stylesheet" href="../dist/css/adminlte.min.css">
 
-  <!-- AdminLTE & Bootstrap -->
-  <link rel="stylesheet" href="../plugins/fontawesome-free/css/all.min.css" />
-  <link rel="stylesheet" href="../../plugins/icheck-bootstrap/icheck-bootstrap.min.css">
-  <link rel="stylesheet" href="../dist/css/adminlte.min.css" />
+  <!-- Optional Plugins -->
+  <link rel="stylesheet" href="../plugins/jsgrid/jsgrid.min.css">
+  <link rel="stylesheet" href="../plugins/jsgrid/jsgrid-theme.min.css">
+  <link rel="stylesheet" href="../plugins/leaflet/leaflet.css">
 
-
-
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="./dist/css/global.css" />
-  <link rel="stylesheet" href="../plugins/jsgrid/jsgrid.min.css" />
-  <link rel="stylesheet" href="../plugins/jsgrid/jsgrid-theme.min.css" />
-
+  <style>
+    .content-wrapper {
+      background-color: #f4f6f9;
+      min-height: 100vh;
+    }
+    #homeContent {
+      min-height: 75vh;
+      padding: 1.5rem;
+      background: #fff;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+  </style>
 </head>
 
 <body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
 
-  <!-- Navbar -->
-  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+  <!-- NAVBAR -->
+  <nav class="main-header navbar navbar-expand navbar-white navbar-light border-bottom">
     <ul class="navbar-nav">
       <li class="nav-item">
         <a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
-        <a href="#" class="nav-link">Accueil</a>
+        <a href="#" class="nav-link" onclick="loadContent('dashboard.html')">Accueil</a>
       </li>
     </ul>
   </nav>
 
-  <!-- Sidebar -->
+  <!-- SIDEBAR -->
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <a href="#" class="brand-link text-center">
       <i class="fas fa-shield-alt"></i>
-      <span class="brand-text">Anti-Contrebande</span>
+      <span class="brand-text font-weight-light">Anti-Contrebande</span>
     </a>
+
     <div class="sidebar">
       <nav class="mt-2">
-        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview">
+
+          <!-- Dashboard -->
           <li class="nav-item">
-            <a href="#" class="nav-link active" onclick="showSection('dashboard')">
-              <i class="nav-icon fas fa-tachometer-alt"></i><p>Tableau de Bord</p>
+            <a href="#" class="nav-link active" onclick="loadContent('dashboard.html')">
+              <i class="nav-icon fas fa-tachometer-alt"></i>
+              <p>Tableau de Bord</p>
             </a>
           </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link" onclick="showSection('declarations')">
-              <i class="nav-icon fas fa-file-alt"></i><p>Déclarations</p>
+
+          <!-- Gestion des Opérations -->
+          <li class="nav-item has-treeview">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fas fa-cogs"></i>
+              <p>
+                Gestion des Opérations
+                <i class="right fas fa-angle-left"></i>
+              </p>
             </a>
+            <ul class="nav nav-treeview ml-3">
+              <li class="nav-item">
+                <a href="#" class="nav-link" onclick="loadContent('operations.html')">
+                  <i class="far fa-circle nav-icon"></i><p>Opérations</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="#" class="nav-link" onclick="loadContent('type_marchandises.html')">
+                  <i class="far fa-circle nav-icon"></i><p>Type de Marchandises</p>
+                </a>
+              </li>
+            </ul>
           </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link" onclick="showSection('statistiques')">
-              <i class="nav-icon fas fa-chart-line"></i><p>Statistiques</p>
+
+          <!-- Gestion des Saisies -->
+          <li class="nav-item has-treeview">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fas fa-box-open"></i>
+              <p>
+                Gestion des Saisies
+                <i class="right fas fa-angle-left"></i>
+              </p>
             </a>
+            <ul class="nav nav-treeview ml-3">
+              <li class="nav-item">
+                <a href="#" class="nav-link" onclick="loadContent('declarations.html')">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Déclarations & Formulaires</p>
+                </a>
+              </li>
+            </ul>
           </li>
+
+          <!-- Statistiques -->
+          <li class="nav-item has-treeview">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fas fa-chart-bar"></i>
+              <p>
+                Statistiques
+                <i class="right fas fa-angle-left"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview ml-3">
+              <li class="nav-item">
+                <a href="#" class="nav-link" onclick="loadContent('stats_maps.html')">
+                  <i class="far fa-circle nav-icon"></i><p>Par Cartes</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="#" class="nav-link" onclick="loadContent('stats_charts.html')">
+                  <i class="far fa-circle nav-icon"></i><p>Charts</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+
         </ul>
       </nav>
     </div>
   </aside>
 
-  <!-- Content Wrapper -->
-  <div class="content-wrapper">
+  <!-- MAIN CONTENT -->
+  <div class="content-wrapper p-3">
     <div class="content-header">
       <div class="container-fluid">
-        <h1 id="pageTitle">Lutte contre la Contrebande</h1>
+        <h3 id="pageTitle" class="mb-3">Tableau de Bord</h3>
       </div>
     </div>
 
+    <!-- Dynamic injected content -->
     <section class="content">
-      <div class="container-fluid">
-
-        <!-- DASHBOARD -->
-        <div id="section-dashboard" class="section">
-          <div class="row" id="dashboardStats"></div>
-          <div class="row mt-3">
-            <div class="col-md-6">
-              <div class="card">
-                <div class="card-header bg-primary text-white">
-                  <h3 class="card-title"><i class="fas fa-chart-bar"></i> Tendance des Saisies</h3>
-                </div>
-                <div class="card-body"><canvas id="saisiesChart" height="150"></canvas></div>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="card">
-                <div class="card-header bg-success text-white">
-                  <h3 class="card-title"><i class="fas fa-map-marked-alt"></i> Carte des Saisies</h3>
-                </div>
-                <div class="card-body"><div id="map"></div></div>
-              </div>
-            </div>
-          </div>
+      <div id="homeContent">
+        <div class="text-center py-5 text-muted">
+          <i class="fas fa-spinner fa-spin fa-2x"></i><br>
+          Chargement du contenu...
         </div>
-
-        <!-- DECLARATIONS -->
-        <div id="section-declarations" class="section" style="display:none;">
-          <div class="card card-outline card-info">
-            <div class="card-header bg-info text-white">
-<!--              <h3 class="card-title"><i class="fas fa-file-alt"></i> Déclarations & Formulaires</h3>-->
-                                  <h3 class="mb-3 card-title"><i class="fas fa-file-alt text-primary"></i> Déclarations & Formulaires</h3>
-
-            </div>
-            <!-- ============================
-   📋 Lutte Contre la Contrebande - Déclarations
-   Unified Form Fragment
- ============================ -->
-       <!--     <section class="content" id="section-declarations">
-              <div class="container-fluid">-->
-
-                <div class="row">
-                  <div class="col-md-12">
-<!--                    <h3 class="mb-3"><i class="fas fa-file-alt text-primary"></i> Déclarations & Formulaires</h3>-->
-                    <p class="text-muted">Saisissez les données relatives aux voyages, devises, marchandises ou incidents interceptés.</p>
-                  </div>
-                </div>
-
-                <div class="accordion" id="accordionDeclarations">
-
-                  <!-- 1️⃣ Déclaration de titre de passage -->
-                  <div class="card card-outline card-primary mb-3">
-                    <div class="card-header">
-                      <h5 class="card-title mb-0">
-                        <a class="text-primary" data-toggle="collapse" href="#collapseTitreDouane">
-                          <i class="fas fa-passport"></i> Déclaration de titre de passage en douane
-                        </a>
-                      </h5>
-                    </div>
-                    <div id="collapseTitreDouane" class="collapse show" data-parent="#accordionDeclarations">
-                      <div class="card-body">
-                        <form id="formTitreDouane">
-                          <div class="form-row">
-                            <div class="form-group col-md-4">
-                              <label>Bureau de Douane</label>
-                              <input type="text" class="form-control" name="bureau" placeholder="Ex: Alger Port">
-                            </div>
-                            <div class="form-group col-md-4">
-                              <label>Numéro de Titre</label>
-                              <input type="text" class="form-control" name="numTitre" required>
-                            </div>
-                            <div class="form-group col-md-4">
-                              <label>Date de Passage</label>
-                              <input type="date" class="form-control" name="datePassage">
-                            </div>
-                          </div>
-                          <div class="form-row">
-                            <div class="form-group col-md-6">
-                              <label>Nom du Voyageur</label>
-                              <input type="text" class="form-control" name="voyageur" placeholder="Nom complet">
-                            </div>
-                            <div class="form-group col-md-6">
-                              <label>Nationalité</label>
-                              <input type="text" class="form-control" name="nationalite" placeholder="Ex: Algérienne">
-                            </div>
-                          </div>
-                          <button type="submit" class="btn btn-primary">Soumettre</button>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- 2️⃣ Déclaration de devises -->
-                  <div class="card card-outline card-success mb-3">
-                    <div class="card-header">
-                      <h5 class="card-title mb-0">
-                        <a class="text-success" data-toggle="collapse" href="#collapseDevises">
-                          <i class="fas fa-money-bill-wave"></i> Déclaration de devises
-                        </a>
-                      </h5>
-                    </div>
-                    <div id="collapseDevises" class="collapse" data-parent="#accordionDeclarations">
-                      <div class="card-body">
-                        <form id="formDevises">
-                          <div class="form-row">
-                            <div class="form-group col-md-4">
-                              <label>Point d'entrée</label>
-                              <select class="form-control" name="pointEntree">
-                                <option>Port</option>
-                                <option>Aéroport</option>
-                                <option>Poste frontalier</option>
-                              </select>
-                            </div>
-                            <div class="form-group col-md-4">
-                              <label>Devise</label>
-                              <input type="text" class="form-control" name="devise" placeholder="Ex: EUR, USD">
-                            </div>
-                            <div class="form-group col-md-4">
-                              <label>Montant</label>
-                              <input type="number" class="form-control" name="montant" placeholder="Ex: 5000">
-                            </div>
-                          </div>
-                          <div class="form-row">
-                            <div class="form-group col-md-6">
-                              <label>Déclarant</label>
-                              <input type="text" class="form-control" name="declarant" placeholder="Nom complet">
-                            </div>
-                            <div class="form-group col-md-6">
-                              <label>Date</label>
-                              <input type="date" class="form-control" name="dateDeclaration">
-                            </div>
-                          </div>
-                          <button type="submit" class="btn btn-success">Soumettre</button>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- 3️⃣ Déclaration de marchandises suspectes -->
-                  <div class="card card-outline card-warning mb-3">
-                    <div class="card-header">
-                      <h5 class="card-title mb-0">
-                        <a class="text-warning" data-toggle="collapse" href="#collapseMarchandises">
-                          <i class="fas fa-box-open"></i> Déclaration de marchandises suspectes
-                        </a>
-                      </h5>
-                    </div>
-                    <div id="collapseMarchandises" class="collapse" data-parent="#accordionDeclarations">
-                      <div class="card-body">
-                        <form id="formMarchandises">
-                          <div class="form-row">
-                            <div class="form-group col-md-4">
-                              <label>Type de Marchandise</label>
-                              <input type="text" class="form-control" name="typeMarchandise" placeholder="Ex: Cigarettes, carburant...">
-                            </div>
-                            <div class="form-group col-md-4">
-                              <label>Quantité</label>
-                              <input type="number" class="form-control" name="quantite">
-                            </div>
-                            <div class="form-group col-md-4">
-                              <label>Unité</label>
-                              <input type="text" class="form-control" name="unite" placeholder="Ex: kg, L, pcs">
-                            </div>
-                          </div>
-                          <div class="form-row">
-                            <div class="form-group col-md-12">
-                              <label>Observations</label>
-                              <textarea class="form-control" rows="2" name="observations" placeholder="Remarques..."></textarea>
-                            </div>
-                          </div>
-                          <button type="submit" class="btn btn-warning text-white">Soumettre</button>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- 4️⃣ Déclaration d’incident -->
-                  <div class="card card-outline card-danger">
-                    <div class="card-header">
-                      <h5 class="card-title mb-0">
-                        <a class="text-danger" data-toggle="collapse" href="#collapseIncident">
-                          <i class="fas fa-exclamation-triangle"></i> Déclaration d’incident (interception / saisie / arrestation)
-                        </a>
-                      </h5>
-                    </div>
-                    <div id="collapseIncident" class="collapse" data-parent="#accordionDeclarations">
-                      <div class="card-body">
-                        <form id="formIncident">
-                          <div class="form-row">
-                            <div class="form-group col-md-4">
-                              <label>Type d’incident</label>
-                              <select class="form-control" name="typeIncident">
-                                <option>Interception</option>
-                                <option>Saisie</option>
-                                <option>Arrestation</option>
-                                <option>Autre</option>
-                              </select>
-                            </div>
-                            <div class="form-group col-md-4">
-                              <label>Lieu</label>
-                              <input type="text" class="form-control" name="lieu">
-                            </div>
-                            <div class="form-group col-md-4">
-                              <label>Date</label>
-                              <input type="date" class="form-control" name="dateIncident">
-                            </div>
-                          </div>
-                          <div class="form-group">
-                            <label>Description</label>
-                            <textarea class="form-control" name="description" rows="3" placeholder="Détails de l'incident..."></textarea>
-                          </div>
-                          <button type="submit" class="btn btn-danger">Soumettre</button>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-
-                </div><!-- end accordion -->
-
-            <div class="export-buttons mb-3">
-              <button class="btn btn-outline-secondary btn-sm" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
-              <button class="btn btn-outline-secondary btn-sm" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> Export PDF</button>
-            </div>
-            <div id="jsGrid"></div>
-
-          </div>
-        </div>
-
-        <!-- STATISTIQUES -->
-        <div id="section-statistiques" class="section" style="display:none;">
-          <div class="card card-outline card-success">
-            <div class="card-header bg-success text-white">
-              <h3 class="card-title"><i class="fas fa-chart-line"></i> Statistiques Générales</h3>
-            </div>
-
-
-            <!-- ===============================
-  📍 Fragment: Operations Dashboard
-  Based on AdminLTE + Bootstrap + jsGrid + Leaflet + Chart.js
-================================ -->
-            <section class="content p-3" id="operations-dashboard">
-
-              <!-- Search / Filters -->
-              <div class="card card-primary shadow-lg mb-3">
-                <div class="card-header">
-                  <h3 class="card-title"><i class="fas fa-search"></i> Recherche des Opérations</h3>
-                </div>
-                <div class="card-body">
-                  <form id="form-operations-filter" class="form-row align-items-end">
-
-                    <!-- ORGN -->
-                    <div class="form-group col-md-3">
-                      <label  for="orgn-dr">Direction Régionale</label>
-                       <select id="orgn-dr" class="form-control select2" data-api="/api/orgn/dr"></select>
-                    </div>
-                    <div class="form-group col-md-3">
-                      <label for="orgn-ins">Division</label>
-                      <select id="orgn-ins" class="form-control select2" data-api="/api/orgn/ins"></select>
-                    </div>
-                    <div class="form-group col-md-3">
-                      <label for="orgn-bri">DR</label>
-                      <select id="orgn-bri" class="form-control select2" data-api="/api/orgn/bri"></select>
-                    </div>
-
-                    <!-- Collaboration -->
-                    <div class="form-group col-md-3">
-                      <label>Type d’Opération</label>
-                      <select id="collaborationType" class="form-control">
-                        <option value="individuelle">Individuelle</option>
-                        <option value="collaborative">En collaboration</option>
-                      </select>
-                    </div>
-
-                    <!-- Marchandise -->
-                    <div class="form-group col-md-4">
-                      <label>Marchandise</label>
-                      <select id="marchandise" class="form-control select2" data-api="/api/marchandise/groupe"></select>
-                    </div>
-
-                    <!-- Wilaya + Position -->
-                    <div class="form-group col-md-4">
-                      <label>Wilaya</label>
-                      <select id="wilaya" class="form-control select2" data-api="/api/ville"></select>
-                    </div>
-                    <div class="form-group col-md-4">
-                      <label>Coordonnées GPS</label>
-                      <input type="text" id="coordonnees" class="form-control" placeholder="Lat, Lng">
-                    </div>
-
-                    <!-- Quantité -->
-                    <div class="form-group col-md-3">
-                      <label>Quantité</label>
-                      <input type="number" id="quantite" class="form-control" placeholder="Ex: 10.5">
-                    </div>
-
-                    <!-- Date / Heure -->
-                    <div class="form-group col-md-3">
-                      <label>Date</label>
-                      <input type="date" id="date" class="form-control">
-                    </div>
-                    <div class="form-group col-md-3">
-                      <label>Heure</label>
-                      <input type="time" id="time" class="form-control">
-                    </div>
-
-                    <!-- Chemin / Trajet -->
-                    <div class="form-group col-md-3">
-                      <label>Itinéraire / Trajet</label>
-                      <button type="button" class="btn btn-outline-primary btn-block" id="btn-add-path">
-                        <i class="fas fa-route"></i> Ajouter un trajet
-                      </button>
-                    </div>
-
-                    <div class="form-group col-md-12 text-right">
-                      <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Rechercher</button>
-                      <button type="reset" class="btn btn-secondary"><i class="fas fa-undo"></i> Réinitialiser</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-
-              <!-- Tabs -->
-              <div class="card card-outline card-info shadow">
-                <div class="card-header p-2">
-                  <ul class="nav nav-pills" id="operationsTabs" role="tablist">
-                    <li class="nav-item"><a class="nav-link active" href="#tab-grid" data-toggle="tab"><i class="fas fa-table"></i> Tableau</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#tab-map" data-toggle="tab"><i class="fas fa-map"></i> Carte</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#tab-charts" data-toggle="tab"><i class="fas fa-chart-bar"></i> Statistiques</a></li>
-                  </ul>
-                </div>
-                <div class="card-body">
-                  <div class="tab-content">
-
-                    <!-- jsGrid Table -->
-                    <div class="tab-pane fade show active" id="tab-grid">
-                      <div id="jsGrid-operations" class="p-2"></div>
-
-                    </div>
-
-                    <!-- Map -->
-                    <div class="tab-pane fade" id="tab-map">
-                      <div id="map-operations" style="height: 480px;" class="rounded border"></div>
-                    </div>
-
-                    <!-- Charts -->
-                    <div class="tab-pane fade" id="tab-charts">
-                      <div class="row">
-                        <div class="col-md-6">
-                          <canvas id="barChart" height="60" width="80"></canvas>
-                          <canvas id="pieChart" height="120" class="mt-4"></canvas>
-                        </div>
-                        <div class="col-md-6">
-                          <canvas id="chart-quantite" height="200"></canvas>
-                        </div>
-                        <div class="col-md-6">
-                          <canvas id="chart-categories" height="200"></canvas>
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-              </div>
-
-            </section>
-
-            </script>
-
-
-          </div>
-        </div>
-
       </div>
     </section>
   </div>
 
+  <!-- FOOTER -->
   <footer class="main-footer text-center">
     <strong>Direction Générale des Douanes © 2025</strong> - Lutte contre la Contrebande
   </footer>
+
 </div>
 
-<!-- JS LIBS -->
-<script src="plugins/jquery/jquery.min.js"></script>
-<script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="dist/js/adminlte.min.js"></script>
-<script src="./plugins/chart.js/Chart.min.js"></script>
+<!-- JS Libraries -->
+<script src="../plugins/jquery/jquery.min.js"></script>
+<script src="../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="../dist/js/adminlte.min.js"></script>
+
+<!-- JSGrid / Chart / Leaflet -->
 <script src="../plugins/jsgrid/jsgrid.min.js"></script>
-
+<script src="../plugins/chart.js/Chart.min.js"></script>
 <script src="../plugins/leaflet/leaflet.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/type_marchandises.js"></script>
+<script src="../js/declarations.js"></script>
 
-<!-- Project Scripts -->
-<script src="./js/data.js"></script>
-<script src="./js/app.js"></script>
-<script src="../js/operations.js"></script>
+<!-- Dynamic Content Loader -->
+<script>
+
+</script>
 </body>
 </html>

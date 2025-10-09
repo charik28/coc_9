@@ -12,7 +12,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.util.List;
 
 @RestController
-@RequestMapping("/")
+@RequestMapping
 public class PageController {
 
     // ✅ Example: later load from DB/service
@@ -34,6 +34,13 @@ public class PageController {
     public ModelAndView loadHome() {
         return new ModelAndView("forward:/app/home.html");
 //        return loadCocReport();
+    }
+    @GetMapping("/iframe/{name}")
+    public ModelAndView loadIframe(@PathVariable("name") String name) {
+
+        if(name.contains(".html"))
+            name = name.replace(".html","");
+        return new ModelAndView("forward:/app/iframe/"+name+".html");
     }
     @GetMapping("/ded")
     public ModelAndView load2() {

@@ -1,0 +1,189 @@
+<!--📋 Lutte Contre la Contrebande - Déclarations
+Unified Form Fragment
+============================ -->
+<!--    <section class="content" id="section-declarations">
+      <div class="container-fluid">-->
+
+<div class="row">
+  <div class="col-md-12">
+    <!--                    <h3 class="mb-3"><i class="fas fa-file-alt text-primary"></i> Déclarations & Formulaires</h3>-->
+    <p class="text-muted">Saisissez les données relatives aux voyages, devises, marchandises ou incidents interceptés.</p>
+  </div>
+</div>
+
+<div class="accordion" id="accordionDeclarations">
+
+  <!-- 1️⃣ Déclaration de titre de passage -->
+  <div class="card card-outline card-primary mb-3">
+    <div class="card-header">
+      <h5 class="card-title mb-0">
+        <a class="text-primary" data-toggle="collapse" href="#collapseTitreDouane">
+          <i class="fas fa-passport"></i> Déclaration de titre de passage en douane
+        </a>
+      </h5>
+    </div>
+    <div id="collapseTitreDouane" class="collapse show" data-parent="#accordionDeclarations">
+      <div class="card-body">
+        <form id="formTitreDouane">
+          <div class="form-row">
+            <div class="form-group col-md-4">
+              <label>Bureau de Douane</label>
+              <input type="text" class="form-control" name="bureau" placeholder="Ex: Alger Port">
+            </div>
+            <div class="form-group col-md-4">
+              <label>Numéro de Titre</label>
+              <input type="text" class="form-control" name="numTitre" required>
+            </div>
+            <div class="form-group col-md-4">
+              <label>Date de Passage</label>
+              <input type="date" class="form-control" name="datePassage">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label>Nom du Voyageur</label>
+              <input type="text" class="form-control" name="voyageur" placeholder="Nom complet">
+            </div>
+            <div class="form-group col-md-6">
+              <label>Nationalité</label>
+              <input type="text" class="form-control" name="nationalite" placeholder="Ex: Algérienne">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Soumettre</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2️⃣ Déclaration de devises -->
+  <div class="card card-outline card-success mb-3">
+    <div class="card-header">
+      <h5 class="card-title mb-0">
+        <a class="text-success" data-toggle="collapse" href="#collapseDevises">
+          <i class="fas fa-money-bill-wave"></i> Déclaration de devises
+        </a>
+      </h5>
+    </div>
+    <div id="collapseDevises" class="collapse" data-parent="#accordionDeclarations">
+      <div class="card-body">
+        <form id="formDevises">
+          <div class="form-row">
+            <div class="form-group col-md-4">
+              <label>Point d'entrée</label>
+              <select class="form-control" name="pointEntree">
+                <option>Port</option>
+                <option>Aéroport</option>
+                <option>Poste frontalier</option>
+              </select>
+            </div>
+            <div class="form-group col-md-4">
+              <label>Devise</label>
+              <input type="text" class="form-control" name="devise" placeholder="Ex: EUR, USD">
+            </div>
+            <div class="form-group col-md-4">
+              <label>Montant</label>
+              <input type="number" class="form-control" name="montant" placeholder="Ex: 5000">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label>Déclarant</label>
+              <input type="text" class="form-control" name="declarant" placeholder="Nom complet">
+            </div>
+            <div class="form-group col-md-6">
+              <label>Date</label>
+              <input type="date" class="form-control" name="dateDeclaration">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-success">Soumettre</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3️⃣ Déclaration de marchandises suspectes -->
+  <div class="card card-outline card-warning mb-3">
+    <div class="card-header">
+      <h5 class="card-title mb-0">
+        <a class="text-warning" data-toggle="collapse" href="#collapseMarchandises">
+          <i class="fas fa-box-open"></i> Déclaration de marchandises suspectes
+        </a>
+      </h5>
+    </div>
+    <div id="collapseMarchandises" class="collapse" data-parent="#accordionDeclarations">
+      <div class="card-body">
+        <form id="formMarchandises">
+          <div class="form-row">
+            <div class="form-group col-md-4">
+              <label>Type de Marchandise</label>
+              <input type="text" class="form-control" name="typeMarchandise" placeholder="Ex: Cigarettes, carburant...">
+            </div>
+            <div class="form-group col-md-4">
+              <label>Quantité</label>
+              <input type="number" class="form-control" name="quantite">
+            </div>
+            <div class="form-group col-md-4">
+              <label>Unité</label>
+              <input type="text" class="form-control" name="unite" placeholder="Ex: kg, L, pcs">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-md-12">
+              <label>Observations</label>
+              <textarea class="form-control" rows="2" name="observations" placeholder="Remarques..."></textarea>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-warning text-white">Soumettre</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4️⃣ Déclaration d’incident -->
+  <div class="card card-outline card-danger">
+    <div class="card-header">
+      <h5 class="card-title mb-0">
+        <a class="text-danger" data-toggle="collapse" href="#collapseIncident">
+          <i class="fas fa-exclamation-triangle"></i> Déclaration d’incident (interception / saisie / arrestation)
+        </a>
+      </h5>
+    </div>
+    <div id="collapseIncident" class="collapse" data-parent="#accordionDeclarations">
+      <div class="card-body">
+        <form id="formIncident">
+          <div class="form-row">
+            <div class="form-group col-md-4">
+              <label>Type d’incident</label>
+              <select class="form-control" name="typeIncident">
+                <option>Interception</option>
+                <option>Saisie</option>
+                <option>Arrestation</option>
+                <option>Autre</option>
+              </select>
+            </div>
+            <div class="form-group col-md-4">
+              <label>Lieu</label>
+              <input type="text" class="form-control" name="lieu">
+            </div>
+            <div class="form-group col-md-4">
+              <label>Date</label>
+              <input type="date" class="form-control" name="dateIncident">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea class="form-control" name="description" rows="3" placeholder="Détails de l'incident..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-danger">Soumettre</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end accordion -->
+
+<div class="export-buttons mb-3">
+  <button class="btn btn-outline-secondary btn-sm" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
+  <button class="btn btn-outline-secondary btn-sm" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> Export PDF</button>
+</div>
+<div id="jsGrid"></div>
