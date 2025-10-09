@@ -8,31 +8,35 @@
   margin-bottom: 10px;
 }
 
-.tree-panel {
-  height: 75vh;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-  padding: 10px;
-  border-radius: 8px;
-  background: #fff;
+.tree-level, .tree-sub {
+  list-style: none;
+  padding-left: 15px;
 }
-.child-panel {
-  height: 75vh;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-  padding: 10px;
-  border-radius: 8px;
-  background: #fff;
-}
+
 .node-item {
   cursor: pointer;
-  padding: 4px 6px;
+  padding: 5px 8px;
+  font-weight: 600;
+  color: #0056b3;
   border-radius: 4px;
 }
+
 .node-item:hover {
-  background-color: #f0f0f0;
+  background-color: #e9f2ff;
 }
+
+.node-leaf {
+  cursor: pointer;
+  padding: 4px 10px;
+  color: #333;
+}
+
+.node-leaf:hover {
+  background-color: #f3f3f3;
+}
+
 .selected {
-  background-color: #007bff;
-  color: #fff;
+  background-color: #007bff !important;
+  color: white !important;
 }
+
