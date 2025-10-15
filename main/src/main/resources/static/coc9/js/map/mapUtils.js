@@ -6,9 +6,9 @@
 
 function circle(lat,lng ,radiusInKm=30,color='red' ){
     //ClearExistingcircle
-    map.eachLayer(function (layer) {
+    mapInstance.eachLayer(function (layer) {
         if (layer instanceof L.Circle) {
-            map.removeLayer(layer);
+            mapInstance.removeLayer(layer);
         }
     });
 
@@ -22,7 +22,7 @@ var circle =
     color: color,
     //fillColor: '#f03',
     fillOpacity: 0.5
-}).addTo(map);
+}).addTo(mapInstance);
 
 }
 
@@ -54,16 +54,16 @@ function ClearExistingMarkers(){
     });
 }*/
 function ClearExistingMarkers() {
-    map.eachLayer(function (layer) {
+    mapInstance.eachLayer(function (layer) {
         if (layer instanceof L.Marker && !notRemovableMarkers.has(layer)) {
-            map.removeLayer(layer);
+            mapInstance.removeLayer(layer);
         }
     });
 }
 function clearMarkerPicker(){
-    map.eachLayer(function (layer) {
+    mapInstance.eachLayer(function (layer) {
         if (layer === markerPiker) {
-            map.removeLayer(layer);
+            mapInstance.removeLayer(layer);
         }
     });
 }

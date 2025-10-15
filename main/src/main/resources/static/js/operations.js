@@ -50,7 +50,7 @@ function loadOperations() {
     data.forEach((op) => {
       if (op.path && op.path.length > 0) {
         const first = op.path[0];
-        const marker = L.marker([first.latitude, first.longitude]).addTo(map);
+        const marker = L.marker([first.latitude, first.longitude]).addTo(mapInstance);
         marker.bindPopup(
           `<b>${op.marchandie.nom || "Marchandise inconnue"}</b><br/>
           ${op.orgn?.orgnNm || "Organe inconnu"}<br/>
@@ -62,8 +62,8 @@ function loadOperations() {
           const polyline = L.polyline(
             op.path.map((p) => [p.latitude, p.longitude]),
             { color: "red", weight: 2 }
-          ).addTo(map);
-          map.fitBounds(polyline.getBounds(), { padding: [20, 20] });
+          ).addTo(mapInstance);
+          mapInstance.fitBounds(polyline.getBounds(), { padding: [20, 20] });
         }
       }
     });

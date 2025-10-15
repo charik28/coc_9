@@ -17,11 +17,11 @@ async  function initMapExport(){
 // Function to export the current view as an image (PNG)
 function exportMapAsImage() {
     console.log('exportMapAsImage')
-    leafletImage(map, function (err, canvas) {
+    leafletImage(mapInstance, function (err, canvas) {
         var img = document.createElement('img');
 
-        if(map.getSize()) {
-            var dimensions = map.getSize();
+        if(mapInstance.getSize()) {
+            var dimensions = mapInstance.getSize();
 
             img.width = dimensions.x;
             img.height = dimensions.y;
@@ -51,7 +51,7 @@ function downloadFile(url, fileName) {
 // Function to export the current view as a PDF file
 function exportMapAsPDF() {
 
-    leafletImage(map, function (err, canvas) {
+    leafletImage(mapInstance, function (err, canvas) {
         var imgData = canvas.toDataURL('image/png');
         var doc = new jsPDF();
         doc.addImage(imgData, 'PNG', 10, 10);
@@ -63,7 +63,7 @@ function exportMapAsPDF() {
 
 // Function to export the current view as a Word (DOCX) file
 function exportMapAsWord() {
-    leafletImage(map, function (err, canvas) {
+    leafletImage(mapInstance, function (err, canvas) {
         var imgData = canvas.toDataURL('image/png');
         var content = '<html><body><img src="' + imgData + '"></body></html>';
         var options = {

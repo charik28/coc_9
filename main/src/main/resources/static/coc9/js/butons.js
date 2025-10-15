@@ -9,8 +9,8 @@
 
 
 var btn1 = L.easyButton("fa-home", function() {
-  map.setView([28.2156279, 2.9081565], 5.35, { animate: true, duration: 0.5 });
-}).addTo(map);
+  mapInstance.setView([28.2156279, 2.9081565], 5.35, { animate: true, duration: 0.5 });
+}).addTo(mapInstance);
 
 
 
@@ -50,7 +50,7 @@ function resetHighlight(e) {
 }
 
 function zoomToFeature(e) {
-  map.fitBounds(e.target.getBounds());
+  mapInstance.fitBounds(e.target.getBounds());
 }
 
 function onEachFeature(feature, layer) {
@@ -95,7 +95,7 @@ function processData(json) {
   geojson = L.geoJson(json, {
     style: style,
     onEachFeature: onEachFeature
-  }).addTo(map);
+  }).addTo(mapInstance);
 }
 
 var legend = L.control({ position: "bottomright" });
@@ -107,7 +107,7 @@ legend.onAdd = function(map) {
   div.innerHTML = "infooooooooooos";
   return div;
 };
-  legend.addTo(map);
+  legend.addTo(mapInstance);
 
 
 
@@ -125,8 +125,8 @@ var btn10 = L.easyButton({
         geojsonLayer.addTo(map);
       }
     }]
-  }).addTo(map);
-  
+  }).addTo(mapInstance);
+
   // Create a button for searching a location
   var btn2 = L.easyButton({
     states: [{
@@ -135,7 +135,7 @@ var btn10 = L.easyButton({
       title: 'Search',
       onClick: handelSearch
     }]
-  }).addTo(map);
+  }).addTo(mapInstance);
 // Function to handle the search action
 function handelSearch() {
  // var searchTerm = prompt('Enter a location to search:');
@@ -154,8 +154,8 @@ function handelSearch() {
         changeTileLayer(3)
       }
     }]
-  }).addTo(map);
-  
+  }).addTo(mapInstance);
+
   // Create a button for viewing government architecture
   var btn4 = L.easyButton({
     states: [{
@@ -167,8 +167,8 @@ function handelSearch() {
         changeTileLayer(4)
       }
     }]
-  }).addTo(map);
-  
+  }).addTo(mapInstance);
+
   // Create a button for switching layers
   var btn5 = L.easyButton({
     states: [{
@@ -180,7 +180,7 @@ function handelSearch() {
         changeTileLayer(5)
       }
     }]
-  }).addTo(map);
+  }).addTo(mapInstance);
 
   var btn6 = L.easyButton({
     states: [{
@@ -192,7 +192,7 @@ function handelSearch() {
         changeTileLayer(6)
       }
     }]
-  }).addTo(map);
+  }).addTo(mapInstance);
 
   var btn7 = L.easyButton({
     states: [{
@@ -204,19 +204,19 @@ function handelSearch() {
         changeTileLayer(7)
       }
     }]
-  }).addTo(map);
+  }).addTo(mapInstance);
 
   function changeTileLayer(layerIndex) {
     if (layerIndex >= 0 && layerIndex < couches.length) {
-      map.eachLayer(function (layer) {
+      mapInstance.eachLayer(function (layer) {
         if (layer instanceof L.TileLayer) {
-          map.removeLayer(layer);
+          mapInstance.removeLayer(layer);
         }
       });
       L.tileLayer(couches[layerIndex], {
         attribution: 'Map data &copy; <a href="https://www.charik.dz/">CNTSID Street Map</a> contributors <div id="xy"></div>',
         maxZoom: 18,
-      }).addTo(map);
+      }).addTo(mapInstance);
       currentLayerIndex = layerIndex; // Update the current layer index
     }
   }

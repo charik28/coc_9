@@ -63,7 +63,7 @@ function getMarkerIcon(iconUrl, iconSize = 32) {
 
 
 function calculateIconSize(baseSize) {
-    const currentZoom = map.getZoom();
+    const currentZoom = mapInstance.getZoom();
     const scaleFactor = calculateScaleFactor(currentZoom); // Define your own scaling factor function
 
     return [baseSize * scaleFactor, baseSize * scaleFactor];
@@ -88,11 +88,11 @@ function createMarker(geojsonPoint,markerPopup , icon,iconSize){
     result_type='.';
     var marker = L.geoJSON(geojsonPoint, {
         pointToLayer: function (feature, latlng) {
-            return L.marker(latlng ,{ icon: getMarkerIcon(icon,iconSize) }).addTo(map);
+            return L.marker(latlng ,{ icon: getMarkerIcon(icon,iconSize) }).addTo(mapInstance);
         },
         coordsToLatLng: function (coords) {
             var point = L.point(coords);
-            return map.options.crs.projection.unproject(point);
+            return mapInstance.options.crs.projection.unproject(point);
         }
     });
 
@@ -102,7 +102,7 @@ function createMarker(geojsonPoint,markerPopup , icon,iconSize){
     addHover(marker)
 
     // Add the marker to the map
-    marker.addTo(map);
+    marker.addTo(mapInstance);
 
     // Fit the map view to the bounds of the markers
     //var group = new L.featureGroup(map.getLayers());

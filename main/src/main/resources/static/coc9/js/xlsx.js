@@ -214,7 +214,7 @@ function  addFictive(orgJson){
             };
         })());
 
-        marker.addTo(map);
+        marker.addTo(mapInstance);
         // notRemovableMarkers.add(marker);
     }
     console.log(count , " marker founded")
@@ -224,6 +224,6 @@ function  addFictive(orgJson){
         this._div.innerHTML = obj ? CreateMarkerTable(obj) : '';
     };
 
-    info.addTo(map);
+    info.addTo(mapInstance);
 
 }

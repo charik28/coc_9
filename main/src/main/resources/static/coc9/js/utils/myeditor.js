@@ -41,7 +41,7 @@ var editor;
      });
 
 
-     loadContent( 'components/dataTable', 'excelTable')
+     loadContent0( 'components/dataTable', 'excelTable')
 
      //navbareSearch
      search_input = document.getElementById('search_input');
@@ -78,11 +78,11 @@ function toDecimalDegre() {  //(WGS84)
         var minit = parseFloat(line.substring(2, 4));
         var sec = parseFloat(line.substring(4, line.length));
 
-        var x = degre + minit / 60 
+        var x = degre + minit / 60
 
         if (  !isNaN(sec)) {
             x += sec / 3600;
-            
+
         }
 
         res += x + '\n';
@@ -257,13 +257,13 @@ function copier() {
   function couper() {
     console.log("couper try")
     var txt = editor.getValue();
-    
+
     // Temporarily focus the document
     var tempInput = document.createElement("input");
     document.body.appendChild(tempInput);
     tempInput.focus();
     document.execCommand("selectAll");
-    
+
     // Copy the text to the clipboard
     navigator.clipboard.writeText(txt)
       .then(function() {

@@ -1,23 +1,17 @@
-const apiBase = '/api/stats'; // adjust to your StatsResource path
+const apiStats = '/api/stats'; // adjust to your StatsResource path
 
 async function initRendmentLayout()  {
-  await initMap('rendementMap');
+  initMap('rendementMap');
   await loadFilters();
   await refreshData();
   document.getElementById("applyFilter").addEventListener("click", refreshData);
 }
 
-let map;
-function initMap0() {
+let mapInstance;
 
-  map = L.map('rendementMap').setView([28, 3], 5); // Algeria center
-  L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-}
 
 async function loadFilters() {
-  const res = await fetch(`${apiBase}/filters`);
+  const res = await fetch(`${apiStats}/filters`);
   const data = await res.json();
   const drSel = document.getElementById('drFilter');
   const iddSel = document.getElementById('iddFilter');
@@ -37,12 +31,12 @@ async function refreshData() {
   });
 
   // Fetch map data
-  const mapRes = await fetch(`${apiBase}/map?${params}`);
+  const mapRes = await fetch(`${apiStats}/map?${params}`);
   const mapData = await mapRes.json();
   updateMap(mapData);
 
   // Fetch chart data
-  const chartRes = await fetch(`${apiBase}/chart?${params}`);
+  const chartRes = await fetch(`${apiStats}/chart?${params}`);
   const chartData = await chartRes.json();
   updateChart(chartData);
 
@@ -50,10 +44,10 @@ async function refreshData() {
 }
 
 function updateMap(points) {
-  map.eachLayer(l => { if (l instanceof L.Marker) map.removeLayer(l); });
+  mapInstance.eachLayer(l => { if (l instanceof L.Marker) mapInstance.removeLayer(l); });
   points.forEach(p => {
     if (p.latitude && p.longitude)
-      L.marker([p.latitude, p.longitude]).addTo(map)
+      L.marker([p.latitude, p.longitude]).addTo(mapInstance)
         .bindPopup(`<b>${p.dr} / ${p.brigade}</b><br>${p.date}<br>Kif: ${p.kifKg || 0} kg`);
   });
 }

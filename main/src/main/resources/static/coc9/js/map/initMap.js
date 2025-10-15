@@ -33,7 +33,7 @@ function loadPolygon(src, background = 'transparent', lineColor = 'black') {
            }
 
 
-            ).addTo(map))
+            ).addTo(mapInstance))
 
 
             if(PolygonbindTooltip)
@@ -112,12 +112,12 @@ function  addOrgJsonToMap(orgJson ){
             };
         })());
 */
-        marker.addTo(map);
+        marker.addTo(mapInstance);
         // notRemovableMarkers.add(marker);
     }
 
     // Add an event listener for map errors
-    map.on('error', function(err) {
+    mapInstance.on('error', function(err) {
         // Check if the error code matches any of the known errors
         const errorMessage = errorMessages.get(err.error.code);
         if (errorMessage) {
@@ -129,7 +129,7 @@ function  addOrgJsonToMap(orgJson ){
         }
     });
 
-    map.on('zoomend', function() {
+    mapInstance.on('zoomend', function() {
         const iconSize = calculateIconSize(32); // Adjust the base icon size as needed
 
         // Iterate over each marker and update its icon size
@@ -148,7 +148,7 @@ function  addOrgJsonToMap(orgJson ){
         this._div.innerHTML = obj ? CreateMarkerTable(obj) : '';
     };
 
-    info.addTo(map);
+    info.addTo(mapInstance);
 
      loadPolygon('/js/geojson/regionsPolygon.geojson')
       //  loadPolygon('./map/regions')
@@ -173,7 +173,7 @@ function  getMapTiles(tiles){
             titleLayers.push(tiles[i].title);
         }
         // Add the baseLayers to the map control
-        L.control.layers(titleLayers).addTo(map);
+        L.control.layers(titleLayers).addTo(mapInstance);
         //   tileLayers.push(data[i])
     }
 
@@ -181,8 +181,8 @@ function  getMapTiles(tiles){
 
 function printZoomInfo(){
 
-    map.on('zoomend', function() {
-        const currentZoom = map.getZoom();
+    mapInstance.on('zoomend', function() {
+        const currentZoom = mapInstance.getZoom();
         // const currentTile = map.getCenterTile();
 
         const tileUrl = config.TILE_LAYER
@@ -198,12 +198,12 @@ function printZoomInfo(){
 // initMap();
 
 function printZoomInfofor(){
-    map.on('zoomend', function() {
-        const currentZoom = map.getZoom();
-        const currentBounds = map.getBounds();
+    mapInstance.on('zoomend', function() {
+        const currentZoom = mapInstance.getZoom();
+        const currentBounds = mapInstance.getBounds();
         const tileBounds = L.bounds(
-            map.project(currentBounds.getNorthWest(), currentZoom),
-            map.project(currentBounds.getSouthEast(), currentZoom)
+            mapInstance.project(currentBounds.getNorthWest(), currentZoom),
+            mapInstance.project(currentBounds.getSouthEast(), currentZoom)
         );
         const tileUrl = TILE_LAYER
             .replace('{z}', currentZoom)
@@ -254,7 +254,7 @@ function addORG() {
             };
         })());
 
-        marker.addTo(map);
+        marker.addTo(mapInstance);
         notRemovableMarkers.add(marker);
     }
 
@@ -263,7 +263,7 @@ function addORG() {
         this._div.innerHTML = obj ? CreateMarkerTable(obj) : '';
     };
 
-    info.addTo(map);
+    info.addTo(mapInstance);
 }
 function addORGBrahim() {
     // tod-ok do not remove these markers
@@ -291,7 +291,7 @@ function addORGBrahim() {
                 };
             })());
 
-            marker.addTo(map);
+            marker.addTo(mapInstance);
             notRemovableMarkers.add(marker);
         }
     }
@@ -301,85 +301,63 @@ function addORGBrahim() {
         this._div.innerHTML = obj ? CreateMarkerTable(obj) : '';
     };
 
-    info.addTo(map);
+    info.addTo(mapInstance);
 }
+function initMap(mapContainer = 'map') {
+  const lat = 36.0538;
+  const lng = 3.4388;
+  const centerZoom = 5;
 
-function initMap(mapContainer='map') {
-
-    var lat = 36.0538
-    let lang = 3.4388
-    let centerZoom = 5
-
-  const mapDiv=document.getElementById(mapContainer)
-  if(!mapDiv) {
-    console.error('No mapContainer found.');
+  const mapDiv = document.getElementById(mapContainer);
+  if (!mapDiv) {
+    console.error('❌ Map container not found:', mapContainer);
     return;
-    //mapContainer = document.createElement('div');
   }
-    console.log('initMap on div',mapContainer);
-    map = L.map(mapContainer
-        //,{  crs: L.CRS.EPSG4326}
-        ,{ crs: L.CRS.EPSG3857}
-    ).setView([lat, lang], centerZoom, { animate: true, duration: 0.5 });
-    L.tileLayer(config.TILE_LAYER, {
-        attribution: config.ATTRIBUTION,
-        minZoom : 5,
-        maxZoom : 22
-    }).addTo(map);
-    map.setMinZoom(2.5)
-    loader = L.control.loader().addTo(map);
 
-// control that shows state info on hover
-    info = L.control();
+  console.log('🗺️ Initializing map in div:', mapContainer);
 
-    info.onAdd = function(map) {
-        this._div = L.DomUtil.create("div", "info");
-        this.update();
-        return this._div;
-    };
+  const map = L.map(mapContainer, { crs: L.CRS.EPSG3857 })
+    .setView([lat, lng], centerZoom, { animate: true, duration: 0.5 });
 
+  L.tileLayer(config.TILE_LAYER, {
+    attribution: config.ATTRIBUTION,
+    minZoom: 5,
+    maxZoom: 22,
+  }).addTo(map);
 
-    var planLayer = L.tileLayer(config.TILE_LAYER, {
-        attribution: config.ATTRIBUTION,
-        maxZoom: 18,
-    }).addTo(map);
+  map.setMinZoom(2.5);
 
+  const loader = L.control.loader().addTo(map);
 
+  const planLayer = L.tileLayer(config.TILE_LAYER, {
+    attribution: config.ATTRIBUTION,
+    maxZoom: 18,
+  }).addTo(map);
 
+  const satelliteLayer = L.tileLayer('http://geo.si.douane.gov.dz/sat/bing/{z}/{x}/{y}.png', {
+    attribution: '&copy; Vectorial map',
+    maxZoom: 18,
+  });
 
-    // Ajouter une couche "Satellite"
-    var satelliteLayer = L.tileLayer('http://geo.si.douane.gov.dz/sat/bing/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="http://geo.si.douane.gov.dz/">Vectorial map</a>',
-        maxZoom: 18,
-    });
+  const reliefLayer = L.tileLayer('http://geo.si.douane.gov.dz/sat/google.sat/{z}/{x}/{y}.png', {
+    attribution: '&copy; Satilitaire map',
+    maxZoom: 18,
+  });
 
-    // Ajouter une couche "Transport"
-    var reliefLayer = L.tileLayer('http://geo.si.douane.gov.dz/sat/google.sat/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="http://geo.si.douane.gov.dz/">Satilitaire map</a>',
-        maxZoom: 18,
-    });
+  const routeLayer = L.tileLayer('http://geo.si.douane.gov.dz/hot/{z}/{x}/{y}.png', {
+    attribution: '&copy; Satilitaire map 2',
+    maxZoom: 18,
+  });
 
-    // Ajouter une couche "Route" (utilisant Thunderforest)
-    var routeLayer = L.tileLayer('http://geo.si.douane.gov.dz/hot/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="http://geo.si.douane.gov.dz/">Satilitaire map 2</a>',
-        maxZoom: 18,
-    });
-
-    // Ajouter une couche "Route" (utilisant Thunderforest)
-    var routeLayer = L.tileLayer('http://geo.si.douane.gov.dz/sat/relief/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="http://geo.si.douane.gov.dz/">Satilitaire map 2</a>',
-        maxZoom: 18,
-    });
-
-    var titleLayers = {
-        "Route": routeLayer,
-        "Satellite": satelliteLayer,
-        "Plans": planLayer,
-        "Relief": reliefLayer,
-    };
+  const titleLayers = {
+    'Plans': planLayer,
+    'Satellite': satelliteLayer,
+    'Relief': reliefLayer,
+    'Route': routeLayer,
+  };
 
 // Ajouter le panneau de contrôle des couches
-    L.control.layers(titleLayers).addTo(map);
+  L.control.layers(titleLayers).addTo(map);
 
     mapInitialised=true
     addORG();

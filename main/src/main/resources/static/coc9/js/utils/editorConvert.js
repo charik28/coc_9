@@ -100,7 +100,7 @@ function  convert () {
             }}
         orgs.push(org)
         // Create a marker using the transformed coordinates
-        var marker = L.marker([latitude,longitude]).addTo(map);
+        var marker = L.marker([latitude,longitude]).addTo(mapInstance);
     }
     //console.log('length : ',orgs.length)
     editor.setOption("mode", "application/json");

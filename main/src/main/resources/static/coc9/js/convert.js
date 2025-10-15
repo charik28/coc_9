@@ -53,7 +53,7 @@ function convert2() {
         }
 
         // Create a marker using the transformed coordinates
-        var marker = L.marker(transformedCoords.reverse()).addTo(map);
+        var marker = L.marker(transformedCoords.reverse()).addTo(mapInstance);
     }
 }
 function convert() {
@@ -92,7 +92,7 @@ function convert() {
         }}
         orgs.push(org)
         // Create a marker using the transformed coordinates
-        var marker = L.marker([latitude,longitude]).addTo(map);
+        var marker = L.marker([latitude,longitude]).addTo(mapInstance);
     }
     console.log('length : ',orgs.length)
     txta.value=JSON.stringify(orgs);

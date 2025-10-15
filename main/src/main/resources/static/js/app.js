@@ -121,7 +121,6 @@ async function loadContent(pageName) {
   }
 }
 
-// Load default dashboard on startup
 
 
 

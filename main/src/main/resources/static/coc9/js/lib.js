@@ -32,12 +32,12 @@
         });
     }*/
 
-    
+
 
 var loadedFraments = [];
 
 var lastPage;
-async function loadContent(page , placeHolder='#indexContentPlaceholder') {
+async function loadContent0(page , placeHolder='#indexContentPlaceholder') {
     if (page === '#') {
         console.log('#');
         return;
@@ -138,10 +138,10 @@ if(!brigade) {//todo
     loadArm(idBrigade);
 }
 
-     if(map){
+     if(mapInstance){
 
          selectedLayerId = parseInt(selectedRegionId)
-         map.fitBounds(_layers[selectedLayerId].getBounds());
+         mapInstance.fitBounds(_layers[selectedLayerId].getBounds());
          //map.enableOnly _layers[polygonId]
 
      }
@@ -199,7 +199,7 @@ if(!brigade) {//todo
      var selectedDivisionId = parseInt(document.getElementById('divisionId').value, 10);
 
 
-     
+
      if(brigade) {
 
          var option = document.createElement('option');
@@ -259,7 +259,7 @@ if(!brigade) {//todo
              // .catch(error => console.error('Error fetching brigades:', error));
 
  }
-   
+
 
 
     function  register() {
@@ -430,7 +430,7 @@ if(!brigade) {//todo
             })
             .catch(error => console.error('Error fetching brigades:', error));
     }
-   
+
 
     var regionDropdown,divisionDropdown,brigadeDropdown,selectedRole;
 
@@ -620,7 +620,7 @@ var region , division , brigade
          regionSelect.selectedIndex=0
          regionSelect.disabled  = true
          populateDivisions();
-         
+
          return;
      }
 
@@ -643,7 +643,7 @@ var region , division , brigade
 
        //  return;
      }
-     if (map) {
+     if (mapInstance) {
          // Show only layer2
          /*         map.eachLayer(function(layer) {
                       for (let i = 0; i < _layers.length; i++) {

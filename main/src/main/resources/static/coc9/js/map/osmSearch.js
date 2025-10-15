@@ -118,9 +118,9 @@ function viewOnMap2(osmId)
                 source: vectorSource
             });
 // Add the vector layer to the map
-            map.addLayer(vectorLayer);
+            mapInstance.addLayer(vectorLayer);
 // Fit the map view to the extent of the vector layer
-            map.getView().fit(vectorSource.getExtent());
+            mapInstance.getView().fit(vectorSource.getExtent());
         })
         .catch(error => {
             console.error(error);
@@ -280,10 +280,10 @@ function convertToDD() {
     document.getElementById("longitudeDD").value = longitudeDD;
 
     if (marker) {
-        map.removeLayer(marker);
+        mapInstance.removeLayer(marker);
     }
 
-    marker = L.marker([latitudeDD , longitudeDD], { icon: getMarkerIcon(iconUrl="img/red-marker.png") }).addTo(map);
+    marker = L.marker([latitudeDD , longitudeDD], { icon: getMarkerIcon(iconUrl="img/red-marker.png") }).addTo(mapInstance);
 
 }
 
@@ -297,7 +297,7 @@ var searchLocationIf=false,circleIf=false,onEditor=false
 function addIconOnClick( latitude='latitudeDD' ,longitude= 'longitudeDD') {
     //console.log('addIconOnClick');
 
-    map.on('click', function(e) {
+    mapInstance.on('click', function(e) {
        // ClearExistingMarkers(markerPiker)
         clearMarkerPicker()
 
@@ -314,7 +314,7 @@ function addIconOnClick( latitude='latitudeDD' ,longitude= 'longitudeDD') {
        if(onEditor) convertToDMS();
 
         if(_layers[selectedLayerId].getBounds().contains(latlng)) {
-            markerPiker = L.marker(latlng, {icon: getMarkerIcon('poi_red')}).addTo(map);
+            markerPiker = L.marker(latlng, {icon: getMarkerIcon('poi_red')}).addTo(mapInstance);
 
         }
          else{
