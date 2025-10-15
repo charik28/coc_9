@@ -368,13 +368,13 @@ function initMap(mapContainer = 'map') {
   L.control.layers(titleLayers).addTo(mapInstance);
 
     mapInitialised=true
-    addORG();
-    addORGBrahim();
+    // addORG();
+    // addORGBrahim();
 
-    console.log('ORGBrahim')
-    addOrgJsonToMap(ORGBrahim)
+    // console.log('ORGBrahim')
+    // addOrgJsonToMap(ORGBrahim)
 
-    console.log('ORGs')
+    // console.log('ORGs')
 
     // addOrgJsonToMap(ORGs)
 
@@ -397,7 +397,7 @@ function initMap(mapContainer = 'map') {
     map.getContainer().addEventListener("mouseleave", function() {
          isCursorOverMap = false;
     });*/
-    printZoomInfo();
+    // printZoomInfo();
     // loader.hide()
 /*
 
