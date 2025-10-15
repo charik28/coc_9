@@ -45,6 +45,7 @@ public class OperationService implements IOperationService {
     public List<OperationGridResponce> selectOperationGridResponce(HashMap<String,Object> map) {
 
         List<OperationGridResponce> operations = mapper.selectOperationGridResponce(map);
+
         for (OperationGridResponce operation : operations) {
             marchandiseService.findMarchandisesByOperationId(operation.getId());
         }
