@@ -13,7 +13,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/stats")
-@CrossOrigin(origins = "*") // allow access for frontend (map/charts)
+//@CrossOrigin(origins = "*") // allow access for frontend (map/charts)
 public class StatsResource {
 
     private final StatsService statsService;
@@ -29,7 +29,10 @@ public class StatsResource {
      */
     @GetMapping("/filters")
     public StatsFilterDTO getFilters() {
-        return statsService.getFilters();
+
+        StatsFilterDTO statsFilterDTO =  statsService.getFilters();
+
+        return statsFilterDTO;
     }
 
     /**

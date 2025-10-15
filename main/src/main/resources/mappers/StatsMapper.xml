@@ -5,11 +5,26 @@
 <mapper namespace="dz.coc9.mappers.StatsMapper">
 
     <!-- 🧩 Filters -->
-    <select id="getFilters" resultType="dz.coc9.vo.brh.StatsFilterDTO">
+    <select id="getFilters0" resultType="dz.coc9.vo.brh.StatsFilterDTO">
         SELECT
             ARRAY(SELECT DISTINCT dr FROM rend25.rendement ORDER BY dr) AS drs,
             ARRAY(SELECT DISTINCT idd FROM rend25.rendement ORDER BY idd) AS idds,
             ARRAY(SELECT DISTINCT TO_CHAR(date, 'YYYY-MM') FROM rend25.rendement ORDER BY 1) AS periodes
+    </select>
+
+    <select id="getDrFilters" resultType="dz.coc9.vo.brh.StatsFilterDTO">
+        SELECT DISTINCT dr
+        FROM rend25.rendement
+    </select>
+
+    <select id="getIddFilters" resultType="dz.coc9.vo.brh.StatsFilterDTO">
+        SELECT DISTINCT dr, idd
+        FROM rend25.rendement
+    </select>
+
+    <select id="getFilters" resultType="dz.coc9.vo.brh.StatsFilterDTO">
+        SELECT DISTINCT dr, idd, TO_CHAR(date, 'YYYY-MM') AS periode
+        FROM rend25.rendement
     </select>
 
 

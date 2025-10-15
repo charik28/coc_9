@@ -11,6 +11,7 @@ let mapInstance;
 
 
 async function loadFilters() {
+  console.debug('loadFilters');
   const res = await fetch(`${apiStats}/filters`);
   const data = await res.json();
   const drSel = document.getElementById('drFilter');

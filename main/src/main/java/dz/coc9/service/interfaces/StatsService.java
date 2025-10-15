@@ -9,7 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
- 
+import java.util.Objects;
+
 @Service
 public class StatsService {
 
@@ -20,10 +21,17 @@ public class StatsService {
         this.statsMapper = statsMapper;
     }
 
-    
+
     public StatsFilterDTO getFilters() {
-        return statsMapper.getFilters();
+
+        List<StatsFilterDTO> rows = statsMapper.getFilters();
+        StatsFilterDTO dto = new StatsFilterDTO();
+        dto.setDrs(rows.stream().map(StatsFilterDTO::getDr).filter(Objects::nonNull).distinct().toList());
+        dto.setIdds(rows.stream().map(StatsFilterDTO::getIdd).filter(Objects::nonNull).distinct().toList());
+        dto.setPeriodes(rows.stream().map(StatsFilterDTO::getPeriode).filter(Objects::nonNull).distinct().toList());
+        return dto;
     }
+
 
     
     public List<StatsMapDTO> getMapData(

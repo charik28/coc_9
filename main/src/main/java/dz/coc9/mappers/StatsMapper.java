@@ -10,7 +10,7 @@ import java.util.List;
 @Mapper
 public interface StatsMapper {
 
-    StatsFilterDTO getFilters();
+    List<StatsFilterDTO> getFilters();
 
     List<StatsMapDTO> getMapData(
             @Param("dr") String dr,
