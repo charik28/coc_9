@@ -99,6 +99,7 @@ async function loadContent(pageName) {
 
     // Update title
     const titleMap = {
+      'rendement-dashboard.html': 'Rendment bdd v2025',
       'dashboard.html': 'Tableau de Bord',
       'operations.html': 'Gestion des Opérations',
       'type_marchandises.html': 'Type de Marchandises',
@@ -121,8 +122,6 @@ async function loadContent(pageName) {
 }
 
 // Load default dashboard on startup
-/*
-document.addEventListener("DOMContentLoaded", function() {
-  loadContent("dashboard.html");
-});
-*/
+
+
+

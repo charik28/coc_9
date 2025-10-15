@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dz.coc9.mappers.RendementMapper">
+
+    <!-- =======================
+         Map View (Coordinates)
+         ======================= -->
+    <select id="selectRendementMap" resultType="dz.coc9.vo.brh.RendementMapDto">
+        SELECT
+        id,
+        dr,
+        idd,
+        brigade,
+        wilaya,
+        loc_e AS longitude,
+        loc_n AS latitude,
+        date,
+        kif_kg,
+        coc_kg,
+        psy_compr,
+        cig_u,
+        tab_kg,
+        alc_l,
+        carb_l
+        FROM tmp.rendement
+        WHERE 1=1
+        <if test="dr != null and dr != ''">
+            AND dr = #{dr}
+        </if>
+        <if test="idd != null and idd != ''">
+            AND idd = #{idd}
+        </if>
+        <if test="startDate != null">
+            AND date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND date &lt;= #{endDate}
+        </if>
+    </select>
+
+    <!-- =======================
+         Chart Aggregation by Month / DR
+         ======================= -->
+    <select id="selectRendementStats" resultType="dz.coc9.vo.brh.RendementChartDto">
+        SELECT
+        dr,
+        annee,
+        mois,
+        SUM(kif_kg) AS total_kif,
+        SUM(coc_kg) AS total_coc,
+        SUM(psy_compr) AS total_psy,
+        SUM(cig_u) AS total_cig,
+        SUM(tab_kg) AS total_tab,
+        SUM(alc_l) AS total_alc,
+        SUM(carb_l) AS total_carb
+        FROM tmp.rendement
+        WHERE 1=1
+        <if test="dr != null and dr != ''">
+            AND dr = #{dr}
+        </if>
+        <if test="idd != null and idd != ''">
+            AND idd = #{idd}
+        </if>
+        <if test="annee != null">
+            AND annee = #{annee}
+        </if>
+        GROUP BY dr, annee, mois
+        ORDER BY annee, mois
+    </select>
+
+    <!-- =======================
+         Distinct Group Extracts
+         ======================= -->
+    <select id="selectDistinctFilters" resultType="dz.coc9.vo.brh.RendementFilterDto">
+        SELECT DISTINCT
+            dr,
+            idd,
+            annee,
+            mois
+        FROM tmp.rendement
+        ORDER BY dr, idd, annee, mois
+    </select>
+
+</mapper>

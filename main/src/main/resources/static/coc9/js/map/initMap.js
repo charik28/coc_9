@@ -195,7 +195,7 @@ function printZoomInfo(){
 
 }
 
-initMap();
+// initMap();
 
 function printZoomInfofor(){
     map.on('zoomend', function() {
@@ -304,14 +304,20 @@ function addORGBrahim() {
     info.addTo(map);
 }
 
-function initMap() {
+function initMap(mapContainer='map') {
 
     var lat = 36.0538
     let lang = 3.4388
     let centerZoom = 5
 
-    console.log('initMap');
-    map = L.map('map'
+  const mapDiv=document.getElementById(mapContainer)
+  if(!mapDiv) {
+    console.error('No mapContainer found.');
+    return;
+    //mapContainer = document.createElement('div');
+  }
+    console.log('initMap on div',mapContainer);
+    map = L.map(mapContainer
         //,{  crs: L.CRS.EPSG4326}
         ,{ crs: L.CRS.EPSG3857}
     ).setView([lat, lang], centerZoom, { animate: true, duration: 0.5 });

@@ -1,0 +1,100 @@
+<!-- rendement-dashboard.html -->
+<section class="content">
+  <div class="container-fluid">
+
+    <!-- ================== FILTER BAR ================== -->
+    <div class="row mb-3">
+      <div class="col-md-3">
+        <select id="drFilter" class="form-control">
+          <option value="">-- Direction Régionale --</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select id="iddFilter" class="form-control">
+          <option value="">-- IDD --</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <input type="month" id="monthFilter" class="form-control" />
+      </div>
+      <div class="col-md-3">
+        <button id="applyFilter" class="btn btn-primary btn-block">
+          <i class="fas fa-filter"></i> Filtrer
+        </button>
+      </div>
+    </div>
+
+    <!-- ================== INFO BOXES ================== -->
+    <div class="row" id="summaryBoxes">
+      <div class="col-md-3 col-sm-6 col-12">
+        <div class="info-box bg-success">
+          <span class="info-box-icon"><i class="fas fa-cannabis"></i></span>
+          <div class="info-box-content">
+            <span class="info-box-text">Kif traité (kg)</span>
+            <span class="info-box-number" id="sumKif">0</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6 col-12">
+        <div class="info-box bg-danger">
+          <span class="info-box-icon"><i class="fas fa-syringe"></i></span>
+          <div class="info-box-content">
+            <span class="info-box-text">Cocaïne (kg)</span>
+            <span class="info-box-number" id="sumCoc">0</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6 col-12">
+        <div class="info-box bg-info">
+          <span class="info-box-icon"><i class="fas fa-pills"></i></span>
+          <div class="info-box-content">
+            <span class="info-box-text">Psychotropes (comp.)</span>
+            <span class="info-box-number" id="sumPsy">0</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6 col-12">
+        <div class="info-box bg-warning">
+          <span class="info-box-icon"><i class="fas fa-gas-pump"></i></span>
+          <div class="info-box-content">
+            <span class="info-box-text">Carburant (L)</span>
+            <span class="info-box-number" id="sumCarb">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================== MAP & CHARTS ================== -->
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header bg-primary text-white">
+            <h3 class="card-title"><i class="fas fa-map-marked-alt"></i> Carte des opérations</h3>
+          </div>
+          <div class="card-body p-0">
+            <div id="rendementMap" style="height: 400px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header bg-secondary text-white">
+            <h3 class="card-title"><i class="fas fa-chart-line"></i> Statistiques mensuelles</h3>
+          </div>
+          <div class="card-body">
+            <canvas id="rendementChart" height="180"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================== JS Section ================== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+<!--  do not use js here until todo-->
+</script>
