@@ -8,9 +8,7 @@
  //loader = L.control.loader().addTo(document);
 
 
-var btn1 = L.easyButton("fa-home", function() {
-  mapInstance.setView([28.2156279, 2.9081565], 5.35, { animate: true, duration: 0.5 });
-}).addTo(mapInstance);
+
 
 
 
@@ -98,44 +96,9 @@ function processData(json) {
   }).addTo(mapInstance);
 }
 
-var legend = L.control({ position: "bottomright" });
-
-legend.onAdd = function(map) {
-  var div = L.DomUtil.create("div", "info legend");
-
-
-  div.innerHTML = "infooooooooooos";
-  return div;
-};
-  legend.addTo(mapInstance);
 
 
 
-// Create a button for setting the map view to a specific location
-//if(L == null )
-
-//console.log("L " + L)
-var btn10 = L.easyButton({
-    states: [{
-      stateName: 'home',
-      icon: 'fa-home',
-      title: 'Go to Home',
-      onClick: function(btn, map) {
-        map.setView([28.2156279, 2.9081565], 5.35, { animate: true, duration: 0.5 });
-        geojsonLayer.addTo(map);
-      }
-    }]
-  }).addTo(mapInstance);
-
-  // Create a button for searching a location
-  var btn2 = L.easyButton({
-    states: [{
-      stateName: 'search',
-      icon: 'fa-search',
-      title: 'Search',
-      onClick: handelSearch
-    }]
-  }).addTo(mapInstance);
 // Function to handle the search action
 function handelSearch() {
  // var searchTerm = prompt('Enter a location to search:');
@@ -143,68 +106,6 @@ function handelSearch() {
 
 
 }
-  // Create a button for coloring the map by population
-  var btn3 = L.easyButton({
-    states: [{
-      stateName: 'color-population',
-      icon: 'fa-paint-brush',
-      title: 'Color Map by Population',
-      onClick: function(btn, map) {
-        // Perform your coloring functionality here
-        changeTileLayer(3)
-      }
-    }]
-  }).addTo(mapInstance);
-
-  // Create a button for viewing government architecture
-  var btn4 = L.easyButton({
-    states: [{
-      stateName: 'government-architecture',
-      icon: 'fa-building',
-      title: 'View Government Architecture',
-      onClick: function(btn, map) {
-        // Perform your government architecture functionality here
-        changeTileLayer(4)
-      }
-    }]
-  }).addTo(mapInstance);
-
-  // Create a button for switching layers
-  var btn5 = L.easyButton({
-    states: [{
-      stateName: 'switch-layers',
-      icon: 'fa-exchange',
-      title: 'Switch Layers',
-      onClick: function(btn, map) {
-        // Perform your layer switching functionality here
-        changeTileLayer(5)
-      }
-    }]
-  }).addTo(mapInstance);
-
-  var btn6 = L.easyButton({
-    states: [{
-      stateName: 'switch-layers',
-      icon: 'fa-exchange',
-      title: 'Switch Layers',
-      onClick: function(btn, map) {
-        // Perform your layer switching functionality here
-        changeTileLayer(6)
-      }
-    }]
-  }).addTo(mapInstance);
-
-  var btn7 = L.easyButton({
-    states: [{
-      stateName: 'switch-layers',
-      icon: 'fa-exchange',
-      title: 'Switch Layers',
-      onClick: function(btn, map) {
-        // Perform your layer switching functionality here
-        changeTileLayer(7)
-      }
-    }]
-  }).addTo(mapInstance);
 
   function changeTileLayer(layerIndex) {
     if (layerIndex >= 0 && layerIndex < couches.length) {

@@ -53,7 +53,7 @@ function getMarkerIcon(iconUrl, iconSize = 32) {
     };
     img.onerror = function() {
         // Si l'image ne charge pas, utiliser une image par défaut
-        console.error('Image not found:', iconUrl);
+        //console.error('Image not found:', iconUrl);
         icon.options.iconUrl = './img/marker/drd.png'; // Chemin vers votre image par défaut
     };
     img.src = iconUrl; // Déclenche le chargement de l'image

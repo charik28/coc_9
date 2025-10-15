@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dz.coc9.mappers.StatsMapper">
+
+    <!-- 🧩 Filters -->
+    <select id="getFilters" resultType="dz.coc9.vo.brh.StatsFilterDTO">
+        SELECT
+            ARRAY(SELECT DISTINCT dr FROM rend25.rendement ORDER BY dr) AS drs,
+            ARRAY(SELECT DISTINCT idd FROM rend25.rendement ORDER BY idd) AS idds,
+            ARRAY(SELECT DISTINCT TO_CHAR(date, 'YYYY-MM') FROM rend25.rendement ORDER BY 1) AS periodes
+    </select>
+
+
+    <!-- 🗺️ Map Data -->
+    <select id="getMapData" resultType="dz.coc9.vo.brh.StatsMapDTO">
+        SELECT
+            dr,
+            idd,
+            wilaya,
+            loc_n AS lat,
+            loc_e AS lng,
+            kif_kg AS kifKg,
+            armes_u AS armes,
+            tab_kg AS tabacKg,
+            carb_l AS carbL,
+            date
+        FROM rend25.rendement
+        WHERE (#{dr} IS NULL OR dr = #{dr})
+          AND (#{idd} IS NULL OR idd = #{idd})
+          AND (#{periode} IS NULL OR TO_CHAR(date, 'YYYY-MM') = #{periode})
+    </select>
+
+
+    <!-- 📊 Chart Data -->
+    <select id="getChartData" resultType="dz.coc9.vo.brh.StatsChartDTO">
+        SELECT
+            wilaya,
+            SUM(kif_kg) AS kifKg,
+            SUM(carb_l) AS carbL,
+            SUM(tab_kg) AS tabacKg,
+            SUM(armes_u) AS armes
+        FROM rend25.rendement
+        WHERE (#{dr} IS NULL OR dr = #{dr})
+          AND (#{idd} IS NULL OR idd = #{idd})
+          AND (#{periode} IS NULL OR TO_CHAR(date, 'YYYY-MM') = #{periode})
+        GROUP BY wilaya
+        ORDER BY wilaya
+    </select>
+
+</mapper>

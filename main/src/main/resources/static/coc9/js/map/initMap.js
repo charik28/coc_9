@@ -143,14 +143,17 @@ function  addOrgJsonToMap(orgJson ){
 
     // console.log(count , " marker founded")
 
+/*
     info.update = function (obj) {
         // console.log("update", obj);
         this._div.innerHTML = obj ? CreateMarkerTable(obj) : '';
     };
 
     info.addTo(mapInstance);
+*/
 
-     loadPolygon('/js/geojson/regionsPolygon.geojson')
+  //todo
+     //loadPolygon('/js/geojson/regionsPolygon.geojson')
       //  loadPolygon('./map/regions')
 
 
@@ -257,13 +260,13 @@ function addORG() {
         marker.addTo(mapInstance);
         notRemovableMarkers.add(marker);
     }
-
+/*
     info.update = function (obj) {
         // console.log("update", obj);
         this._div.innerHTML = obj ? CreateMarkerTable(obj) : '';
-    };
+    };*/
 
-    info.addTo(mapInstance);
+    // info.addTo(mapInstance);
 }
 function addORGBrahim() {
     // tod-ok do not remove these markers
@@ -296,12 +299,12 @@ function addORGBrahim() {
         }
     }
 
-    info.update = function (obj) {
+/*    info.update = function (obj) {
         // console.log("update", obj);
         this._div.innerHTML = obj ? CreateMarkerTable(obj) : '';
     };
 
-    info.addTo(mapInstance);
+    info.addTo(mapInstance);*/
 }
 function initMap(mapContainer = 'map') {
   const lat = 36.0538;
@@ -316,25 +319,30 @@ function initMap(mapContainer = 'map') {
 
   console.log('🗺️ Initializing map in div:', mapContainer);
 
-  const map = L.map(mapContainer, { crs: L.CRS.EPSG3857 })
+  mapInstance = L.map(mapContainer, { crs: L.CRS.EPSG3857 })
     .setView([lat, lng], centerZoom, { animate: true, duration: 0.5 });
 
   L.tileLayer(config.TILE_LAYER, {
     attribution: config.ATTRIBUTION,
     minZoom: 5,
     maxZoom: 22,
-  }).addTo(map);
+  }).addTo(mapInstance);
 
-  map.setMinZoom(2.5);
+  mapInstance.setMinZoom(2.5);
 
-  const loader = L.control.loader().addTo(map);
+  // const loader = L.control.loader().addTo(map);
 
   const planLayer = L.tileLayer(config.TILE_LAYER, {
     attribution: config.ATTRIBUTION,
     maxZoom: 18,
-  }).addTo(map);
+  }).addTo(mapInstance);
 
-  const satelliteLayer = L.tileLayer('http://geo.si.douane.gov.dz/sat/bing/{z}/{x}/{y}.png', {
+  const satelliteLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; Vectorial map',
+    maxZoom: 18,
+  });
+
+  const satelliteLayer0 = L.tileLayer('http://geo.si.douane.gov.dz/sat/bing/{z}/{x}/{y}.png', {
     attribution: '&copy; Vectorial map',
     maxZoom: 18,
   });
@@ -357,7 +365,7 @@ function initMap(mapContainer = 'map') {
   };
 
 // Ajouter le panneau de contrôle des couches
-  L.control.layers(titleLayers).addTo(map);
+  L.control.layers(titleLayers).addTo(mapInstance);
 
     mapInitialised=true
     addORG();
@@ -390,7 +398,117 @@ function initMap(mapContainer = 'map') {
          isCursorOverMap = false;
     });*/
     printZoomInfo();
-    loader.hide()
+    // loader.hide()
+/*
 
+  // init butons
+  var btn1 = L.easyButton("fa-home", function() {
+    mapInstance.setView([28.2156279, 2.9081565], 5.35, { animate: true, duration: 0.5 });
+  }).addTo(mapInstance);
+
+
+  var legend = L.control({ position: "bottomright" });
+
+  legend.onAdd = function(map) {
+    var div = L.DomUtil.create("div", "info legend");
+
+
+    div.innerHTML = "infooooooooooos";
+    return div;
+  };
+  legend.addTo(mapInstance);
+
+
+  // Create a button for coloring the map by population
+  var btn3 = L.easyButton({
+    states: [{
+      stateName: 'color-population',
+      icon: 'fa-paint-brush',
+      title: 'Color Map by Population',
+      onClick: function(btn, map) {
+        // Perform your coloring functionality here
+        changeTileLayer(3)
+      }
+    }]
+  }).addTo(mapInstance);
+
+  // Create a button for viewing government architecture
+  var btn4 = L.easyButton({
+    states: [{
+      stateName: 'government-architecture',
+      icon: 'fa-building',
+      title: 'View Government Architecture',
+      onClick: function(btn, map) {
+        // Perform your government architecture functionality here
+        changeTileLayer(4)
+      }
+    }]
+  }).addTo(mapInstance);
+
+  // Create a button for switching layers
+  var btn5 = L.easyButton({
+    states: [{
+      stateName: 'switch-layers',
+      icon: 'fa-exchange',
+      title: 'Switch Layers',
+      onClick: function(btn, map) {
+        // Perform your layer switching functionality here
+        changeTileLayer(5)
+      }
+    }]
+  }).addTo(mapInstance);
+
+  var btn6 = L.easyButton({
+    states: [{
+      stateName: 'switch-layers',
+      icon: 'fa-exchange',
+      title: 'Switch Layers',
+      onClick: function(btn, map) {
+        // Perform your layer switching functionality here
+        changeTileLayer(6)
+      }
+    }]
+  }).addTo(mapInstance);
+
+  var btn7 = L.easyButton({
+    states: [{
+      stateName: 'switch-layers',
+      icon: 'fa-exchange',
+      title: 'Switch Layers',
+      onClick: function(btn, map) {
+        // Perform your layer switching functionality here
+        changeTileLayer(7)
+      }
+    }]
+  }).addTo(mapInstance);
+
+
+
+// Create a button for setting the map view to a specific location
+//if(L == null )
+
+//console.log("L " + L)
+  var btn10 = L.easyButton({
+    states: [{
+      stateName: 'home',
+      icon: 'fa-home',
+      title: 'Go to Home',
+      onClick: function(btn, map) {
+        map.setView([28.2156279, 2.9081565], 5.35, { animate: true, duration: 0.5 });
+        geojsonLayer.addTo(map);
+      }
+    }]
+  }).addTo(mapInstance);
+
+  // Create a button for searching a location
+  var btn2 = L.easyButton({
+    states: [{
+      stateName: 'search',
+      icon: 'fa-search',
+      title: 'Search',
+      onClick: handelSearch
+    }]
+  }).addTo(mapInstance);
+*/
 
 }
