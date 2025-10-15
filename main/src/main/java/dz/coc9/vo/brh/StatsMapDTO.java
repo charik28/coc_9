@@ -1,37 +1,100 @@
 package dz.coc9.vo.brh;
 
+import java.time.LocalDateTime;
+
 public class StatsMapDTO {
+
     private String dr;
     private String idd;
     private String wilaya;
-    private double lat;
-    private double lng;
-    private double kifKg;
-    private int armes;
-    private double tabacKg;
-    private double carbL;
-    private String date;
 
-    // Getters & setters
-    public String getDr() { return dr; }
-    public void setDr(String dr) { this.dr = dr; }
-    public String getIdd() { return idd; }
-    public void setIdd(String idd) { this.idd = idd; }
-    public String getWilaya() { return wilaya; }
-    public void setWilaya(String wilaya) { this.wilaya = wilaya; }
-    public double getLat() { return lat; }
-    public void setLat(double lat) { this.lat = lat; }
-    public double getLng() { return lng; }
-    public void setLng(double lng) { this.lng = lng; }
-    public double getKifKg() { return kifKg; }
-    public void setKifKg(double kifKg) { this.kifKg = kifKg; }
-    public int getArmes() { return armes; }
-    public void setArmes(int armes) { this.armes = armes; }
-    public double getTabacKg() { return tabacKg; }
-    public void setTabacKg(double tabacKg) { this.tabacKg = tabacKg; }
-    public double getCarbL() { return carbL; }
-    public void setCarbL(double carbL) { this.carbL = carbL; }
-    public String getDate() { return date; }
-    public void setDate(String date) { this.date = date; }
+    private Double lat;
+    private Double lng;
+
+    private Double kifKg;
+    private Integer armes;
+    private Double tabacKg;
+    private Double carbL;
+
+    private LocalDateTime date;
+
+    public String getDr() {
+        return dr;
+    }
+
+    public void setDr(String dr) {
+        this.dr = dr;
+    }
+
+    public String getIdd() {
+        return idd;
+    }
+
+    public void setIdd(String idd) {
+        this.idd = idd;
+    }
+
+    public String getWilaya() {
+        return wilaya;
+    }
+
+    public void setWilaya(String wilaya) {
+        this.wilaya = wilaya;
+    }
+
+    public Double getLat() {
+        return lat;
+    }
+
+    public void setLat(Double lat) {
+        this.lat = lat;
+    }
+
+    public Double getLng() {
+        return lng;
+    }
+
+    public void setLng(Double lng) {
+        this.lng = lng;
+    }
+
+    public Double getKifKg() {
+        return kifKg;
+    }
+
+    public void setKifKg(Double kifKg) {
+        this.kifKg = kifKg;
+    }
+
+    public Integer getArmes() {
+        return armes;
+    }
+
+    public void setArmes(Integer armes) {
+        this.armes = armes;
+    }
+
+    public Double getTabacKg() {
+        return tabacKg;
+    }
+
+    public void setTabacKg(Double tabacKg) {
+        this.tabacKg = tabacKg;
+    }
+
+    public Double getCarbL() {
+        return carbL;
+    }
+
+    public void setCarbL(Double carbL) {
+        this.carbL = carbL;
+    }
+
+    public LocalDateTime getDate() {
+        return date;
+    }
+
+    public void setDate(LocalDateTime date) {
+        this.date = date;
+    }
 }
-
