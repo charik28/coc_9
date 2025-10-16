@@ -90,3 +90,6 @@ CREATE TABLE rend25.rendement (
                                alim_kg NUMERIC(12,2),
                                alim_l NUMERIC(12,2)
 );
+
+
+--- asus-dzGeo:5432 [2025-10-16 05:23:15] completed in 21 ms

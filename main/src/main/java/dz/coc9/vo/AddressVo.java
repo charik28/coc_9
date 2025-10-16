@@ -7,5 +7,5 @@ public class AddressVo {
 
     private String adresse;
     private VilleVo wilaya;
-    private OrgnVo orgn;
+    private OrgnFlatDTO orgn;
 }

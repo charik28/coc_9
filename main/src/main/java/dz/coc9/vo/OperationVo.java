@@ -10,7 +10,7 @@ public class OperationVo {
     private String id;
 
     private String orgnCd;
-    OrgnVo orgn;
+    OrgnFlatDTO orgn;
     private String collaborationType;
     List<MarchandiseVo> marchandies;
 

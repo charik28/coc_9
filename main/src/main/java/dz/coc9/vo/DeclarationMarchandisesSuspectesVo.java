@@ -15,7 +15,7 @@ public class DeclarationMarchandisesSuspectesVo {
     private Long idd;
 
     /** Organisation ou Brigade déclarant */
-    private OrgnVo orgn;
+    private OrgnFlatDTO orgn;
 
     /** Wilaya où la déclaration a eu lieu */
     private VilleVo wilaya;

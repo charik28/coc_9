@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 @Data
-public class OrgnVo {
+public class OrgnFlatDTO {
     private String id;
     private String cd;
     private String nm;
@@ -13,6 +13,6 @@ public class OrgnVo {
     String lttd,lngt;
 
     @JsonIgnore
-    OrgnVo subOrgn;
+    OrgnFlatDTO subOrgn;
 
 }

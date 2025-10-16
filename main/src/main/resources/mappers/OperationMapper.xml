@@ -21,7 +21,7 @@
         <result property="quantite" column="total_affaires" jdbcType="INTEGER"/>
         <result property="agent" column="orgn_cd" jdbcType="VARCHAR"/>
         <!-- Orgn nested object -->
-        <association property="orgn" javaType="dz.coc9.vo.OrgnVo">
+        <association property="orgn" javaType="dz.coc9.vo.OrgnFlatDTO">
             <result property="id" column="orgn_id"/>
             <result property="cd" column="orgn_cd"/>
             <result property="nm" column="orgn_cd"/>
