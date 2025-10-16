@@ -90,7 +90,14 @@
       if (v) params.append(`filters[${k}]`, v);
     }
 
-    if(PROFILE_OFFLINE) {// Simulated data (replace with actual fetch in real API)
+    if(typeof PROFILE_OFFLINE==='undefined' || !PROFILE_OFFLINE) {
+      const res = await fetch(`/api/stats/map?view=${view}&dr=${dr || ''}&idd=${idd || ''}`);
+      return await res.json();
+
+    }
+    else{
+
+      // Simulated data (replace with actual fetch in real API)
       const mockData = [
         {label: "Janv 2025", value: Math.random() * 100},
         {label: "Févr 2025", value: Math.random() * 100},
@@ -99,11 +106,6 @@
         {label: "Mai 2025", value: Math.random() * 100}
       ];
       return mockData;
-    }
-    else{
-      const res = await fetch(`/api/stats/map?view=${view}&dr=${dr || ''}&idd=${idd || ''}`);
-      return await res.json();
-
     }
 
     // Uncomment when backend is active:
