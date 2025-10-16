@@ -7,5 +7,9 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   initRendmentLayout();
 
+
+   initFilters();
+  refreshData();
+
 });
 

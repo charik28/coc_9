@@ -101,6 +101,7 @@ async function loadContent(pageName) {
     const titleMap = {
       'rendement-dashboard.html': 'Rendment bdd v2025',
       'dashboard.html': 'Tableau de Bord',
+      'stats-full.html': 'Vision Spatiale – Tendances',
       'operations.html': 'Gestion des Opérations',
       'type_marchandises.html': 'Type de Marchandises',
       'declarations.html': 'Déclarations & Formulaires',
@@ -110,6 +111,7 @@ async function loadContent(pageName) {
     document.getElementById('pageTitle').innerText = titleMap[pageName] || 'Anti-Contrebande';
 
     // Re-run any scripts inside the loaded HTML
+    console.debug('Re-run any scripts inside the loaded HTML',pageName)
     container.querySelectorAll("script").forEach(oldScript => {
       const newScript = document.createElement("script");
       newScript.text = oldScript.text;

@@ -1,6 +1,6 @@
 SET lc_time = 'fr_FR.UTF-8';
 /*
-INSERT INTO rend25.rendement (
+INSERT INTO rend24.rendement (
     id, mois, annee, dr, idd, brigade, wilaya, collab,
     loc_e, loc_n, topo, date, heure,
     armes_u, type_armes, mun_u, equip_sens_m, equip_sens_u,
@@ -42,10 +42,10 @@ SELECT
     NULLIF(carb_l, '0')::numeric(12,2),
     NULLIF(alim_kg, '0')::numeric(12,2),
     NULLIF(alim_l, '0')::numeric(12,2)
-FROM rend25.rendement_;
+FROM rend24.rendement_;
 
 */
-INSERT INTO rend25.rendement (
+INSERT INTO rend24.rendement (
     id,
     mois,
     annee,
@@ -70,8 +70,9 @@ SELECT
     topo,
     type_armes,
     desc_prod
-FROM rend25.rendement_;
+FROM rend24.rendement_;
 -- wadoo [2025-10-15 07:50:09] 2,445 rows affected in 21 ms
 --asus   [2025-10-16 05:57:01] 2,445 rows affected in 15 ms
+-- waddo 2024 6655
 
 
