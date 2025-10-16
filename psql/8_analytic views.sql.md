@@ -74,6 +74,12 @@ SELECT DISTINCT dr, idd, brigade
 FROM rend25.rendement
 WHERE dr IS NOT NULL AND idd IS NOT NULL AND brigade IS NOT NULL
 ORDER BY dr, idd, brigade;
+
+--389
+
+select * from rend25.vw_org_filters;
+
+
 ```
 
 🧠 **Use:** Filter dropdowns / organizational hierarchy.
@@ -102,6 +108,9 @@ SELECT
     SUM(armes_u) AS armes_total
 FROM rend25.rendement
 GROUP BY dr, idd, brigade, wilaya;
+
+select * from rend25.vw_map_summary;
+
 ```
 
 🧠 **Use:**

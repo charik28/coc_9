@@ -48,17 +48,18 @@ where  loc_n is not null;-- 97 row only;
 UPDATE rend25.rendement
 SET topo = null where topo='0';-----------------[2025-10-15 08:01:29] 1,473 rows affected in 6 ms
 
-select distinct armes_u from rend25.rendement_ r_
+/*select distinct armes_u from rend25.rendement_ r_
     where r_.armes_u in (0,1,2,3,4)
     --where r_.armes_u not in (null,'',' ')
 
-;
+;*/
 
 UPDATE rend25.rendement
 SET armes_u = r_.armes_u::int4
 FROM rend25.rendement_ r_
 WHERE r_.id = rendement.id
-and r_.armes_u in (0,1,2,3,4)
+and r_.armes_u not in ('',' ')
+-- and r_.armes_u in (0,1,2,3,4)
 -----------------[2025-10-15 08:09:34] 2,145 rows affected in 14 ms
 
 --and r_.armes_u not in (null,'',' ') -- error
@@ -75,7 +76,8 @@ UPDATE rend25.rendement
 SET mun_u = r_.mun_u::int4
 FROM rend25.rendement_ r_
 WHERE r_.id = rendement.id
-  and r_.mun_u not in ('',' ');-----------------[2025-10-15 08:14:51] 2,147 rows affected in 15 ms
+  and r_.mun_u not in ('',' ');
+-----------------[2025-10-15 08:14:51] 2,147 rows affected in 15 ms
 
 select distinct equip_sens_m from rend25.rendement_ r_;
 select distinct equip_sens_m from rend25.rendement r
@@ -170,7 +172,7 @@ UPDATE rend25.rendement
 SET cig_u = replace(r_.cig_u,'.','')::int8
 FROM rend25.rendement_ r_
 WHERE r_.id = rendement.id
-  and r_.cig_u not in ('',0);-----------------[2025-10-15 13:33:42] 26 rows affected in 5 ms
+  and r_.cig_u not in ('');-----------------[2025-10-15 13:33:42] 26 rows affected in 5 ms
 
 
 -------- tab_kg

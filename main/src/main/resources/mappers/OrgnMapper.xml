@@ -5,7 +5,7 @@
 
 <mapper namespace="dz.coc9.mappers.OrgnMapper">
 
-    <resultMap id="orgnResultMap" type="dz.coc9.vo.OrgnVo">
+    <resultMap id="orgnResultMap" type="dz.coc9.vo.OrgnFlatDTO">
 
         <result property="id" column="orgn_mgmt_cd" />
         <result property="cd" column="orgn_cd" />
@@ -16,6 +16,14 @@
         <result property="lttd" column="lttd" />
         
     </resultMap>
+
+
+    <select id="getHierarchy" resultType="dz.coc9.vo.OrgnFlatDTO">
+        SELECT dr, idd, brigade
+        FROM rend25.vw_org_filters
+        ORDER BY dr, idd, brigade
+    </select>
+
 
     <select id="findAll" resultMap="orgnResultMap">
         select * from alpassint.tb_poti_orgn

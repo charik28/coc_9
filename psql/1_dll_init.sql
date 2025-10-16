@@ -20,12 +20,12 @@ Spiritueux
 
  */
 /*
-MOIS,ANNEE,DR,IDD,BRIGADES,WILAYA,COLLABORATION,localisation_geographique_e,localisation_geographique_n,toponymie,date,heure,Armes_Unite,TYPES_D_ARMES,Munitions_Unite,Equipements_sensibles_metres,Produits_et_equipements_sensibles_Unite,Stupefiants_kif_traite_KG,Cocaine_KG,Produits_psychotropes_comprime,Discription_du_produit2,Cigarettes_Unite,Tabac_KG,Alcool_et_Spiritueux_Litre,Carburants_Litre,produits_alimentaires_de_large_consommation_KG,produits_alimentaires_de_large_consommation_Litre
+MOIS;ANNEE;DR;IDD;BRIGADES;WILAYA;COLLABORATION;localisation_geographique_e;localisation_geographique_n;toponymie;date;heure;Armes_Unite;TYPES_D_ARMES;Munitions_Unite;Equipements_sensibles_metres;Produits_et_equipements_sensibles_Unite;Stupefiants_kif_traite_KG;Cocaine_KG;Produits_psychotropes_comprime;Discription_du_produit2;Cigarettes_Unite;Tabac_KG;Alcool_et_Spiritueux_Litre;Carburants_Litre;produits_alimentaires_de_large_consommation_KG;produits_alimentaires_de_large_consommation_Litre
 */
 
 Shortened CSV Header
 
-mois,annee,dr,idd,brigade,wilaya,collab,loc_e,loc_n,topo,date,heure,armes_u,type_armes,mun_u,equip_sens_m,equip_sens_u,kif_kg,coc_kg,psy_compr,desc_prod,cig_u,tab_kg,alc_l,carb_l,alim_kg,alim_l
+mois;annee;dr;idd;brigade;wilaya;collab;loc_e;loc_n;topo;date;heure;armes_u;type_armes;mun_u;equip_sens_m;equip_sens_u;kif_kg;coc_kg;psy_compr;desc_prod;cig_u;tab_kg;alc_l;carb_l;alim_kg;alim_l
 
 create schema rend25;
 
@@ -92,4 +92,16 @@ CREATE TABLE rend25.rendement (
 );
 
 
+ALTER TABLE rend25.rendement ALTER COLUMN brigade TYPE varchar USING brigade::varchar;;
 --- asus-dzGeo:5432 [2025-10-16 05:23:15] completed in 21 ms
+
+
+
+select * from rend25.rendement_
+where mois ='' and annee ='';
+
+delete from rend25.rendement_
+where mois ='' and annee ='' and dr='';
+
+
+select count(*) from rend25.rendement_; --2445 of 2532 in csv file !!! todo
