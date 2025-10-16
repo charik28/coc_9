@@ -16,6 +16,7 @@ var notRemovableMarkers = new Set();
 //const TILE_LAYER = 'http://localhost/satmap/{z}/{x}/{y}.jpg'; // Satellite view
 
 var config;
+var PROFILE_OFFLINE =false; //todo
 
 if ( typeof config == 'undefined') {
      config = {

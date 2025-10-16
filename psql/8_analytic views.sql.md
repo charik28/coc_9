@@ -141,6 +141,9 @@ SELECT
 FROM rend25.rendement
 GROUP BY annee, mois, dr
 ORDER BY annee, mois, dr;
+
+select * from rend25.vw_monthly_trends; -- 135 row
+
 ```
 
 🧠 **Use:**
@@ -177,6 +180,9 @@ SELECT
 FROM rend25.rendement
 GROUP BY dr, idd, brigade, wilaya
 ORDER BY risk_score DESC;
+
+select * from rend25.vw_risk_score ;--396
+
 ```
 
 🧠 **Use:**
@@ -194,16 +200,21 @@ ORDER BY risk_score DESC;
 Measure how often a collaboration leads to large seizures.
 
 ```sql
+-- drop materialized view rend25.vw_collaboration_effectiveness;
 CREATE MATERIALIZED VIEW rend25.vw_collaboration_effectiveness AS
 SELECT
     collab,
     COUNT(*) AS operations,
-    SUM(kif_kg + coc_kg + tab_kg + carb_l) AS total_goods,
-    AVG(kif_kg + coc_kg + tab_kg + carb_l) AS avg_goods
+    SUM(kif_kg + coc_kg + tab_kg + carb_l)::numeric(15,4) AS total_goods,
+    AVG(kif_kg + coc_kg + tab_kg + carb_l)::numeric(15,4) AS avg_goods
 FROM rend25.rendement
 WHERE collab IS NOT NULL
 GROUP BY collab
 ORDER BY total_goods DESC;
+
+
+select * from rend25.vw_collaboration_effectiveness;
+
 ```
 
 🧠 **Use:**
@@ -234,6 +245,9 @@ SELECT
 FROM rend25.rendement
 GROUP BY wilaya
 ORDER BY wilaya;
+
+select * from rend25.vw_goods_summary;--57 row
+
 ```
 
 🧠 **Use:**

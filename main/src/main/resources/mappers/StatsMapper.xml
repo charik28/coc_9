@@ -64,4 +64,29 @@
         ORDER BY wilaya
     </select>
 
+
+    <!-- ===================================================== -->
+    <!--  NEW SECTION FOR DYNAMIC VIEW-BASED ANALYSIS          -->
+    <!-- ===================================================== -->
+    <select id="selectDynamicStats"
+            parameterType="map"
+            resultType="dz.coc9.service.dto.DynamicStatsDTO">
+        SELECT
+        ${selectClause}
+        FROM ${viewName}
+        <where>
+            <if test="filters != null">
+                <foreach item="val" index="key" collection="filters" open="" separator="AND" close="">
+                    ${key} = #{val}
+                </foreach>
+            </if>
+        </where>
+        <if test="orderBy != null">
+            ORDER BY ${orderBy}
+        </if>
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
 </mapper>

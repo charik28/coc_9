@@ -1,4 +1,11 @@
 
+16/10/2025
+
+clone rend24 as rend25 
+compare headers, add this params schemas as path var
+
+add a i18n_lang for the head if needed
+
 06/10 todo
 osm json regions
 villes lat,long

@@ -1,11 +1,14 @@
 package dz.coc9.web.rest;
 
+import dz.coc9.service.dto.DynamicStatsDTO;
 import dz.coc9.service.interfaces.StatsService;
 import dz.coc9.vo.brh.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST controller for Douane & Brigades performance statistics
@@ -64,4 +67,17 @@ public class StatsResource {
     ) {
         return statsService.getChartData(dr, idd, periode);
     }
+
+    @GetMapping("/api/stats/dynamic")
+    public ResponseEntity<List<DynamicStatsDTO>> getDynamicStats(
+            @RequestParam String view,
+            @RequestParam(required = false) Map<String, Object> filters,
+            @RequestParam(defaultValue = "*") String select,
+            @RequestParam(required = false) String orderBy,
+            @RequestParam(required = false) Integer limit
+    ) {
+        List<DynamicStatsDTO> data = statsService.getDynamicStats(view, filters, select, orderBy, limit);
+        return ResponseEntity.ok(data);
+    }
+
 }

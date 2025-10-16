@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Douane & Lutte Contre la Contrebande</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      margin: 0;
+      background: #f5f6fa;
+      color: #222;
+    }
+    header {
+      background: #2c3e50;
+      color: #fff;
+      padding: 15px 25px;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    .filters {
+      display: flex;
+      gap: 10px;
+      background: #fff;
+      padding: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    select, button {
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    main {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 100px);
+    }
+    .tabs {
+      display: flex;
+      background: #eee;
+    }
+    .tabs button {
+      flex: 1;
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      background: #eee;
+      transition: 0.3s;
+    }
+    .tabs button.active {
+      background: #fff;
+      border-bottom: 2px solid #3498db;
+      font-weight: bold;
+    }
+    .tab-content {
+      flex: 1;
+      display: none;
+      padding: 10px;
+      background: #fff;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    #map {
+      height: 80vh;
+      width: 100%;
+      border-radius: 8px;
+    }
+    canvas {
+      max-height: 70vh;
+    }
+    .modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center; align-items: center;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+    }
+  </style>
+</head>
+<body>
+<header>📊 Tableau de Bord – Douane et Brigades</header>
+
+<div class="filters">
+  <select id="drSelect"></select>
+  <select id="iddSelect"></select>
+  <select id="periodeSelect"></select>
+  <button onclick="refreshData()">🔄 Actualiser</button>
+</div>
+
+<main>
+  <div class="tabs">
+    <button class="tabBtn active" onclick="switchTab('charts')">📈 Statistiques</button>
+    <button class="tabBtn" onclick="switchTab('map')">🗺️ Carte</button>
+    <button class="tabBtn" onclick="switchTab('heat')">🔥 Heat Map</button>
+  </div>
+
+  <div id="charts" class="tab-content active">
+    <canvas id="chartCanvas"></canvas>
+  </div>
+  <div id="map" class="tab-content"></div>
+  <div id="heat" class="tab-content"></div>
+</main>
+
+<div id="detailsModal" class="modal" onclick="this.style.display='none'">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <h3>Détails de la Saisie</h3>
+    <div id="detailsContent"></div>
+  </div>
+</div>
+
+<script>
+  let map, heatmap, chart;
+
+  // 🧠 Simulated large dataset
+  function generateData(count = 500) {
+    const data = [];
+    const wilayas = ['Alger', 'Oran', 'Tlemcen', 'Tizi Ouzou', 'Annaba'];
+    for (let i = 0; i < count; i++) {
+      data.push({
+        id: i+1,
+        dr: 'DR' + (1 + i % 3),
+        idd: 'IDD' + (1 + i % 5),
+        wilaya: wilayas[i % wilayas.length],
+        lat: 36 + Math.random(),
+        lng: 2 + Math.random() * 3,
+        kifKg: Math.random() * 100,
+        carbL: Math.random() * 200,
+        tabacKg: Math.random() * 50,
+        armes: Math.floor(Math.random() * 5)
+      });
+    }
+    return data;
+  }
+
+  const data = generateData(2000);
+
+  function initFilters() {
+    const drs = [...new Set(data.map(d => d.dr))];
+    const idds = [...new Set(data.map(d => d.idd))];
+    const per = ['2025-01', '2025-02', '2025-03'];
+
+    fillSelect('drSelect', drs);
+    fillSelect('iddSelect', idds);
+    fillSelect('periodeSelect', per);
+  }
+
+  function fillSelect(id, values) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">Tous</option>' + values.map(v => `<option>${v}</option>`).join('');
+  }
+
+  function switchTab(tabId) {
+    document.querySelectorAll('.tabBtn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelector(`.tabBtn[onclick*='${tabId}']`).classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+  }
+
+  function refreshData() {
+    const dr = document.getElementById('drSelect').value;
+    const idd = document.getElementById('iddSelect').value;
+
+    const filtered = data.filter(d =>
+      (!dr || d.dr === dr) &&
+      (!idd || d.idd === idd)
+    );
+    renderChart(filtered);
+    renderMap(filtered);
+    renderHeat(filtered);
+  }
+
+  function renderChart(list) {
+    const grouped = {};
+    list.forEach(d => {
+      if (!grouped[d.wilaya]) grouped[d.wilaya] = { kif: 0, carb: 0 };
+      grouped[d.wilaya].kif += d.kifKg;
+      grouped[d.wilaya].carb += d.carbL;
+    });
+
+    const labels = Object.keys(grouped);
+    const kif = labels.map(l => grouped[l].kif);
+    const carb = labels.map(l => grouped[l].carb);
+
+    const ctx = document.getElementById('chartCanvas').getContext('2d');
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Kif (Kg)', data: kif, backgroundColor: 'rgba(46, 204, 113,0.7)' },
+          { label: 'Carburants (L)', data: carb, backgroundColor: 'rgba(52, 152, 219,0.7)' }
+        ]
+      }
+    });
+  }
+
+  function renderMap(list) {
+    if (!map) {
+      map = L.map('map').setView([36.7, 3.0], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 12
+      }).addTo(map);
+    } else {
+      map.eachLayer(l => { if (l instanceof L.Marker) map.removeLayer(l); });
+    }
+
+    list.forEach(d => {
+      const marker = L.marker([d.lat, d.lng]).addTo(map);
+      marker.bindPopup(`<b>${d.wilaya}</b><br>Kif: ${d.kifKg.toFixed(1)} kg<br>
+                          Carburant: ${d.carbL.toFixed(1)} L<br>
+                          <a href="#" onclick="showDetails(${d.id});return false;">Détails</a>`);
+    });
+  }
+
+  function renderHeat(list) {
+    if (!heatmap) {
+      heatmap = L.map('heat').setView([36.7, 3.0], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(heatmap);
+    }
+
+    const pts = list.map(d => [d.lat, d.lng, d.kifKg / 100]);
+    L.heatLayer(pts, { radius: 25 }).addTo(heatmap);
+  }
+
+  function showDetails(id) {
+    const d = data.find(x => x.id === id);
+    const div = document.getElementById('detailsContent');
+    div.innerHTML = `
+        <b>Wilaya:</b> ${d.wilaya}<br>
+        <b>DR:</b> ${d.dr}<br>
+        <b>IDD:</b> ${d.idd}<br>
+        <b>Kif:</b> ${d.kifKg.toFixed(1)} kg<br>
+        <b>Carburants:</b> ${d.carbL.toFixed(1)} L<br>
+        <b>Armes:</b> ${d.armes}<br>
+      `;
+    document.getElementById('detailsModal').style.display = 'flex';
+  }
+
+  initFilters();
+  refreshData();
+</script>
+</body>
+</html>

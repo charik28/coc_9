@@ -1,6 +1,7 @@
 package dz.coc9.service.interfaces;
 
 import dz.coc9.mappers.StatsMapper;
+import dz.coc9.service.dto.DynamicStatsDTO;
 import dz.coc9.vo.brh.StatsChartDTO;
 import dz.coc9.vo.brh.StatsFilterDTO;
 import dz.coc9.vo.brh.StatsMapDTO;
@@ -8,7 +9,9 @@ import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -47,5 +50,20 @@ public class StatsService {
             @Param("idd") String idd,
             @Param("periode") String periode) {
         return statsMapper.getChartData(dr, idd, periode);
+    }
+
+
+    public List<DynamicStatsDTO> getDynamicStats(String viewName,
+                                                 Map<String, Object> filters,
+                                                 String selectClause,
+                                                 String orderBy,
+                                                 Integer limit) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("viewName", viewName);
+        params.put("filters", filters);
+        params.put("selectClause", selectClause);
+        params.put("orderBy", orderBy);
+        params.put("limit", limit);
+        return statsMapper.selectDynamicStats(params);
     }
 }
