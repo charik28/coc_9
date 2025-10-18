@@ -32,8 +32,8 @@ mois;annee;dr;idd;brigade;wilaya;collab;loc_e;loc_n;topo;date;heure;armes_u;type
 
 
 ```sql
-create schema if not exists rend25;
-create schema if not exists rend24;
+-- create schema if not exists rend25;
+-- create schema if not exists rend24;
 
 CREATE TABLE public.rend24_rendement_ (
                                   id SERIAL PRIMARY KEY,

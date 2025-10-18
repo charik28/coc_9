@@ -69,10 +69,12 @@ We can extract **at least 6 families of analytical views**, depending on what qu
 👉 Filters for UI (we already defined it):
 
 ```sql
+
 CREATE MATERIALIZED VIEW rend25.vw_org_filters AS
-SELECT DISTINCT dr, idd, brigade
-FROM rend25.rendement
-WHERE dr IS NOT NULL AND idd IS NOT NULL AND brigade IS NOT NULL
+SELECT dr, idd, brigade, r.wilaya,w.latitude,w.longitude
+FROM rend25_rendement r
+         join coc10.wilaya_coords w on r.wilaya like w.wilaya
+--WHERE dr IS NOT NULL AND idd IS NOT NULL AND brigade IS NOT NULL
 ORDER BY dr, idd, brigade;
 
 --389

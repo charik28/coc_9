@@ -1,39 +1,43 @@
 
 
-select mois ,annee ,date_ from rend25.rendement;
+select distinct mois ,annee ,date_,periode from public.rend24_rendement;
 
-alter table rend25.rendement add column date_ varchar;
+-- alter table public.rend24_rendement add column date_ varchar;
 
-UPDATE rend25.rendement
+UPDATE public.rend24_rendement
 SET date_ = concat('01/',mois,'/',annee)
 where date_ is null;
 ;
-
-UPDATE rend25.rendement SET date_ = replace(date_,'MAI','05');
-UPDATE rend25.rendement SET date_ = replace(date_, 'JANVIER', '01');
-UPDATE rend25.rendement SET date_ = replace(date_, 'FEVRIER', '02');
-UPDATE rend25.rendement SET date_ = replace(date_, 'MARS', '03');
-UPDATE rend25.rendement SET date_ = replace(date_, 'AVRIL', '04');
-UPDATE rend25.rendement SET date_ = replace(date_, 'MAI', '05');
-UPDATE rend25.rendement SET date_ = replace(date_, 'JUIN', '06');
-UPDATE rend25.rendement SET date_ = replace(date_, 'JUILLET', '07');
-UPDATE rend25.rendement SET date_ = replace(date_, 'AOUT', '08');
-UPDATE rend25.rendement SET date_ = replace(date_, 'SEPTEMBRE', '09');
-UPDATE rend25.rendement SET date_ = replace(date_, 'OCTOBRE', '10');
-UPDATE rend25.rendement SET date_ = replace(date_, 'NOVEMBRE', '11');
-UPDATE rend25.rendement SET date_ = replace(date_, 'DECEMBRE', '12');
-
-
-
-select distinct date_ from rend25.rendement;
-select  periode from rend25.rendement;
-select  count(periode) from rend25.rendement; --2445
+UPDATE public.rend24_rendement
+SET date_ = replace(date_,'//','/')
+where date_ like '%//%';
 ;
-ALTER TABLE rend25.rendement ADD COLUMN periode date;
 
-UPDATE rend25.rendement
-SET periode = TO_DATE(date_, 'DD/MM/YYYY')
-WHERE annee IS NOT NULL AND mois ~ '^[0-9]{2}$';
+UPDATE public.rend24_rendement SET date_ = replace(date_,'MAI','05');
+UPDATE public.rend24_rendement SET date_ = replace(date_, 'JANVIER', '01');
+UPDATE public.rend24_rendement SET date_ = replace(date_, 'FEVRIER', '02');
+UPDATE public.rend24_rendement SET date_ = replace(date_, 'MARS', '03');
+UPDATE public.rend24_rendement SET date_ = replace(date_, 'AVRIL', '04');
+UPDATE public.rend24_rendement SET date_ = replace(date_, 'MAI', '05');
+UPDATE public.rend24_rendement SET date_ = replace(date_, 'JUIN', '06');
+UPDATE public.rend24_rendement SET date_ = replace(date_, 'JUILLET', '07');
+UPDATE public.rend24_rendement SET date_ = replace(date_, 'AOUT', '08');
+UPDATE public.rend24_rendement SET date_ = replace(date_, 'SEPTEMBRE', '09');
+UPDATE public.rend24_rendement SET date_ = replace(date_, 'OCTOBRE', '10');
+UPDATE public.rend24_rendement SET date_ = replace(date_, 'NOVEMBRE', '11');
+UPDATE public.rend24_rendement SET date_ = replace(date_, 'DECEMBRE', '12');
 
 
-    to_char(concat(mois, '/', annee), 'YYYY-MM-DD');
+
+select distinct date_ from public.rend24_rendement;
+select  periode from public.rend24_rendement;
+select  count(periode) from public.rend24_rendement; --2445
+;
+ALTER TABLE public.rend24_rendement ADD COLUMN periode timestamp;
+ALTER TABLE public.rend24_rendement alter COLUMN periode type timestamp;
+
+UPDATE public.rend24_rendement
+SET periode = to_timestamp(date_, 'DD/MM/YYYY')
+-- WHERE annee IS NOT NULL AND mois ~ '^[0-9]{2}$';
+;
+
