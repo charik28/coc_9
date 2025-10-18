@@ -35,7 +35,7 @@ mois;annee;dr;idd;brigade;wilaya;collab;loc_e;loc_n;topo;date;heure;armes_u;type
 create schema if not exists rend25;
 create schema if not exists rend24;
 
-CREATE TABLE rend24.rendement_ (
+CREATE TABLE public.rend24_rendement_ (
                                   id SERIAL PRIMARY KEY,
                                   mois TEXT,
                                   annee TEXT,
@@ -67,7 +67,7 @@ CREATE TABLE rend24.rendement_ (
 );
 
 -- create your simplified table
-CREATE TABLE rend24.rendement (
+CREATE TABLE public.public.rend24_rendement (
                                id SERIAL PRIMARY KEY,
                                mois VARCHAR(10),
                                annee INT,
@@ -99,11 +99,11 @@ CREATE TABLE rend24.rendement (
 );
 
 
-ALTER TABLE rend24.rendement ALTER COLUMN brigade TYPE varchar USING brigade::varchar;
+ALTER TABLE public.rend24_rendement ALTER COLUMN brigade TYPE varchar USING brigade::varchar;
 --- asus-dzGeo:5432 [2025-10-16 05:23:15] completed in 21 ms
 
 -- now populate it from the old disaster
-INSERT INTO rend24.rendement_ (
+INSERT INTO public.rend24_rendement_ (
  mois, annee, dr, idd, brigade, wilaya, collab,
  loc_e, loc_n, topo, date, heure,
  armes_u, type_armes, mun_u, equip_sens_m, equip_sens_u,
@@ -142,16 +142,16 @@ FROM coc10.rendement; --[2025-10-16 08:51:06] 6,655 rows affected in 79 ms
 
 
 /*
-select count(*) from rend24.rendement_; -- wadoo 6655
-select * from rend24.rendement_
+select count(*) from public.rend24_rendement_; -- wadoo 6655
+select * from public.rend24_rendement_
 where mois ='' and annee =''; --0 NO NULLs
 
-delete from rend24.rendement_
+delete from public.rend24_rendement_
 where mois ='' and annee ='' and dr='';
 
 */
                       
-select count(*) from rend24.rendement_; -- r2025 :2445 of 2532 in csv file !!! todo
+select count(*) from public.rend24_rendement_; -- r2025 :2445 of 2532 in csv file !!! todo
 -- r2024 : 6655
 
 

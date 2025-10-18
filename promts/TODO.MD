@@ -1,5 +1,9 @@
 
-16/10/2025
+## 16/10/2025
+
+use the power of grafana
+restore the old dashboards
+split the fragment into page to help debuggin code if needed
 
 clone rend24 as rend25 
 compare headers, add this params schemas as path var
