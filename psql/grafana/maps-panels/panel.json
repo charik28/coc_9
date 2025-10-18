@@ -1,0 +1,308 @@
+{
+  "id": 9,
+  "type": "geomap",
+  "title": "Carte des kif",
+  "gridPos": {
+    "x": 0,
+    "y": 14,
+    "h": 10,
+    "w": 24
+  },
+  "fieldConfig": {
+    "defaults": {
+      "custom": {
+        "hideFrom": {
+          "tooltip": false,
+          "viz": false,
+          "legend": false
+        }
+      },
+      "mappings": [],
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          {
+            "color": "green",
+            "value": null
+          },
+          {
+            "color": "red",
+            "value": 80
+          },
+          {
+            "value": 90,
+            "color": "#EAB839"
+          }
+        ]
+      },
+      "color": {
+        "fixedColor": "#ed4c5f",
+        "mode": "palette-classic"
+      }
+    },
+    "overrides": []
+  },
+  "pluginVersion": "11.4.0",
+  "targets": [
+    {
+      "format": "table",
+      "rawQuery": true,
+      "rawSql": "-- A ::gun-solid.svg\r\nSELECT dr,\r\n       idd,\r\n       brigade,\r\n       r.wilaya,\r\n       latitude,\r\n       longitude,\r\n       SUM(kif_kg)  AS kif_total,\r\n       SUM(coc_kg)  AS coc_total,\r\n       SUM(tab_kg)  AS tabac_total,\r\n       SUM(carb_l)  AS carburant_total,\r\n       SUM(armes_u) AS armes_total,\r\n       concat('img/icons/marker/',saisie_icon) as icon,\r\n       icon_color\r\nFROM rendement r\r\nwhere saisie_icon='gun-solid.svg'\r\nGROUP BY dr, idd, brigade, r.wilaya, latitude, longitude, saisie_icon, saisie_type,icon_color\r\nhaving SUM(armes_u) > 100\r\n;",
+      "refId": "A",
+      "editorMode": "code",
+      "sql": {
+        "columns": [
+          {
+            "type": "function",
+            "parameters": []
+          }
+        ],
+        "groupBy": [
+          {
+            "type": "groupBy",
+            "property": {
+              "type": "string"
+            }
+          }
+        ],
+        "limit": 50
+      }
+    },
+    {
+      "datasource": {
+        "uid": "eea90nvv78bnkd",
+        "type": "grafana-postgresql-datasource"
+      },
+      "refId": "B",
+      "hide": false,
+      "format": "table",
+      "rawSql": "SELECT dr,\r\n       idd,\r\n       brigade,\r\n       w.latitude,\r\n       w.longitude,\r\n       SUM(kif_kg)  AS kif_total,\r\n       concat('img/icons/marker/',saisie_icon) as saisie_icon,\r\n       icon_color\r\nFROM rendement r\r\n         LEFT JOIN coc10.wilaya_coords w ON r.wilaya = w.wilaya\r\nwhere saisie_icon='cannabis-solid.svg'\r\nGROUP BY dr, idd, brigade,  w.latitude, w.longitude, saisie_icon, icon_color\r\nhaving SUM(kif_kg)  > 10\r\n;",
+      "editorMode": "code",
+      "sql": {
+        "columns": [
+          {
+            "type": "function",
+            "parameters": []
+          }
+        ],
+        "groupBy": [
+          {
+            "type": "groupBy",
+            "property": {
+              "type": "string"
+            }
+          }
+        ],
+        "limit": 50
+      },
+      "rawQuery": true
+    },
+    {
+      "datasource": {
+        "uid": "eea90nvv78bnkd",
+        "type": "grafana-postgresql-datasource"
+      },
+      "refId": "C",
+      "hide": false,
+      "format": "table",
+      "rawSql": "SELECT dr,\r\n       idd,\r\n       brigade,\r\n       latitude,\r\n       longitude,\r\n       SUM(psy_compr)  AS psy_compr_total,\r\n       SUM(kif_kg)  AS kif_total,\r\n       SUM(coc_kg)  AS coc_total,\r\n       SUM(tab_kg)  AS tabac_total,\r\n       SUM(carb_l)  AS carburant_total,\r\n       SUM(armes_u) AS armes_total,\r\n       concat('img/icons/marker/',saisie_icon) as saisie_icon,\r\n       icon_color\r\nFROM rendement r\r\nwhere saisie_icon='capsules-solid.svg'\r\nGROUP BY dr, idd, brigade,  latitude, longitude, saisie_icon, icon_color",
+      "editorMode": "code",
+      "sql": {
+        "columns": [
+          {
+            "type": "function",
+            "parameters": []
+          }
+        ],
+        "groupBy": [
+          {
+            "type": "groupBy",
+            "property": {
+              "type": "string"
+            }
+          }
+        ],
+        "limit": 50
+      },
+      "rawQuery": true
+    }
+  ],
+  "datasource": {
+    "type": "grafana-postgresql-datasource",
+    "uid": "eea90nvv78bnkd"
+  },
+  "options": {
+    "view": {
+      "allLayers": true,
+      "id": "coords",
+      "lat": 35.286306,
+      "lon": 0.961686,
+      "zoom": 3.67
+    },
+    "controls": {
+      "showZoom": true,
+      "mouseWheelZoom": true,
+      "showAttribution": true,
+      "showScale": false,
+      "showMeasure": false,
+      "showDebug": false
+    },
+    "tooltip": {
+      "mode": "details"
+    },
+    "basemap": {
+      "config": {},
+      "name": "Layer 0",
+      "type": "osm-standard"
+    },
+    "layers": [
+      {
+        "config": {
+          "style": {
+            "size": {
+              "fixed": 5,
+              "min": 10,
+              "max": 20,
+              "field": "saisie_icon"
+            },
+            "color": {
+              "fixed": "dark-green",
+              "field": "icon_color"
+            },
+            "opacity": 0.6,
+            "symbol": {
+              "mode": "fixed",
+              "fixed": "img/icons/marker/gun-solid.svg",
+              "field": ""
+            },
+            "symbolAlign": {
+              "horizontal": "center",
+              "vertical": "center"
+            },
+            "textConfig": {
+              "fontSize": 12,
+              "textAlign": "center",
+              "textBaseline": "middle",
+              "offsetX": 0,
+              "offsetY": 0
+            },
+            "rotation": {
+              "fixed": 0,
+              "mode": "mod",
+              "min": -360,
+              "max": 360
+            }
+          },
+          "showLegend": true
+        },
+        "filterData": {
+          "id": "byRefId",
+          "options": "A"
+        },
+        "name": "gun",
+        "opacity": 0.4,
+        "tooltip": true,
+        "type": "markers"
+      },
+      {
+        "type": "markers",
+        "name": "kif",
+        "config": {
+          "style": {
+            "size": {
+              "fixed": 5,
+              "min": 2,
+              "max": 15
+            },
+            "color": {
+              "fixed": "dark-green"
+            },
+            "opacity": 0.8,
+            "symbol": {
+              "mode": "fixed",
+              "fixed": "img/icons/marker/cannabis-solid.svg"
+            },
+            "symbolAlign": {
+              "horizontal": "center",
+              "vertical": "center"
+            },
+            "textConfig": {
+              "fontSize": 12,
+              "textAlign": "center",
+              "textBaseline": "middle",
+              "offsetX": 0,
+              "offsetY": 0
+            },
+            "rotation": {
+              "fixed": 0,
+              "mode": "mod",
+              "min": -360,
+              "max": 360,
+              "field": "kif_total"
+            }
+          },
+          "showLegend": true
+        },
+        "location": {
+          "mode": "auto"
+        },
+        "tooltip": true,
+        "filterData": {
+          "id": "byRefId",
+          "options": "B"
+        }
+      },
+      {
+        "type": "markers",
+        "name": "capsules",
+        "config": {
+          "style": {
+            "size": {
+              "fixed": 5,
+              "min": 2,
+              "max": 15
+            },
+            "color": {
+              "fixed": "semi-dark-red"
+            },
+            "opacity": 0.2,
+            "symbol": {
+              "mode": "fixed",
+              "fixed": "img/icons/marker/gun-solid.svg"
+            },
+            "symbolAlign": {
+              "horizontal": "left",
+              "vertical": "bottom"
+            },
+            "textConfig": {
+              "fontSize": 12,
+              "textAlign": "center",
+              "textBaseline": "middle",
+              "offsetX": 0,
+              "offsetY": 0
+            },
+            "rotation": {
+              "fixed": 0,
+              "mode": "mod",
+              "min": -360,
+              "max": 360
+            },
+            "text": {
+              "fixed": "",
+              "mode": "fixed"
+            }
+          },
+          "showLegend": true
+        },
+        "location": {
+          "mode": "auto"
+        },
+        "tooltip": true,
+        "filterData": {
+          "id": "byRefId",
+          "options": "C"
+        }
+      }
+    ]
+  }
+}
