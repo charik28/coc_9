@@ -21,9 +21,18 @@ order by id
 ;
 
 select * from rendement;--9100
+select distinct periode from rendement;--9100
 select count(*) from rendement;--9100
 
 select distinct dr,r.brigade from rendement r
 where brigade not like '%/%'
 limit 50 offset 0
 ;
+
+ALTER TABLE public.rendement DROP COLUMN mois;
+ALTER TABLE public.rendement DROP COLUMN annee;
+ALTER TABLE public.rendement DROP COLUMN loc_e;
+ALTER TABLE public.rendement DROP COLUMN loc_n;
+ALTER TABLE public.rendement DROP COLUMN date_;
+ALTER TABLE public.rendement DROP COLUMN date;
+ALTER TABLE public.rendement DROP COLUMN heure;
